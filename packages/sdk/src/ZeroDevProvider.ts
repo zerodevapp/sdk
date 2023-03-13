@@ -25,7 +25,7 @@ export class ZeroDevProvider extends BaseProvider {
     readonly originalProvider: BaseProvider,
     readonly httpRpcClient: HttpRpcClient,
     readonly entryPoint: EntryPoint,
-    readonly smartAccountAPI: BaseAccountAPI
+    readonly smartAccountAPI: BaseAccountAPI,
   ) {
     super({
       name: 'ERC-4337 Custom Network',

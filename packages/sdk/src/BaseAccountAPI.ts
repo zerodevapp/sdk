@@ -40,7 +40,6 @@ export interface UserOpResult {
  * - createSignedUserOp - helper to call the above createUnsignedUserOp, and then extract the userOpHash and sign it
  */
 export abstract class BaseAccountAPI {
-  private senderAddress!: string
   private isPhantom = true
   // entryPoint connected to "zero" address. allowed to make static calls (e.g. to getSenderAddress)
   private readonly entryPointView: EntryPoint
@@ -162,7 +161,7 @@ export abstract class BaseAccountAPI {
    * return maximum gas used for verification.
    * NOTE: createUnsignedUserOp will add to this value the cost of creation, if the contract is not yet created.
    */
-  async getVerificationGasLimit(): Promise<BigNumberish> {
+  async getVerificationGasLimit(): Promise<BigNumberish> { // TODO: need to check on-chain for this one
     return 100000
   }
 
@@ -196,7 +195,7 @@ export abstract class BaseAccountAPI {
       callData = await this.encodeExecute(detailsForUserOp.target, value, detailsForUserOp.data)
     }
 
-    const callGasLimit = parseNumber(detailsForUserOp.gasLimit) ?? await this.provider.estimateGas({
+    const callGasLimit = parseNumber(detailsForUserOp.gasLimit) ?? await this.provider.estimateGas({ // TODO : we may need to multiply by 1.2
       from: this.entryPointAddress,
       to: this.getAccountAddress(),
       data: callData
@@ -224,14 +223,10 @@ export abstract class BaseAccountAPI {
    * this value is valid even before deploying the contract.
    */
   async getAccountAddress(): Promise<string> {
-    if (this.senderAddress == null) {
-      if (this.accountAddress != null) {
-        this.senderAddress = this.accountAddress
-      } else {
-        this.senderAddress = await this.getCounterFactualAddress()
-      }
+    if (this.accountAddress == null) { // means it needs deployment
+        this.accountAddress = await this.getCounterFactualAddress()
     }
-    return this.senderAddress
+    return this.accountAddress
   }
 
   async estimateCreationGas(initCode?: string): Promise<BigNumberish> {
@@ -284,8 +279,6 @@ export abstract class BaseAccountAPI {
       signature: ethers.utils.hexlify(Buffer.alloc(SIG_SIZE, 1)),
     }
     partialUserOp.preVerificationGas = this.getPreVerificationGas(partialUserOp);
-
-    console.log('partialUserOp', partialUserOp)
 
     let paymasterAndData: string | undefined
     if (this.paymasterAPI != null) {

@@ -42,3 +42,26 @@ export const CHAIN_ID_TO_INFURA_NAME: { [key: string]: any } = {
   '1313161554': 'aurora-mainnet',
   '1313161555': 'aurora-testnet',
 }
+
+
+export const ERC721_ABI = [
+  "function transferFrom(address from, address to, uint256 tokenId) external",
+  "function safeTransferFrom(address from, address to, uint256 tokenId) external",
+  "function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata _data) external",
+  "function balanceOf(address owner) external view returns (uint256 balance)",
+];
+
+export const ERC20_ABI = [
+  "function transfer(address to, uint256 value) external returns (bool)",
+  "function transferFrom(address from, address to, uint256 value) external returns (bool)",
+  "function approve(address spender, uint256 value) external returns (bool)",
+  "function allowance(address owner, address spender) external view returns (uint256)",
+  "function balanceOf(address owner) external view returns (uint256)",
+]
+
+export const ERC1155_ABI = [
+  "function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external",
+  "function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external",
+  "function balanceOf(address account, uint256 id) external view returns (uint256)",
+  "function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory)",
+]

@@ -35,7 +35,8 @@ export async function wrapProvider(
     entryPointAddress: entryPoint.address,
     owner: originalSigner,
     factoryAddress: config.accountFactoryAddress,
-    paymasterAPI: config.paymasterAPI
+    paymasterAPI: config.paymasterAPI,
+    accountAddress: config.walletAddress
   })
   debug('config=', config)
   const httpRpcClient = new HttpRpcClient(config.bundlerUrl, config.entryPointAddress, chainId)
@@ -47,5 +48,6 @@ export async function wrapProvider(
     httpRpcClient,
     entryPoint,
     accountAPI,
+
   ).init()
 }

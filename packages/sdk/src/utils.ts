@@ -1,3 +1,5 @@
+import { Provider } from '@ethersproject/abstract-provider'
+import { Contract } from 'ethers'
 import { hexValue } from 'ethers/lib/utils'
 
 import * as constants from './constants'
@@ -22,4 +24,16 @@ export const hexifyUserOp = (resolvedUserOp: any) => {
       }),
       {}
     )
+}
+
+export const getERC721Contract = (provider: Provider, address: string) : Contract => {
+  return new Contract(address, constants.ERC721_ABI, provider)
+}
+
+export const getERC20Contract = (provider: Provider, address: string) : Contract => {
+  return new Contract(address, constants.ERC20_ABI, provider)
+}
+
+export const getERC1155Contract = (provider: Provider, address: string) : Contract => {
+  return new Contract(address, constants.ERC1155_ABI, provider)
 }
