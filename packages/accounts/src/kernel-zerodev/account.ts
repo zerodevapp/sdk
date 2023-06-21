@@ -11,7 +11,9 @@ import {parseAbiParameters} from "abitype";
 import {KernelBaseValidator, ValidatorMode} from "./validator/base";
 import {KernelAccountAbi} from "./abis/KernelAccountAbi";
 import {KernelFactoryAbi} from "./abis/KernelFactoryAbi";
-import {type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner} from "@alchemy/aa-core";
+import {type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type UserOperationCallData} from "@alchemy/aa-core";
+import { MULTISEND_ADDR } from "./constants";
+import { encodeMultiSend } from "./utils";
 
 export interface KernelSmartAccountParams<
     TTransport extends Transport | FallbackTransport = Transport
@@ -22,6 +24,11 @@ export interface KernelSmartAccountParams<
     defaultValidator: KernelBaseValidator
     validator?: KernelBaseValidator
 }
+
+export type UserOperationCallDataWithDelegate = UserOperationCallData & { delegateCall?: boolean };
+
+export type BatchUserOperationCallDataWithDelegate = UserOperationCallDataWithDelegate[];
+
 
 export class KernelSmartContractAccount<
     TTransport extends Transport | FallbackTransport = Transport
@@ -52,6 +59,21 @@ export class KernelSmartContractAccount<
         } else {
             return this.encodeExecuteAction(target, value, data, 0)
         }
+    }
+
+
+    async encodeBatchExecute(
+        _txs: BatchUserOperationCallDataWithDelegate
+    ): Promise<`0x${string}`> {
+      
+          const multiSendCalldata = encodeFunctionData({
+            abi: [
+                'function multiSend(bytes memory transactions)'
+              ],
+            functionName: 'multiSend',
+            args: [encodeMultiSend(_txs)]
+          })
+          return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata)
     }
 
     async encodeExecuteDelegate (target: Hex, value: bigint, data: Hex): Promise<Hex> {

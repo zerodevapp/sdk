@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.6",
+    "axios": "^1.4.0",
     "typescript": "^5.0.4",
     "typescript-template": "*",
     "viem": "^0.3.50",
