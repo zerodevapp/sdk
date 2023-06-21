@@ -1,0 +1,1 @@
+export const BUNDLER_URL = 'https://v0-6-meta-bundler.onrender.com'

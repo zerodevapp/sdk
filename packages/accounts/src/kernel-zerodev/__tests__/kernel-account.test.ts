@@ -1,30 +1,34 @@
 import {
     encodeAbiParameters,
     getContract,
-    Hex,
+    type Hex,
     parseAbi,
     parseAbiParameters
 } from "viem";
 import {polygonMumbai} from "viem/chains";
+import { generatePrivateKey } from 'viem/accounts'
 import {KernelBaseValidator, ValidatorMode} from "../validator/base";
-import {KernelSmartAccountParams, KernelSmartContractAccount} from "../account";
+import {type KernelSmartAccountParams, KernelSmartContractAccount} from "../account";
 import {MockSigner} from "./mocks/mock-signer";
-import {KernelAccountProvider} from "../provider";
+import {ZeroDevProvider} from "../provider";
 import {PrivateKeySigner} from "@alchemy/aa-core";
 
 
 describe("Kernel Account Tests", () => {
 
+
+    
     //any wallet should work
     const config = {
-        privateKey: process.env.OWNER_KEY as Hex,
+        privateKey: generatePrivateKey(),
         ownerWallet: process.env.OWNER_WALLET,
         mockWallet: "0x48D4d3536cDe7A257087206870c6B6E76e3D4ff4",
         chain: polygonMumbai,
         rpcProvider: `${polygonMumbai.rpcUrls.alchemy.http[0]}/${[process.env.API_KEY]}`,
-        validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5",
-        accountFactoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
-        entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+        validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5" as Hex,
+        accountFactoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39" as Hex,
+        entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,
+        projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6"
     }
 
     const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey)
@@ -43,11 +47,11 @@ describe("Kernel Account Tests", () => {
     }))
 
 
-    const provider = new KernelAccountProvider(
-        config.rpcProvider,
-        config.entryPointAddress,
-        config.chain
-    )
+    const provider = new ZeroDevProvider({
+        projectId: config.projectId,
+        entryPointAddress: config.entryPointAddress,
+        chain: config.chain
+    })
 
     const kernelAddress = "0xD49a72cb78C44c6bfbf0d471581B7635cF62E81e"
 
@@ -59,11 +63,11 @@ describe("Kernel Account Tests", () => {
         publicClient: provider.rpcClient,
     })
 
-    function connect(index, owner=mockOwner) {
+    function connect(index: bigint, owner=mockOwner) {
         return provider.connect((provider) => account(index,owner))
     }
 
-    function account(index, owner=mockOwner) {
+    function account(index: bigint, owner=mockOwner) {
         const accountParams: KernelSmartAccountParams = {
             rpcClient: provider.rpcClient,
             entryPointAddress: config.entryPointAddress,
@@ -104,7 +108,7 @@ describe("Kernel Account Tests", () => {
 
         const signer2:KernelSmartContractAccount =  account(3n)
         expect(await signer2.getNonce()).eql(2n);
-    });
+    }, {timeout: 10000});
 
     it("encodeExecute returns valid encoded hash", async () => {
         const signer:KernelSmartContractAccount =  account(0n)
@@ -223,6 +227,6 @@ describe("Kernel Account Tests", () => {
         //contract not deployed
         const signer4 =  account(5n)
         expect(await signer4.isAccountDeployed()).eql(false );
-    });
+    },{timeout: 100000});
 
 })
