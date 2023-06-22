@@ -60,6 +60,6 @@
   "bugs": {
     "url": "https://github.com/zerodevapp/aa-sdk/issues"
   },
-  "homepage": "https://github.com/zerodevapp/aa-sdk#readme",
-  "gitHead": "b7e4cd3253f6d93032419a9a559ea16d2a4f71d8"
+  "homepage": "https://github.com/zerodevapp/aa-sdk/blob/zd-provider/packages/accounts/src/kernel-zerodev/README.md#readme",
+  "gitHead": "e99966f1f941b684832809b465d9fa1c1f4eae37"
 }

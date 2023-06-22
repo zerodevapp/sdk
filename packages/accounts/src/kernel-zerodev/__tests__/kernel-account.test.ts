@@ -206,7 +206,7 @@ describe("Kernel Account Tests", () => {
         );
     });
 
-    // NOTE - this test case will only pass if the gas fee is not sponsored
+    // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
         let signerWithProvider =  connect(1000n, owner)
     
