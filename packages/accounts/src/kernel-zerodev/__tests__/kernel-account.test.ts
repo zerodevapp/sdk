@@ -20,7 +20,7 @@ describe("Kernel Account Tests", () => {
     
     //any wallet should work
     const config = {
-        privateKey: generatePrivateKey(),
+        privateKey: process.env.PRIVATE_KEY as Hex ?? generatePrivateKey(),
         ownerWallet: process.env.OWNER_WALLET,
         mockWallet: "0x48D4d3536cDe7A257087206870c6B6E76e3D4ff4",
         chain: polygonMumbai,
@@ -86,7 +86,6 @@ describe("Kernel Account Tests", () => {
 
         //contract already deployed
         let signerWithProvider =  connect(0n)
-
         expect(await signerWithProvider.getAddress()).eql(
             "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
         );
@@ -97,7 +96,7 @@ describe("Kernel Account Tests", () => {
             "0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845"
         );
 
-     });
+     },{timeout: 100000});
 
 
     it("getNonce returns valid nonce", async () => {
@@ -108,7 +107,7 @@ describe("Kernel Account Tests", () => {
 
         const signer2:KernelSmartContractAccount =  account(3n)
         expect(await signer2.getNonce()).eql(2n);
-    }, {timeout: 10000});
+    }, {timeout: 100000});
 
     it("encodeExecute returns valid encoded hash", async () => {
         const signer:KernelSmartContractAccount =  account(0n)
@@ -154,7 +153,7 @@ describe("Kernel Account Tests", () => {
             signature
         );
 
-    });
+    },{timeout: 100000});
 
 
     it("signMessage should correctly sign the message", async () => {
@@ -176,35 +175,35 @@ describe("Kernel Account Tests", () => {
 
     //NOTE - this test case will only work if your alchemy endpoint has beta access
 
-    // it("sendUserOperation should fail to execute if gas fee not present", async () => {
-    //     let signerWithProvider =  connect(1000n)
-    //
-    //
-    //     const result = signerWithProvider.sendUserOperation({
-    //         target: await signerWithProvider.getAddress(),
-    //         data: "0x",
-    //     });
-    //
-    //     await expect(result).rejects.toThrowError(/sender balance and deposit together is 0/);
-    // });
+    it("sendUserOperation should fail to execute if gas fee not present", async () => {
+        let signerWithProvider =  connect(1000n, owner)
+    
+    
+        const result = signerWithProvider.sendUserOperation({
+            target: await signerWithProvider.getAddress(),
+            data: "0x",
+        });
+    
+        await expect(result).rejects.toThrowError(/sender balance and deposit together is 0/);
+    }, {timeout: 100000});
 
 
     //NOTE - this test case will only work if your alchemy endpoint has beta access
     // and you have deposited some matic balance for counterfactual address at entrypoint
 
-    // it("sendUserOperation should execute properly", async () => {
-    //     //
-    //     let signerWithProvider =  connect(0n,owner)
-    //
-    //     //to fix bug in old versions
-    //     await signerWithProvider.account.getInitCode()
-    //     const result = signerWithProvider.sendUserOperation({
-    //         target: await signerWithProvider.getAddress(),
-    //         data: "0x",
-    //         value: 0n
-    //     });
-    //     await expect(result).resolves.not.toThrowError();
-    // });
+    it("sendUserOperation should execute properly", async () => {
+        //
+        let signerWithProvider =  connect(0n,owner)
+    
+        //to fix bug in old versions
+        await signerWithProvider.account.getInitCode()
+        const result = signerWithProvider.sendUserOperation({
+            target: await signerWithProvider.getAddress(),
+            data: "0x",
+            value: 0n
+        });
+        await expect(result).resolves.not.toThrowError();
+    }, {timeout: 100000});
 
 
 
