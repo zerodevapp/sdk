@@ -12,11 +12,11 @@ This module provides a Signer + Provider implementation of Zerodev's Kernel V2 o
 ```ts
 import {
   KernelSmartContractAccount,
-  KernelAccountProvider,
+  ZeroDevProvider,
   type KernelSmartAccountParams,
   KernelBaseValidator,
   type ValidatorMode 
-} from "@alchemy/aa-accounts";
+} from "zerodev-aa-sak";
 import { mnemonicToAccount } from "viem/accounts";
 import {PrivateKeySigner} from "@alchemy/aa-core";
 import { polygonMumbai } from "viem/chains";
@@ -36,30 +36,27 @@ const validator: KernelBaseValidator = new KernelBaseValidator(({
 }))
 
 // 2. initialize the provider and connect it to the account
-const provider = new KernelAccountProvider(
-  // the demo key below is public and rate-limited, it's better to create a new one
-  // you can get started with a free account @ https://www.alchemy.com/
-  "https://polygon-mumbai.g.alchemy.com/v2/demo", // rpcUrl
-  "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789", // entryPointAddress
-  polygonMumbai // chain
-).connect(
-  (rpcClient) =>
-    new KernelSmartContractAccount({
-      owner,
-      index: 0n,  
-      entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-      chain: polygonMumbai,
-      factoryAddress: KERNEL_ACCOUNT_FACTORY_ADDRESS,
-      rpcClient,
-      // optionally if you already know the account's address
-      accountAddress: "0x000...000",
-      defaultValidator: validator,
-      validator
-    })
-);
+const provider = new ZeroDevProvider({ 
+  chain: polygonMumbai,
+  projectId, // zeroDev projectId
+  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
+}).connect((rpcClient) =>
+  new KernelSmartContractAccount({
+    owner,
+    index: BigInt(0),  
+    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    chain: polygonMumbai,
+    factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
+    rpcClient,
+    // optionally if you already know the account's address
+    accountAddress: "0x000...000",
+    defaultValidator: validator,
+    validator
+  })
+)
 
 // 3. send a UserOperation
-const { hash } = provider.sendUserOperation({
+const { hash } = await provider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
@@ -71,9 +68,9 @@ const { hash } = provider.sendUserOperation({
 
 ### Core Components
 
-The primary interfaces are the `KernelAccountProvider`, `KernelSmartContractAccount` and `KernelBaseValidator`
+The primary interfaces are the `ZeroDevProvider`, `KernelSmartContractAccount` and `KernelBaseValidator`
 
-The `KernelAccountProvider` is an ERC-1193 compliant Provider built on top of Alchemy's `SmartAccountProvider`
+The `ZeroDevProvider` is an ERC-1193 compliant Provider built on top of Alchemy's `SmartAccountProvider`
 1. `sendUserOperation` -- this takes in `target`, `callData`, and an optional `value` which then constructs a UserOperation (UO), sends it, and returns the `hash` of the UO. It handles estimating gas, fetching fee data, (optionally) requesting paymasterAndData, and lastly signing. This is done via a middleware stack that runs in a specific order. The middleware order is `getDummyPaymasterData` => `estimateGas` => `getFeeData` => `getPaymasterAndData`. The paymaster fields are set to `0x` by default. They can be changed using `provider.withPaymasterMiddleware`.
 2. `sendTransaction` -- this takes in a traditional Transaction Request object which then gets converted into a UO. Currently, the only data being used from the Transaction Request object is `from`, `to`, `data` and `value`. Support for other fields is coming soon.
 

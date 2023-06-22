@@ -1,8 +1,8 @@
 {
-  "name": "@alchemy/aa-accounts",
-  "version": "0.1.0-alpha.5",
+  "name": "@zerodevapp/sdk",
+  "version": "4.0.0-alpha.0",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
-  "author": "Alchemy",
+  "author": "ZeroDev",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -55,11 +55,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alchemyplatform/aa-sdk.git"
+    "url": "git+https://github.com/zerodevapp/aa-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/alchemyplatform/aa-sdk/issues"
+    "url": "https://github.com/zerodevapp/aa-sdk/issues"
   },
-  "homepage": "https://github.com/alchemyplatform/aa-sdk#readme",
+  "homepage": "https://github.com/zerodevapp/aa-sdk#readme",
   "gitHead": "b7e4cd3253f6d93032419a9a559ea16d2a4f71d8"
 }

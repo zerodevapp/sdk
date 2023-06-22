@@ -1,4 +1,4 @@
-# `@alchemy/aa-accounts`
+# `zerodev-aa-sdk`
 
 This package contains various implementations of the [`BaseSmartContractAccount`](../core/src/account/base.ts) class defined in `aa-core`. This repo is community maintained and we welcome contributions!
 
@@ -9,13 +9,13 @@ If you are already using the `@alchemy/aa-core` package, you can simply install 
 via `yarn`
 
 ```bash
-yarn add @alchemy/aa-accounts
+yarn add zerodev-aa-sdk
 ```
 
 via `npm`
 
 ```bash
-npm i -s @alchemy/aa-accounts
+npm i -s zerodev-aa-sdk
 ```
 
 ## Contributing
