@@ -7,7 +7,7 @@ import { ErrTransactionFailedGasChecks } from "../errors";
 
 export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddleware<'TOKEN_PAYMASTER'>{
 
-    constructor(public paymasterConfig: PaymasterConfig<'TOKEN_PAYMASTER'>, public commonCfg: PaymasterCommonConfig) { 
+    constructor(public paymasterConfig: PaymasterConfig<'TOKEN_PAYMASTER'>, public commonCfg: PaymasterCommonConfig) {
         super(paymasterConfig, commonCfg)
     }
     async getPaymasterAddress(): Promise<string | undefined> {
@@ -33,13 +33,20 @@ export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddlewar
             const paymasterResp = await this.signUserOp(
                 hexifiedUserOp,
                 gasTokenAddress
-            )
-            if (paymasterResp === undefined) {
-                throw ErrTransactionFailedGasChecks
-            }
+            );
 
-            return paymasterResp
+            if (paymasterResp) {
+                return {
+                    ...struct,
+                    ...paymasterResp,
+                    signature: ""
+                };
+            }
+            console.log(ErrTransactionFailedGasChecks);
         }
-        return struct;
+        return {
+            ...struct,
+            signature: ""
+        };
     }
 }

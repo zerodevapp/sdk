@@ -13,7 +13,6 @@ import {
   getUserOperationHash,
   type BytesLike
 } from "@alchemy/aa-core";
-import type { isValidRequest } from "@alchemy/aa-core";
 import { BUNDLER_URL, ERC20_ABI, ERC20_APPROVAL_AMOUNT } from "./constants";
 import { getGasTokenAddress, type PaymasterConfig, type PaymasterPolicy } from "./middleware/types";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
@@ -21,6 +20,7 @@ import type { KernelSmartContractAccount, UserOperationCallDataWithDelegate } fr
 import type { TokenPaymasterDataMiddleware } from "./paymaster/tokenPaymaster";
 import { withZeroDevGasEstimator } from "./middleware/gasEstimator";
 import { BaseZeroDevProvider } from "./provider/baseProvider";
+import { isValidRequest } from "./utils/ERC4337Utils";
 
 
 export type ZeroDevProviderConfig = {
@@ -66,8 +66,8 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
     const initCode = await this.account.getInitCode();
     const uoStruct = await asyncPipe(
       this.dummyPaymasterDataMiddleware,
-      this.gasEstimator,
       this.feeDataGetter,
+      this.gasEstimator,
       this.paymasterDataMiddleware,
       this.customMiddleware ?? noOpMiddleware
     )({
@@ -79,7 +79,6 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
     } as UserOperationStruct);
 
     const request = deepHexlify(await resolveProperties(uoStruct));
-    // @ts-ignore
     if (!isValidRequest(request)) {
       // this pretty prints the uo
       throw new Error(

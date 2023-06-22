@@ -1,4 +1,4 @@
-import { EntryPointAbi, type UserOperationStruct } from "@alchemy/aa-core"
+import { EntryPointAbi, type UserOperationRequest, type UserOperationStruct } from "@alchemy/aa-core"
 import type { NotPromise } from "./calcPreverificationGas"
 import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256 } from 'viem'
 
@@ -90,3 +90,22 @@ export function packUserOp(op: NotPromise<UserOperationStruct>, forSignature = t
     }))
     return encode(typevalues, forSignature)
 }
+
+/**
+ * Utility method for asserting a {@link UserOperationStruct} is a {@link UserOperationRequest}
+ *
+ * @param request a {@link UserOperationStruct} to validate
+ * @returns a type guard that asserts the {@link UserOperationStruct} is a {@link UserOperationRequest}
+ */
+export function isValidRequest(
+    request: UserOperationStruct
+  ): request is UserOperationRequest {
+    // These are the only ones marked as optional in the interface above
+    return (
+      !!request.callGasLimit &&
+      !!request.maxFeePerGas &&
+      request.maxPriorityFeePerGas != null &&
+      !!request.preVerificationGas &&
+      !!request.verificationGasLimit
+    );
+  }

@@ -15,8 +15,6 @@ import {PrivateKeySigner} from "@alchemy/aa-core";
 
 
 describe("Kernel Account Tests", () => {
-
-
     
     //any wallet should work
     const config = {
@@ -24,7 +22,7 @@ describe("Kernel Account Tests", () => {
         ownerWallet: process.env.OWNER_WALLET,
         mockWallet: "0x48D4d3536cDe7A257087206870c6B6E76e3D4ff4",
         chain: polygonMumbai,
-        rpcProvider: `${polygonMumbai.rpcUrls.alchemy.http[0]}/${[process.env.API_KEY]}`,
+        rpcProvider: "https://mumbai-bundler.etherspot.io/",
         validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5" as Hex,
         accountFactoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39" as Hex,
         entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,
@@ -50,7 +48,9 @@ describe("Kernel Account Tests", () => {
     const provider = new ZeroDevProvider({
         projectId: config.projectId,
         entryPointAddress: config.entryPointAddress,
-        chain: config.chain
+        chain: config.chain,
+        // By default uses ZeroDev meta-bundler
+        // rpcUrl: config.rpcProvider
     })
 
     const kernelAddress = "0xD49a72cb78C44c6bfbf0d471581B7635cF62E81e"
@@ -170,11 +170,7 @@ describe("Kernel Account Tests", () => {
         );
     });
 
-
-
-
-    //NOTE - this test case will only work if your alchemy endpoint has beta access
-
+    // NOTE - this test case will only pass if the gas fee is not sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
         let signerWithProvider =  connect(1000n, owner)
     
@@ -184,12 +180,12 @@ describe("Kernel Account Tests", () => {
             data: "0x",
         });
     
-        await expect(result).rejects.toThrowError(/sender balance and deposit together is 0/);
+        await expect(result).rejects.toThrowError("AA21 didn't pay prefund");
     }, {timeout: 100000});
 
 
-    //NOTE - this test case will only work if your alchemy endpoint has beta access
-    // and you have deposited some matic balance for counterfactual address at entrypoint
+    //NOTE - this test case will only work if you
+    // have deposited some matic balance for counterfactual address at entrypoint
 
     it("sendUserOperation should execute properly", async () => {
         //
@@ -198,7 +194,7 @@ describe("Kernel Account Tests", () => {
         //to fix bug in old versions
         await signerWithProvider.account.getInitCode()
         const result = signerWithProvider.sendUserOperation({
-            target: await signerWithProvider.getAddress(),
+            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
             data: "0x",
             value: 0n
         });

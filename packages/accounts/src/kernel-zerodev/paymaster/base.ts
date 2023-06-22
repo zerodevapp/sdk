@@ -14,18 +14,18 @@ export abstract class AbstractPaymasterDataMiddleware<T extends PaymasterPolicy>
         erc20CallData?: BytesLike
     ): Promise<UserOperationStruct | undefined> {
         try {
-
+            let requestBodyParams = {
+                projectId: this.commonCfg.projectId,
+                chainId: this.commonCfg.chainId,
+                userOp,
+                entryPointAddress: ENTRYPOINT_ADDRESS,
+                callData,
+                tokenAddress: gasTokenAddress,
+                erc20UserOp,
+                erc20CallData
+            };
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/sign`, {
-                body: JSON.stringify({
-                    projectId: this.commonCfg.projectId,
-                    chainId: this.commonCfg.chainId,
-                    userOp,
-                    entryPointAddress: ENTRYPOINT_ADDRESS,
-                    callData,
-                    tokenAddress: gasTokenAddress,
-                    erc20UserOp,
-                    erc20CallData
-                }),
+                ...requestBodyParams
             }, { headers: { 'Content-Type': 'application/json' } })
             return paymasterResp
         } catch (error) {

@@ -1,5 +1,6 @@
 import { createPublicErc4337FromClient, type HttpTransport, type PublicErc4337Client } from "@alchemy/aa-core";
 import { http, createPublicClient, type Chain } from "viem";
+import { BUNDLER_URL } from "../constants";
 
 
 export const createZeroDevPublicErc4337Client = ({
@@ -16,9 +17,7 @@ export const createZeroDevPublicErc4337Client = ({
             chain,
             transport: http(rpcUrl, {
                 fetchOptions: {
-                    headers: {
-                        projectId,
-                    },
+                    headers: rpcUrl === BUNDLER_URL ? { projectId } : {},
                 },
                 name: 'Connected bundler network',
                 key: 'connected-bundler-network',
