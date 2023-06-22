@@ -4,6 +4,21 @@ This module provides a Signer + Provider implementation of Zerodev's Kernel V2 o
 [What is Kernel V2?](https://docs.zerodev.app/blog/kernel-v2-and-the-lessons-we-learned)
 [Documentation](https://docs.zerodev.app/use-wallets/overview)
 
+## Getting started
+
+If you are already using the `@alchemy/aa-core` package, you can simply install this package and start using the accounts. If you are not using `@alchemy/aa-core`, you can install it and follow the instructions in the [README](https://github.com/zerodevapp/aa-sdk/blob/zd-provider/README.md) to get started.
+
+via `yarn`
+
+```bash
+yarn add @zerodevapp/sdk@4.0.1-alpha.0
+```
+
+via `npm`
+
+```bash
+npm i -s @zerodevapp/sdk@4.0.1-alpha.0
+```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
 

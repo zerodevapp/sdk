@@ -9,13 +9,13 @@ If you are already using the `@alchemy/aa-core` package, you can simply install 
 via `yarn`
 
 ```bash
-yarn add @zerodevapp/sdk@4.0.0-alpha.0
+yarn add @zerodevapp/sdk@4.0.1-alpha.0
 ```
 
 via `npm`
 
 ```bash
-npm i -s @zerodevapp/sdk@4.0.0-alpha.0
+npm i -s @zerodevapp/sdk@4.0.1-alpha.0
 ```
 
 ## Contributing
