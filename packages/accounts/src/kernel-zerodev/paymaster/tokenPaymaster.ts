@@ -4,6 +4,7 @@ import { getGasTokenAddress, type PaymasterCommonConfig, type PaymasterConfig } 
 import { AbstractPaymasterDataMiddleware } from "./base";
 import axios from "axios";
 import { ErrTransactionFailedGasChecks } from "../errors";
+import { hexifyUserOp } from "../utils/ERC4337Utils";
 
 export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddleware<'TOKEN_PAYMASTER'>{
 
@@ -25,14 +26,24 @@ export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddlewar
         }
     }
 
-    async getPaymasterResponse(struct: UserOperationStruct): Promise<UserOperationStruct> {
+    async getPaymasterResponse(struct: UserOperationStruct, erc20UserOp?: Partial<UserOperationStruct>): Promise<UserOperationStruct> {
         const gasTokenAddress = getGasTokenAddress(this.paymasterConfig.gasToken, this.commonCfg.chainId);
         if (gasTokenAddress !== undefined) {
             const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
+            let resolvedERC20UserOp;
+            let hexifiedERC20UserOp: any;
+            if (erc20UserOp) {
 
+                resolvedERC20UserOp = await resolveProperties(erc20UserOp)
+
+                hexifiedERC20UserOp = hexifyUserOp(resolvedERC20UserOp)
+            }
             const paymasterResp = await this.signUserOp(
                 hexifiedUserOp,
-                gasTokenAddress
+                hexifiedUserOp.callData,
+                gasTokenAddress,
+                hexifiedERC20UserOp,
+                resolvedERC20UserOp?.callData
             );
 
             if (paymasterResp) {

@@ -48,11 +48,9 @@ export const withZeroDevGasEstimator = (
                 console.log(error)
             }
 
-
             return {
                 ...struct,
                 ...request,
-                signature: ""
             };
         });
 

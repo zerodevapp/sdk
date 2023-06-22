@@ -30,13 +30,25 @@ export const zeroDevPaymasterAndDataMiddleware = <T extends PaymasterPolicy>(
         paymasterDataMiddleware: async (struct) => {
             let MiddlewareClass = middlewareClasses[paymasterConfig.policy];
             let middleware = new MiddlewareClass(paymasterConfig, commonCfg);
-            let paymasterResponse = await middleware.getPaymasterResponse(struct);
+            let erc20Struct;
+            if (paymasterConfig.policy === "TOKEN_PAYMASTER") {
+                erc20Struct = {
+                    ...struct,
+                    callData: struct.callData,
+                    callGasLimit: struct.callGasLimit
+                }
+            }
+            let paymasterResponse = await middleware.getPaymasterResponse(struct, erc20Struct);
             if (!paymasterResponse.paymasterAndData && paymasterConfig.policy !== "VERIFYING_PAYMASTER") {
                 const VerifyingMiddlewareClass = middlewareClasses['VERIFYING_PAYMASTER'];
                 const verifyingMiddleware = new VerifyingMiddlewareClass({ policy: 'VERIFYING_PAYMASTER' }, commonCfg);
-                paymasterResponse = await verifyingMiddleware.getPaymasterResponse(paymasterResponse);
+                paymasterResponse = await verifyingMiddleware.getPaymasterResponse(struct);
             }
-            return paymasterResponse;
+            return {
+                ...struct,
+                ...paymasterResponse,
+                signature: ""
+            };
         }
     }
 };

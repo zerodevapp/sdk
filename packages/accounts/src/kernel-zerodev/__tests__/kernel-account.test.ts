@@ -81,6 +81,42 @@ describe("Kernel Account Tests", () => {
         return new KernelSmartContractAccount(accountParams)
     }
 
+    // TokenPaymaster not working yet
+    // Also, need to refactor this test file 😬
+    // it('should test token paymaster', async () => {
+    //     const provider = new ZeroDevProvider({
+    //         projectId: config.projectId,
+    //         entryPointAddress: config.entryPointAddress,
+    //         chain: config.chain,
+    //         paymasterConfig: {
+    //             policy: "TOKEN_PAYMASTER",
+    //             gasToken: "USDC"
+    //         }
+    //         // By default uses ZeroDev meta-bundler
+    //         // rpcUrl: config.rpcProvider
+    //     })
+
+    //     const accountParams: KernelSmartAccountParams = {
+    //         rpcClient: provider.rpcClient,
+    //         entryPointAddress: config.entryPointAddress,
+    //         chain: config.chain,
+    //         owner: owner,
+    //         factoryAddress: config.accountFactoryAddress,
+    //         index: 0n,
+    //         defaultValidator: validator,
+    //         validator: validator
+    //     }
+    //     const account = new KernelSmartContractAccount(accountParams);
+    //     let signerWithProvider = await provider.connect((provider) => account)
+    //     await signerWithProvider.account.getInitCode()
+    //     const result = signerWithProvider.sendUserOperation({
+    //         target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
+    //         data: "0x",
+    //         value: 0n
+    //     });
+    //     await expect(result).resolves.not.toThrowError();
+
+    // }, {timeout: 100000});
 
     it("getAddress returns valid counterfactual address", async () => {
 

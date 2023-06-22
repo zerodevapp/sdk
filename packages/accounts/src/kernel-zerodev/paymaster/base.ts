@@ -1,17 +1,17 @@
-import type { BytesLike, UserOperationStruct } from "@alchemy/aa-core"
+import type { BytesLike, PromiseOrValue, UserOperationStruct } from "@alchemy/aa-core"
 import axios from "axios";
 import type { PaymasterCommonConfig, PaymasterConfig, PaymasterPolicy } from "../middleware/types"
 import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants";
 
 export abstract class AbstractPaymasterDataMiddleware<T extends PaymasterPolicy> {
     constructor(public paymasterConfig: PaymasterConfig<T>, public commonCfg: PaymasterCommonConfig) { }
-    abstract getPaymasterResponse(struct: UserOperationStruct): Promise<UserOperationStruct>;
+    abstract getPaymasterResponse(struct: UserOperationStruct, erc20Struct: Partial<UserOperationStruct>): Promise<UserOperationStruct>;
     public async signUserOp(
         userOp: UserOperationStruct,
         callData?: BytesLike,
         gasTokenAddress?: string,
-        erc20UserOp?: string,
-        erc20CallData?: BytesLike
+        erc20UserOp?: Partial<UserOperationStruct>,
+        erc20CallData?: PromiseOrValue<BytesLike>
     ): Promise<UserOperationStruct | undefined> {
         try {
             let requestBodyParams = {

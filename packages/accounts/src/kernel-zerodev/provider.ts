@@ -48,6 +48,10 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
 
     super(projectId, _chain, entryPointAddress, rpcUrl, paymasterConfig, account, opts);
 
+    if(this.paymasterConfig.policy === "TOKEN_PAYMASTER") {
+      throw new Error("TokenPaymaster is not supported yet");
+    }
+
     withZeroDevPaymasterAndData(this, this.paymasterConfig, { chainId: _chain.id, projectId });
     withZeroDevGasEstimator(this);
 

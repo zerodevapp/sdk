@@ -1,6 +1,6 @@
 import { EntryPointAbi, type UserOperationRequest, type UserOperationStruct } from "@alchemy/aa-core"
 import type { NotPromise } from "./calcPreverificationGas"
-import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256 } from 'viem'
+import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256, toHex } from 'viem'
 
 // UserOperation is the first parameter of validateUseOp
 const validateUserOpMethod = 'simulateValidation'
@@ -99,13 +99,31 @@ export function packUserOp(op: NotPromise<UserOperationStruct>, forSignature = t
  */
 export function isValidRequest(
     request: UserOperationStruct
-  ): request is UserOperationRequest {
+): request is UserOperationRequest {
     // These are the only ones marked as optional in the interface above
     return (
-      !!request.callGasLimit &&
-      !!request.maxFeePerGas &&
-      request.maxPriorityFeePerGas != null &&
-      !!request.preVerificationGas &&
-      !!request.verificationGasLimit
+        !!request.callGasLimit &&
+        !!request.maxFeePerGas &&
+        request.maxPriorityFeePerGas != null &&
+        !!request.preVerificationGas &&
+        !!request.verificationGasLimit
     );
-  }
+}
+
+export const hexifyUserOp = (resolvedUserOp: any) => {
+    return Object.keys(resolvedUserOp)
+        .map((key) => {
+            let val = (resolvedUserOp)[key]
+            if (typeof val !== 'string' || !val.startsWith('0x')) {
+                val = toHex(val)
+            }
+            return [key, val]
+        })
+        .reduce(
+            (set, [k, v]) => ({
+                ...set,
+                [k]: v
+            }),
+            {}
+        )
+}

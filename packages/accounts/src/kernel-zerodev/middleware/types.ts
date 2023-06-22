@@ -21,12 +21,12 @@ export type PaymasterConfig<T extends PaymasterPolicy> = {
 export interface IPaymasterDataMiddleware {
     paymasterConfig: PaymasterConfig<PaymasterPolicy>;
     commonCfg: PaymasterCommonConfig;
-    getPaymasterResponse: (struct: UserOperationStruct) => Promise<UserOperationStruct>;
+    getPaymasterResponse: (struct: UserOperationStruct, erc20Struct?: Partial<UserOperationStruct>) => Promise<UserOperationStruct>;
     signUserOp: (
         userOp: UserOperationStruct,
         callData?: BytesLike,
         gasTokenAddress?: string,
-        erc20UserOp?: string,
+        erc20UserOp?: Partial<UserOperationStruct>,
         erc20CallData?: BytesLike
     ) => Promise<UserOperationStruct | undefined>;
 }
@@ -51,7 +51,8 @@ export const gasTokenChainAddresses: IGasTokenAddresses = {
         1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         // 5: "0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557",
         137: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-        // 80001: "",
+        // Stackup Testnet USDC
+        80001: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
         // 420: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
         42161: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
         // 421613: "",
