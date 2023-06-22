@@ -14,13 +14,10 @@ import {
   type BytesLike
 } from "@alchemy/aa-core";
 import type { isValidRequest } from "@alchemy/aa-core";
-import { createZeroDevPublicErc4337Client } from "./client/create-client";
 import { BUNDLER_URL, ERC20_ABI, ERC20_APPROVAL_AMOUNT } from "./constants";
 import { getGasTokenAddress, type PaymasterConfig, type PaymasterPolicy } from "./middleware/types";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
 import type { KernelSmartContractAccount, UserOperationCallDataWithDelegate } from "./account";
-import { defaultPaymasterConfig, middlewareClasses } from "./paymaster/types";
-import type { AbstractPaymasterDataMiddleware } from "./paymaster/base";
 import type { TokenPaymasterDataMiddleware } from "./paymaster/tokenPaymaster";
 import { withZeroDevGasEstimator } from "./middleware/gasEstimator";
 import { BaseZeroDevProvider } from "./provider/baseProvider";
@@ -38,9 +35,6 @@ export type ZeroDevProviderConfig = {
 
 export class ZeroDevProvider extends BaseZeroDevProvider {
 
-  private paymasterConfig: PaymasterConfig<PaymasterPolicy>;
-  private paymaster: AbstractPaymasterDataMiddleware<PaymasterPolicy>;
-
   constructor({
     projectId,
     chain,
@@ -51,28 +45,8 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
     opts,
   }: ZeroDevProviderConfig) {
     const _chain = typeof chain === "number" ? getChain(chain) : chain;
-    const rpcClient = createZeroDevPublicErc4337Client({
-      chain: _chain,
-      rpcUrl,
-      projectId
-    });
 
-    super(rpcClient, entryPointAddress, _chain, account, opts);
-
-    this.paymasterConfig = paymasterConfig ?? defaultPaymasterConfig;
-
-    let middleware: AbstractPaymasterDataMiddleware<PaymasterPolicy>;
-
-    if (this.paymasterConfig.policy === "VERIFYING_PAYMASTER") {
-      let PaymasterClass = middlewareClasses.VERIFYING_PAYMASTER;
-      middleware = new PaymasterClass(this.paymasterConfig as PaymasterConfig<"VERIFYING_PAYMASTER">, { chainId: _chain.id, projectId });
-    } else if (this.paymasterConfig.policy === "TOKEN_PAYMASTER") {
-      let PaymasterClass = middlewareClasses.TOKEN_PAYMASTER;
-      middleware = new PaymasterClass(this.paymasterConfig as PaymasterConfig<"TOKEN_PAYMASTER">, { chainId: _chain.id, projectId });
-    } else {
-      throw new Error(`Unsupported paymaster policy: ${this.paymasterConfig.policy}`);
-    }
-    this.paymaster = middleware;
+    super(projectId, _chain, entryPointAddress, rpcUrl, paymasterConfig, account, opts);
 
     withZeroDevPaymasterAndData(this, this.paymasterConfig, { chainId: _chain.id, projectId });
     withZeroDevGasEstimator(this);

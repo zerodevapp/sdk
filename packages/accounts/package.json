@@ -1,5 +1,5 @@
 {
-  "name": "@alchemy/aa-accounts",
+  "name": "zerodev-aa-sdk",
   "version": "0.1.0-alpha.5",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "Alchemy",
