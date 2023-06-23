@@ -1,6 +1,6 @@
 import type { UserOperationStruct } from "@alchemy/aa-core"
 import { toBytes, toHex } from "viem"
-import { packUserOp } from "./ERC4337Utils"
+import { packUserOp } from "./ERC4337-utils"
 
 export interface GasOverheads {
   /**

@@ -13,14 +13,16 @@ import {
   getUserOperationHash,
   type BytesLike
 } from "@alchemy/aa-core";
-import { BUNDLER_URL, ERC20_ABI, ERC20_APPROVAL_AMOUNT } from "./constants";
+import { BUNDLER_URL, ERC20_APPROVAL_AMOUNT } from "./constants";
 import { getGasTokenAddress, type PaymasterConfig, type PaymasterPolicy } from "./middleware/types";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
-import type { KernelSmartContractAccount, UserOperationCallDataWithDelegate } from "./account";
-import type { TokenPaymasterDataMiddleware } from "./paymaster/tokenPaymaster";
-import { withZeroDevGasEstimator } from "./middleware/gasEstimator";
-import { BaseZeroDevProvider } from "./provider/baseProvider";
-import { isValidRequest } from "./utils/ERC4337Utils";
+import type { KernelSmartContractAccount } from "./account";
+import type { TokenPaymasterDataMiddleware } from "./paymaster/token-paymaster";
+import { withZeroDevGasEstimator } from "./middleware/gas-estimator";
+import { BaseZeroDevProvider } from "./provider/base-provider";
+import { isValidRequest } from "./utils/ERC4337-utils";
+import { ERC20Abi } from "./abis/ERC20Abi";
+import { defaultPaymasterConfig } from "./paymaster/types";
 
 
 export type ZeroDevProviderConfig = {
@@ -48,11 +50,7 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
 
     super(projectId, _chain, entryPointAddress, rpcUrl, paymasterConfig, account, opts);
 
-    if(this.paymasterConfig.policy === "TOKEN_PAYMASTER") {
-      throw new Error("TokenPaymaster is not supported yet");
-    }
-
-    withZeroDevPaymasterAndData(this, this.paymasterConfig, { chainId: _chain.id, projectId });
+    withZeroDevPaymasterAndData(this, paymasterConfig ?? defaultPaymasterConfig, { chainId: _chain.id, projectId });
     withZeroDevGasEstimator(this);
 
   }
@@ -102,6 +100,7 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
       )
     )) as `0x${string}`;
 
+    // [TODO] - Better error handling
     return {
       hash: await this.rpcClient.sendUserOperation(
         request,
@@ -121,7 +120,7 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
       throw new Error("account not connected!");
     }
 
-    if (Array.isArray(data) && this.paymasterConfig.policy === "TOKEN_PAYMASTER") {
+    if (this.paymasterConfig.policy === "TOKEN_PAYMASTER") {
       const gasTokenAddress = getGasTokenAddress((this.paymasterConfig as PaymasterConfig<"TOKEN_PAYMASTER">).gasToken, this.paymaster.commonCfg.chainId);
       const paymasterAddress = await (this.paymaster as TokenPaymasterDataMiddleware).getPaymasterAddress();
       if (gasTokenAddress !== undefined && paymasterAddress !== undefined) {
@@ -129,12 +128,16 @@ export class ZeroDevProvider extends BaseZeroDevProvider {
           target: gasTokenAddress,
           value: BigInt(0),
           data: encodeFunctionData({
-            abi: ERC20_ABI,
+            abi: ERC20Abi,
             functionName: "approve",
             args: [paymasterAddress, ERC20_APPROVAL_AMOUNT[gasTokenAddress]],
           })
         }
-        callData = await this.account.encodeBatchExecute([approveData, ...data.map<UserOperationCallDataWithDelegate>((d) => ({ ...d, delegateCall: true }))]);
+        if (Array.isArray(data)) {
+          callData = await this.account.encodeBatchExecute([approveData, ...data]);
+        } else {
+          callData = await this.account.encodeBatchExecute([approveData, data]);
+        }
       }
 
     } else if (Array.isArray(data)) {

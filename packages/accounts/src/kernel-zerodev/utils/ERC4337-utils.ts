@@ -1,5 +1,5 @@
 import { EntryPointAbi, type UserOperationRequest, type UserOperationStruct } from "@alchemy/aa-core"
-import type { NotPromise } from "./calcPreverificationGas"
+import type { NotPromise } from "./calc-pre-verification-gas"
 import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256, toHex } from 'viem'
 
 // UserOperation is the first parameter of validateUseOp

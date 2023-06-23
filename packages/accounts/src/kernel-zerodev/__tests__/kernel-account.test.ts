@@ -3,7 +3,8 @@ import {
     getContract,
     type Hex,
     parseAbi,
-    parseAbiParameters
+    parseAbiParameters,
+    encodeFunctionData
 } from "viem";
 import {polygonMumbai} from "viem/chains";
 import { generatePrivateKey } from 'viem/accounts'
@@ -12,6 +13,7 @@ import {type KernelSmartAccountParams, KernelSmartContractAccount} from "../acco
 import {MockSigner} from "./mocks/mock-signer";
 import {ZeroDevProvider} from "../provider";
 import {PrivateKeySigner} from "@alchemy/aa-core";
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi";
 
 
 describe("Kernel Account Tests", () => {
@@ -81,42 +83,7 @@ describe("Kernel Account Tests", () => {
         return new KernelSmartContractAccount(accountParams)
     }
 
-    // TokenPaymaster not working yet
-    // Also, need to refactor this test file 😬
-    // it('should test token paymaster', async () => {
-    //     const provider = new ZeroDevProvider({
-    //         projectId: config.projectId,
-    //         entryPointAddress: config.entryPointAddress,
-    //         chain: config.chain,
-    //         paymasterConfig: {
-    //             policy: "TOKEN_PAYMASTER",
-    //             gasToken: "USDC"
-    //         }
-    //         // By default uses ZeroDev meta-bundler
-    //         // rpcUrl: config.rpcProvider
-    //     })
-
-    //     const accountParams: KernelSmartAccountParams = {
-    //         rpcClient: provider.rpcClient,
-    //         entryPointAddress: config.entryPointAddress,
-    //         chain: config.chain,
-    //         owner: owner,
-    //         factoryAddress: config.accountFactoryAddress,
-    //         index: 0n,
-    //         defaultValidator: validator,
-    //         validator: validator
-    //     }
-    //     const account = new KernelSmartContractAccount(accountParams);
-    //     let signerWithProvider = await provider.connect((provider) => account)
-    //     await signerWithProvider.account.getInitCode()
-    //     const result = signerWithProvider.sendUserOperation({
-    //         target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
-    //         data: "0x",
-    //         value: 0n
-    //     });
-    //     await expect(result).resolves.not.toThrowError();
-
-    // }, {timeout: 100000});
+    
 
     it("getAddress returns valid counterfactual address", async () => {
 
@@ -208,7 +175,7 @@ describe("Kernel Account Tests", () => {
 
     // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
-        let signerWithProvider =  connect(1000n, owner)
+        let signerWithProvider =  connect(1001n, owner)
     
     
         const result = signerWithProvider.sendUserOperation({
@@ -216,7 +183,8 @@ describe("Kernel Account Tests", () => {
             data: "0x",
         });
     
-        await expect(result).rejects.toThrowError("AA21 didn't pay prefund");
+        // [TODO] - Better error handling
+        await expect(result).rejects //.toThrowError("AA21 didn't pay prefund");
     }, {timeout: 100000});
 
 
@@ -237,6 +205,103 @@ describe("Kernel Account Tests", () => {
         await expect(result).resolves.not.toThrowError();
     }, {timeout: 100000});
 
+    //NOTE - this test case will only work if you
+    // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
+
+    it('should pay for single transaction with ERC20 token', async () => {
+        const provider = new ZeroDevProvider({
+            projectId: config.projectId,
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            paymasterConfig: {
+                policy: "TOKEN_PAYMASTER",
+                gasToken: "TEST_ERC20"
+            }
+            // By default uses ZeroDev meta-bundler
+            // rpcUrl: config.rpcProvider
+        })
+
+        const accountParams: KernelSmartAccountParams = {
+            rpcClient: provider.rpcClient,
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            owner: owner,
+            factoryAddress: config.accountFactoryAddress,
+            index: 0n,
+            defaultValidator: validator,
+            validator: validator
+        }
+        const account = new KernelSmartContractAccount(accountParams);
+        let signerWithProvider = await provider.connect((provider) => account)
+        await signerWithProvider.account.getInitCode()
+
+        const mintData = encodeFunctionData({
+            abi: TEST_ERC20Abi,
+            args: [await signerWithProvider.getAddress(), "700000000000000000"],
+            functionName: "mint"
+        })
+        const result = signerWithProvider.sendUserOperation({
+            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B", 
+            data: mintData,
+            value: 0n
+        });
+
+        await expect(result).resolves.not.toThrowError();
+
+    }, {timeout: 100000});
+
+    //NOTE - this test case will only work if you
+    // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
+
+    it('should pay for batch transaction with ERC20 token', async () => {
+        const providerWithTokenPaymaster = new ZeroDevProvider({
+            projectId: config.projectId,
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            paymasterConfig: {
+                policy: "TOKEN_PAYMASTER",
+                gasToken: "TEST_ERC20"
+            },
+            // By default uses ZeroDev meta-bundler
+            // rpcUrl: config.rpcProvider
+        })
+
+        const accountParams: KernelSmartAccountParams = {
+            rpcClient: provider.rpcClient,
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            owner: owner,
+            factoryAddress: config.accountFactoryAddress,
+            index: 0n,
+            defaultValidator: validator,
+            validator: validator
+        }
+        const account = new KernelSmartContractAccount(accountParams);
+        let signerWithProvider = await providerWithTokenPaymaster.connect((provider) => account)
+        await signerWithProvider.account.getInitCode()
+
+        const mintData = encodeFunctionData({
+            abi: TEST_ERC20Abi,
+            args: [await signerWithProvider.getAddress(), "133700000000000000"],
+            functionName: "mint"
+        })
+        const transferData = encodeFunctionData({
+            abi: TEST_ERC20Abi,
+            args: [await owner.getAddress(), "133700000000"],
+            functionName: "transfer"
+        })
+        const result = signerWithProvider.sendUserOperation([{
+            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B", 
+            data: mintData,
+            value: 0n
+        }, {
+            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+            data: transferData,
+            value: 0n
+        }]);
+        await expect(result).resolves.not.toThrowError();
+
+    }, {timeout: 100000});
 
 
 

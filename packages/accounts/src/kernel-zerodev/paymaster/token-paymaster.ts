@@ -4,7 +4,7 @@ import { getGasTokenAddress, type PaymasterCommonConfig, type PaymasterConfig } 
 import { AbstractPaymasterDataMiddleware } from "./base";
 import axios from "axios";
 import { ErrTransactionFailedGasChecks } from "../errors";
-import { hexifyUserOp } from "../utils/ERC4337Utils";
+import { hexifyUserOp } from "../utils/ERC4337-utils";
 
 export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddleware<'TOKEN_PAYMASTER'>{
 
@@ -14,10 +14,8 @@ export class TokenPaymasterDataMiddleware extends AbstractPaymasterDataMiddlewar
     async getPaymasterAddress(): Promise<string | undefined> {
         try {
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/getPaymasterAddress`, {
-                body: JSON.stringify({
-                    chainId: this.commonCfg.chainId,
-                    entryPointAddress: ENTRYPOINT_ADDRESS
-                }),
+                chainId: this.commonCfg.chainId,
+                entryPointAddress: ENTRYPOINT_ADDRESS
             }, { headers: { 'Content-Type': 'application/json' } })
             return paymasterResp
         } catch (e) {

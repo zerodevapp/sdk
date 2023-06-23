@@ -1,6 +1,6 @@
 import type { PaymasterConfig, PaymasterMiddlewareMap } from "../middleware/types";
-import { TokenPaymasterDataMiddleware } from "./tokenPaymaster";
-import { VerifyingPaymasterDataMiddleware } from "./verifyingPaymaster";
+import { TokenPaymasterDataMiddleware } from "./token-paymaster";
+import { VerifyingPaymasterDataMiddleware } from "./verifying-paymaster";
 
 export const middlewareClasses: PaymasterMiddlewareMap = {
     VERIFYING_PAYMASTER: VerifyingPaymasterDataMiddleware,

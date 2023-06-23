@@ -1,6 +1,6 @@
 import { SmartAccountProvider, resolveProperties, type UserOperationStruct, type BigNumberish, BaseSmartContractAccount, type SmartAccountProviderOpts, getChain } from "@alchemy/aa-core";
 import type { Address, Chain, Hex, HttpTransport } from "viem";
-import { calcPreVerificationGas } from "../utils/calcPreverificationGas";
+import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas";
 import { BUNDLER_URL, ENTRYPOINT_ADDRESS } from "../constants";
 import { createZeroDevPublicErc4337Client } from "../client/create-client";
 import type { PaymasterConfig, PaymasterPolicy } from "../middleware/types";
@@ -66,6 +66,7 @@ export abstract class BaseZeroDevProvider extends SmartAccountProvider<HttpTrans
         const p = await resolveProperties(userOp)
         return calcPreVerificationGas(p)
     }
+
     async getFeeData(): Promise<FeeData> {
         const { block, gasPrice } = await resolveProperties({
             block: this.rpcClient.getBlock({ blockTag: 'latest' }),

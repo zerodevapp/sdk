@@ -9,11 +9,7 @@ export class VerifyingPaymasterDataMiddleware extends AbstractPaymasterDataMiddl
     }
 
     async getPaymasterResponse(struct: UserOperationStruct): Promise<UserOperationStruct> {
-        const partialStruct = {
-            ...struct,
-            signature: "0x4046ab7d9c387d7a5ef5ca0777eded29767fd9863048946d35b3042d2f7458ff7c62ade2903503e15973a63a296313eab15b964a18d79f4b06c8c01c7028143c1c"
-        }
-        const hexifiedUserOp = deepHexlify(await resolveProperties(partialStruct));
+        const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
 
         const paymasterResp = await this.signUserOp(
             hexifiedUserOp,
@@ -21,7 +17,7 @@ export class VerifyingPaymasterDataMiddleware extends AbstractPaymasterDataMiddl
 
         if (paymasterResp) {
             return {
-                ...partialStruct,
+                ...struct,
                 ...paymasterResp,
                 signature: ""
             };
@@ -32,7 +28,7 @@ export class VerifyingPaymasterDataMiddleware extends AbstractPaymasterDataMiddl
         }
 
         return {
-            ...partialStruct,
+            ...struct,
             signature: ""
         };
 

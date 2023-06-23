@@ -1,4 +1,4 @@
-import type {Address} from "abitype";
+import type { Address } from "abitype";
 import {
     concatHex,
     encodeAbiParameters,
@@ -7,13 +7,14 @@ import {
     type Hex, toBytes,
     type Transport,
 } from "viem";
-import {parseAbiParameters} from "abitype";
-import {KernelBaseValidator, ValidatorMode} from "./validator/base";
-import {KernelAccountAbi} from "./abis/KernelAccountAbi";
-import {KernelFactoryAbi} from "./abis/KernelFactoryAbi";
-import {type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type UserOperationCallData} from "@alchemy/aa-core";
+import { parseAbiParameters } from "abitype";
+import { KernelBaseValidator, ValidatorMode } from "./validator/base";
+import { KernelAccountAbi } from "./abis/KernelAccountAbi";
+import { KernelFactoryAbi } from "./abis/KernelFactoryAbi";
+import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData } from "@alchemy/aa-core";
 import { MULTISEND_ADDR } from "./constants";
 import { encodeMultiSend } from "./utils";
+import { MultiSendAbi } from "./abis/MultiSendAbi";
 
 export interface KernelSmartAccountParams<
     TTransport extends Transport | FallbackTransport = Transport
@@ -24,11 +25,6 @@ export interface KernelSmartAccountParams<
     defaultValidator: KernelBaseValidator
     validator?: KernelBaseValidator
 }
-
-export type UserOperationCallDataWithDelegate = UserOperationCallData & { delegateCall?: boolean };
-
-export type BatchUserOperationCallDataWithDelegate = UserOperationCallDataWithDelegate[];
-
 
 export class KernelSmartContractAccount<
     TTransport extends Transport | FallbackTransport = Transport
@@ -50,7 +46,7 @@ export class KernelSmartContractAccount<
     }
 
     getDummySignature(): Hex {
-        return "0x4046ab7d9c387d7a5ef5ca0777eded29767fd9863048946d35b3042d2f7458ff7c62ade2903503e15973a63a296313eab15b964a18d79f4b06c8c01c7028143c1c";
+        return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
     }
 
     async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
@@ -63,27 +59,25 @@ export class KernelSmartContractAccount<
 
 
     async encodeBatchExecute(
-        _txs: BatchUserOperationCallDataWithDelegate
+        _txs: BatchUserOperationCallData
     ): Promise<`0x${string}`> {
-      
-          const multiSendCalldata = encodeFunctionData({
-            abi: [
-                'function multiSend(bytes memory transactions)'
-              ],
+
+        const multiSendCalldata = encodeFunctionData({
+            abi: MultiSendAbi,
             functionName: 'multiSend',
             args: [encodeMultiSend(_txs)]
-          })
-          return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata)
+        })
+        return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata)
     }
 
-    async encodeExecuteDelegate (target: Hex, value: bigint, data: Hex): Promise<Hex> {
+    async encodeExecuteDelegate(target: Hex, value: bigint, data: Hex): Promise<Hex> {
         return this.encodeExecuteAction(target, value, data, 1)
     }
 
     async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
         try {
-            const formattedMessage = typeof msg === "string" ? toBytes(msg): msg
-            let sig = await this.owner.signMessage(toBytes(hashMessage({raw: formattedMessage})))
+            const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
+            let sig = await this.owner.signMessage(toBytes(hashMessage({ raw: formattedMessage })))
             // If the account is undeployed, use ERC-6492
             if (!await this.isAccountDeployed()) {
                 sig = (encodeAbiParameters(
@@ -99,7 +93,7 @@ export class KernelSmartContractAccount<
 
             return sig
         } catch (err: any) {
-            console.error("Got Error - ",err.message)
+            console.error("Got Error - ", err.message)
             throw new Error("Message Signing with EIP6492 failed")
         }
 
@@ -107,7 +101,7 @@ export class KernelSmartContractAccount<
     }
 
     signMessage(msg: Uint8Array | string): Promise<Hex> {
-        const formattedMessage = typeof msg === "string" ? toBytes(msg): msg
+        const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
         return this.validator.signMessageWithValidatorParams(formattedMessage)
     }
 
@@ -130,10 +124,10 @@ export class KernelSmartContractAccount<
             return encodeFunctionData({
                 abi: KernelFactoryAbi,
                 functionName: "createAccount",
-                args: [this.defaultValidator.getAddress(),await this.defaultValidator.getOwner(), this.index],
+                args: [this.defaultValidator.getAddress(), await this.defaultValidator.getOwner(), this.index],
             })
         } catch (err: any) {
-            console.error("err occurred:",err.message)
+            console.error("err occurred:", err.message)
             throw new Error("Factory Code generation failed")
         }
 

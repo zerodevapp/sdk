@@ -14,7 +14,7 @@ export abstract class AbstractPaymasterDataMiddleware<T extends PaymasterPolicy>
         erc20CallData?: PromiseOrValue<BytesLike>
     ): Promise<UserOperationStruct | undefined> {
         try {
-            let requestBodyParams = {
+            let requestBodyParams = Object.fromEntries(Object.entries({
                 projectId: this.commonCfg.projectId,
                 chainId: this.commonCfg.chainId,
                 userOp,
@@ -23,7 +23,7 @@ export abstract class AbstractPaymasterDataMiddleware<T extends PaymasterPolicy>
                 tokenAddress: gasTokenAddress,
                 erc20UserOp,
                 erc20CallData
-            };
+            }).filter(([_, value]) => value !== undefined));
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/sign`, {
                 ...requestBodyParams
             }, { headers: { 'Content-Type': 'application/json' } })
