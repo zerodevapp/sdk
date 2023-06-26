@@ -4,7 +4,8 @@ import {
     type Hex,
     parseAbi,
     parseAbiParameters,
-    encodeFunctionData
+    encodeFunctionData,
+    type Hash
 } from "viem";
 import {polygonMumbai} from "viem/chains";
 import { generatePrivateKey } from 'viem/accounts'
@@ -28,7 +29,9 @@ describe("Kernel Account Tests", () => {
         validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5" as Hex,
         accountFactoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39" as Hex,
         entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,
-        projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6"
+        // Turn off all policies related to gas sponsorship for this projectId
+        // To make all the testcases pass
+        projectId: "8db3f9f0-f8d0-4c69-9bc6-5c522ee25844"
     }
 
     const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey)
@@ -175,16 +178,15 @@ describe("Kernel Account Tests", () => {
 
     // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
-        let signerWithProvider =  connect(1001n, owner)
+        let signerWithProvider =  (connect(1001n, owner)).withZeroDevPaymasterAndData({policy: "VERIFYING_PAYMASTER"})
     
     
         const result = signerWithProvider.sendUserOperation({
             target: await signerWithProvider.getAddress(),
             data: "0x",
         });
-    
-        // [TODO] - Better error handling
-        await expect(result).rejects //.toThrowError("AA21 didn't pay prefund");
+        
+        await expect(result).rejects.toThrowError("AA21 didn't pay prefund");
     }, {timeout: 100000});
 
 
@@ -203,6 +205,41 @@ describe("Kernel Account Tests", () => {
             value: 0n
         });
         await expect(result).resolves.not.toThrowError();
+        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
+    }, {timeout: 100000});
+
+    it("sponsored sendUserOperation should execute properly", async () => {
+        //
+        const provider = new ZeroDevProvider({
+            projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            // By default uses ZeroDev meta-bundler
+            // rpcUrl: config.rpcProvider
+        })
+
+        const accountParams: KernelSmartAccountParams = {
+            rpcClient: provider.rpcClient,
+            entryPointAddress: config.entryPointAddress,
+            chain: config.chain,
+            owner: owner,
+            factoryAddress: config.accountFactoryAddress,
+            index: 1002n,
+            defaultValidator: validator,
+            validator: validator
+        }
+        const account = new KernelSmartContractAccount(accountParams);
+        let signerWithProvider = (await provider.connect((provider) => account)).withZeroDevPaymasterAndData({policy:"VERIFYING_PAYMASTER"});
+        await signerWithProvider.account!.getInitCode()
+    
+        //to fix bug in old versions
+        const result = signerWithProvider.sendUserOperation({
+            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
+            data: "0x",
+            value: 0n
+        });
+        await expect(result).resolves.not.toThrowError();
+        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
     }, {timeout: 100000});
 
     //NOTE - this test case will only work if you
@@ -213,10 +250,6 @@ describe("Kernel Account Tests", () => {
             projectId: config.projectId,
             entryPointAddress: config.entryPointAddress,
             chain: config.chain,
-            paymasterConfig: {
-                policy: "TOKEN_PAYMASTER",
-                gasToken: "TEST_ERC20"
-            }
             // By default uses ZeroDev meta-bundler
             // rpcUrl: config.rpcProvider
         })
@@ -232,8 +265,8 @@ describe("Kernel Account Tests", () => {
             validator: validator
         }
         const account = new KernelSmartContractAccount(accountParams);
-        let signerWithProvider = await provider.connect((provider) => account)
-        await signerWithProvider.account.getInitCode()
+        let signerWithProvider = (await provider.connect((provider) => account)).withZeroDevPaymasterAndData({policy:"TOKEN_PAYMASTER", gasToken: "TEST_ERC20"});
+        await signerWithProvider.account!.getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
@@ -248,6 +281,7 @@ describe("Kernel Account Tests", () => {
 
         await expect(result).resolves.not.toThrowError();
 
+        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
     }, {timeout: 100000});
 
     //NOTE - this test case will only work if you
@@ -258,10 +292,6 @@ describe("Kernel Account Tests", () => {
             projectId: config.projectId,
             entryPointAddress: config.entryPointAddress,
             chain: config.chain,
-            paymasterConfig: {
-                policy: "TOKEN_PAYMASTER",
-                gasToken: "TEST_ERC20"
-            },
             // By default uses ZeroDev meta-bundler
             // rpcUrl: config.rpcProvider
         })
@@ -277,8 +307,8 @@ describe("Kernel Account Tests", () => {
             validator: validator
         }
         const account = new KernelSmartContractAccount(accountParams);
-        let signerWithProvider = await providerWithTokenPaymaster.connect((provider) => account)
-        await signerWithProvider.account.getInitCode()
+        let signerWithProvider = (await providerWithTokenPaymaster.connect((provider) => account)).withZeroDevPaymasterAndData({policy:"TOKEN_PAYMASTER", gasToken: "TEST_ERC20"})
+        await signerWithProvider.account!.getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,

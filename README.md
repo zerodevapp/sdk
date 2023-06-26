@@ -83,17 +83,13 @@ ZeroDev currently supports:
   - `PEPE` (mainnet only)
   - `DAI` (upcoming)
 
-Pass `paymasterConfig` param to `ZeroDevProvider`.
+Attach `withZeroDevPaymasterAndData` middleware to `ZeroDevProvider`.
 
 ```ts
-const provider = new ZeroDevProvider({ 
+let provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
   projectId, // zeroDev projectId
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
-  paymasterConfig: {
-      policy: "TOKEN_PAYMASTER",
-      gasToken: "TEST_ERC20"
-  }
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
     owner,
@@ -108,6 +104,8 @@ const provider = new ZeroDevProvider({
     validator
   })
 )
+
+let providerWithPaymaster = provider.withZeroDevPaymasterAndData({policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20"});
 ```
 
 ## Components

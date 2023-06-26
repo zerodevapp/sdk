@@ -10,5 +10,7 @@ export {
 } from "./kernel-zerodev/validator/base";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base";
 export type { KernelSmartAccountParams } from "./kernel-zerodev/account";
+export type * from "./kernel-zerodev/paymaster/types";
+export * as constants from "./kernel-zerodev/constants";
 export { KernelSmartContractAccount } from "./kernel-zerodev/account";
 export { ZeroDevProvider } from "./kernel-zerodev/provider";

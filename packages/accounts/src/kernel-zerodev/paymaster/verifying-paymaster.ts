@@ -1,36 +1,24 @@
-import { deepHexlify, resolveProperties, type UserOperationStruct } from "@alchemy/aa-core";
-import { ErrTransactionFailedGasChecks } from "../errors";
-import type { IPaymasterDataMiddleware, PaymasterCommonConfig, PaymasterConfig } from "../middleware/types";
-import { AbstractPaymasterDataMiddleware } from "./base";
+import { type UserOperationStruct, deepHexlify, resolveProperties } from "@alchemy/aa-core";
+import { Paymaster,  } from "./base";
+import type { ZeroDevProvider } from "../provider";
+import type { PaymasterConfig } from "./types";
 
-export class VerifyingPaymasterDataMiddleware extends AbstractPaymasterDataMiddleware<'VERIFYING_PAYMASTER'> implements IPaymasterDataMiddleware {
-    constructor(public paymasterConfig: PaymasterConfig<'VERIFYING_PAYMASTER'>, public commonCfg: PaymasterCommonConfig) {
-        super(paymasterConfig, commonCfg)
-    }
-
+export class VerifyingPaymaster extends Paymaster {
+    constructor(provider:ZeroDevProvider, _: PaymasterConfig<"VERIFYING_PAYMASTER">) {super(provider);}
     async getPaymasterResponse(struct: UserOperationStruct): Promise<UserOperationStruct> {
-        const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
+        try {
+            const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
+            const paymasterResp = await this.signUserOp(hexifiedUserOp);
+            if (paymasterResp) {
+                return {
+                    ...struct,
+                    ...paymasterResp
+                }
+            }
 
-        const paymasterResp = await this.signUserOp(
-            hexifiedUserOp,
-        )
-
-        if (paymasterResp) {
-            return {
-                ...struct,
-                ...paymasterResp,
-                signature: ""
-            };
+        } catch (error) {
+            return struct;
         }
-
-        if (paymasterResp === undefined) {
-            console.log(ErrTransactionFailedGasChecks)
-        }
-
-        return {
-            ...struct,
-            signature: ""
-        };
-
+        return struct;
     }
 }

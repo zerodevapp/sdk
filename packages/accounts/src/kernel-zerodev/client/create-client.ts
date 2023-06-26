@@ -2,16 +2,17 @@ import { createPublicErc4337FromClient, type HttpTransport, type PublicErc4337Cl
 import { http, createPublicClient, type Chain } from "viem";
 import { BUNDLER_URL } from "../constants";
 
+interface ZeroDevClientConfig {
+    chain: Chain;
+    rpcUrl: string;
+    projectId: string;
+}
 
 export const createZeroDevPublicErc4337Client = ({
     chain,
     rpcUrl,
     projectId
-}: {
-    chain: Chain;
-    rpcUrl: string;
-    projectId: string;
-}): PublicErc4337Client<HttpTransport> => {
+}: ZeroDevClientConfig): PublicErc4337Client<HttpTransport> => {
     let client = createPublicErc4337FromClient(
         createPublicClient({
             chain,
