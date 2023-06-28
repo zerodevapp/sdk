@@ -1,4 +1,4 @@
-import { type Address, type Chain, type HttpTransport } from "viem";
+import { type Address, type Chain, type HttpTransport, type RpcTransactionRequest } from "viem";
 import {
     deepHexlify, resolveProperties,
     type SmartAccountProviderOpts,
@@ -163,24 +163,29 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         return withZeroDevPaymasterAndData(this, config);
     }
 
-    request: (args: { method: string; params?: any[] }) => Promise<any> = async (
+    request: (args: { method: string; params?: any[]; }) => Promise<any> = async (
         args
     ) => {
         const { method, params } = args;
-        if (method === "personal_sign") {
-            if (!this.account) {
-                throw new Error("account not connected!");
-            }
-            const [data, address] = params!;
-            if (address !== (await this.getAddress())) {
-                throw new Error(
-                    "cannot sign for address that is not the current account"
-                );
-            }
-            // @ts-ignore
-            return this.account.signWithEip6492(data);
-        } else {
-            return super.request(args)
+        switch (method) {
+            case "eth_sendTransaction":
+                const [tx] = params as [RpcTransactionRequest];
+                return this.sendTransaction(tx);
+            case "personal_sign":
+                if (!this.account) {
+                    throw new Error("account not connected!");
+                }
+                const [data, address] = params!;
+                if (address !== (await this.getAddress())) {
+                    throw new Error(
+                        "cannot sign for address that is not the current account"
+                    );
+                }
+                // @ts-ignore
+                return this.account.signWithEip6492(data);
+            default:
+                // @ts-expect-error
+                return this.rpcClient.request(args);
         }
     };
 
