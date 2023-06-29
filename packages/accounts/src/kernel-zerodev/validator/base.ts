@@ -53,8 +53,6 @@ export abstract class KernelBaseValidator {
 
     abstract getEnableData(): Promise<Hex>;
 
-    // abstract signMessageWithValidatorParams(userOpHash: Uint8Array | string | Hex): Promise<Hex>;
-
     abstract signMessage(message: Uint8Array | string | Hex): Promise<Hex>;
 
     abstract signUserOp(userOp: UserOperationRequest): Promise<Hex>;
@@ -101,8 +99,8 @@ export abstract class KernelBaseValidator {
         const kernel = getContract({ abi: KernelAccountAbi, address: userOp.sender, publicClient });
         let mode: ValidatorMode;
         try {
-            const defaultValidatorAddress = await kernel.read.getDefaultValidator(); //publicClient.readContract({ abi: KernelAccountAbi, address: userOp.sender, functionName: "getDefaultValidator" });
-            const executionData = await kernel.read.getExecution([userOp.callData.slice(0, 6) as Hex]); // publicClient.readContract({ abi: KernelAccountAbi, address: userOp.sender, functionName: "getExecution", args: [userOp.callData.slice(0, 6) as Hex] });
+            const defaultValidatorAddress = await kernel.read.getDefaultValidator();
+            const executionData = await kernel.read.getExecution([userOp.callData.slice(0, 6) as Hex]);
             if (defaultValidatorAddress?.toLowerCase() === this.validatorAddress.toLowerCase()) {
                 mode = ValidatorMode.sudo;
             } else if (executionData?.validator.toLowerCase() === this.validatorAddress.toLowerCase()) {

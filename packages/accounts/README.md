@@ -29,7 +29,7 @@ npm i -s @alchemy/aa-core @zerodevapp/sdk@alpha viem
 import {
   KernelSmartContractAccount,
   ZeroDevProvider,
-  KernelBaseValidator,
+  ECDSAValidator,
   type ValidatorMode 
 } from "@zerodevapp/sdk@alpha";
 import {PrivateKeySigner} from "@alchemy/aa-core";
@@ -42,10 +42,12 @@ const KERNEL_ACCOUNT_FACTORY_ADDRESS =
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
 const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
-const validator: KernelBaseValidator = new KernelBaseValidator(({
+const validator: ECDSAValidator = new ECDSAValidator(({
     validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5",
     mode: ValidatorMode.sudo,
-    owner
+    owner,
+    chain: polygonMumbai,
+    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }))
 
 // 2. initialize the provider and connect it to the account
@@ -108,6 +110,41 @@ let provider = new ZeroDevProvider({
 let providerWithPaymaster = provider.withZeroDevPaymasterAndData({policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20"});
 ```
 
+### Change Kernel Account Owner (ECDSAValidator as default validator)
+
+```ts
+const validator: ECDSAValidator = new ECDSAValidator(({
+    validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5",
+    mode: ValidatorMode.sudo,
+    owner,
+    chain: polygonMumbai,
+    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+}))
+        
+const validatorProvider = new ValidatorProvider({
+    projectId, // zeroDev projectId
+    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
+    chain: polygonMumbai,
+    defaultValidator: validator,
+}).connect((rpcClient) =>
+  new KernelSmartContractAccount({
+    owner,
+    index: BigInt(0),  
+    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    chain: polygonMumbai,
+    factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
+    rpcClient,
+    // optionally if you already know the account's address
+    // accountAddress: "0x000...000",
+    defaultValidator: validator,
+    validator
+  })
+)
+
+await validatorProvider.sendEnableUserOp(<New-Owner-Address>);
+```
+
+
 ## Components
 
 ### Core Components
@@ -126,10 +163,10 @@ The `ZeroDevProvider` is an ERC-1193 compliant Provider built on top of Alchemy'
 5. `signWithEip6492` -- this should return an ERC-191 and EIP-6492 compliant message used to personal_sign
 6. `getAccountInitCode` -- this should return the init code that will be used to create an account if one does not exist. Usually this is the concatenation of the account's factory address and the abi encoded function data of the account factory's `createAccount` method.
 
-The `KernelBaseValidator` is a plugin that modify how transactions are validated. It allows for extension and implementation of arbitrary validation logic. It implements 3 methods:
+The `KernelBaseValidator` is a plugin that modify how transactions are validated. It allows for extension and implementation of arbitrary validation logic. It implements 3 main methods:
 1. `getAddress` -- this returns the address of the validator
 2. `getOwner` -- this returns the eligible signer's address for the active smart wallet
-3. `signMessageWithValidatorParams` -- this method signs the userop hash using signer object and then concats additional params based on validator mode.
+3. `getSignature` -- this method signs the userop hash using signer object and then concats additional params based on validator mode.
 
 ## Contributing
 
