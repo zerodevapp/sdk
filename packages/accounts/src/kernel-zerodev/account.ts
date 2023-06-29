@@ -17,26 +17,28 @@ import { encodeMultiSend } from "./utils";
 import { MultiSendAbi } from "./abis/MultiSendAbi";
 
 export interface KernelSmartAccountParams<
-    TTransport extends Transport | FallbackTransport = Transport
+    VValidator extends KernelBaseValidator = KernelBaseValidator,
+    TTransport extends Transport | FallbackTransport = Transport,
 > extends BaseSmartAccountParams<TTransport> {
     owner: SmartAccountSigner;
     factoryAddress: Address;
     index?: bigint;
-    defaultValidator: KernelBaseValidator
-    validator?: KernelBaseValidator
+    defaultValidator: VValidator;
+    validator?: VValidator;
 }
 
 export class KernelSmartContractAccount<
-    TTransport extends Transport | FallbackTransport = Transport
+    VValidator extends KernelBaseValidator = KernelBaseValidator,
+    TTransport extends Transport | FallbackTransport = Transport,
 > extends BaseSmartContractAccount<TTransport> {
     private owner: SmartAccountSigner;
     private readonly factoryAddress: Address;
     private readonly index: bigint;
-    private defaultValidator: KernelBaseValidator;
-    validator: KernelBaseValidator;
+    defaultValidator: VValidator;
+    validator: VValidator;
 
 
-    constructor(params: KernelSmartAccountParams) {
+    constructor(params: KernelSmartAccountParams<VValidator>) {
         super(params);
         this.index = params.index ?? 0n;
         this.owner = params.owner;

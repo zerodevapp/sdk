@@ -21,14 +21,15 @@ import { InvalidOperation } from "./errors";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
 import { createZeroDevPublicErc4337Client } from "./client/create-client";
 import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
+import type { KernelBaseValidator } from "./validator/base";
 
 
-export type ZeroDevProviderConfig = {
+export type ZeroDevProviderConfig<VValidator extends KernelBaseValidator> = {
     projectId: string;
     chain: Chain | number;
     entryPointAddress: Address;
     rpcUrl?: string;
-    account?: KernelSmartContractAccount;
+    account?: KernelSmartContractAccount<VValidator>;
     opts?: SmartAccountProviderOpts;
 };
 
@@ -42,7 +43,7 @@ type UserOpDataOperationTypes<T> =
     T extends BatchUserOperationCallData ? Operation.Call :
     never;
 
-export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
+export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBaseValidator> extends SmartAccountProvider<HttpTransport> {
 
     protected projectId: string;
 
@@ -53,7 +54,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         rpcUrl = BUNDLER_URL,
         account,
         opts,
-    }: ZeroDevProviderConfig) {
+    }: ZeroDevProviderConfig<VValidator>) {
         const _chain = typeof chain === "number" ? getChain(chain) : chain;
         const rpcClient = createZeroDevPublicErc4337Client({
             chain: _chain,

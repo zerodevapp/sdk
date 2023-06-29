@@ -110,7 +110,7 @@ let provider = new ZeroDevProvider({
 let providerWithPaymaster = provider.withZeroDevPaymasterAndData({policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20"});
 ```
 
-### Change Kernel Account Owner (ECDSAValidator as default validator)
+### Change Kernel Account Owner in ECDSAValidator
 
 ```ts
 const validator: ECDSAValidator = new ECDSAValidator(({
@@ -120,12 +120,11 @@ const validator: ECDSAValidator = new ECDSAValidator(({
     chain: polygonMumbai,
     entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }))
-        
-const validatorProvider = new ValidatorProvider({
-    projectId, // zeroDev projectId
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
-    chain: polygonMumbai,
-    defaultValidator: validator,
+
+const provider = new ZeroDevProvider({ 
+  chain: polygonMumbai,
+  projectId, // zeroDev projectId
+  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
     owner,
@@ -141,7 +140,17 @@ const validatorProvider = new ValidatorProvider({
   })
 )
 
-await validatorProvider.sendEnableUserOp(<New-Owner-Address>);
+const ecdsaValidatorProvider = new ECDSAValidatorProvider({
+    provider,
+
+    /* defaultValidator is used by default
+    /* optionally you can specify the validator here
+    */
+
+    // validator
+});
+
+await ecdsaValidatorProvider.changeOwner(<New-Owner-Address>);
 ```
 
 

@@ -1,32 +1,50 @@
-import { type Hex, type SendUserOperationResult } from "@alchemy/aa-core";
+import { defineReadOnly, type Hex } from "@alchemy/aa-core";
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider";
 import type { KernelBaseValidator } from "../validator/base";
+import type { Hash } from "viem";
 
-interface ValidatorProviderConfig extends ZeroDevProviderConfig {
-    defaultValidator: KernelBaseValidator;
-    validator?: KernelBaseValidator;
+type DefinedAccount<VValidator extends KernelBaseValidator> = Exclude<ZeroDevProviderConfig<VValidator>["account"], undefined>;
+export interface ValidatorProviderConfig {
+    provider: ZeroDevProvider;
 }
 
+// A simple facade abstraction for validator related provider operations
+// Needs to be implemented for each validator plugin
+export abstract class ValidatorProvider<VValidator extends KernelBaseValidator = KernelBaseValidator> {
 
-export class ValidatorProvider extends ZeroDevProvider {
-
-    protected defaultValidator: KernelBaseValidator;
-    protected validator: KernelBaseValidator;
+    provider: ZeroDevProvider;
+    validator: VValidator;
 
     constructor(params: ValidatorProviderConfig) {
-        super(params);
-        this.defaultValidator = params.defaultValidator
-        this.validator = params.validator ?? params.defaultValidator
+        this.provider = params.provider;
+        if (!params.provider.account) {
+            throw new Error("account not connected!");
+        }
+        this.validator = (params.provider.account as DefinedAccount<VValidator>).defaultValidator;
     }
 
-    sendEnableUserOp = async (enableData: Hex): Promise<SendUserOperationResult> => {
-        const data = this.defaultValidator.encodeEnable(enableData);
-        return await this.sendUserOperation({ target: this.defaultValidator.validatorAddress, data });
+    abstract getEncodedEnableData(enableData: Hex): Promise<Hex>;
+
+    abstract getEncodedDisableData(enableData: Hex): Promise<Hex>;
+
+    waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
+        return await this.provider.waitForUserOperationTransaction(hash);
     }
 
-    sendDisableUserOp = async (enableData: Hex): Promise<SendUserOperationResult> => {
-        const data = this.defaultValidator.encodeEnable(enableData);
-        return await this.sendUserOperation({ target: this.defaultValidator.validatorAddress, data });
+    connectProvider = (
+        provider: ZeroDevProvider<VValidator>,
+        validator?: VValidator
+    ): this => {
+        if (!this.provider.isConnected()) {
+            throw new Error(
+                "ValidatorProvider: account is not set, did you call `connect` first?"
+            );
+        }
+        defineReadOnly(this, "provider", provider);
+
+        this.validator = validator ?? (this.provider.account as DefinedAccount<VValidator>).defaultValidator;
+        
+        return this;
     }
 
 }
