@@ -1,4 +1,4 @@
-# Zerodev Kernel Account API
+# ZeroDev Kernel Account API
 This package contains ZeroDev's KernelV2 implementation of the `@alchemy/aa-core` [`BaseSmartContractAccount`](https://github.com/alchemyplatform/aa-sdk/blob/main/packages/core/src/account/base.ts) class defined in `@alchemy/aa-core`. 
 
 [What is Kernel V2?](https://docs.zerodev.app/blog/kernel-v2-and-the-lessons-we-learned)
@@ -53,7 +53,7 @@ const validator: ECDSAValidator = new ECDSAValidator(({
 // 2. initialize the provider and connect it to the account
 const provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
-  projectId, // zeroDev projectId
+  projectId, // ZeroDev projectId
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
@@ -90,7 +90,7 @@ Attach `withZeroDevPaymasterAndData` middleware to `ZeroDevProvider`.
 ```ts
 let provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
-  projectId, // zeroDev projectId
+  projectId, // ZeroDev projectId
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
