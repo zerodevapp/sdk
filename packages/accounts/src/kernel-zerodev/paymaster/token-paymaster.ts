@@ -18,11 +18,11 @@ export class TokenPaymaster extends Paymaster {
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/getPaymasterAddress`, {
                 chainId: this.provider.getChain().id,
                 entryPointAddress: ENTRYPOINT_ADDRESS
-            }, { headers: { 'Content-Type': 'application/json' } })
-            return paymasterResp as Hex
+            }, { headers: { 'Content-Type': 'application/json' } });
+            return paymasterResp as Hex;
         } catch (e) {
-            console.log(e)
-            return undefined
+            console.log(e);
+            return undefined;
         }
     }
     async decodeMainCallFromCallData(callData: PromiseOrValue<BytesLike>): Promise<UserOperationCallDataWithDelegate | undefined> {
@@ -32,12 +32,12 @@ export class TokenPaymaster extends Paymaster {
             if (callData instanceof Promise) {
                 const _data = await callData;
                 if (_data instanceof Uint8Array) {
-                    data = toHex(_data)
+                    data = toHex(_data);
                 } else {
                     data = _data as Hex;
                 }
             } else if (callData instanceof Uint8Array) {
-                data = toHex(callData)
+                data = toHex(callData);
             } else {
                 data = callData as Hex;
             }
@@ -45,7 +45,7 @@ export class TokenPaymaster extends Paymaster {
             const { functionName, args } = decodeFunctionData({
                 abi: KernelAccountAbi,
                 data: data
-            })
+            });
             if (functionName === "execute") {
                 const [target, value, data,] = args;
                 let msFuntionName;
@@ -53,7 +53,7 @@ export class TokenPaymaster extends Paymaster {
                     ({ functionName: msFuntionName } = decodeFunctionData({
                         abi: MultiSendAbi,
                         data
-                    }))
+                    }));
 
                 } catch (error) { }
                 let mainCall: UserOperationCallData | UserOperationCallDataWithDelegate = {
@@ -67,7 +67,7 @@ export class TokenPaymaster extends Paymaster {
                         target: MULTISEND_ADDR,
                         delegateCall: true,
                         data
-                    }
+                    };
                 }
                 return mainCall;
             }
@@ -76,29 +76,33 @@ export class TokenPaymaster extends Paymaster {
         return;
     }
 
-    async getERC20UserOp(struct: UserOperationStruct, mainCall: UserOperationCallDataWithDelegate, gasTokenAddress: Hex, paymasterAddress: Hex): Promise<UserOperationStruct> {
+    async getERC20UserOp(struct: UserOperationStruct, mainCall: UserOperationCallDataWithDelegate, gasTokenAddress: Hex, paymasterAddress: Hex): Promise<UserOperationStruct | undefined> {
 
-        const approveData: UserOperationCallData = {
-            target: gasTokenAddress,
-            value: BigInt(0),
-            data: encodeFunctionData({
-                abi: ERC20Abi,
-                functionName: "approve",
-                args: [paymasterAddress, ERC20_APPROVAL_AMOUNT[gasTokenAddress]],
-            })
-        }
-        if (!this.provider.account) {
-            throw AccountNotConnected;
-        }
-        const erc20CallData = await this.provider.account.encodeBatchExecute([approveData, mainCall]);
-        return {
-            ...struct,
-            callData: erc20CallData,
-            callGasLimit: await this.provider.rpcClient.estimateGas({
-                account: ENTRYPOINT_ADDRESS,
-                to: await this.provider.getAddress(),
-                data: erc20CallData
-            })
+        try {
+            const approveData: UserOperationCallData = {
+                target: gasTokenAddress,
+                value: BigInt(0),
+                data: encodeFunctionData({
+                    abi: ERC20Abi,
+                    functionName: "approve",
+                    args: [paymasterAddress, ERC20_APPROVAL_AMOUNT[gasTokenAddress]],
+                })
+            };
+            if (!this.provider.account) {
+                throw AccountNotConnected;
+            }
+            const erc20CallData = await this.provider.account.encodeBatchExecute([approveData, mainCall]);
+            return {
+                ...struct,
+                callData: erc20CallData,
+                callGasLimit: await this.provider.rpcClient.estimateGas({
+                    account: ENTRYPOINT_ADDRESS,
+                    to: await this.provider.getAddress(),
+                    data: erc20CallData
+                })
+            };
+        } catch (error) {
+            return;
         }
     }
 
@@ -114,12 +118,15 @@ export class TokenPaymaster extends Paymaster {
             let paymasterAddress = await this.getPaymasterAddress();
             if (gasTokenAddress !== undefined && paymasterAddress !== undefined) {
                 const erc20UserOp = await this.getERC20UserOp(struct, mainCall, gasTokenAddress, paymasterAddress);
-                const paymasterResp = await this.signUserOp(struct, struct.callData, gasTokenAddress, erc20UserOp, erc20UserOp.callData)
+                if (!erc20UserOp) {
+                    return struct;
+                }
+                const paymasterResp = await this.signUserOp(struct, struct.callData, gasTokenAddress, erc20UserOp, erc20UserOp.callData);
                 if (paymasterResp) {
                     return {
                         ...struct,
                         ...paymasterResp
-                    }
+                    };
                 }
             }
         } catch (error) {

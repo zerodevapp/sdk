@@ -11,7 +11,7 @@ import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator, ValidatorMode } from "./validator/base";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi";
-import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData } from "@alchemy/aa-core";
+import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest } from "@alchemy/aa-core";
 import { MULTISEND_ADDR } from "./constants";
 import { encodeMultiSend } from "./utils";
 import { MultiSendAbi } from "./abis/MultiSendAbi";
@@ -33,7 +33,7 @@ export class KernelSmartContractAccount<
     private readonly factoryAddress: Address;
     private readonly index: bigint;
     private defaultValidator: KernelBaseValidator;
-    private validator: KernelBaseValidator;
+    validator: KernelBaseValidator;
 
 
     constructor(params: KernelSmartAccountParams) {
@@ -100,9 +100,13 @@ export class KernelSmartContractAccount<
 
     }
 
-    signMessage(msg: Uint8Array | string): Promise<Hex> {
+    async signMessage(msg: Uint8Array | string): Promise<Hex> {
         const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
-        return this.validator.signMessageWithValidatorParams(formattedMessage)
+        return await this.validator.signMessage(formattedMessage)
+    }
+
+    signUserOp(userOp: UserOperationRequest): Promise<Hex> {
+        return this.validator.signUserOp(userOp);
     }
 
     protected encodeExecuteAction(target: Hex, value: bigint, data: Hex, code: number): Hex {
@@ -124,7 +128,7 @@ export class KernelSmartContractAccount<
             return encodeFunctionData({
                 abi: KernelFactoryAbi,
                 functionName: "createAccount",
-                args: [this.defaultValidator.getAddress(), await this.defaultValidator.getOwner(), this.index],
+                args: [this.defaultValidator.getAddress(), await this.defaultValidator.getEnableData(), this.index],
             })
         } catch (err: any) {
             console.error("err occurred:", err.message)

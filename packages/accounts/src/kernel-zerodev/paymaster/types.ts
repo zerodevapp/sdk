@@ -1,6 +1,6 @@
 import type { Hex } from "viem";
-import type { ZeroDevProvider } from "../provider";
 import type { Paymaster } from "./base";
+import type { ZeroDevProvider } from "../provider";
 
 export type SupportedGasToken = "USDC" | "PEPE" | "TEST_ERC20";
 
@@ -20,12 +20,12 @@ export interface IGasTokenAddresses {
     };
 }
 
-export interface IPaymaster<T extends PaymasterPolicy> {
-    new(provider: ZeroDevProvider, paymasterConfig: PaymasterConfig<T>): Paymaster;
+export interface IPaymaster<Provider extends ZeroDevProvider, P extends PaymasterPolicy> {
+    new(provider: Provider, paymasterConfig: PaymasterConfig<P>): Paymaster;
 }
 
-export type PaymasterMap = {
-    [P in PaymasterPolicy]: IPaymaster<P>
+export type PaymasterMap<Provider extends ZeroDevProvider> = {
+    [P in PaymasterPolicy]: IPaymaster<Provider, P>
 };
 
 

@@ -9,7 +9,6 @@ import {
     asyncPipe,
     noOpMiddleware,
     type UserOperationStruct,
-    getUserOperationHash,
     type BytesLike,
     SmartAccountProvider,
     type AccountMiddlewareFn
@@ -128,13 +127,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
             );
         }
 
-        request.signature = (await this.account.signMessage(
-            getUserOperationHash(
-                request,
-                this.entryPointAddress as `0x${string}`,
-                BigInt(this.chain.id)
-            )
-        )) as `0x${string}`;
+        request.signature = await (this.account as KernelSmartContractAccount).validator.getSignature(request);
 
         return {
             hash: await this.rpcClient.sendUserOperation(

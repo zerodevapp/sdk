@@ -4,10 +4,12 @@ import { Paymasters } from "../paymaster";
 import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types";
 
 
-export const withZeroDevPaymasterAndData = (
-    provider: ZeroDevProvider,
+export const withZeroDevPaymasterAndData = <
+Provider extends ZeroDevProvider
+>(
+    provider: Provider,
     paymasterConfig: PaymasterConfig<PaymasterPolicy>,
-): ZeroDevProvider => {
+): Provider => {
 
     provider
         .withPaymasterMiddleware(zeroDevPaymasterAndDataMiddleware(provider, paymasterConfig));
@@ -15,9 +17,12 @@ export const withZeroDevPaymasterAndData = (
     return provider;
 }
 
-export const zeroDevPaymasterAndDataMiddleware = <T extends PaymasterPolicy>(
-    provider: ZeroDevProvider,
-    paymasterConfig: PaymasterConfig<T>,
+export const zeroDevPaymasterAndDataMiddleware = <
+Provider extends ZeroDevProvider,
+P extends PaymasterPolicy
+>(
+    provider: Provider,
+    paymasterConfig: PaymasterConfig<P>,
 ): Parameters<
     ConnectedSmartAccountProvider["withPaymasterMiddleware"]
 >["0"] => {
