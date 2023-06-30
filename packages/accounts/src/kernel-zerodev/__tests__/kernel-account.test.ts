@@ -43,7 +43,6 @@ describe("Kernel Account Tests", () => {
         mode: ValidatorMode.sudo,
         owner,
         chain: config.chain,
-        entryPointAddress: config.entryPointAddress
     }))
 
     const mockValidator: KernelBaseValidator = new ECDSAValidator(({
@@ -51,13 +50,11 @@ describe("Kernel Account Tests", () => {
         mode: ValidatorMode.sudo,
         owner: mockOwner,
         chain: config.chain,
-        entryPointAddress: config.entryPointAddress
     }))
 
 
     const provider = new ZeroDevProvider({
         projectId: config.projectId,
-        entryPointAddress: config.entryPointAddress,
         chain: config.chain,
         // By default uses ZeroDev meta-bundler
         // rpcUrl: config.rpcProvider
@@ -72,7 +69,6 @@ describe("Kernel Account Tests", () => {
     function account(index: bigint, owner = mockOwner) {
         const accountParams: KernelSmartAccountParams = {
             rpcClient: provider.rpcClient,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
@@ -212,7 +208,6 @@ describe("Kernel Account Tests", () => {
         //
         const provider = new ZeroDevProvider({
             projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             // By default uses ZeroDev meta-bundler
             // rpcUrl: config.rpcProvider
@@ -220,7 +215,6 @@ describe("Kernel Account Tests", () => {
 
         const accountParams: KernelSmartAccountParams = {
             rpcClient: provider.rpcClient,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
@@ -234,7 +228,7 @@ describe("Kernel Account Tests", () => {
         await signerWithProvider.account!.getInitCode()
 
         const result = signerWithProvider.sendUserOperation({
-            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
+            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
@@ -248,7 +242,6 @@ describe("Kernel Account Tests", () => {
     it('should pay for single transaction with ERC20 token', async () => {
         const provider = new ZeroDevProvider({
             projectId: config.projectId,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             // By default uses ZeroDev meta-bundler
             // rpcUrl: config.rpcProvider
@@ -256,7 +249,6 @@ describe("Kernel Account Tests", () => {
 
         const accountParams: KernelSmartAccountParams = {
             rpcClient: provider.rpcClient,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
@@ -290,7 +282,6 @@ describe("Kernel Account Tests", () => {
     it('should pay for batch transaction with ERC20 token', async () => {
         const providerWithTokenPaymaster = new ZeroDevProvider({
             projectId: config.projectId,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             // By default uses ZeroDev meta-bundler
             // rpcUrl: config.rpcProvider
@@ -298,7 +289,6 @@ describe("Kernel Account Tests", () => {
 
         const accountParams: KernelSmartAccountParams = {
             rpcClient: provider.rpcClient,
-            entryPointAddress: config.entryPointAddress,
             chain: config.chain,
             owner: owner,
             factoryAddress: config.accountFactoryAddress,

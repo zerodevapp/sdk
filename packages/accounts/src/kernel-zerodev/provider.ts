@@ -13,7 +13,7 @@ import {
     SmartAccountProvider,
     type AccountMiddlewareFn
 } from "@alchemy/aa-core";
-import { BUNDLER_URL } from "./constants";
+import { BUNDLER_URL, ENTRYPOINT_ADDRESS } from "./constants";
 import { KernelSmartContractAccount } from "./account";
 import { withZeroDevGasEstimator } from "./middleware/gas-estimator";
 import { isValidRequest } from "./utils/ERC4337-utils";
@@ -27,7 +27,7 @@ import type { KernelBaseValidator } from "./validator/base";
 export type ZeroDevProviderConfig<VValidator extends KernelBaseValidator> = {
     projectId: string;
     chain: Chain | number;
-    entryPointAddress: Address;
+    entryPointAddress?: Address;
     rpcUrl?: string;
     account?: KernelSmartContractAccount<VValidator>;
     opts?: SmartAccountProviderOpts;
@@ -50,7 +50,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
     constructor({
         projectId,
         chain,
-        entryPointAddress,
+        entryPointAddress = ENTRYPOINT_ADDRESS,
         rpcUrl = BUNDLER_URL,
         account,
         opts,

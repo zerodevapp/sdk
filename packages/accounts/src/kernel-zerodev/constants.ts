@@ -1,10 +1,10 @@
-import { parseUnits } from "viem";
+import { parseUnits, type Hex } from "viem";
 import type { IGasTokenAddresses } from "./paymaster/types";
 
 export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
 export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
-export const ENTRYPOINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
-export const MULTISEND_ADDR = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
+export const ENTRYPOINT_ADDRESS: Hex = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
 
 export const gasTokenChainAddresses: IGasTokenAddresses = {
     "USDC": {

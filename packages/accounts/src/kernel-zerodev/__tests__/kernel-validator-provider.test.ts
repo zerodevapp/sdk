@@ -21,14 +21,12 @@ describe("Kernel Validator Provider Test", async () => {
         mode: ValidatorMode.sudo,
         owner,
         chain: config.chain,
-        entryPointAddress: config.entryPointAddress
     }));
 
 
     let provider = new ZeroDevProvider({
         projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
         chain: config.chain,
-        entryPointAddress: config.entryPointAddress
     });
     const client = createPublicClient({
         chain: polygonMumbai,
@@ -38,7 +36,6 @@ describe("Kernel Validator Provider Test", async () => {
 
     const accountParams: KernelSmartAccountParams<ECDSAValidator> = {
         rpcClient: provider.rpcClient,
-        entryPointAddress: config.entryPointAddress,
         chain: config.chain,
         owner: owner,
         factoryAddress: config.accountFactoryAddress,
@@ -55,7 +52,7 @@ describe("Kernel Validator Provider Test", async () => {
     });
 
 
-    it.only("should change owner in ECDSAValidator plugin to new owner", async () => {
+    it("should change owner in ECDSAValidator plugin to new owner", async () => {
 
 
         await provider.account!.getInitCode();
@@ -73,14 +70,13 @@ describe("Kernel Validator Provider Test", async () => {
         console.log(`Owner changed from ${await owner.getAddress()} to ${currentOwnerNow}}`);
     }, { timeout: 100000 });
 
-    it.only("should change owner back to original owner in ECDSAValidator plugin", async () => {
+    it("should change owner back to original owner in ECDSAValidator plugin", async () => {
 
         const validator2: ECDSAValidator = new ECDSAValidator(({
             validatorAddress: config.validatorAddress,
             mode: ValidatorMode.sudo,
             owner: secondOwner,
             chain: config.chain,
-            entryPointAddress: config.entryPointAddress
         }));
         const account2 = new KernelSmartContractAccount({ ...accountParams, owner: secondOwner, index: 0n, accountAddress: await account.getAddress(), defaultValidator: validator2, validator: validator2 });
         ecdsaValidatorProvider = ecdsaValidatorProvider.connectProvider(provider.connect((_) => account2));

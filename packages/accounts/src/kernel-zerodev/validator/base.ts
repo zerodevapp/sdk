@@ -1,6 +1,7 @@
 import { getChain, type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
 import { concat, type Chain, type Hex, pad, toHex, type Address, createPublicClient, http, concatHex, getContract } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi";
+import { ENTRYPOINT_ADDRESS } from "../constants";
 
 export enum ValidatorMode {
     sudo = '0x00000000',
@@ -12,7 +13,7 @@ export interface KernelBaseValidatorParams {
     validatorAddress: Hex;
     mode: ValidatorMode;
     chain: Chain | number;
-    entryPointAddress: Address;
+    entryPointAddress?: Address;
     enableSignature?: Hex;
     validUntil?: number;
     validAfter?: number;
@@ -39,7 +40,7 @@ export abstract class KernelBaseValidator {
         this.mode = params.mode;
         const chain = typeof params.chain === "number" ? getChain(params.chain) : params.chain;
         this.chain = chain;
-        this.entryPointAddress = params.entryPointAddress;
+        this.entryPointAddress = params.entryPointAddress ?? ENTRYPOINT_ADDRESS;
         this.enableSignature = params.enableSignature;
         this.validUntil = params.validUntil ?? 0;
         this.validAfter = params.validAfter ?? 0;

@@ -47,19 +47,16 @@ const validator: ECDSAValidator = new ECDSAValidator(({
     mode: ValidatorMode.sudo,
     owner,
     chain: polygonMumbai,
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }))
 
 // 2. initialize the provider and connect it to the account
 const provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
   projectId, // zeroDev projectId
-  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
     owner,
     index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
     chain: polygonMumbai,
     factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
     rpcClient,
@@ -91,12 +88,10 @@ Attach `withZeroDevPaymasterAndData` middleware to `ZeroDevProvider`.
 let provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
   projectId, // zeroDev projectId
-  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
     owner,
     index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
     chain: polygonMumbai,
     factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
     rpcClient,
@@ -118,18 +113,15 @@ const validator: ECDSAValidator = new ECDSAValidator(({
     mode: ValidatorMode.sudo,
     owner,
     chain: polygonMumbai,
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }))
 
 const provider = new ZeroDevProvider({ 
   chain: polygonMumbai,
   projectId, // zeroDev projectId
-  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
 }).connect((rpcClient) =>
   new KernelSmartContractAccount({
     owner,
     index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
     chain: polygonMumbai,
     factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
     rpcClient,

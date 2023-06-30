@@ -12,14 +12,21 @@ import { KernelBaseValidator, ValidatorMode } from "./validator/base";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi";
 import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest } from "@alchemy/aa-core";
-import { MULTISEND_ADDR } from "./constants";
+import { ENTRYPOINT_ADDRESS, MULTISEND_ADDR } from "./constants";
 import { encodeMultiSend } from "./utils";
 import { MultiSendAbi } from "./abis/MultiSendAbi";
 
+type WithOptional<T, K extends keyof T> = Pick<Partial<T>, K>;
+type WithRequired<T, K extends keyof T> = Required<Pick<T, K>>;
+type BaseSmartAccountParamsMod<
+    TTransport extends Transport | FallbackTransport = Transport,
+> = WithOptional<BaseSmartAccountParams<TTransport>, "entryPointAddress" | "accountAddress"> &
+    WithRequired<BaseSmartAccountParams<TTransport>, "rpcClient" | "chain">;
+    
 export interface KernelSmartAccountParams<
     VValidator extends KernelBaseValidator = KernelBaseValidator,
     TTransport extends Transport | FallbackTransport = Transport,
-> extends BaseSmartAccountParams<TTransport> {
+> extends BaseSmartAccountParamsMod<TTransport> {
     owner: SmartAccountSigner;
     factoryAddress: Address;
     index?: bigint;
@@ -39,12 +46,12 @@ export class KernelSmartContractAccount<
 
 
     constructor(params: KernelSmartAccountParams<VValidator>) {
-        super(params);
+        super({...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS});
         this.index = params.index ?? 0n;
         this.owner = params.owner;
         this.factoryAddress = params.factoryAddress;
-        this.defaultValidator = params.defaultValidator!
-        this.validator = params.validator ?? params.defaultValidator!
+        this.defaultValidator = params.defaultValidator!;
+        this.validator = params.validator ?? params.defaultValidator!;
     }
 
     getDummySignature(): Hex {
@@ -53,9 +60,9 @@ export class KernelSmartContractAccount<
 
     async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
         if (this.validator.mode !== ValidatorMode.sudo) {
-            throw new Error("Validator Mode not supported")
+            throw new Error("Validator Mode not supported");
         } else {
-            return this.encodeExecuteAction(target, value, data, 0)
+            return this.encodeExecuteAction(target, value, data, 0);
         }
     }
 
@@ -68,18 +75,18 @@ export class KernelSmartContractAccount<
             abi: MultiSendAbi,
             functionName: 'multiSend',
             args: [encodeMultiSend(_txs)]
-        })
-        return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata)
+        });
+        return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata);
     }
 
     async encodeExecuteDelegate(target: Hex, value: bigint, data: Hex): Promise<Hex> {
-        return this.encodeExecuteAction(target, value, data, 1)
+        return this.encodeExecuteAction(target, value, data, 1);
     }
 
     async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
         try {
-            const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
-            let sig = await this.owner.signMessage(toBytes(hashMessage({ raw: formattedMessage })))
+            const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
+            let sig = await this.owner.signMessage(toBytes(hashMessage({ raw: formattedMessage })));
             // If the account is undeployed, use ERC-6492
             if (!await this.isAccountDeployed()) {
                 sig = (encodeAbiParameters(
@@ -90,21 +97,21 @@ export class KernelSmartContractAccount<
                         sig
                     ]
                 ) + '6492649264926492649264926492649264926492649264926492649264926492' // magic suffix
-                ) as Hex
+                ) as Hex;
             }
 
-            return sig
+            return sig;
         } catch (err: any) {
-            console.error("Got Error - ", err.message)
-            throw new Error("Message Signing with EIP6492 failed")
+            console.error("Got Error - ", err.message);
+            throw new Error("Message Signing with EIP6492 failed");
         }
 
 
     }
 
     async signMessage(msg: Uint8Array | string): Promise<Hex> {
-        const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
-        return await this.validator.signMessage(formattedMessage)
+        const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
+        return await this.validator.signMessage(formattedMessage);
     }
 
     signUserOp(userOp: UserOperationRequest): Promise<Hex> {
@@ -131,10 +138,10 @@ export class KernelSmartContractAccount<
                 abi: KernelFactoryAbi,
                 functionName: "createAccount",
                 args: [this.defaultValidator.getAddress(), await this.defaultValidator.getEnableData(), this.index],
-            })
+            });
         } catch (err: any) {
-            console.error("err occurred:", err.message)
-            throw new Error("Factory Code generation failed")
+            console.error("err occurred:", err.message);
+            throw new Error("Factory Code generation failed");
         }
 
     }
