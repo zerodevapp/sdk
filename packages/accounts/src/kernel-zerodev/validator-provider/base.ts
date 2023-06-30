@@ -20,7 +20,7 @@ export abstract class ValidatorProvider<VValidator extends KernelBaseValidator =
         if (!params.provider.account) {
             throw new Error("account not connected!");
         }
-        this.validator = (params.provider.account as DefinedAccount<VValidator>).defaultValidator;
+        this.validator = (params.provider.account as DefinedAccount<VValidator>).validator;
     }
 
     abstract getEncodedEnableData(enableData: Hex): Promise<Hex>;
@@ -32,8 +32,7 @@ export abstract class ValidatorProvider<VValidator extends KernelBaseValidator =
     }
 
     connectProvider = (
-        provider: ZeroDevProvider<VValidator>,
-        validator?: VValidator
+        provider: ZeroDevProvider<VValidator>
     ): this => {
         if (!this.provider.isConnected()) {
             throw new Error(
@@ -42,7 +41,7 @@ export abstract class ValidatorProvider<VValidator extends KernelBaseValidator =
         }
         defineReadOnly(this, "provider", provider);
 
-        this.validator = validator ?? (this.provider.account as DefinedAccount<VValidator>).defaultValidator;
+        this.validator = (this.provider.account as DefinedAccount<VValidator>).validator;
         
         return this;
     }

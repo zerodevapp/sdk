@@ -40,7 +40,6 @@ describe("Kernel Validator Provider Test", async () => {
         owner: owner,
         factoryAddress: config.accountFactoryAddress,
         index: 10034n,
-        defaultValidator: validator,
         validator: validator
     };
     const account = new KernelSmartContractAccount(accountParams);
@@ -78,7 +77,7 @@ describe("Kernel Validator Provider Test", async () => {
             owner: secondOwner,
             chain: config.chain,
         }));
-        const account2 = new KernelSmartContractAccount({ ...accountParams, owner: secondOwner, index: 0n, accountAddress: await account.getAddress(), defaultValidator: validator2, validator: validator2 });
+        const account2 = new KernelSmartContractAccount({ ...accountParams, owner: secondOwner, index: 0n, accountAddress: await account.getAddress(), validator: validator2 });
         ecdsaValidatorProvider = ecdsaValidatorProvider.connectProvider(provider.connect((_) => account2));
         const resp2 = await ecdsaValidatorProvider.changeOwner(await owner.getAddress());
         await ecdsaValidatorProvider.waitForUserOperationTransaction(resp2.hash as Hex);

@@ -62,7 +62,6 @@ const provider = new ZeroDevProvider({
     rpcClient,
     // optionally if you already know the account's address
     // accountAddress: "0x000...000",
-    defaultValidator: validator,
     validator
   })
 )
@@ -97,7 +96,6 @@ let provider = new ZeroDevProvider({
     rpcClient,
     // optionally if you already know the account's address
     // accountAddress: "0x000...000",
-    defaultValidator: validator,
     validator
   })
 )
@@ -127,19 +125,12 @@ const provider = new ZeroDevProvider({
     rpcClient,
     // optionally if you already know the account's address
     // accountAddress: "0x000...000",
-    defaultValidator: validator,
     validator
   })
 )
 
 const ecdsaValidatorProvider = new ECDSAValidatorProvider({
     provider,
-
-    /* defaultValidator is used by default
-    /* optionally you can specify the validator here
-    */
-
-    // validator
 });
 
 await ecdsaValidatorProvider.changeOwner(<New-Owner-Address>);

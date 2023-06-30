@@ -30,8 +30,7 @@ export interface KernelSmartAccountParams<
     owner: SmartAccountSigner;
     factoryAddress: Address;
     index?: bigint;
-    defaultValidator: VValidator;
-    validator?: VValidator;
+    validator: VValidator;
 }
 
 export class KernelSmartContractAccount<
@@ -41,7 +40,6 @@ export class KernelSmartContractAccount<
     private owner: SmartAccountSigner;
     private readonly factoryAddress: Address;
     private readonly index: bigint;
-    defaultValidator: VValidator;
     validator: VValidator;
 
 
@@ -50,8 +48,7 @@ export class KernelSmartContractAccount<
         this.index = params.index ?? 0n;
         this.owner = params.owner;
         this.factoryAddress = params.factoryAddress;
-        this.defaultValidator = params.defaultValidator!;
-        this.validator = params.validator ?? params.defaultValidator!;
+        this.validator = params.validator;
     }
 
     getDummySignature(): Hex {
@@ -137,7 +134,7 @@ export class KernelSmartContractAccount<
             return encodeFunctionData({
                 abi: KernelFactoryAbi,
                 functionName: "createAccount",
-                args: [this.defaultValidator.getAddress(), await this.defaultValidator.getEnableData(), this.index],
+                args: [this.validator.getAddress(), await this.validator.getEnableData(), this.index],
             });
         } catch (err: any) {
             console.error("err occurred:", err.message);

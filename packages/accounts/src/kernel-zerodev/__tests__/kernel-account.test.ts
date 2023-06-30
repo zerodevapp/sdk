@@ -73,7 +73,6 @@ describe("Kernel Account Tests", () => {
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
             index: index,
-            defaultValidator: owner === mockOwner ? mockValidator : validator,
             validator: owner === mockOwner ? mockValidator : validator
         }
         return new KernelSmartContractAccount(accountParams)
@@ -219,7 +218,6 @@ describe("Kernel Account Tests", () => {
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
             index: 1003n,
-            defaultValidator: validator,
             validator: validator
         }
         const account = new KernelSmartContractAccount(accountParams);
@@ -253,7 +251,6 @@ describe("Kernel Account Tests", () => {
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
             index: 0n,
-            defaultValidator: validator,
             validator: validator
         }
         const account = new KernelSmartContractAccount(accountParams);
@@ -293,7 +290,6 @@ describe("Kernel Account Tests", () => {
             owner: owner,
             factoryAddress: config.accountFactoryAddress,
             index: 0n,
-            defaultValidator: validator,
             validator: validator
         }
         const account = new KernelSmartContractAccount(accountParams);
