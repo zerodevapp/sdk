@@ -161,6 +161,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     ) => {
         const { method, params } = args;
         switch (method) {
+            case 'eth_chainId':
+                return this.chain.id
             case "eth_sendTransaction":
                 const [tx] = params as [RpcTransactionRequest];
                 return this.sendTransaction(tx);
