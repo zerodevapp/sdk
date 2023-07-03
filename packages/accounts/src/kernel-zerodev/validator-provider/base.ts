@@ -3,14 +3,12 @@ import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider";
 import type { KernelBaseValidator } from "../validator/base";
 import type { Hash } from "viem";
 import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types";
-import { KernelSmartContractAccount, type KernelSmartAccountParams } from "../account";
+import { KernelSmartContractAccount, type KernelSmartAccountParams, isKernelAccount } from "../account";
 import { polygonMumbai } from "viem/chains";
-
-type DefinedAccount = Exclude<ZeroDevProviderConfig<KernelBaseValidator>["account"], undefined>;
 
 export type ValidatorProviderParamsOpts = {
     paymasterConfig?: PaymasterConfig<PaymasterPolicy>;
-    providerConfig?: Omit<ZeroDevProviderConfig<KernelBaseValidator>, keyof ValidatorProviderParams>;
+    providerConfig?: Omit<ZeroDevProviderConfig, keyof ValidatorProviderParams>;
     accountConfig?: Omit<KernelSmartAccountParams, keyof ValidatorProviderParams>;
 };
 
@@ -60,21 +58,21 @@ export abstract class ValidatorProvider {
     };
 
     connectProvider = (
-        provider: ZeroDevProvider<KernelBaseValidator>
+        provider: ZeroDevProvider
     ): this => {
-        if (!this.provider.isConnected()) {
+        if (!isKernelAccount(this.provider.account)) {
             throw new Error(
-                "ValidatorProvider: account is not set, did you call `connect` first?"
+                "ValidatorProvider: account is not set or not kernel, did you call `connect` first?"
             );
         }
-        if (!((this.provider.account as DefinedAccount).validator)) {
+        if (!this.provider.account.validator) {
             throw new Error(
                 "ValidatorProvider: account is not set, did you call `connect` first?"
             );
         }
         defineReadOnly(this, "provider", provider);
 
-        this.validator = (this.provider.account as DefinedAccount).validator!;
+        this.validator = this.provider.account.validator;
 
         return this;
     };

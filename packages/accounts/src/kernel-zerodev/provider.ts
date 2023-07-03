@@ -14,23 +14,22 @@ import {
     type AccountMiddlewareFn
 } from "@alchemy/aa-core";
 import { BUNDLER_URL, ENTRYPOINT_ADDRESS } from "./constants";
-import { KernelSmartContractAccount } from "./account";
+import { KernelSmartContractAccount, isKernelAccount } from "./account";
 import { withZeroDevGasEstimator } from "./middleware/gas-estimator";
 import { isValidRequest } from "./utils/ERC4337-utils";
 import { InvalidOperation } from "./errors";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
 import { createZeroDevPublicErc4337Client } from "./client/create-client";
 import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
-import type { KernelBaseValidator } from "./validator/base";
 import { getChainId } from "./api";
 
 
-export type ZeroDevProviderConfig<VValidator extends KernelBaseValidator> = {
+export type ZeroDevProviderConfig = {
     projectId: string;
     chain: Chain | number;
     entryPointAddress?: Address;
     rpcUrl?: string;
-    account?: KernelSmartContractAccount<VValidator>;
+    account?: KernelSmartContractAccount;
     opts?: SmartAccountProviderOpts;
 };
 
@@ -44,7 +43,7 @@ type UserOpDataOperationTypes<T> =
     T extends BatchUserOperationCallData ? Operation.Call :
     never;
 
-export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBaseValidator> extends SmartAccountProvider<HttpTransport> {
+export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
     protected projectId: string;
 
@@ -55,7 +54,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         rpcUrl = BUNDLER_URL,
         account,
         opts,
-    }: ZeroDevProviderConfig<VValidator>) {
+    }: ZeroDevProviderConfig) {
         const _chain = typeof chain === "number" ? getChain(chain) : chain;
         const rpcClient = createZeroDevPublicErc4337Client({
             chain: _chain,
@@ -70,7 +69,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         withZeroDevGasEstimator(this);
     }
 
-    public static async init<VValidator extends KernelBaseValidator>(params: ZeroDevProviderConfig<VValidator>): Promise<ZeroDevProvider> {
+    public static async init(params: ZeroDevProviderConfig): Promise<ZeroDevProvider> {
         const chainId = await getChainId(params.projectId);
         if (!chainId) {
             throw new Error("ChainId not found");
@@ -86,10 +85,10 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         data: T,
         operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>,
     ): Promise<SendUserOperationResult> => {
-        if (!this.account) {
+        if (!isKernelAccount(this.account)) {
             throw new Error("account not connected!");
         }
-        if (!((this.account as KernelSmartContractAccount).validator)) {
+        if (!(this.account.validator)) {
             throw new Error("validator not connected!");
         }
 
@@ -141,7 +140,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
             );
         }
 
-        request.signature = await (this.account as KernelSmartContractAccount).validator!.getSignature(request);
+        request.signature = await this.account.validator.getSignature(request);
 
         return {
             hash: await this.rpcClient.sendUserOperation(
@@ -152,11 +151,11 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         };
     };
 
-    getAccount: () => KernelSmartContractAccount<VValidator> = () => {
-        if (!this.account) {
+    getAccount: () => KernelSmartContractAccount = () => {
+        if (!isKernelAccount(this.account)) {
             throw new Error("account not connected!");
         }
-        return this.account as KernelSmartContractAccount<VValidator>;
+        return this.account;
     };
 
 

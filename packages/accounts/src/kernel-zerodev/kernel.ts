@@ -1,6 +1,6 @@
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "./provider";
 import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
-import type { KernelBaseValidator, KernelBaseValidatorParams } from "./validator/base";
+import type { KernelBaseValidatorParams } from "./validator/base";
 import { KernelSmartContractAccount, type KernelSmartAccountParams } from "./account";
 import type { SupportedValidators } from "./validator/types";
 import { getChain, type SmartAccountSigner } from "@alchemy/aa-core";
@@ -9,7 +9,7 @@ import { Validators } from "./validator";
 
 export type CreateZeroDevProviderOpts = {
     paymasterConfig?: PaymasterConfig<PaymasterPolicy>;
-    providerConfig?: Omit<ZeroDevProviderConfig<KernelBaseValidator>, keyof CreateZeroDevProviderConfig>;
+    providerConfig?: Omit<ZeroDevProviderConfig, keyof CreateZeroDevProviderConfig>;
     accountConfig?: Omit<KernelSmartAccountParams, keyof CreateZeroDevProviderConfig>;
     validatorConfig?: Omit<KernelBaseValidatorParams, keyof CreateZeroDevProviderConfig>;
 };
@@ -21,7 +21,7 @@ export interface CreateZeroDevProviderConfig {
     opts?: CreateZeroDevProviderOpts;
 }
 
-export async function createZeroDevProvider(params: CreateZeroDevProviderConfig): Promise<ZeroDevProvider<KernelBaseValidator>> {
+export async function createZeroDevProvider(params: CreateZeroDevProviderConfig): Promise<ZeroDevProvider> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
         throw new Error("ChainId not found");

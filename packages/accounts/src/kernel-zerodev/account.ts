@@ -20,27 +20,29 @@ import { getChainId } from "./api";
 import { createZeroDevPublicErc4337Client } from "./client/create-client";
 
 export interface KernelSmartAccountParams<
-    VValidator extends KernelBaseValidator = KernelBaseValidator,
     TTransport extends Transport | FallbackTransport = Transport,
 > extends Partial<BaseSmartAccountParams<TTransport>> {
     projectId: string;
     owner: SmartAccountSigner;
     factoryAddress?: Address;
     index?: bigint;
-    validator?: VValidator;
+    validator?: KernelBaseValidator;
+}
+
+export function isKernelAccount(account: any): account is KernelSmartContractAccount {
+    return account && account.connectValidator !== undefined;
 }
 
 export class KernelSmartContractAccount<
-    VValidator extends KernelBaseValidator = KernelBaseValidator,
     TTransport extends Transport | FallbackTransport = Transport,
 > extends BaseSmartContractAccount<TTransport> {
     private owner: SmartAccountSigner;
     private readonly factoryAddress: Address;
     private readonly index: bigint;
-    validator?: VValidator;
+    validator?: KernelBaseValidator;
 
 
-    constructor(params: KernelSmartAccountParams<VValidator>) {
+    constructor(params: KernelSmartAccountParams) {
         super({ ...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS, chain: params.chain ?? polygonMumbai, rpcClient: params.rpcClient ?? BUNDLER_URL });
         this.index = params.index ?? 0n;
         this.owner = params.owner;
@@ -63,7 +65,7 @@ export class KernelSmartContractAccount<
         return instance;
     }
 
-    connectValidator(validator: VValidator): this {
+    connectValidator(validator: KernelBaseValidator): this {
         defineReadOnly(this, "validator", validator);
         return this;
     }

@@ -3,7 +3,7 @@ import { ValidatorProvider, type ValidatorProviderParamsOpts, type ValidatorProv
 import { ECDSAValidator } from "../validator/ecdsa-validator";
 import { getChainId } from "../api";
 import { polygonMumbai } from "viem/chains";
-import { KernelSmartContractAccount } from "../account";
+import { isKernelAccount } from "../account";
 
 export interface ECDSAValidatorProviderParams extends ValidatorProviderParams {
     opts?: ValidatorProviderParamsOpts & {
@@ -17,24 +17,28 @@ export class ECDSAValidatorProvider extends ValidatorProvider {
         const chain = typeof params.opts?.providerConfig?.chain === "number" ?
             getChain(params.opts.providerConfig.chain) :
             (params.opts?.providerConfig?.chain ?? polygonMumbai);
-        super({...params, opts: { 
-            ...params.opts,
-            providerConfig: {
-                chain,
-                ...params.opts?.providerConfig,
-            },
-            accountConfig: {
-                chain,
-                ...params.opts?.accountConfig,
+        super({
+            ...params, opts: {
+                ...params.opts,
+                providerConfig: {
+                    chain,
+                    ...params.opts?.providerConfig,
+                },
+                accountConfig: {
+                    chain,
+                    ...params.opts?.accountConfig,
+                }
             }
-        }});
+        });
         this.validator = new ECDSAValidator({
             projectId: params.projectId,
             owner: params.owner,
             chain,
             ...params.opts?.ecdsaValidatorConfig
         });
-        (this.provider.account as KernelSmartContractAccount).connectValidator(this.validator);
+        if (isKernelAccount(this.provider.account)) {
+            this.provider.account.connectValidator(this.validator);
+        }
     }
 
     public static async init(params: ECDSAValidatorProviderParams): Promise<ECDSAValidatorProvider> {
