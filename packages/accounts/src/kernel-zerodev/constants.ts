@@ -5,6 +5,9 @@ export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
 export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
 export const ENTRYPOINT_ADDRESS: Hex = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
+export const BACKEND_URL = "https://backend-vikp.onrender.com";
+export const ECDSA_VALIDATOR_ADDRESS = "0x180D6465F921C7E0DEA0040107D342c87455fFF5";
+export const KERNEL_FACTORY_ADDRESS = "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39";
 
 export const gasTokenChainAddresses: IGasTokenAddresses = {
     "USDC": {
@@ -25,7 +28,7 @@ export const gasTokenChainAddresses: IGasTokenAddresses = {
     }
 };
 
-export const ERC20_APPROVAL_AMOUNT: { [key: string]: bigint } = {
+export const ERC20_APPROVAL_AMOUNT: { [key: string]: bigint; } = {
     // ETH
     [gasTokenChainAddresses["USDC"][1]]: parseUnits('100', 6),
 
@@ -45,4 +48,4 @@ export const ERC20_APPROVAL_AMOUNT: { [key: string]: bigint } = {
     [gasTokenChainAddresses["PEPE"][1]]: parseUnits('50000000', 18),
 
     '0x3870419Ba2BBf0127060bCB37f69A1b1C090992B': parseUnits('100', 18)
-}
+};

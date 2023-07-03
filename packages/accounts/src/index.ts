@@ -10,6 +10,15 @@ export {
 } from "./kernel-zerodev/validator/base";
 export { ECDSAValidator } from "./kernel-zerodev/validator/ecdsa-validator";
 export { ECDSAValidatorProvider } from "./kernel-zerodev/validator-provider";
+export { ProviderBuilder } from "./kernel-zerodev/builder/provider-builder";
+export { ValidatorProviderBuilder } from "./kernel-zerodev/builder/validator-provider-builder";
+export {
+  KernelProvider,
+  KernelValidatorProvider,
+} from "./kernel-zerodev/kernel";
+export type { IProviderBuilder } from "./kernel-zerodev/builder/provider-builder";
+export type { IValidatorProviderBuilder } from "./kernel-zerodev/builder/validator-provider-builder";
+export type { KernelConfig, KernelProviderOpts } from "./kernel-zerodev/kernel";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base";
 export type { KernelSmartAccountParams } from "./kernel-zerodev/account";

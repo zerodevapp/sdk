@@ -1,7 +1,8 @@
-import { getUserOperationHash, type Hex, type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
+import { getChain, getUserOperationHash, type Hex, type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base";
 import { encodeFunctionData, toBytes } from "viem";
 import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi";
+import { getChainId } from "../api";
 
 export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
     owner: SmartAccountSigner;
@@ -10,10 +11,19 @@ export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
 export class ECDSAValidator extends KernelBaseValidator {
     protected owner: SmartAccountSigner;
 
-    constructor(params: ECDSAValidatorParams) {
+    private constructor(params: ECDSAValidatorParams) {
         super(params);
-        this.mode = params.mode;
         this.owner = params.owner;
+    }
+
+    public static async init(params: ECDSAValidatorParams): Promise<ECDSAValidator> {
+        const chainId = await getChainId(params.projectId);
+        if (!chainId) {
+            throw new Error("ChainId not found");
+        }
+        const chain = getChain(chainId);
+        const instance = new ECDSAValidator({ ...params, chain });
+        return instance;
     }
 
     async signer(): Promise<SmartAccountSigner> {
@@ -49,6 +59,9 @@ export class ECDSAValidator extends KernelBaseValidator {
     }
 
     async signUserOp(userOp: UserOperationRequest): Promise<Hex> {
+        if (!this.chain) {
+            throw new Error("Validator uninitialized");
+        }
         const hash = getUserOperationHash(
             {
                 ...userOp,
@@ -56,7 +69,7 @@ export class ECDSAValidator extends KernelBaseValidator {
             },
             this.entryPointAddress,
             BigInt(this.chain.id)
-        )
+        );
         const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
         return await this.owner.signMessage(formattedMessage);
     }

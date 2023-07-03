@@ -11,26 +11,23 @@ import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator, ValidatorMode } from "./validator/base";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi";
-import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest } from "@alchemy/aa-core";
-import { ENTRYPOINT_ADDRESS, MULTISEND_ADDR } from "./constants";
+import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest, defineReadOnly, getChain } from "@alchemy/aa-core";
+import { BUNDLER_URL, ENTRYPOINT_ADDRESS, KERNEL_FACTORY_ADDRESS, MULTISEND_ADDR } from "./constants";
 import { encodeMultiSend } from "./utils";
 import { MultiSendAbi } from "./abis/MultiSendAbi";
+import { polygonMumbai } from "viem/chains";
+import { getChainId } from "./api";
+import { createZeroDevPublicErc4337Client } from "./client/create-client";
 
-type WithOptional<T, K extends keyof T> = Pick<Partial<T>, K>;
-type WithRequired<T, K extends keyof T> = Required<Pick<T, K>>;
-type BaseSmartAccountParamsMod<
-    TTransport extends Transport | FallbackTransport = Transport,
-> = WithOptional<BaseSmartAccountParams<TTransport>, "entryPointAddress" | "accountAddress"> &
-    WithRequired<BaseSmartAccountParams<TTransport>, "rpcClient" | "chain">;
-    
 export interface KernelSmartAccountParams<
     VValidator extends KernelBaseValidator = KernelBaseValidator,
     TTransport extends Transport | FallbackTransport = Transport,
-> extends BaseSmartAccountParamsMod<TTransport> {
+> extends Partial<BaseSmartAccountParams<TTransport>> {
+    projectId: string;
     owner: SmartAccountSigner;
-    factoryAddress: Address;
+    factoryAddress?: Address;
     index?: bigint;
-    validator: VValidator;
+    validator?: VValidator;
 }
 
 export class KernelSmartContractAccount<
@@ -40,15 +37,35 @@ export class KernelSmartContractAccount<
     private owner: SmartAccountSigner;
     private readonly factoryAddress: Address;
     private readonly index: bigint;
-    validator: VValidator;
+    validator?: VValidator;
 
 
-    constructor(params: KernelSmartAccountParams<VValidator>) {
-        super({...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS});
+    private constructor(params: KernelSmartAccountParams<VValidator>) {
+        super({ ...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS, chain: params.chain ?? polygonMumbai, rpcClient: params.rpcClient ?? BUNDLER_URL });
         this.index = params.index ?? 0n;
         this.owner = params.owner;
-        this.factoryAddress = params.factoryAddress;
+        this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
         this.validator = params.validator;
+    }
+
+    public static async init(params: KernelSmartAccountParams): Promise<KernelSmartContractAccount> {
+        const chainId = await getChainId(params.projectId);
+        if (!chainId) {
+            throw new Error("ChainId not found");
+        }
+        const chain = getChain(chainId);
+        const rpcClient = typeof params.rpcClient === "string" ? createZeroDevPublicErc4337Client({
+            chain,
+            rpcUrl: params.rpcClient ?? BUNDLER_URL,
+            projectId: params.projectId,
+        }) : params.rpcClient;
+        const instance = new KernelSmartContractAccount({ ...params, chain, rpcClient });
+        return instance;
+    }
+
+    connectValidator(validator: VValidator): this {
+        defineReadOnly(this, "validator", validator);
+        return this;
     }
 
     getDummySignature(): Hex {
@@ -56,6 +73,9 @@ export class KernelSmartContractAccount<
     }
 
     async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         if (this.validator.mode !== ValidatorMode.sudo) {
             throw new Error("Validator Mode not supported");
         } else {
@@ -107,11 +127,17 @@ export class KernelSmartContractAccount<
     }
 
     async signMessage(msg: Uint8Array | string): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
         return await this.validator.signMessage(formattedMessage);
     }
 
     signUserOp(userOp: UserOperationRequest): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         return this.validator.signUserOp(userOp);
     }
 
@@ -130,6 +156,9 @@ export class KernelSmartContractAccount<
     }
 
     protected async getFactoryInitCode(): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         try {
             return encodeFunctionData({
                 abi: KernelFactoryAbi,

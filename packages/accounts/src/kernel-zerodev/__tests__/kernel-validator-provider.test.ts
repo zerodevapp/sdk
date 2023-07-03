@@ -1,14 +1,11 @@
 import { createPublicClient, http, type Hex } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi";
-import { type KernelSmartAccountParams, KernelSmartContractAccount } from "../account";
-import { ValidatorMode } from "../validator/base";
-import { ECDSAValidator } from "../validator/ecdsa-validator";
 import { config } from "./kernel-account.test";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { generatePrivateKey } from "viem/accounts";
-import { ZeroDevProvider } from "../provider";
-import { ECDSAValidatorProvider } from "../validator-provider/ecdsa-validator-provider";
+import { ValidatorProviderBuilder } from "../builder/validator-provider-builder";
+import { KernelValidatorProvider } from "../kernel";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Validator Provider Test", async () => {
@@ -16,52 +13,42 @@ describe("Kernel Validator Provider Test", async () => {
     const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey);
     const secondOwner = PrivateKeySigner.privateKeyToAccountSigner(generatePrivateKey());
 
-    const validator: ECDSAValidator = new ECDSAValidator(({
-        validatorAddress: config.validatorAddress,
-        mode: ValidatorMode.sudo,
-        owner,
-        chain: config.chain,
-    }));
-
-
-    let provider = new ZeroDevProvider({
-        projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
-        chain: config.chain,
-    });
     const client = createPublicClient({
         chain: polygonMumbai,
         transport: http()
     });
 
 
-    const accountParams: KernelSmartAccountParams<ECDSAValidator> = {
-        rpcClient: provider.rpcClient,
-        chain: config.chain,
-        owner: owner,
-        factoryAddress: config.accountFactoryAddress,
-        index: 10034n,
-        validator: validator
-    };
-    const account = new KernelSmartContractAccount(accountParams);
-
-    provider = provider.connect((_) => account).withZeroDevPaymasterAndData({ policy: "VERIFYING_PAYMASTER" });
-
-    let ecdsaValidatorProvider = new ECDSAValidatorProvider({
-        provider,
-    });
-
-
+    let accountAddress: Hex = "0x";
+    let validatorProviderBuilder = new ValidatorProviderBuilder();
+    let kernelValidatorProvider = new KernelValidatorProvider(validatorProviderBuilder);
     it("should change owner in ECDSAValidator plugin to new owner", async () => {
 
-
-        await provider.account!.getInitCode();
+        await kernelValidatorProvider.init({
+            projectId: config.projectId,
+            owner,
+            validatorType: "ECDSA",
+            opts: {
+                accountConfig: {
+                    index: 10041n,
+                },
+                paymasterConfig: {
+                    policy: "TOKEN_PAYMASTER",
+                    gasToken: "TEST_ERC20"
+                },
+            }
+        });
+        await validatorProviderBuilder.prepareValidatorProvider();
+        await (await validatorProviderBuilder.getAccount())!.getInitCode();
+        accountAddress = await (await validatorProviderBuilder.getAccount())!.getAddress();
+        let ecdsaValidatorProvider = await validatorProviderBuilder.buildValidatorProvider();
 
 
         const resp = await ecdsaValidatorProvider.changeOwner(await secondOwner.getAddress());
         await ecdsaValidatorProvider.waitForUserOperationTransaction(resp.hash as Hex);
         let currentOwnerNow = await client.readContract({
             functionName: "ecdsaValidatorStorage",
-            args: [await account.getAddress()],
+            args: [await ecdsaValidatorProvider.provider.account!.getAddress()],
             abi: ECDSAValidatorAbi,
             address: config.validatorAddress
         });
@@ -71,19 +58,29 @@ describe("Kernel Validator Provider Test", async () => {
 
     it("should change owner back to original owner in ECDSAValidator plugin", async () => {
 
-        const validator2: ECDSAValidator = new ECDSAValidator(({
-            validatorAddress: config.validatorAddress,
-            mode: ValidatorMode.sudo,
+        await kernelValidatorProvider.init({
+            projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
             owner: secondOwner,
-            chain: config.chain,
-        }));
-        const account2 = new KernelSmartContractAccount({ ...accountParams, owner: secondOwner, index: 0n, accountAddress: await account.getAddress(), validator: validator2 });
-        ecdsaValidatorProvider = ecdsaValidatorProvider.connectProvider(provider.connect((_) => account2));
+            opts: {
+                accountConfig: {
+                    index: 0n,
+                    accountAddress
+                },
+                paymasterConfig: {
+                    policy: "TOKEN_PAYMASTER",
+                    gasToken: "TEST_ERC20"
+                }
+            }
+        });
+        await validatorProviderBuilder.prepareValidatorProvider();
+        await (await validatorProviderBuilder.getAccount())!.getInitCode();
+        let ecdsaValidatorProvider = await validatorProviderBuilder.buildValidatorProvider();
+
         const resp2 = await ecdsaValidatorProvider.changeOwner(await owner.getAddress());
         await ecdsaValidatorProvider.waitForUserOperationTransaction(resp2.hash as Hex);
         let currentOwnerNow = (await client.readContract({
             functionName: "ecdsaValidatorStorage",
-            args: [await account.getAddress()],
+            args: [accountAddress],
             abi: ECDSAValidatorAbi,
             address: config.validatorAddress
         }));

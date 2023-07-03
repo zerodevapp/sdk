@@ -3,6 +3,7 @@ import axios from "axios";
 import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants";
 import type { ZeroDevProvider } from "../provider";
 import { hexifyUserOp } from "../utils/ERC4337-utils";
+import type { PaymasterAndBundlerProviders } from "./types";
 
 
 export abstract class Paymaster {
@@ -13,7 +14,8 @@ export abstract class Paymaster {
         callData?: PromiseOrValue<BytesLike>,
         gasTokenAddress?: string,
         erc20UserOp?: Partial<UserOperationStruct>,
-        erc20CallData?: PromiseOrValue<BytesLike>
+        erc20CallData?: PromiseOrValue<BytesLike>,
+        paymasterProvider?: PaymasterAndBundlerProviders
     ): Promise<any> {
         try {
             const hexifiedUserOp = deepHexlify(await resolveProperties(userOp));
@@ -34,7 +36,8 @@ export abstract class Paymaster {
                 callData: callData instanceof Promise ? await callData : callData,
                 tokenAddress: gasTokenAddress,
                 erc20UserOp: hexifiedERC20UserOp,
-                erc20CallData: erc20CallData instanceof Promise ? await erc20CallData : erc20CallData
+                erc20CallData: erc20CallData instanceof Promise ? await erc20CallData : erc20CallData,
+                paymasterProvider
             }).filter(([_, value]) => value !== undefined));
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/sign`, {
                 ...requestBodyParams

@@ -22,6 +22,7 @@ import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
 import { createZeroDevPublicErc4337Client } from "./client/create-client";
 import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
 import type { KernelBaseValidator } from "./validator/base";
+import { getChainId } from "./api";
 
 
 export type ZeroDevProviderConfig<VValidator extends KernelBaseValidator> = {
@@ -47,7 +48,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
 
     protected projectId: string;
 
-    constructor({
+    private constructor({
         projectId,
         chain,
         entryPointAddress = ENTRYPOINT_ADDRESS,
@@ -69,6 +70,16 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         withZeroDevGasEstimator(this);
     }
 
+    public static async init<VValidator extends KernelBaseValidator>(params: ZeroDevProviderConfig<VValidator>): Promise<ZeroDevProvider> {
+        const chainId = await getChainId(params.projectId);
+        if (!chainId) {
+            throw new Error("ChainId not found");
+        }
+        const chain = getChain(chainId);
+        const instance = new ZeroDevProvider({ ...params, chain });
+        return instance;
+    }
+
     getChain = (): Chain => this.chain;
     getProjectId = (): string => this.projectId;
 
@@ -78,6 +89,9 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
     ): Promise<SendUserOperationResult> => {
         if (!this.account) {
             throw new Error("account not connected!");
+        }
+        if (!((this.account as KernelSmartContractAccount).validator)) {
+            throw new Error("validator not connected!");
         }
 
         let callData: BytesLike = "0x";
@@ -105,8 +119,8 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         const uoStruct = await asyncPipe(
             this.dummyPaymasterDataMiddleware,
             this.feeDataGetter,
-            this.gasEstimator,
             this.paymasterDataMiddleware,
+            this.gasEstimator,
             this.customMiddleware ?? noOpMiddleware
         )({
             initCode,
@@ -128,7 +142,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
             );
         }
 
-        request.signature = await (this.account as KernelSmartContractAccount).validator.getSignature(request);
+        request.signature = await (this.account as KernelSmartContractAccount).validator!.getSignature(request);
 
         return {
             hash: await this.rpcClient.sendUserOperation(
