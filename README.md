@@ -42,26 +42,19 @@ const KERNEL_ACCOUNT_FACTORY_ADDRESS =
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
 const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
-// 2. Instantiate a Provider Builder
-const providerBuilder = new ProviderBuilder();
-
-// 3. Instantiate a Kernel Provider by passing in the Provider Builder instance
-// Kernel Provider is a preset which initiate the Provider Builder with all the necessary configurations
-// You can can build your own Provider builder with custom configurations if you want
-// without using the kernel provider
-const kernelProvider = new KernelProvider(providerBuilder);
-
-// 4. Initiate the Kernel Provider
-await kernelProvider.init({
+// 2. Create a ZeroDev Provider
+let provider = await createZeroDevProvider({
     projectId, // zeroDev projectId
     owner,
+    // Optional: pass the paymasterConfig to use the verifying paymaster
+    // opts: {
+    //     paymasterConfig: {
+    //         policy: "VERIFYING_PAYMASTER"
+    //     }
+    // }
 });
 
-// 5. Get the provider instance
-const provider = await providerBuilder.buildProvider();
-
-
-// 6. send a UserOperation
+// 3. send a UserOperation
 const { hash } = await provider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
@@ -76,10 +69,10 @@ ZeroDev currently supports:
   - `PEPE` (mainnet only)
   - `DAI` (upcoming)
 
-Just pass the `paymasterConfig` to `kernelProvider` while initializing.
+Just pass the `paymasterConfig` to `createZeroDevProvider` function while creating the provider.
 
 ```ts
-await kernelProvider.init({
+let provider = await createZeroDevProvider({
     projectId, // zeroDev projectId
     owner,
     opts: {
@@ -94,22 +87,13 @@ await kernelProvider.init({
 ### Change Kernel Account Owner in ECDSAValidator
 
 ```ts
-// 1. Instantiate a Validator Provider Builder and Kernel Validator Provider
-let validatorProviderBuilder = new ValidatorProviderBuilder();
-let kernelValidatorProvider = new KernelValidatorProvider(validatorProviderBuilder);
-
-// 2. Initiate the Kernel Validator Provider
-await kernelValidatorProvider.init({
-    projectId, // zeroDev projectId
+// 1. Create a ECDSAValidatorProvider
+const ecdsaValidatorProvider = await ECDSAValidatorProvider.init({
+    projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
     owner,
-    // Optional: by default, the validator mode is set to "ECDSA"
-    // validatorType: "ECDSA",
 });
 
-// 3. Get the validator provider instance
-let ecdsaValidatorProvider = await validatorProviderBuilder.buildValidatorProvider();
-
-// 4. Change the owner of the Kernel Account
+// 2. Change the owner of the Kernel Account
 const { hash } = await ecdsaValidatorProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```
 

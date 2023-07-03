@@ -40,7 +40,7 @@ export class KernelSmartContractAccount<
     validator?: VValidator;
 
 
-    private constructor(params: KernelSmartAccountParams<VValidator>) {
+    constructor(params: KernelSmartAccountParams<VValidator>) {
         super({ ...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS, chain: params.chain ?? polygonMumbai, rpcClient: params.rpcClient ?? BUNDLER_URL });
         this.index = params.index ?? 0n;
         this.owner = params.owner;

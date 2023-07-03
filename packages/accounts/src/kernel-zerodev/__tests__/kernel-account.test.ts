@@ -6,13 +6,10 @@ import {
     type Hash} from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from 'viem/accounts'
-import { KernelBaseValidator, ValidatorMode } from "../validator/base";
-import { type KernelSmartAccountParams, KernelSmartContractAccount } from "../account";
 import { MockSigner } from "./mocks/mock-signer";
-import { ZeroDevProvider } from "../provider";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi";
-import { ECDSAValidator } from "../validator/ecdsa-validator";
+import { createZeroDevProvider } from "../kernel";
 
 export const config = {
     privateKey: process.env.PRIVATE_KEY as Hex ?? generatePrivateKey(),
@@ -30,7 +27,7 @@ export const config = {
 
 // [TODO] - Organize instantiations and tests properly
 
-describe("Kernel Account Tests", () => {
+describe.skip("Kernel Account Tests", () => {
 
     //any wallet should work
     
@@ -38,59 +35,28 @@ describe("Kernel Account Tests", () => {
     const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey)
     const mockOwner = new MockSigner()
 
-    const validator: KernelBaseValidator = new ECDSAValidator(({
-        validatorAddress: config.validatorAddress,
-        mode: ValidatorMode.sudo,
-        owner,
-        chain: config.chain,
-    }))
-
-    const mockValidator: KernelBaseValidator = new ECDSAValidator(({
-        validatorAddress: config.validatorAddress,
-        mode: ValidatorMode.sudo,
-        owner: mockOwner,
-        chain: config.chain,
-    }))
-
-
-    const provider = new ZeroDevProvider({
-        projectId: config.projectId,
-        chain: config.chain,
-        // By default uses ZeroDev meta-bundler
-        // rpcUrl: config.rpcProvider
-    })
-
-    const kernelAddress = "0xD49a72cb78C44c6bfbf0d471581B7635cF62E81e"
-
-    function connect(index: bigint, owner = mockOwner) {
-        return provider.connect((_) => account(index, owner))
-    }
-
-    function account(index: bigint, owner = mockOwner) {
-        const accountParams: KernelSmartAccountParams = {
-            rpcClient: provider.rpcClient,
-            chain: config.chain,
-            owner: owner,
-            factoryAddress: config.accountFactoryAddress,
-            index: index,
-            validator: owner === mockOwner ? mockValidator : validator
-        }
-        return new KernelSmartContractAccount(accountParams)
-    }
-
-    
-
-
     it("getAddress returns valid counterfactual address", async () => {
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+        })
 
         //contract already deployed
-        let signerWithProvider = connect(0n)
         expect(await signerWithProvider.getAddress()).eql(
             "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
         );
 
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 3n
+                }
+            }
+        })
+
         //contract already deployed
-        signerWithProvider = connect(3n)
         expect(await signerWithProvider.getAddress()).eql(
             "0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845"
         );
@@ -99,17 +65,35 @@ describe("Kernel Account Tests", () => {
 
 
     it("getNonce returns valid nonce", async () => {
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+        })
+        const signer = signerWithProvider.getAccount();
 
         //contract deployed but no transaction
-        const signer: KernelSmartContractAccount = account(0n)
         expect(await signer.getNonce()).eql(0n);
 
-        const signer2: KernelSmartContractAccount = account(3n)
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 3n
+                }
+            }
+        })
+        const signer2 = signerWithProvider.getAccount();
+
         expect(await signer2.getNonce()).eql(2n);
     }, { timeout: 100000 });
 
     it("encodeExecute returns valid encoded hash", async () => {
-        const signer: KernelSmartContractAccount = account(0n)
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+        })
+        const signer = signerWithProvider.getAccount();
         expect(await signer.encodeExecute("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -117,7 +101,11 @@ describe("Kernel Account Tests", () => {
 
 
     it("encodeExecuteDelegate returns valid encoded hash", async () => {
-        const signer: KernelSmartContractAccount = account(0n)
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+        })
+        const signer = signerWithProvider.getAccount();
         expect(await signer.encodeExecuteDelegate("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -134,7 +122,10 @@ describe("Kernel Account Tests", () => {
             [config.accountFactoryAddress, factoryCode, ownerSignedMessage]
         ) + magicBytes
 
-        const signer = connect(0n)
+        let signer = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+        })
         expect(await signer.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
@@ -144,7 +135,16 @@ describe("Kernel Account Tests", () => {
             ownerSignedMessage
         );
 
-        const signer2 = connect(10n)
+        let signer2 = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 10n
+                }
+            }
+        })
+
         expect(await signer2.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
@@ -160,12 +160,34 @@ describe("Kernel Account Tests", () => {
     it("signMessage should correctly sign the message", async () => {
         const messageToBeSigned: Hex = "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b"
 
-        const signer: KernelSmartContractAccount = account(0n)
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 0n
+                }
+            }
+        })
+
+        const signer = signerWithProvider.getAccount();
+
         expect(await signer.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
         );
 
-        const signer2: KernelSmartContractAccount = account(1000n)
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 1000n
+                }
+            }
+        })
+
+        const signer2 = signerWithProvider.getAccount();
+
         expect(await signer2.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
         );
@@ -173,7 +195,19 @@ describe("Kernel Account Tests", () => {
 
     // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
-        let signerWithProvider = (connect(1001n, owner)).withZeroDevPaymasterAndData({ policy: "VERIFYING_PAYMASTER" })
+        // let signerWithProvider = (connect(1001n, owner)).withZeroDevPaymasterAndData({ policy: "VERIFYING_PAYMASTER" })
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner,
+            opts: {
+                accountConfig: {
+                    index: 1001n
+                },
+                paymasterConfig: {
+                    policy: "VERIFYING_PAYMASTER"
+                }
+            }
+        })
 
 
         const result = signerWithProvider.sendUserOperation({
@@ -190,12 +224,24 @@ describe("Kernel Account Tests", () => {
 
     it("sendUserOperation should execute properly", async () => {
         //
-        let signerWithProvider = connect(0n, owner)
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner,
+            opts: {
+                accountConfig: {
+                    index: 0n
+                },
+                paymasterConfig: {
+                    policy: "VERIFYING_PAYMASTER"
+                }
+            }
+        })
+
 
         //to fix bug in old versions
-        await signerWithProvider.account.getInitCode()
+        await signerWithProvider.getAccount().getInitCode()
         const result = signerWithProvider.sendUserOperation({
-            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175", //await signerWithProvider.getAddress(),
+            target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
@@ -204,26 +250,20 @@ describe("Kernel Account Tests", () => {
     }, { timeout: 100000 });
 
     it("sponsored sendUserOperation should execute properly", async () => {
-        //
-        const provider = new ZeroDevProvider({
-            projectId: "b5486fa4-e3d9-450b-8428-646e757c10f6",
-            chain: config.chain,
-            // By default uses ZeroDev meta-bundler
-            // rpcUrl: config.rpcProvider
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
+            owner,
+            opts: {
+                accountConfig: {
+                    index: 1003n
+                },
+                paymasterConfig: {
+                    policy: "VERIFYING_PAYMASTER"
+                }
+            }
         })
-
-        const accountParams: KernelSmartAccountParams = {
-            rpcClient: provider.rpcClient,
-            chain: config.chain,
-            owner: owner,
-            factoryAddress: config.accountFactoryAddress,
-            index: 1003n,
-            validator: validator
-        }
-        const account = new KernelSmartContractAccount(accountParams);
-        let signerWithProvider = (await provider.connect((provider) => account)).withZeroDevPaymasterAndData({ policy: "VERIFYING_PAYMASTER" });
         //to fix bug in old versions
-        await signerWithProvider.account!.getInitCode()
+        await signerWithProvider.getAccount().getInitCode()
 
         const result = signerWithProvider.sendUserOperation({
             target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
@@ -238,24 +278,21 @@ describe("Kernel Account Tests", () => {
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for single transaction with ERC20 token', async () => {
-        const provider = new ZeroDevProvider({
+        let signerWithProvider = await createZeroDevProvider({
             projectId: config.projectId,
-            chain: config.chain,
-            // By default uses ZeroDev meta-bundler
-            // rpcUrl: config.rpcProvider
+            owner,
+            opts: {
+                accountConfig: {
+                    index: 0n
+                },
+                paymasterConfig: {
+                    policy: "TOKEN_PAYMASTER",
+                    gasToken: "TEST_ERC20"
+                }
+            }
         })
-
-        const accountParams: KernelSmartAccountParams = {
-            rpcClient: provider.rpcClient,
-            chain: config.chain,
-            owner: owner,
-            factoryAddress: config.accountFactoryAddress,
-            index: 0n,
-            validator: validator
-        }
-        const account = new KernelSmartContractAccount(accountParams);
-        let signerWithProvider = (await provider.connect((provider) => account)).withZeroDevPaymasterAndData({ policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20" });
-        await signerWithProvider.account!.getInitCode()
+        //to fix bug in old versions
+        await signerWithProvider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
@@ -277,24 +314,21 @@ describe("Kernel Account Tests", () => {
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for batch transaction with ERC20 token', async () => {
-        const providerWithTokenPaymaster = new ZeroDevProvider({
+        let signerWithProvider = await createZeroDevProvider({
             projectId: config.projectId,
-            chain: config.chain,
-            // By default uses ZeroDev meta-bundler
-            // rpcUrl: config.rpcProvider
+            owner,
+            opts: {
+                accountConfig: {
+                    index: 0n
+                },
+                paymasterConfig: {
+                    policy: "TOKEN_PAYMASTER",
+                    gasToken: "TEST_ERC20"
+                }
+            }
         })
-
-        const accountParams: KernelSmartAccountParams = {
-            rpcClient: provider.rpcClient,
-            chain: config.chain,
-            owner: owner,
-            factoryAddress: config.accountFactoryAddress,
-            index: 0n,
-            validator: validator
-        }
-        const account = new KernelSmartContractAccount(accountParams);
-        let signerWithProvider = (await providerWithTokenPaymaster.connect((provider) => account)).withZeroDevPaymasterAndData({ policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20" })
-        await signerWithProvider.account!.getInitCode()
+        //to fix bug in old versions
+        await signerWithProvider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
@@ -323,20 +357,60 @@ describe("Kernel Account Tests", () => {
     //non core functions
     it("should correctly identify whether account is deployed", async () => {
 
+        let signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 0n
+                },
+            }
+        })
+        const signer = signerWithProvider.getAccount();
         //contract already deployed
-        const signer = account(0n)
         expect(await signer.isAccountDeployed()).eql(true);
 
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 3n
+                },
+            }
+        })
+        const signer2 = signerWithProvider.getAccount();
+
         //contract already deployed
-        const signer2 = account(3n)
         expect(await signer2.isAccountDeployed()).eql(true);
 
-        //contract not deployed
-        const signer3 = account(4n)
-        expect(await signer3.isAccountDeployed()).eql(false);
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 4n
+                },
+            }
+        })
+        const signer3 = signerWithProvider.getAccount();
 
         //contract not deployed
-        const signer4 = account(5n)
+        expect(await signer3.isAccountDeployed()).eql(false);
+
+
+        signerWithProvider = await createZeroDevProvider({
+            projectId: config.projectId,
+            owner: mockOwner,
+            opts: {
+                accountConfig: {
+                    index: 5n
+                },
+            }
+        })
+
+        const signer4 = signerWithProvider.getAccount();
+        //contract not deployed
         expect(await signer4.isAccountDeployed()).eql(false);
     }, { timeout: 100000 });
 

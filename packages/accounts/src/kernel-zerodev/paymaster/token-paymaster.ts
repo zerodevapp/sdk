@@ -1,4 +1,4 @@
-import type { PromiseOrValue, BytesLike, UserOperationCallData, UserOperationStruct } from "@alchemy/aa-core";
+import { type PromiseOrValue, type BytesLike, type UserOperationCallData, type UserOperationStruct } from "@alchemy/aa-core";
 import axios from "axios";
 import { type Hex, toHex, decodeFunctionData, encodeFunctionData } from "viem";
 import { ERC20Abi } from "../abis/ERC20Abi";
@@ -10,13 +10,16 @@ import type { ZeroDevProvider } from "../provider";
 import { getGasTokenAddress, type UserOperationCallDataWithDelegate } from "../utils";
 import { Paymaster } from "./base";
 import { type PaymasterConfig } from "./types";
+import { getChainId } from "../api";
 
 export class TokenPaymaster extends Paymaster {
     constructor(provider: ZeroDevProvider, protected paymasterConfig: PaymasterConfig<"TOKEN_PAYMASTER">) { super(provider); }
     async getPaymasterAddress(): Promise<Hex | undefined> {
+        const chainId = await getChainId(this.provider.getProjectId());
+
         try {
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/getPaymasterAddress`, {
-                chainId: this.provider.getChain().id,
+                chainId,
                 entryPointAddress: ENTRYPOINT_ADDRESS
             }, { headers: { 'Content-Type': 'application/json' } });
             return paymasterResp as Hex;
@@ -113,7 +116,10 @@ export class TokenPaymaster extends Paymaster {
             if (!mainCall) {
                 throw IncorrectCallDataForTokenPaymaster;
             }
-            const chainId = await this.provider.getChain().id;
+            const chainId = await getChainId(this.provider.getProjectId());
+            if (!chainId) {
+                throw new Error("ChainId not found");
+            }
             const gasTokenAddress = getGasTokenAddress(this.paymasterConfig.gasToken, chainId);
             let paymasterAddress = await this.getPaymasterAddress();
             if (gasTokenAddress !== undefined && paymasterAddress !== undefined) {

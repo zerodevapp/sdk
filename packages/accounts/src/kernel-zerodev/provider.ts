@@ -48,7 +48,7 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
 
     protected projectId: string;
 
-    private constructor({
+    constructor({
         projectId,
         chain,
         entryPointAddress = ENTRYPOINT_ADDRESS,
@@ -80,7 +80,6 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
         return instance;
     }
 
-    getChain = (): Chain => this.chain;
     getProjectId = (): string => this.projectId;
 
     sendUserOperation = async <T extends UserOperationCallData | BatchUserOperationCallData>(
@@ -151,6 +150,13 @@ export class ZeroDevProvider<VValidator extends KernelBaseValidator = KernelBase
             ),
             request,
         };
+    };
+
+    getAccount: () => KernelSmartContractAccount<VValidator> = () => {
+        if (!this.account) {
+            throw new Error("account not connected!");
+        }
+        return this.account as KernelSmartContractAccount<VValidator>;
     };
 
 

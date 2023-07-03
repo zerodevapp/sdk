@@ -1,107 +1,56 @@
+import { ZeroDevProvider, type ZeroDevProviderConfig } from "./provider";
+import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
+import type { KernelBaseValidator, KernelBaseValidatorParams } from "./validator/base";
+import { KernelSmartContractAccount, type KernelSmartAccountParams } from "./account";
+import type { SupportedValidators } from "./validator/types";
 import { getChain, type SmartAccountSigner } from "@alchemy/aa-core";
 import { getChainId } from "./api";
-import { ValidatorProviderBuilder } from "./builder/validator-provider-builder";
-import { createZeroDevPublicErc4337Client } from "./client/create-client";
-import { BUNDLER_URL } from "./constants";
-import type { SupportedValidators } from "./validator/types";
-import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
-import type { ZeroDevProviderConfig } from "./provider";
-import type { KernelBaseValidator, KernelBaseValidatorParams } from "./validator/base";
-import type { KernelSmartAccountParams } from "./account";
-import type { ProviderBuilder } from "./builder/provider-builder";
+import { Validators } from "./validator";
 
-export type KernelProviderOpts<V extends SupportedValidators> = {
+export type CreateZeroDevProviderOpts = {
     paymasterConfig?: PaymasterConfig<PaymasterPolicy>;
-    providerConfig?: Omit<ZeroDevProviderConfig<KernelBaseValidator>, keyof KernelConfig<V>>;
-    accountConfig?: Omit<KernelSmartAccountParams, keyof KernelConfig<V>>;
-    validatorConfig?: Omit<KernelBaseValidatorParams, keyof KernelConfig<V>>;
+    providerConfig?: Omit<ZeroDevProviderConfig<KernelBaseValidator>, keyof CreateZeroDevProviderConfig>;
+    accountConfig?: Omit<KernelSmartAccountParams, keyof CreateZeroDevProviderConfig>;
+    validatorConfig?: Omit<KernelBaseValidatorParams, keyof CreateZeroDevProviderConfig>;
 };
 
-export interface KernelConfig<V extends SupportedValidators> {
+export interface CreateZeroDevProviderConfig {
     projectId: string;
     owner: SmartAccountSigner;
-    validatorType?: V;
-    opts?: KernelProviderOpts<V>;
+    validatorType?: SupportedValidators;
+    opts?: CreateZeroDevProviderOpts;
 }
 
-// A director class for the provider builder
-export class KernelProvider<V extends SupportedValidators = "ECDSA"> {
-    private providerBuilder: ProviderBuilder<V>;
-
-    constructor(providerBuilder: ProviderBuilder<V>) {
-        this.providerBuilder = providerBuilder;
+export async function createZeroDevProvider(params: CreateZeroDevProviderConfig): Promise<ZeroDevProvider<KernelBaseValidator>> {
+    const chainId = await getChainId(params.projectId);
+    if (!chainId) {
+        throw new Error("ChainId not found");
     }
+    const chain = getChain(chainId);
+    let provider = new ZeroDevProvider({
+        projectId: params.projectId,
+        chain,
+        ...params.opts?.providerConfig,
+    });
 
-    public async init(params: KernelConfig<V>): Promise<void> {
-        const chainId = await getChainId(params.projectId);
-        if (!chainId) {
-            throw new Error("ChainId not found");
-        }
-        const chain = getChain(chainId);
-        const rpcClient = createZeroDevPublicErc4337Client({
-            chain,
-            rpcUrl: BUNDLER_URL,
-            projectId: params.projectId
-        });
-        this.providerBuilder
-            .setProjectId(params.projectId)
-            .setOwner(params.owner)
-            .setProvider({
-                chain,
-                ...params.opts?.providerConfig,
-            }).setAccount({
-                rpcClient,
-                ...params.opts?.accountConfig
-            }).setValidator({
-                ...params.opts?.validatorConfig
-            }, params.validatorType);
+    const validator = await Validators[params.validatorType ?? "ECDSA"]({
+        projectId: params.projectId,
+        owner: params.owner,
+        ...params.opts?.validatorConfig,
+    });
 
-        if (params.opts?.paymasterConfig) {
-            this.providerBuilder.setPaymasterConfig(params.opts.paymasterConfig);
-        }
+    provider.connect(() =>
+        new KernelSmartContractAccount({
+            projectId: params.projectId,
+            owner: params.owner,
+            validator,
+            rpcClient: provider.rpcClient,
+            ...params.opts?.accountConfig,
+        })
+    );
+    if (params.opts?.paymasterConfig) {
+        provider = provider.withZeroDevPaymasterAndData(params.opts.paymasterConfig);
     }
-}
+    return provider;
 
-// A director class for the validator provider builder
-export class KernelValidatorProvider<V extends SupportedValidators> {
-    private validatorProviderBuilder: ValidatorProviderBuilder<V>;
-
-    constructor(validatorProviderBuilder: ValidatorProviderBuilder<V>) {
-
-        this.validatorProviderBuilder = validatorProviderBuilder;
-    }
-
-    public async init(params: KernelConfig<V>): Promise<void> {
-        const chainId = await getChainId(params.projectId);
-        if (!chainId) {
-            throw new Error("ChainId not found");
-        }
-        const chain = getChain(chainId);
-        const rpcClient = createZeroDevPublicErc4337Client({
-            chain,
-            rpcUrl: BUNDLER_URL,
-            projectId: params.projectId
-        });
-        this.validatorProviderBuilder
-            .setProjectId(params.projectId)
-            .setOwner(params.owner)
-            .setProvider({
-                chain,
-                ...params.opts?.providerConfig,
-            }).setAccount({
-                rpcClient,
-                ...params.opts?.accountConfig
-            }).setValidator({
-                ...params.opts?.validatorConfig
-            }, params.validatorType)
-            .setValidatorProvider(
-                {
-                    provider: await this.validatorProviderBuilder.getProvider(),
-                }
-            );
-
-        if (params.opts?.paymasterConfig) {
-            this.validatorProviderBuilder.setPaymasterConfig(params.opts.paymasterConfig);
-        }
-    }
 }

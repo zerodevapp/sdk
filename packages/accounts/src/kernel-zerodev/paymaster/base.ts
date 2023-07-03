@@ -4,6 +4,7 @@ import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants";
 import type { ZeroDevProvider } from "../provider";
 import { hexifyUserOp } from "../utils/ERC4337-utils";
 import type { PaymasterAndBundlerProviders } from "./types";
+import { getChainId } from "../api";
 
 
 export abstract class Paymaster {
@@ -28,9 +29,11 @@ export abstract class Paymaster {
                 hexifiedERC20UserOp = hexifyUserOp(resolvedERC20UserOp)
 
             }
+            const chainId = await getChainId(this.provider.getProjectId());
+            if (!chainId) throw new Error("ChainId not found");
             let requestBodyParams = Object.fromEntries(Object.entries({
                 projectId: this.provider.getProjectId(),
-                chainId: this.provider.getChain().id,
+                chainId,
                 userOp: hexifiedUserOp,
                 entryPointAddress: ENTRYPOINT_ADDRESS,
                 callData: callData instanceof Promise ? await callData : callData,

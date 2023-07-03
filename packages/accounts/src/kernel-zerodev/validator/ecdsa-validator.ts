@@ -11,7 +11,7 @@ export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
 export class ECDSAValidator extends KernelBaseValidator {
     protected owner: SmartAccountSigner;
 
-    private constructor(params: ECDSAValidatorParams) {
+    constructor(params: ECDSAValidatorParams) {
         super(params);
         this.owner = params.owner;
     }
