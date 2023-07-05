@@ -17,4 +17,3 @@ export type * from "./kernel-zerodev/paymaster/types";
 export * as constants from "./kernel-zerodev/constants";
 export { KernelSmartContractAccount } from "./kernel-zerodev/account";
 export { ZeroDevProvider } from "./kernel-zerodev/provider";
-export { createProvider } from "./kernel-zerodev/validator-provider/validator-provider-factory";

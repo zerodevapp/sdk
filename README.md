@@ -43,7 +43,7 @@ const KERNEL_ACCOUNT_FACTORY_ADDRESS =
 const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
 // 2. Create a ZeroDev Provider
-let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+let ecdsaProvider = await ECDSAProvider.init({
     projectId, // zeroDev projectId
     owner,
     // Optional: pass the paymasterConfig to use the verifying paymaster
@@ -72,7 +72,7 @@ ZeroDev currently supports:
 Just pass the `paymasterConfig` to `createZeroDevProvider` function while creating the provider.
 
 ```ts
-let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+let ecdsaProvider = await ECDSAProvider.init({
     projectId, // zeroDev projectId
     owner,
     opts: {
@@ -88,7 +88,7 @@ let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
 
 ```ts
 // 1. Create a ECDSAValidatorProvider
-const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+const ecdsaProvider = await ECDSAProvider.init({
     projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
     owner,
 });

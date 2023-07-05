@@ -4,7 +4,7 @@ import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi";
 import { config } from "./kernel-account.test";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { generatePrivateKey } from "viem/accounts";
-import { createProvider } from "../validator-provider/validator-provider-factory";
+import { ECDSAProvider } from "../validator-provider";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Validator Provider Test", async () => {
@@ -21,7 +21,7 @@ describe("Kernel Validator Provider Test", async () => {
     let accountAddress: Hex = "0x";
 
     it("should change owner in ECDSAValidator plugin to new owner", async () => {
-        const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        const ecdsaProvider = await ECDSAProvider.init({
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner,
             opts: {
@@ -49,7 +49,7 @@ describe("Kernel Validator Provider Test", async () => {
     }, { timeout: 100000 });
 
     it("should change owner back to original owner in ECDSAValidator plugin", async () => {
-        const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        const ecdsaProvider = await ECDSAProvider.init({
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner: secondOwner,
             opts: {

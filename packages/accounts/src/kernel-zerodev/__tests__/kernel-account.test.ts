@@ -9,7 +9,7 @@ import { generatePrivateKey } from 'viem/accounts'
 import { MockSigner } from "./mocks/mock-signer";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi";
-import { createProvider } from "../validator-provider/validator-provider-factory";
+import { ECDSAProvider } from "../validator-provider";
 
 export const config = {
     privateKey: process.env.PRIVATE_KEY as Hex ?? generatePrivateKey(),
@@ -36,7 +36,7 @@ describe.skip("Kernel Account Tests", () => {
     const mockOwner = new MockSigner()
 
     it("getAddress returns valid counterfactual address", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -46,7 +46,7 @@ describe.skip("Kernel Account Tests", () => {
             "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
         );
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -65,7 +65,7 @@ describe.skip("Kernel Account Tests", () => {
 
 
     it("getNonce returns valid nonce", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -75,7 +75,7 @@ describe.skip("Kernel Account Tests", () => {
         //contract deployed but no transaction
         expect(await signer.getNonce()).eql(0n);
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -91,7 +91,7 @@ describe.skip("Kernel Account Tests", () => {
     }, { timeout: 100000 });
 
     it("encodeExecute returns valid encoded hash", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -103,7 +103,7 @@ describe.skip("Kernel Account Tests", () => {
 
 
     it("encodeExecuteDelegate returns valid encoded hash", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -124,7 +124,7 @@ describe.skip("Kernel Account Tests", () => {
             [config.accountFactoryAddress, factoryCode, ownerSignedMessage]
         ) + magicBytes
 
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -138,7 +138,7 @@ describe.skip("Kernel Account Tests", () => {
             ownerSignedMessage
         );
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -163,7 +163,7 @@ describe.skip("Kernel Account Tests", () => {
     it("signMessage should correctly sign the message", async () => {
         const messageToBeSigned: Hex = "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b"
 
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -174,7 +174,7 @@ describe.skip("Kernel Account Tests", () => {
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
         );
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -193,7 +193,7 @@ describe.skip("Kernel Account Tests", () => {
 
     // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner,
             opts: {
@@ -219,7 +219,7 @@ describe.skip("Kernel Account Tests", () => {
     // have deposited some matic balance for counterfactual address at entrypoint
 
     it("sendUserOperation should execute properly", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner,
             opts: {
@@ -242,7 +242,7 @@ describe.skip("Kernel Account Tests", () => {
     }, { timeout: 100000 });
 
     it("sponsored sendUserOperation should execute properly", async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner,
             opts: {
@@ -271,7 +271,7 @@ describe.skip("Kernel Account Tests", () => {
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for single transaction with ERC20 token', async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner,
             opts: {
@@ -304,7 +304,7 @@ describe.skip("Kernel Account Tests", () => {
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for batch transaction with ERC20 token', async () => {
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner,
             opts: {
@@ -345,7 +345,7 @@ describe.skip("Kernel Account Tests", () => {
     //non core functions
     it("should correctly identify whether account is deployed", async () => {
 
-        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        let ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
         });
@@ -353,7 +353,7 @@ describe.skip("Kernel Account Tests", () => {
         //contract already deployed
         expect(await signer.isAccountDeployed()).eql(true);
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -367,7 +367,7 @@ describe.skip("Kernel Account Tests", () => {
         //contract already deployed
         expect(await signer2.isAccountDeployed()).eql(true);
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -382,7 +382,7 @@ describe.skip("Kernel Account Tests", () => {
         expect(await signer3.isAccountDeployed()).eql(false);
 
 
-        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
+        ecdsaProvider = await ECDSAProvider.init({
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
