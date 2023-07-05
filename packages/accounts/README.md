@@ -55,7 +55,7 @@ let ecdsaProvider = await ECDSAProvider.init({
 });
 
 // 3. send a UserOperation
-const { hash } = await ecdsaProvider.provider.sendUserOperation({
+const { hash } = await ecdsaProvider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined

@@ -34,13 +34,13 @@ describe("Kernel Validator Provider Test", async () => {
             }
         });
 
-        await ecdsaProvider.provider.getAccount().getInitCode();
-        accountAddress = await ecdsaProvider.provider.getAccount().getAddress();
+        await ecdsaProvider.getAccount().getInitCode();
+        accountAddress = await ecdsaProvider.getAccount().getAddress();
         const resp = await ecdsaProvider.changeOwner(await secondOwner.getAddress());
         await ecdsaProvider.waitForUserOperationTransaction(resp.hash as Hex);
         let currentOwnerNow = await client.readContract({
             functionName: "ecdsaValidatorStorage",
-            args: [await ecdsaProvider.provider.getAccount().getAddress()],
+            args: [await ecdsaProvider.getAccount().getAddress()],
             abi: ECDSAValidatorAbi,
             address: config.validatorAddress
         });
@@ -63,7 +63,7 @@ describe("Kernel Validator Provider Test", async () => {
             }
         });
 
-        await ecdsaProvider.provider.getAccount().getInitCode();
+        await ecdsaProvider.getAccount().getInitCode();
 
         const resp2 = await ecdsaProvider.changeOwner(await owner.getAddress());
         await ecdsaProvider.waitForUserOperationTransaction(resp2.hash as Hex);

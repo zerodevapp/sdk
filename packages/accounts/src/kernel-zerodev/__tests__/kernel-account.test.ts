@@ -42,7 +42,7 @@ describe.skip("Kernel Account Tests", () => {
         });
 
         //contract already deployed
-        expect(await ecdsaProvider.provider.getAddress()).eql(
+        expect(await ecdsaProvider.getAddress()).eql(
             "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
         );
 
@@ -57,7 +57,7 @@ describe.skip("Kernel Account Tests", () => {
         });
 
         //contract already deployed
-        expect(await ecdsaProvider.provider.getAddress()).eql(
+        expect(await ecdsaProvider.getAddress()).eql(
             "0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845"
         );
 
@@ -70,7 +70,7 @@ describe.skip("Kernel Account Tests", () => {
             owner: mockOwner,
         });
 
-        const signer = ecdsaProvider.provider.getAccount();
+        const signer = ecdsaProvider.getAccount();
 
         //contract deployed but no transaction
         expect(await signer.getNonce()).eql(0n);
@@ -85,7 +85,7 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
 
-        const signer2 = ecdsaProvider.provider.getAccount();
+        const signer2 = ecdsaProvider.getAccount();
 
         expect(await signer2.getNonce()).eql(2n);
     }, { timeout: 100000 });
@@ -95,7 +95,7 @@ describe.skip("Kernel Account Tests", () => {
             projectId: config.projectId,
             owner: mockOwner,
         });
-        const signer = ecdsaProvider.provider.getAccount();
+        const signer = ecdsaProvider.getAccount();
         expect(await signer.encodeExecute("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -107,7 +107,7 @@ describe.skip("Kernel Account Tests", () => {
             projectId: config.projectId,
             owner: mockOwner,
         });
-        const signer = ecdsaProvider.provider.getAccount();
+        const signer = ecdsaProvider.getAccount();
         expect(await signer.encodeExecuteDelegate("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -129,10 +129,10 @@ describe.skip("Kernel Account Tests", () => {
             owner: mockOwner,
         });
 
-        expect(await ecdsaProvider.provider.request({
+        expect(await ecdsaProvider.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
-                await ecdsaProvider.provider.getAddress()
+                await ecdsaProvider.getAddress()
             ]
         })).toBe(
             ownerSignedMessage
@@ -148,10 +148,10 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
 
-        expect(await ecdsaProvider.provider.request({
+        expect(await ecdsaProvider.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
-                await ecdsaProvider.provider.getAddress()
+                await ecdsaProvider.getAddress()
             ]
         })).toBe(
             signature
@@ -168,7 +168,7 @@ describe.skip("Kernel Account Tests", () => {
             owner: mockOwner,
         });
 
-        const signer = ecdsaProvider.provider.getAccount();
+        const signer = ecdsaProvider.getAccount();
 
         expect(await signer.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
@@ -184,7 +184,7 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
 
-        const signer2 = ecdsaProvider.provider.getAccount();
+        const signer2 = ecdsaProvider.getAccount();
 
         expect(await signer2.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
@@ -206,8 +206,8 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
 
-        const result = ecdsaProvider.provider.sendUserOperation({
-            target: await ecdsaProvider.provider.getAddress(),
+        const result = ecdsaProvider.sendUserOperation({
+            target: await ecdsaProvider.getAddress(),
             data: "0x",
         });
 
@@ -231,14 +231,14 @@ describe.skip("Kernel Account Tests", () => {
 
 
         //to fix bug in old versions
-        await ecdsaProvider.provider.getAccount().getInitCode()
-        const result = ecdsaProvider.provider.sendUserOperation({
+        await ecdsaProvider.getAccount().getInitCode()
+        const result = ecdsaProvider.sendUserOperation({
             target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
         await expect(result).resolves.not.toThrowError();
-        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     it("sponsored sendUserOperation should execute properly", async () => {
@@ -256,15 +256,15 @@ describe.skip("Kernel Account Tests", () => {
         });
 
         //to fix bug in old versions
-        await ecdsaProvider.provider.getAccount().getInitCode()
+        await ecdsaProvider.getAccount().getInitCode()
 
-        const result = ecdsaProvider.provider.sendUserOperation({
+        const result = ecdsaProvider.sendUserOperation({
             target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
         await expect(result).resolves.not.toThrowError();
-        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     //NOTE - this test case will only work if you
@@ -282,14 +282,14 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
         //to fix bug in old versions
-        await ecdsaProvider.provider.getAccount().getInitCode()
+        await ecdsaProvider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
-            args: [await ecdsaProvider.provider.getAddress(), "700000000000000000"],
+            args: [await ecdsaProvider.getAddress(), "700000000000000000"],
             functionName: "mint"
         })
-        const result = ecdsaProvider.provider.sendUserOperation({
+        const result = ecdsaProvider.sendUserOperation({
             target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
             data: mintData,
             value: 0n
@@ -297,7 +297,7 @@ describe.skip("Kernel Account Tests", () => {
 
         await expect(result).resolves.not.toThrowError();
 
-        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     //NOTE - this test case will only work if you
@@ -316,11 +316,11 @@ describe.skip("Kernel Account Tests", () => {
         });
 
         //to fix bug in old versions
-        await ecdsaProvider.provider.getAccount().getInitCode()
+        await ecdsaProvider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
-            args: [await ecdsaProvider.provider.getAddress(), "133700000000000000"],
+            args: [await ecdsaProvider.getAddress(), "133700000000000000"],
             functionName: "mint"
         })
         const transferData = encodeFunctionData({
@@ -328,7 +328,7 @@ describe.skip("Kernel Account Tests", () => {
             args: [await owner.getAddress(), "133700000000"],
             functionName: "transfer"
         })
-        const result = ecdsaProvider.provider.sendUserOperation([{
+        const result = ecdsaProvider.sendUserOperation([{
             target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
             data: mintData,
             value: 0n
@@ -349,7 +349,7 @@ describe.skip("Kernel Account Tests", () => {
             projectId: config.projectId,
             owner: mockOwner,
         });
-        const signer = ecdsaProvider.provider.getAccount();
+        const signer = ecdsaProvider.getAccount();
         //contract already deployed
         expect(await signer.isAccountDeployed()).eql(true);
 
@@ -362,7 +362,7 @@ describe.skip("Kernel Account Tests", () => {
                 },
             }
         });
-        const signer2 = ecdsaProvider.provider.getAccount();
+        const signer2 = ecdsaProvider.getAccount();
 
         //contract already deployed
         expect(await signer2.isAccountDeployed()).eql(true);
@@ -376,7 +376,7 @@ describe.skip("Kernel Account Tests", () => {
                 },
             }
         });
-        const signer3 = ecdsaProvider.provider.getAccount();
+        const signer3 = ecdsaProvider.getAccount();
 
         //contract not deployed
         expect(await signer3.isAccountDeployed()).eql(false);
@@ -392,7 +392,7 @@ describe.skip("Kernel Account Tests", () => {
             }
         });
 
-        const signer4 = ecdsaProvider.provider.getAccount();
+        const signer4 = ecdsaProvider.getAccount();
         //contract not deployed
         expect(await signer4.isAccountDeployed()).eql(false);
     }, { timeout: 100000 });

@@ -21,7 +21,6 @@ import { InvalidOperation } from "./errors";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster";
 import { createZeroDevPublicErc4337Client } from "./client/create-client";
 import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
-import { getChainId } from "./api";
 
 
 export type ZeroDevProviderConfig = {
@@ -67,16 +66,6 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         this.projectId = projectId;
 
         withZeroDevGasEstimator(this);
-    }
-
-    public static async init(params: ZeroDevProviderConfig): Promise<ZeroDevProvider> {
-        const chainId = await getChainId(params.projectId);
-        if (!chainId) {
-            throw new Error("ChainId not found");
-        }
-        const chain = getChain(chainId);
-        const instance = new ZeroDevProvider({ ...params, chain });
-        return instance;
     }
 
     getProjectId = (): string => this.projectId;
