@@ -10,7 +10,10 @@ export const withZeroDevGasEstimator = (
 
     provider.withFeeDataGetter(async () => {
         try {
-            const { maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(provider);
+            let { maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(provider);
+            if (maxPriorityFeePerGas < provider.minPriorityFeePerBid) {
+                maxPriorityFeePerGas = provider.minPriorityFeePerBid;
+            }
             return {
                 maxFeePerGas,
                 maxPriorityFeePerGas
@@ -22,10 +25,13 @@ export const withZeroDevGasEstimator = (
         }
 
         const feeData = await getFeeData(provider);
-        const maxFeePerGas = feeData?.maxFeePerGas ?? 0n;
-        const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 0n;
+        const maxFeePerGas = feeData?.maxFeePerGas ? BigInt(feeData?.maxFeePerGas) : 0n;
+        let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ? BigInt(feeData.maxPriorityFeePerGas) : 0n;
+        if (maxPriorityFeePerGas < provider.minPriorityFeePerBid) {
+            maxPriorityFeePerGas = provider.minPriorityFeePerBid;
+        }
         return { maxFeePerGas, maxPriorityFeePerGas };
-    })
+    });
 
     provider.withGasEstimator(async (struct) => {
         if (struct.callGasLimit !== undefined && struct.verificationGasLimit !== undefined && struct.preVerificationGas !== undefined) {
