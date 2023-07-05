@@ -4,7 +4,7 @@ import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi";
 import { config } from "./kernel-account.test";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { generatePrivateKey } from "viem/accounts";
-import { ECDSAValidatorProvider } from "../validator-provider";
+import { createProvider } from "../validator-provider/validator-provider-factory";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Validator Provider Test", async () => {
@@ -21,7 +21,7 @@ describe("Kernel Validator Provider Test", async () => {
     let accountAddress: Hex = "0x";
 
     it("should change owner in ECDSAValidator plugin to new owner", async () => {
-        const ecdsaValidatorProvider = await ECDSAValidatorProvider.init({
+        const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner,
             opts: {
@@ -34,13 +34,13 @@ describe("Kernel Validator Provider Test", async () => {
             }
         });
 
-        await ecdsaValidatorProvider.provider.getAccount().getInitCode();
-        accountAddress = await ecdsaValidatorProvider.provider.getAccount().getAddress();
-        const resp = await ecdsaValidatorProvider.changeOwner(await secondOwner.getAddress());
-        await ecdsaValidatorProvider.waitForUserOperationTransaction(resp.hash as Hex);
+        await ecdsaProvider.provider.getAccount().getInitCode();
+        accountAddress = await ecdsaProvider.provider.getAccount().getAddress();
+        const resp = await ecdsaProvider.changeOwner(await secondOwner.getAddress());
+        await ecdsaProvider.waitForUserOperationTransaction(resp.hash as Hex);
         let currentOwnerNow = await client.readContract({
             functionName: "ecdsaValidatorStorage",
-            args: [await ecdsaValidatorProvider.provider.getAccount().getAddress()],
+            args: [await ecdsaProvider.provider.getAccount().getAddress()],
             abi: ECDSAValidatorAbi,
             address: config.validatorAddress
         });
@@ -49,7 +49,7 @@ describe("Kernel Validator Provider Test", async () => {
     }, { timeout: 100000 });
 
     it("should change owner back to original owner in ECDSAValidator plugin", async () => {
-        const ecdsaValidatorProvider = await ECDSAValidatorProvider.init({
+        const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner: secondOwner,
             opts: {
@@ -63,10 +63,10 @@ describe("Kernel Validator Provider Test", async () => {
             }
         });
 
-        await ecdsaValidatorProvider.provider.getAccount().getInitCode();
+        await ecdsaProvider.provider.getAccount().getInitCode();
 
-        const resp2 = await ecdsaValidatorProvider.changeOwner(await owner.getAddress());
-        await ecdsaValidatorProvider.waitForUserOperationTransaction(resp2.hash as Hex);
+        const resp2 = await ecdsaProvider.changeOwner(await owner.getAddress());
+        await ecdsaProvider.waitForUserOperationTransaction(resp2.hash as Hex);
         let currentOwnerNow = (await client.readContract({
             functionName: "ecdsaValidatorStorage",
             args: [accountAddress],

@@ -9,12 +9,7 @@ export {
   KernelBaseValidator,
 } from "./kernel-zerodev/validator/base";
 export { ECDSAValidator } from "./kernel-zerodev/validator/ecdsa-validator";
-export { ECDSAValidatorProvider } from "./kernel-zerodev/validator-provider";
-export { createZeroDevProvider } from "./kernel-zerodev/kernel";
-export type {
-  CreateZeroDevProviderConfig,
-  CreateZeroDevProviderOpts,
-} from "./kernel-zerodev/kernel";
+export { ECDSAProvider } from "./kernel-zerodev/validator-provider";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base";
 export type { KernelSmartAccountParams } from "./kernel-zerodev/account";
@@ -22,3 +17,4 @@ export type * from "./kernel-zerodev/paymaster/types";
 export * as constants from "./kernel-zerodev/constants";
 export { KernelSmartContractAccount } from "./kernel-zerodev/account";
 export { ZeroDevProvider } from "./kernel-zerodev/provider";
+export { createProvider } from "./kernel-zerodev/validator-provider/validator-provider-factory";

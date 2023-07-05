@@ -11,5 +11,5 @@ export type ValidatorParamsMap = {
 };
 
 export type ValidatorMap = {
-    [V in SupportedValidators]: (params: ValidatorParamsMap[V]) => Promise<ValidatorTypeMap[V]>
+    [V in SupportedValidators]: new (params: ValidatorParamsMap[V]) => ValidatorTypeMap[V]
 };

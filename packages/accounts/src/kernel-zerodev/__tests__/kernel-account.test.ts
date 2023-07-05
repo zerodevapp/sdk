@@ -9,7 +9,7 @@ import { generatePrivateKey } from 'viem/accounts'
 import { MockSigner } from "./mocks/mock-signer";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi";
-import { createZeroDevProvider } from "../kernel";
+import { createProvider } from "../validator-provider/validator-provider-factory";
 
 export const config = {
     privateKey: process.env.PRIVATE_KEY as Hex ?? generatePrivateKey(),
@@ -36,17 +36,17 @@ describe.skip("Kernel Account Tests", () => {
     const mockOwner = new MockSigner()
 
     it("getAddress returns valid counterfactual address", async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-        })
+        });
 
         //contract already deployed
-        expect(await signerWithProvider.getAddress()).eql(
+        expect(await ecdsaProvider.provider.getAddress()).eql(
             "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
         );
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -54,10 +54,10 @@ describe.skip("Kernel Account Tests", () => {
                     index: 3n
                 }
             }
-        })
+        });
 
         //contract already deployed
-        expect(await signerWithProvider.getAddress()).eql(
+        expect(await ecdsaProvider.provider.getAddress()).eql(
             "0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845"
         );
 
@@ -65,16 +65,17 @@ describe.skip("Kernel Account Tests", () => {
 
 
     it("getNonce returns valid nonce", async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-        })
-        const signer = signerWithProvider.getAccount();
+        });
+
+        const signer = ecdsaProvider.provider.getAccount();
 
         //contract deployed but no transaction
         expect(await signer.getNonce()).eql(0n);
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -82,18 +83,19 @@ describe.skip("Kernel Account Tests", () => {
                     index: 3n
                 }
             }
-        })
-        const signer2 = signerWithProvider.getAccount();
+        });
+
+        const signer2 = ecdsaProvider.provider.getAccount();
 
         expect(await signer2.getNonce()).eql(2n);
     }, { timeout: 100000 });
 
     it("encodeExecute returns valid encoded hash", async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-        })
-        const signer = signerWithProvider.getAccount();
+        });
+        const signer = ecdsaProvider.provider.getAccount();
         expect(await signer.encodeExecute("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -101,11 +103,11 @@ describe.skip("Kernel Account Tests", () => {
 
 
     it("encodeExecuteDelegate returns valid encoded hash", async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-        })
-        const signer = signerWithProvider.getAccount();
+        });
+        const signer = ecdsaProvider.provider.getAccount();
         expect(await signer.encodeExecuteDelegate("0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845", 1n, "0x234")).eql(
             "0x51945447000000000000000000000000a7b2c01a5afbcf1fab17acf95d8367eccfeeb84500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000022340000000000000000000000000000000000000000000000000000000000000"
         );
@@ -122,20 +124,21 @@ describe.skip("Kernel Account Tests", () => {
             [config.accountFactoryAddress, factoryCode, ownerSignedMessage]
         ) + magicBytes
 
-        let signer = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-        })
-        expect(await signer.request({
+        });
+
+        expect(await ecdsaProvider.provider.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
-                await signer.getAddress()
+                await ecdsaProvider.provider.getAddress()
             ]
         })).toBe(
             ownerSignedMessage
         );
 
-        let signer2 = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -143,12 +146,12 @@ describe.skip("Kernel Account Tests", () => {
                     index: 10n
                 }
             }
-        })
+        });
 
-        expect(await signer2.request({
+        expect(await ecdsaProvider.provider.request({
             method: "personal_sign", params: [
                 messageToBeSigned,
-                await signer2.getAddress()
+                await ecdsaProvider.provider.getAddress()
             ]
         })).toBe(
             signature
@@ -160,23 +163,18 @@ describe.skip("Kernel Account Tests", () => {
     it("signMessage should correctly sign the message", async () => {
         const messageToBeSigned: Hex = "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b"
 
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-            opts: {
-                accountConfig: {
-                    index: 0n
-                }
-            }
-        })
+        });
 
-        const signer = signerWithProvider.getAccount();
+        const signer = ecdsaProvider.provider.getAccount();
 
         expect(await signer.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
         );
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -184,9 +182,9 @@ describe.skip("Kernel Account Tests", () => {
                     index: 1000n
                 }
             }
-        })
+        });
 
-        const signer2 = signerWithProvider.getAccount();
+        const signer2 = ecdsaProvider.provider.getAccount();
 
         expect(await signer2.signMessage(messageToBeSigned)).toBe(
             "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
@@ -195,8 +193,7 @@ describe.skip("Kernel Account Tests", () => {
 
     // NOTE - this test case will fail if the gas fee is sponsored
     it("sendUserOperation should fail to execute if gas fee not present", async () => {
-        // let signerWithProvider = (connect(1001n, owner)).withZeroDevPaymasterAndData({ policy: "VERIFYING_PAYMASTER" })
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner,
             opts: {
@@ -207,11 +204,10 @@ describe.skip("Kernel Account Tests", () => {
                     policy: "VERIFYING_PAYMASTER"
                 }
             }
-        })
+        });
 
-
-        const result = signerWithProvider.sendUserOperation({
-            target: await signerWithProvider.getAddress(),
+        const result = ecdsaProvider.provider.sendUserOperation({
+            target: await ecdsaProvider.provider.getAddress(),
             data: "0x",
         });
 
@@ -223,34 +219,30 @@ describe.skip("Kernel Account Tests", () => {
     // have deposited some matic balance for counterfactual address at entrypoint
 
     it("sendUserOperation should execute properly", async () => {
-        //
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner,
             opts: {
-                accountConfig: {
-                    index: 0n
-                },
                 paymasterConfig: {
                     policy: "VERIFYING_PAYMASTER"
                 }
             }
-        })
+        });
 
 
         //to fix bug in old versions
-        await signerWithProvider.getAccount().getInitCode()
-        const result = signerWithProvider.sendUserOperation({
+        await ecdsaProvider.provider.getAccount().getInitCode()
+        const result = ecdsaProvider.provider.sendUserOperation({
             target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
         await expect(result).resolves.not.toThrowError();
-        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     it("sponsored sendUserOperation should execute properly", async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
             owner,
             opts: {
@@ -261,45 +253,43 @@ describe.skip("Kernel Account Tests", () => {
                     policy: "VERIFYING_PAYMASTER"
                 }
             }
-        })
-        //to fix bug in old versions
-        await signerWithProvider.getAccount().getInitCode()
+        });
 
-        const result = signerWithProvider.sendUserOperation({
+        //to fix bug in old versions
+        await ecdsaProvider.provider.getAccount().getInitCode()
+
+        const result = ecdsaProvider.provider.sendUserOperation({
             target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
             data: "0x",
             value: 0n
         });
         await expect(result).resolves.not.toThrowError();
-        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     //NOTE - this test case will only work if you
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for single transaction with ERC20 token', async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner,
             opts: {
-                accountConfig: {
-                    index: 0n
-                },
                 paymasterConfig: {
                     policy: "TOKEN_PAYMASTER",
                     gasToken: "TEST_ERC20"
                 }
             }
-        })
+        });
         //to fix bug in old versions
-        await signerWithProvider.getAccount().getInitCode()
+        await ecdsaProvider.provider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
-            args: [await signerWithProvider.getAddress(), "700000000000000000"],
+            args: [await ecdsaProvider.provider.getAddress(), "700000000000000000"],
             functionName: "mint"
         })
-        const result = signerWithProvider.sendUserOperation({
+        const result = ecdsaProvider.provider.sendUserOperation({
             target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
             data: mintData,
             value: 0n
@@ -307,32 +297,30 @@ describe.skip("Kernel Account Tests", () => {
 
         await expect(result).resolves.not.toThrowError();
 
-        await signerWithProvider.waitForUserOperationTransaction((await result).hash as Hash);
+        await ecdsaProvider.provider.waitForUserOperationTransaction((await result).hash as Hash);
     }, { timeout: 100000 });
 
     //NOTE - this test case will only work if you
     // have deposited some Stackup TEST_ERC20 balance for counterfactual address at entrypoint
 
     it('should pay for batch transaction with ERC20 token', async () => {
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner,
             opts: {
-                accountConfig: {
-                    index: 0n
-                },
                 paymasterConfig: {
                     policy: "TOKEN_PAYMASTER",
                     gasToken: "TEST_ERC20"
                 }
             }
-        })
+        });
+
         //to fix bug in old versions
-        await signerWithProvider.getAccount().getInitCode()
+        await ecdsaProvider.provider.getAccount().getInitCode()
 
         const mintData = encodeFunctionData({
             abi: TEST_ERC20Abi,
-            args: [await signerWithProvider.getAddress(), "133700000000000000"],
+            args: [await ecdsaProvider.provider.getAddress(), "133700000000000000"],
             functionName: "mint"
         })
         const transferData = encodeFunctionData({
@@ -340,7 +328,7 @@ describe.skip("Kernel Account Tests", () => {
             args: [await owner.getAddress(), "133700000000"],
             functionName: "transfer"
         })
-        const result = signerWithProvider.sendUserOperation([{
+        const result = ecdsaProvider.provider.sendUserOperation([{
             target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
             data: mintData,
             value: 0n
@@ -357,20 +345,15 @@ describe.skip("Kernel Account Tests", () => {
     //non core functions
     it("should correctly identify whether account is deployed", async () => {
 
-        let signerWithProvider = await createZeroDevProvider({
+        let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
-            opts: {
-                accountConfig: {
-                    index: 0n
-                },
-            }
-        })
-        const signer = signerWithProvider.getAccount();
+        });
+        const signer = ecdsaProvider.provider.getAccount();
         //contract already deployed
         expect(await signer.isAccountDeployed()).eql(true);
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -378,13 +361,13 @@ describe.skip("Kernel Account Tests", () => {
                     index: 3n
                 },
             }
-        })
-        const signer2 = signerWithProvider.getAccount();
+        });
+        const signer2 = ecdsaProvider.provider.getAccount();
 
         //contract already deployed
         expect(await signer2.isAccountDeployed()).eql(true);
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -392,14 +375,14 @@ describe.skip("Kernel Account Tests", () => {
                     index: 4n
                 },
             }
-        })
-        const signer3 = signerWithProvider.getAccount();
+        });
+        const signer3 = ecdsaProvider.provider.getAccount();
 
         //contract not deployed
         expect(await signer3.isAccountDeployed()).eql(false);
 
 
-        signerWithProvider = await createZeroDevProvider({
+        ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
             projectId: config.projectId,
             owner: mockOwner,
             opts: {
@@ -407,9 +390,9 @@ describe.skip("Kernel Account Tests", () => {
                     index: 5n
                 },
             }
-        })
+        });
 
-        const signer4 = signerWithProvider.getAccount();
+        const signer4 = ecdsaProvider.provider.getAccount();
         //contract not deployed
         expect(await signer4.isAccountDeployed()).eql(false);
     }, { timeout: 100000 });

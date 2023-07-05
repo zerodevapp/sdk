@@ -43,7 +43,7 @@ const KERNEL_ACCOUNT_FACTORY_ADDRESS =
 const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
 // 2. Create a ZeroDev Provider
-let provider = await createZeroDevProvider({
+let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
     projectId, // zeroDev projectId
     owner,
     // Optional: pass the paymasterConfig to use the verifying paymaster
@@ -55,7 +55,7 @@ let provider = await createZeroDevProvider({
 });
 
 // 3. send a UserOperation
-const { hash } = await provider.sendUserOperation({
+const { hash } = await ecdsaProvider.provider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
@@ -72,7 +72,7 @@ ZeroDev currently supports:
 Just pass the `paymasterConfig` to `createZeroDevProvider` function while creating the provider.
 
 ```ts
-let provider = await createZeroDevProvider({
+let ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
     projectId, // zeroDev projectId
     owner,
     opts: {
@@ -88,13 +88,13 @@ let provider = await createZeroDevProvider({
 
 ```ts
 // 1. Create a ECDSAValidatorProvider
-const ecdsaValidatorProvider = await ECDSAValidatorProvider.init({
+const ecdsaProvider = await createProvider<"ECDSA">("ECDSA",{
     projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
     owner,
 });
 
 // 2. Change the owner of the Kernel Account
-const { hash } = await ecdsaValidatorProvider.changeOwner(<NEW_OWNER_ADDRESS>);
+const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```
 
 

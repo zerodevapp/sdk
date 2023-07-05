@@ -1,9 +1,9 @@
-import { ECDSAValidatorProvider } from "./ecdsa-validator-provider";
+import { ECDSAProvider } from "./ecdsa-provider";
 import type { ValidatorProviderMap } from "./types";
 
 export const ValidatorProviders: ValidatorProviderMap = {
-    ECDSA: ECDSAValidatorProvider.init,
+    ECDSA: ECDSAProvider,
 };
 
-export { ECDSAValidatorProvider };
+export { ECDSAProvider };
  
