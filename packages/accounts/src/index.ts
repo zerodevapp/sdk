@@ -2,17 +2,22 @@
 // Don't use wildcard exports, instead use named exports
 
 //kernel exports
-export { KernelAccountAbi } from "./kernel-zerodev/abis/KernelAccountAbi.js";
 export { KernelFactoryAbi } from "./kernel-zerodev/abis/KernelFactoryAbi.js";
-export { KernelSmartContractAccount } from "./kernel-zerodev/account.js";
-export type { KernelSmartAccountParams } from "./kernel-zerodev/account.js";
-export { KernelAccountProvider } from "./kernel-zerodev/provider.js";
-export type {
-  KernelBatchUserOperationCallData,
-  KernelUserOperationCallData,
-} from "./kernel-zerodev/types.js";
+export { KernelAccountAbi } from "./kernel-zerodev/abis/KernelAccountAbi.js";
 export {
-  KernelBaseValidator,
   ValidatorMode,
+  KernelBaseValidator,
 } from "./kernel-zerodev/validator/base.js";
+export { ECDSAValidator } from "./kernel-zerodev/validator/ecdsa-validator.js";
+export { ECDSAProvider } from "./kernel-zerodev/validator-provider/index.js";
+export type {
+  ValidatorProviderParams,
+  ValidatorProviderParamsOpts,
+} from "./kernel-zerodev/validator-provider/base.js";
+export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
+export type { KernelSmartAccountParams } from "./kernel-zerodev/account.js";
+export type * from "./kernel-zerodev/paymaster/types.js";
+export * as constants from "./kernel-zerodev/constants.js";
+export { KernelSmartContractAccount } from "./kernel-zerodev/account.js";
+export { ZeroDevProvider } from "./kernel-zerodev/provider.js";
