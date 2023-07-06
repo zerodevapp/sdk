@@ -10,6 +10,10 @@ export {
 } from "./kernel-zerodev/validator/base";
 export { ECDSAValidator } from "./kernel-zerodev/validator/ecdsa-validator";
 export { ECDSAProvider } from "./kernel-zerodev/validator-provider";
+export type {
+  ValidatorProviderParams,
+  ValidatorProviderParamsOpts,
+} from "./kernel-zerodev/validator-provider/base";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base";
 export type { KernelSmartAccountParams } from "./kernel-zerodev/account";
