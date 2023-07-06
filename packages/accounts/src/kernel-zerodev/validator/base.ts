@@ -1,7 +1,7 @@
 import { type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
 import { concat, type Chain, type Hex, pad, toHex, type Address, createPublicClient, http, concatHex, getContract } from "viem";
-import { KernelAccountAbi } from "../abis/KernelAccountAbi";
-import { ECDSA_VALIDATOR_ADDRESS, ENTRYPOINT_ADDRESS } from "../constants";
+import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
+import { ECDSA_VALIDATOR_ADDRESS, ENTRYPOINT_ADDRESS } from "../constants.js";
 
 export enum ValidatorMode {
     sudo = '0x00000000',

@@ -20,7 +20,7 @@ import { isValidRequest } from "./utils/ERC4337-utils.js";
 import { InvalidOperation } from "./errors.js";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
-import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
+import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types.js";
 
 
 export type ZeroDevProviderConfig = {

@@ -1,7 +1,7 @@
 import { type ConnectedSmartAccountProvider } from "@alchemy/aa-core";
-import type { ZeroDevProvider } from "../provider";
-import { Paymasters } from "../paymaster";
-import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types";
+import type { ZeroDevProvider } from "../provider.js";
+import { Paymasters } from "../paymaster/index.js";
+import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
 
 
 export const withZeroDevPaymasterAndData = <

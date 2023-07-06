@@ -1,5 +1,5 @@
 import { parseUnits, type Hex } from "viem";
-import type { IGasTokenAddresses } from "./paymaster/types";
+import type { IGasTokenAddresses } from "./paymaster/types.js";
 
 export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
 export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";

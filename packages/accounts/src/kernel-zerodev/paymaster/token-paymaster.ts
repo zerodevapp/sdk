@@ -1,16 +1,16 @@
 import { type PromiseOrValue, type BytesLike, type UserOperationCallData, type UserOperationStruct } from "@alchemy/aa-core";
 import axios from "axios";
 import { type Hex, toHex, decodeFunctionData, encodeFunctionData } from "viem";
-import { ERC20Abi } from "../abis/ERC20Abi";
-import { KernelAccountAbi } from "../abis/KernelAccountAbi";
-import { MultiSendAbi } from "../abis/MultiSendAbi";
-import { PAYMASTER_URL, ENTRYPOINT_ADDRESS, MULTISEND_ADDR, ERC20_APPROVAL_AMOUNT } from "../constants";
-import { AccountNotConnected, IncorrectCallDataForTokenPaymaster } from "../errors";
-import type { ZeroDevProvider } from "../provider";
-import { getGasTokenAddress, type UserOperationCallDataWithDelegate } from "../utils";
-import { Paymaster } from "./base";
-import { type PaymasterConfig } from "./types";
-import { getChainId } from "../api";
+import { ERC20Abi } from "../abis/ERC20Abi.js";
+import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
+import { MultiSendAbi } from "../abis/MultiSendAbi.js";
+import { PAYMASTER_URL, ENTRYPOINT_ADDRESS, MULTISEND_ADDR, ERC20_APPROVAL_AMOUNT } from "../constants.js";
+import { AccountNotConnected, IncorrectCallDataForTokenPaymaster } from "../errors.js";
+import type { ZeroDevProvider } from "../provider.js";
+import { getGasTokenAddress, type UserOperationCallDataWithDelegate } from "../utils.js";
+import { Paymaster } from "./base.js";
+import { type PaymasterConfig } from "./types.js";
+import { getChainId } from "../api/index.js";
 
 export class TokenPaymaster extends Paymaster {
     constructor(provider: ZeroDevProvider, protected paymasterConfig: PaymasterConfig<"TOKEN_PAYMASTER">) { super(provider); }

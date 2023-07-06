@@ -1,7 +1,7 @@
-import { ValidatorProvider, type ValidatorProviderParams } from "./base";
-import { type ECDSAValidatorParams } from "../validator/ecdsa-validator";
+import { ValidatorProvider, type ValidatorProviderParams } from "./base.js";
+import { type ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
 import { getChain } from "@alchemy/aa-core";
-import { getChainId } from "../api";
+import { getChainId } from "../api/index.js";
 
 
 export class ECDSAProvider extends ValidatorProvider<ECDSAValidatorParams> {

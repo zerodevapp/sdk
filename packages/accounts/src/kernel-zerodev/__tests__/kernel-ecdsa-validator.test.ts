@@ -1,6 +1,6 @@
-import { ECDSAValidator } from "../validator/ecdsa-validator";
+import { ECDSAValidator } from "../validator/ecdsa-validator.js";
 import {PrivateKeySigner} from "@alchemy/aa-core";
-import { config } from "./kernel-account.test";
+import { config } from "./kernel-account.test.js";
 
 
 describe("Base Validator Test", async () => {

@@ -6,10 +6,10 @@ import {
     type Hash} from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from 'viem/accounts'
-import { MockSigner } from "./mocks/mock-signer";
+import { MockSigner } from "./mocks/mock-signer.js";
 import { PrivateKeySigner } from "@alchemy/aa-core";
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi";
-import { ECDSAProvider } from "../validator-provider";
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
+import { ECDSAProvider } from "../validator-provider/index.js";
 
 export const config = {
     privateKey: process.env.PRIVATE_KEY as Hex ?? generatePrivateKey(),

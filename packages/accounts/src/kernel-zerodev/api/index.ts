@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BACKEND_URL } from "../constants";
+import { BACKEND_URL } from "../constants.js";
 
 export const getChainId = async (
     projectId: string,

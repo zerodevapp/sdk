@@ -1,7 +1,7 @@
 import { type UserOperationStruct, deepHexlify, resolveProperties } from "@alchemy/aa-core";
-import { Paymaster,  } from "./base";
-import type { ZeroDevProvider } from "../provider";
-import type { PaymasterConfig } from "./types";
+import { Paymaster,  } from "./base.js";
+import type { ZeroDevProvider } from "../provider.js";
+import type { PaymasterConfig } from "./types.js";
 
 export class VerifyingPaymaster extends Paymaster {
     constructor(provider:ZeroDevProvider, _: PaymasterConfig<"VERIFYING_PAYMASTER">) {super(provider);}

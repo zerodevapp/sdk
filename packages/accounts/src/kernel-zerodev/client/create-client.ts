@@ -1,7 +1,7 @@
 import { createPublicErc4337FromClient, type HttpTransport, type PublicErc4337Client } from "@alchemy/aa-core";
 import { http, createPublicClient, type Chain } from "viem";
-import { BUNDLER_URL } from "../constants";
-import type { PaymasterAndBundlerProviders } from "../paymaster/types";
+import { BUNDLER_URL } from "../constants.js";
+import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
 
 interface ZeroDevClientConfig {
     chain: Chain;

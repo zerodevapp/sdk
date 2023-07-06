@@ -1,12 +1,12 @@
 import { getChain, type Hex, type SendUserOperationResult, type SmartAccountSigner } from "@alchemy/aa-core";
-import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider";
-import type { KernelBaseValidatorParams } from "../validator/base";
-import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types";
-import { KernelSmartContractAccount, type KernelSmartAccountParams, isKernelAccount } from "../account";
+import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider.js";
+import type { KernelBaseValidatorParams } from "../validator/base.js";
+import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
+import { KernelSmartContractAccount, type KernelSmartAccountParams, isKernelAccount } from "../account.js";
 import { polygonMumbai } from "viem/chains";
-import type { SupportedValidators } from "../validator/types";
-import { Validators } from "../validator";
-import { withZeroDevPaymasterAndData } from "../middleware/paymaster";
+import type { SupportedValidators } from "../validator/types.js";
+import { Validators } from "../validator/index.js";
+import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
 
 export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
     paymasterConfig?: PaymasterConfig<PaymasterPolicy>;

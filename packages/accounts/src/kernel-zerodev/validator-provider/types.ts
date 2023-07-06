@@ -1,6 +1,6 @@
-import type { SupportedValidators, ValidatorParamsMap } from "../validator/types";
-import type { ValidatorProviderParams } from "./base";
-import type { ECDSAProvider } from "./ecdsa-provider";
+import type { SupportedValidators, ValidatorParamsMap } from "../validator/types.js";
+import type { ValidatorProviderParams } from "./base.js";
+import type { ECDSAProvider } from "./ecdsa-provider.js";
 
 
 export type ValidatorProviderTypeMap = {

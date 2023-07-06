@@ -1,17 +1,17 @@
-import { EntryPointAbi, type UserOperationRequest, type UserOperationStruct } from "@alchemy/aa-core"
-import type { NotPromise } from "./calc-pre-verification-gas"
-import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256, toHex } from 'viem'
+import { EntryPointAbi, type UserOperationRequest, type UserOperationStruct } from "@alchemy/aa-core";
+import type { NotPromise } from "./calc-pre-verification-gas.js";
+import { encodeAbiParameters, parseAbiParameters, type Hex, keccak256, toHex } from "viem";
 
 // UserOperation is the first parameter of validateUseOp
-const validateUserOpMethod = 'simulateValidation'
+const validateUserOpMethod = 'simulateValidation';
 
 // @ts-ignore
-const UserOpType = EntryPointAbi.find(entry => entry.name === validateUserOpMethod)?.inputs[0]
+const UserOpType = EntryPointAbi.find(entry => entry.name === validateUserOpMethod)?.inputs[0];
 
-function encode(typevalues: Array<{ type: string, val: any }>, forSignature: boolean): string {
-    const types = typevalues.map(typevalue => typevalue.type === 'bytes' && forSignature ? 'bytes32' : typevalue.type).join(', ')
-    const values = typevalues.map((typevalue) => typevalue.type === 'bytes' && forSignature ? keccak256(typevalue.val) : typevalue.val)
-    return encodeAbiParameters(parseAbiParameters(types), values)
+function encode(typevalues: Array<{ type: string, val: any; }>, forSignature: boolean): string {
+    const types = typevalues.map(typevalue => typevalue.type === 'bytes' && forSignature ? 'bytes32' : typevalue.type).join(', ');
+    const values = typevalues.map((typevalue) => typevalue.type === 'bytes' && forSignature ? keccak256(typevalue.val) : typevalue.val);
+    return encodeAbiParameters(parseAbiParameters(types), values);
 }
 
 /**
@@ -72,23 +72,23 @@ export function packUserOp(op: NotPromise<UserOperationStruct>, forSignature = t
             ],
             name: 'userOp',
             type: 'tuple'
-        }
+        };
         // console.log('hard-coded userOpType', userOpType)
         // console.log('from ABI userOpType', UserOpType)
         let encoded = encodeAbiParameters(userOpType.components, Object.values({
             ...op,
             signature: '0x'
-        }))
+        }));
         // remove leading word (total length) and trailing word (zero-length signature)
-        encoded = '0x' + encoded.slice(66, encoded.length - 64) as Hex
-        return encoded
+        encoded = '0x' + encoded.slice(66, encoded.length - 64) as Hex;
+        return encoded;
     }
 
-    const typevalues = (UserOpType as any).components.map((c: { name: keyof typeof op, type: string }) => ({
+    const typevalues = (UserOpType as any).components.map((c: { name: keyof typeof op, type: string; }) => ({
         type: c.type,
         val: op[c.name]
-    }))
-    return encode(typevalues, forSignature)
+    }));
+    return encode(typevalues, forSignature);
 }
 
 /**
@@ -113,11 +113,11 @@ export function isValidRequest(
 export const hexifyUserOp = (resolvedUserOp: any) => {
     return Object.keys(resolvedUserOp)
         .map((key) => {
-            let val = (resolvedUserOp)[key]
+            let val = (resolvedUserOp)[key];
             if (typeof val !== 'string' || !val.startsWith('0x')) {
-                val = toHex(val)
+                val = toHex(val);
             }
-            return [key, val]
+            return [key, val];
         })
         .reduce(
             (set, [k, v]) => ({
@@ -125,5 +125,5 @@ export const hexifyUserOp = (resolvedUserOp: any) => {
                 [k]: v
             }),
             {}
-        )
-}
+        );
+};

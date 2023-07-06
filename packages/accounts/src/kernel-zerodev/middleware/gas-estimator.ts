@@ -1,8 +1,8 @@
-import type { ZeroDevProvider } from "../provider";
+import type { ZeroDevProvider } from "../provider.js";
 import { deepHexlify, type Hex, type UserOperationStruct, resolveProperties, type BigNumberish, type UserOperationEstimateGasResponse } from "@alchemy/aa-core";
-import { ENTRYPOINT_ADDRESS } from "../constants";
+import { ENTRYPOINT_ADDRESS } from "../constants.js";
 import { toHex } from "viem";
-import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas";
+import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas.js";
 
 export const withZeroDevGasEstimator = (
     provider: ZeroDevProvider

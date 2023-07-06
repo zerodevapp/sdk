@@ -1,8 +1,8 @@
 import { getChain, getUserOperationHash, type Hex, type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
-import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base";
+import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import { encodeFunctionData, toBytes } from "viem";
-import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi";
-import { getChainId } from "../api";
+import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi.js";
+import { getChainId } from "../api/index.js";
 
 export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
     owner: SmartAccountSigner;

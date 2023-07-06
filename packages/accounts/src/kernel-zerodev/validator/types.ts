@@ -1,4 +1,4 @@
-import type { ECDSAValidator, ECDSAValidatorParams } from "./ecdsa-validator";
+import type { ECDSAValidator, ECDSAValidatorParams } from "./ecdsa-validator.js";
 
 export type SupportedValidators = "ECDSA";
 

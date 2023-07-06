@@ -1,10 +1,10 @@
 import { deepHexlify, type BytesLike, type PromiseOrValue, type UserOperationStruct, resolveProperties } from "@alchemy/aa-core";
 import axios from "axios";
-import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants";
-import type { ZeroDevProvider } from "../provider";
-import { hexifyUserOp } from "../utils/ERC4337-utils";
-import type { PaymasterAndBundlerProviders } from "./types";
-import { getChainId } from "../api";
+import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants.js";
+import type { ZeroDevProvider } from "../provider.js";
+import { hexifyUserOp } from "../utils/ERC4337-utils.js";
+import type { PaymasterAndBundlerProviders } from "./types.js";
+import { getChainId } from "../api/index.js";
 
 
 export abstract class Paymaster {

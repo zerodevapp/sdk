@@ -1,6 +1,6 @@
 import type { Hex } from "viem";
-import type { Paymaster } from "./base";
-import type { ZeroDevProvider } from "../provider";
+import type { Paymaster } from "./base.js";
+import type { ZeroDevProvider } from "../provider.js";
 
 export type PaymasterAndBundlerProviders = "ALCHEMY" | "STACKUP" | "PIMLICO";
 
