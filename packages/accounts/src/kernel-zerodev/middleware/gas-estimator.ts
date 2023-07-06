@@ -11,9 +11,6 @@ export const withZeroDevGasEstimator = (
     provider.withFeeDataGetter(async () => {
         try {
             let { maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(provider);
-            if (maxPriorityFeePerGas < provider.minPriorityFeePerBid) {
-                maxPriorityFeePerGas = provider.minPriorityFeePerBid;
-            }
             return {
                 maxFeePerGas,
                 maxPriorityFeePerGas
@@ -26,10 +23,7 @@ export const withZeroDevGasEstimator = (
 
         const feeData = await getFeeData(provider);
         const maxFeePerGas = feeData?.maxFeePerGas ? BigInt(feeData?.maxFeePerGas) : 0n;
-        let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ? BigInt(feeData.maxPriorityFeePerGas) : 0n;
-        if (maxPriorityFeePerGas < provider.minPriorityFeePerBid) {
-            maxPriorityFeePerGas = provider.minPriorityFeePerBid;
-        }
+        const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ? BigInt(feeData.maxPriorityFeePerGas) : 0n;
         return { maxFeePerGas, maxPriorityFeePerGas };
     });
 
@@ -98,7 +92,8 @@ export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
 
     const tip = BigInt(fee);
     const buffer = (tip / (100n)) * (13n);
-    const maxPriorityFeePerGas = tip + (buffer);
+    let maxPriorityFeePerGas = tip + (buffer);
+    maxPriorityFeePerGas = maxPriorityFeePerGas < provider.minPriorityFeePerBid ? provider.minPriorityFeePerBid : maxPriorityFeePerGas;
     const maxFeePerGas = block.baseFeePerGas
         ? (BigInt(block.baseFeePerGas) * (2n)) + (maxPriorityFeePerGas)
         : maxPriorityFeePerGas;
@@ -128,6 +123,7 @@ export const getFeeData = async (provider: ZeroDevProvider): Promise<FeeData> =>
         if ((maxPriorityFeePerGas == null) || maxPriorityFeePerGas - BigInt(0) || maxPriorityFeePerGas > minimumTip) {
             maxPriorityFeePerGas = minimumTip;
         }
+        maxPriorityFeePerGas = maxPriorityFeePerGas < provider.minPriorityFeePerBid  ? provider.minPriorityFeePerBid : maxPriorityFeePerGas;
         maxFeePerGas = block.baseFeePerGas * BigInt(2) + (maxPriorityFeePerGas ?? 0);
     }
 
