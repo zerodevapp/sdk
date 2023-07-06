@@ -3,6 +3,8 @@ import axios from "axios";
 import { ENTRYPOINT_ADDRESS, PAYMASTER_URL } from "../constants";
 import type { ZeroDevProvider } from "../provider";
 import { hexifyUserOp } from "../utils/ERC4337-utils";
+import type { PaymasterAndBundlerProviders } from "./types";
+import { getChainId } from "../api";
 
 
 export abstract class Paymaster {
@@ -13,7 +15,8 @@ export abstract class Paymaster {
         callData?: PromiseOrValue<BytesLike>,
         gasTokenAddress?: string,
         erc20UserOp?: Partial<UserOperationStruct>,
-        erc20CallData?: PromiseOrValue<BytesLike>
+        erc20CallData?: PromiseOrValue<BytesLike>,
+        paymasterProvider?: PaymasterAndBundlerProviders
     ): Promise<any> {
         try {
             const hexifiedUserOp = deepHexlify(await resolveProperties(userOp));
@@ -26,15 +29,18 @@ export abstract class Paymaster {
                 hexifiedERC20UserOp = hexifyUserOp(resolvedERC20UserOp)
 
             }
+            const chainId = await getChainId(this.provider.getProjectId());
+            if (!chainId) throw new Error("ChainId not found");
             let requestBodyParams = Object.fromEntries(Object.entries({
                 projectId: this.provider.getProjectId(),
-                chainId: this.provider.getChain().id,
+                chainId,
                 userOp: hexifiedUserOp,
                 entryPointAddress: ENTRYPOINT_ADDRESS,
                 callData: callData instanceof Promise ? await callData : callData,
                 tokenAddress: gasTokenAddress,
                 erc20UserOp: hexifiedERC20UserOp,
-                erc20CallData: erc20CallData instanceof Promise ? await erc20CallData : erc20CallData
+                erc20CallData: erc20CallData instanceof Promise ? await erc20CallData : erc20CallData,
+                paymasterProvider
             }).filter(([_, value]) => value !== undefined));
             const { data: paymasterResp } = await axios.post(`${PAYMASTER_URL}/sign`, {
                 ...requestBodyParams

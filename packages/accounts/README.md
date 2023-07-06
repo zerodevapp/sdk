@@ -42,36 +42,20 @@ const KERNEL_ACCOUNT_FACTORY_ADDRESS =
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
 const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
-const validator: ECDSAValidator = new ECDSAValidator(({
-    validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5",
-    mode: ValidatorMode.sudo,
+// 2. Create a ZeroDev Provider
+let ecdsaProvider = await ECDSAProvider.init({
+    projectId, // zeroDev projectId
     owner,
-    chain: polygonMumbai,
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
-}))
-
-// 2. initialize the provider and connect it to the account
-const provider = new ZeroDevProvider({ 
-  chain: polygonMumbai,
-  projectId, // zeroDev projectId
-  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
-}).connect((rpcClient) =>
-  new KernelSmartContractAccount({
-    owner,
-    index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-    chain: polygonMumbai,
-    factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
-    rpcClient,
-    // optionally if you already know the account's address
-    // accountAddress: "0x000...000",
-    defaultValidator: validator,
-    validator
-  })
-)
+    // Optional: pass the paymasterConfig to use the verifying paymaster
+    // opts: {
+    //     paymasterConfig: {
+    //         policy: "VERIFYING_PAYMASTER"
+    //     }
+    // }
+});
 
 // 3. send a UserOperation
-const { hash } = await provider.sendUserOperation({
+const { hash } = await ecdsaProvider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
@@ -85,63 +69,32 @@ ZeroDev currently supports:
   - `PEPE` (mainnet only)
   - `DAI` (upcoming)
 
-Attach `withZeroDevPaymasterAndData` middleware to `ZeroDevProvider`.
+Just pass the `paymasterConfig` to `createZeroDevProvider` function while creating the provider.
 
 ```ts
-let provider = new ZeroDevProvider({ 
-  chain: polygonMumbai,
-  projectId, // zeroDev projectId
-  entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
-}).connect((rpcClient) =>
-  new KernelSmartContractAccount({
+let ecdsaProvider = await ECDSAProvider.init({
+    projectId, // zeroDev projectId
     owner,
-    index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-    chain: polygonMumbai,
-    factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
-    rpcClient,
-    // optionally if you already know the account's address
-    // accountAddress: "0x000...000",
-    defaultValidator: validator,
-    validator
-  })
-)
-
-let providerWithPaymaster = provider.withZeroDevPaymasterAndData({policy: "TOKEN_PAYMASTER", gasToken: "TEST_ERC20"});
+    opts: {
+        paymasterConfig: {
+            policy: "TOKEN_PAYMASTER",
+            gasToken: "TEST_ERC20"
+        }
+    }
+});
 ```
 
-### Change Kernel Account Owner (ECDSAValidator as default validator)
+### Change Kernel Account Owner in ECDSAValidator
 
 ```ts
-const validator: ECDSAValidator = new ECDSAValidator(({
-    validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5",
-    mode: ValidatorMode.sudo,
+// 1. Create a ECDSAValidatorProvider
+const ecdsaProvider = await ECDSAProvider.init({
+    projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
     owner,
-    chain: polygonMumbai,
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
-}))
-        
-const validatorProvider = new ValidatorProvider({
-    projectId, // zeroDev projectId
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" 
-    chain: polygonMumbai,
-    defaultValidator: validator,
-}).connect((rpcClient) =>
-  new KernelSmartContractAccount({
-    owner,
-    index: BigInt(0),  
-    entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-    chain: polygonMumbai,
-    factoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39",
-    rpcClient,
-    // optionally if you already know the account's address
-    // accountAddress: "0x000...000",
-    defaultValidator: validator,
-    validator
-  })
-)
+});
 
-await validatorProvider.sendEnableUserOp(<New-Owner-Address>);
+// 2. Change the owner of the Kernel Account
+const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```
 
 

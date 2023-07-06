@@ -1,10 +1,9 @@
 import { ECDSAValidator } from "../validator/ecdsa-validator";
-import {ValidatorMode} from "../validator/base";
 import {PrivateKeySigner} from "@alchemy/aa-core";
-import { polygonMumbai } from "viem/chains";
+import { config } from "./kernel-account.test";
 
 
-describe("Base Validator Test", () => {
+describe("Base Validator Test", async () => {
 
     const dummyPrivateKey = "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc"
     const dummyAddress = "0xabcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc"
@@ -12,12 +11,9 @@ describe("Base Validator Test", () => {
 
     const ECDSA_VALIDATOR_ADDRESS = "0x180D6465F921C7E0DEA0040107D342c87455fFF5"
 
-    const validator = new ECDSAValidator({
-        validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-        mode: ValidatorMode.sudo,
+    const validator = await ECDSAValidator.init({
         owner: signer,
-        chain: polygonMumbai,
-        entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+        projectId: config.projectId,
     })
 
     it("should return proper validator address", async () => {

@@ -2,6 +2,8 @@ import type { Hex } from "viem";
 import type { Paymaster } from "./base";
 import type { ZeroDevProvider } from "../provider";
 
+export type PaymasterAndBundlerProviders = "ALCHEMY" | "STACKUP" | "PIMLICO";
+
 export type SupportedGasToken = "USDC" | "PEPE" | "TEST_ERC20";
 
 export type PaymasterPolicy = "VERIFYING_PAYMASTER" | "TOKEN_PAYMASTER";

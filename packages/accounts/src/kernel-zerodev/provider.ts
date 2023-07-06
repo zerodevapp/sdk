@@ -13,8 +13,8 @@ import {
     SmartAccountProvider,
     type AccountMiddlewareFn
 } from "@alchemy/aa-core";
-import { BUNDLER_URL } from "./constants";
-import { KernelSmartContractAccount } from "./account";
+import { BUNDLER_URL, ENTRYPOINT_ADDRESS } from "./constants";
+import { KernelSmartContractAccount, isKernelAccount } from "./account";
 import { withZeroDevGasEstimator } from "./middleware/gas-estimator";
 import { isValidRequest } from "./utils/ERC4337-utils";
 import { InvalidOperation } from "./errors";
@@ -26,7 +26,7 @@ import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types";
 export type ZeroDevProviderConfig = {
     projectId: string;
     chain: Chain | number;
-    entryPointAddress: Address;
+    entryPointAddress?: Address;
     rpcUrl?: string;
     account?: KernelSmartContractAccount;
     opts?: SmartAccountProviderOpts;
@@ -49,7 +49,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     constructor({
         projectId,
         chain,
-        entryPointAddress,
+        entryPointAddress = ENTRYPOINT_ADDRESS,
         rpcUrl = BUNDLER_URL,
         account,
         opts,
@@ -68,15 +68,17 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         withZeroDevGasEstimator(this);
     }
 
-    getChain = (): Chain => this.chain;
     getProjectId = (): string => this.projectId;
 
     sendUserOperation = async <T extends UserOperationCallData | BatchUserOperationCallData>(
         data: T,
         operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>,
     ): Promise<SendUserOperationResult> => {
-        if (!this.account) {
+        if (!isKernelAccount(this.account)) {
             throw new Error("account not connected!");
+        }
+        if (!(this.account.validator)) {
+            throw new Error("validator not connected!");
         }
 
         let callData: BytesLike = "0x";
@@ -104,8 +106,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         const uoStruct = await asyncPipe(
             this.dummyPaymasterDataMiddleware,
             this.feeDataGetter,
-            this.gasEstimator,
             this.paymasterDataMiddleware,
+            this.gasEstimator,
             this.customMiddleware ?? noOpMiddleware
         )({
             initCode,
@@ -127,7 +129,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
             );
         }
 
-        request.signature = await (this.account as KernelSmartContractAccount).validator.getSignature(request);
+        request.signature = await this.account.validator.getSignature(request);
 
         return {
             hash: await this.rpcClient.sendUserOperation(
@@ -136,6 +138,13 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
             ),
             request,
         };
+    };
+
+    getAccount: () => KernelSmartContractAccount = () => {
+        if (!isKernelAccount(this.account)) {
+            throw new Error("account not connected!");
+        }
+        return this.account;
     };
 
 

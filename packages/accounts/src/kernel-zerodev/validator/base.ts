@@ -1,6 +1,7 @@
-import { getChain, type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
+import { type SmartAccountSigner, type UserOperationRequest } from "@alchemy/aa-core";
 import { concat, type Chain, type Hex, pad, toHex, type Address, createPublicClient, http, concatHex, getContract } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi";
+import { ECDSA_VALIDATOR_ADDRESS, ENTRYPOINT_ADDRESS } from "../constants";
 
 export enum ValidatorMode {
     sudo = '0x00000000',
@@ -9,10 +10,11 @@ export enum ValidatorMode {
 }
 
 export interface KernelBaseValidatorParams {
-    validatorAddress: Hex;
-    mode: ValidatorMode;
-    chain: Chain | number;
-    entryPointAddress: Address;
+    projectId: string;
+    validatorAddress?: Hex;
+    mode?: ValidatorMode;
+    chain?: Chain;
+    entryPointAddress?: Address;
     enableSignature?: Hex;
     validUntil?: number;
     validAfter?: number;
@@ -26,7 +28,8 @@ export interface KernelBaseValidatorParams {
 export abstract class KernelBaseValidator {
     readonly validatorAddress: Hex;
     mode: ValidatorMode;
-    protected chain: Chain;
+    protected projectId: string;
+    protected chain?: Chain;
     protected entryPointAddress: Address;
     protected enableSignature?: Hex;
     protected validUntil: number;
@@ -35,16 +38,16 @@ export abstract class KernelBaseValidator {
     protected selector?: string;
 
     constructor(params: KernelBaseValidatorParams) {
-        this.validatorAddress = params.validatorAddress;
-        this.mode = params.mode;
-        const chain = typeof params.chain === "number" ? getChain(params.chain) : params.chain;
-        this.chain = chain;
-        this.entryPointAddress = params.entryPointAddress;
+        this.projectId = params.projectId;
+        this.validatorAddress = params.validatorAddress ?? ECDSA_VALIDATOR_ADDRESS;
+        this.mode = params.mode ?? ValidatorMode.sudo;
+        this.entryPointAddress = params.entryPointAddress ?? ENTRYPOINT_ADDRESS;
         this.enableSignature = params.enableSignature;
         this.validUntil = params.validUntil ?? 0;
         this.validAfter = params.validAfter ?? 0;
         this.executor = params.executor;
         this.selector = params.selector;
+        this.chain = params.chain;
     }
 
     abstract encodeEnable(enableData: Hex): Hex;
@@ -68,6 +71,9 @@ export abstract class KernelBaseValidator {
     }
 
     async approveExecutor(kernel: string, selector: string, executor: string, validUntil: number, validAfter: number, validator: KernelBaseValidator): Promise<string> {
+        if (!this.chain) {
+            throw new Error("Validator uninitialized");
+        }
         const sender = kernel;
         const ownerSig = await (await this.signer() as any)._signTypedData(
             {
@@ -95,7 +101,10 @@ export abstract class KernelBaseValidator {
     }
 
     async resolveValidatorMode(userOp: UserOperationRequest): Promise<ValidatorMode> {
-        const publicClient= createPublicClient({ transport: http(), chain: this.chain });
+        if (!this.chain) {
+            throw new Error("Validator uninitialized");
+        }
+        const publicClient = createPublicClient({ transport: http(), chain: this.chain });
         const kernel = getContract({ abi: KernelAccountAbi, address: userOp.sender, publicClient });
         let mode: ValidatorMode;
         try {

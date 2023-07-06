@@ -11,38 +11,63 @@ import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator, ValidatorMode } from "./validator/base";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi";
-import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest } from "@alchemy/aa-core";
-import { MULTISEND_ADDR } from "./constants";
+import { type BaseSmartAccountParams, BaseSmartContractAccount, type SmartAccountSigner, type BatchUserOperationCallData, type UserOperationRequest, defineReadOnly, getChain } from "@alchemy/aa-core";
+import { BUNDLER_URL, ENTRYPOINT_ADDRESS, KERNEL_FACTORY_ADDRESS, MULTISEND_ADDR } from "./constants";
 import { encodeMultiSend } from "./utils";
 import { MultiSendAbi } from "./abis/MultiSendAbi";
+import { polygonMumbai } from "viem/chains";
+import { getChainId } from "./api";
+import { createZeroDevPublicErc4337Client } from "./client/create-client";
 
 export interface KernelSmartAccountParams<
-    TTransport extends Transport | FallbackTransport = Transport
-> extends BaseSmartAccountParams<TTransport> {
+    TTransport extends Transport | FallbackTransport = Transport,
+> extends Partial<BaseSmartAccountParams<TTransport>> {
+    projectId: string;
     owner: SmartAccountSigner;
-    factoryAddress: Address;
+    factoryAddress?: Address;
     index?: bigint;
-    defaultValidator: KernelBaseValidator
-    validator?: KernelBaseValidator
+    validator?: KernelBaseValidator;
+}
+
+export function isKernelAccount(account: any): account is KernelSmartContractAccount {
+    return account && account.connectValidator !== undefined;
 }
 
 export class KernelSmartContractAccount<
-    TTransport extends Transport | FallbackTransport = Transport
+    TTransport extends Transport | FallbackTransport = Transport,
 > extends BaseSmartContractAccount<TTransport> {
     private owner: SmartAccountSigner;
     private readonly factoryAddress: Address;
     private readonly index: bigint;
-    private defaultValidator: KernelBaseValidator;
-    validator: KernelBaseValidator;
+    validator?: KernelBaseValidator;
 
 
     constructor(params: KernelSmartAccountParams) {
-        super(params);
+        super({ ...params, entryPointAddress: params.entryPointAddress ?? ENTRYPOINT_ADDRESS, chain: params.chain ?? polygonMumbai, rpcClient: params.rpcClient ?? BUNDLER_URL });
         this.index = params.index ?? 0n;
         this.owner = params.owner;
-        this.factoryAddress = params.factoryAddress;
-        this.defaultValidator = params.defaultValidator!
-        this.validator = params.validator ?? params.defaultValidator!
+        this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
+        this.validator = params.validator;
+    }
+
+    public static async init(params: KernelSmartAccountParams): Promise<KernelSmartContractAccount> {
+        const chainId = await getChainId(params.projectId);
+        if (!chainId) {
+            throw new Error("ChainId not found");
+        }
+        const chain = getChain(chainId);
+        const rpcClient = typeof params.rpcClient === "string" ? createZeroDevPublicErc4337Client({
+            chain,
+            rpcUrl: params.rpcClient ?? BUNDLER_URL,
+            projectId: params.projectId,
+        }) : params.rpcClient;
+        const instance = new KernelSmartContractAccount({ ...params, chain, rpcClient });
+        return instance;
+    }
+
+    connectValidator(validator: KernelBaseValidator): this {
+        defineReadOnly(this, "validator", validator);
+        return this;
     }
 
     getDummySignature(): Hex {
@@ -50,10 +75,13 @@ export class KernelSmartContractAccount<
     }
 
     async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         if (this.validator.mode !== ValidatorMode.sudo) {
-            throw new Error("Validator Mode not supported")
+            throw new Error("Validator Mode not supported");
         } else {
-            return this.encodeExecuteAction(target, value, data, 0)
+            return this.encodeExecuteAction(target, value, data, 0);
         }
     }
 
@@ -66,18 +94,18 @@ export class KernelSmartContractAccount<
             abi: MultiSendAbi,
             functionName: 'multiSend',
             args: [encodeMultiSend(_txs)]
-        })
-        return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata)
+        });
+        return await this.encodeExecuteDelegate(MULTISEND_ADDR, BigInt(0), multiSendCalldata);
     }
 
     async encodeExecuteDelegate(target: Hex, value: bigint, data: Hex): Promise<Hex> {
-        return this.encodeExecuteAction(target, value, data, 1)
+        return this.encodeExecuteAction(target, value, data, 1);
     }
 
     async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
         try {
-            const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
-            let sig = await this.owner.signMessage(toBytes(hashMessage({ raw: formattedMessage })))
+            const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
+            let sig = await this.owner.signMessage(toBytes(hashMessage({ raw: formattedMessage })));
             // If the account is undeployed, use ERC-6492
             if (!await this.isAccountDeployed()) {
                 sig = (encodeAbiParameters(
@@ -88,24 +116,30 @@ export class KernelSmartContractAccount<
                         sig
                     ]
                 ) + '6492649264926492649264926492649264926492649264926492649264926492' // magic suffix
-                ) as Hex
+                ) as Hex;
             }
 
-            return sig
+            return sig;
         } catch (err: any) {
-            console.error("Got Error - ", err.message)
-            throw new Error("Message Signing with EIP6492 failed")
+            console.error("Got Error - ", err.message);
+            throw new Error("Message Signing with EIP6492 failed");
         }
 
 
     }
 
     async signMessage(msg: Uint8Array | string): Promise<Hex> {
-        const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg
-        return await this.validator.signMessage(formattedMessage)
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
+        const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
+        return await this.validator.signMessage(formattedMessage);
     }
 
     signUserOp(userOp: UserOperationRequest): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         return this.validator.signUserOp(userOp);
     }
 
@@ -124,15 +158,18 @@ export class KernelSmartContractAccount<
     }
 
     protected async getFactoryInitCode(): Promise<Hex> {
+        if (!this.validator) {
+            throw new Error("Validator not connected");
+        }
         try {
             return encodeFunctionData({
                 abi: KernelFactoryAbi,
                 functionName: "createAccount",
-                args: [this.defaultValidator.getAddress(), await this.defaultValidator.getEnableData(), this.index],
-            })
+                args: [this.validator.getAddress(), await this.validator.getEnableData(), this.index],
+            });
         } catch (err: any) {
-            console.error("err occurred:", err.message)
-            throw new Error("Factory Code generation failed")
+            console.error("err occurred:", err.message);
+            throw new Error("Factory Code generation failed");
         }
 
     }
