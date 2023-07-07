@@ -15,9 +15,10 @@ import {
 // UserOperation is the first parameter of validateUseOp
 const validateUserOpMethod = "simulateValidation";
 
-// @ts-ignore
 const UserOpType = EntryPointAbi.find(
+// @ts-ignore
   (entry) => entry.name === validateUserOpMethod
+// @ts-ignore
 )?.inputs[0];
 
 function encode(
