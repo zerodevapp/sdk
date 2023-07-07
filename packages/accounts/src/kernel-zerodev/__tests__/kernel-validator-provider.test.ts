@@ -2,15 +2,15 @@ import { createPublicClient, http, type Hex } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi.js";
 import { config } from "./kernel-account.test.js";
-import { PrivateKeySigner } from "@alchemy/aa-core";
+import { LocalAccountSigner } from "@alchemy/aa-core";
 import { generatePrivateKey } from "viem/accounts";
 import { ECDSAProvider } from "../validator-provider/index.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Validator Provider Test", async () => {
 
-    const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey);
-    const secondOwner = PrivateKeySigner.privateKeyToAccountSigner(generatePrivateKey());
+    const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
+    const secondOwner = LocalAccountSigner.privateKeyToAccountSigner(generatePrivateKey());
 
     const client = createPublicClient({
         chain: polygonMumbai,

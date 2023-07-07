@@ -7,7 +7,7 @@ import {
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from 'viem/accounts'
 import { MockSigner } from "./mocks/mock-signer.js";
-import { PrivateKeySigner } from "@alchemy/aa-core";
+import { LocalAccountSigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
 
@@ -32,7 +32,7 @@ describe("Kernel Account Tests", () => {
     //any wallet should work
     
 
-    const owner = PrivateKeySigner.privateKeyToAccountSigner(config.privateKey)
+    const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey)
     const mockOwner = new MockSigner()
 
     it("getAddress returns valid counterfactual address", async () => {
