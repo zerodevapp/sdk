@@ -1,0 +1,45 @@
+name: Run checks on Pull Requests
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  enforce_title:
+    name: Enforce PR Title Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Use commitlint to check PR title
+        run: echo "${{ github.event.pull_request.title }}" | yarn commitlint
+
+  build_and_lint:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint:check
+
+      - name: Build
+        run: yarn build

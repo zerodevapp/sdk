@@ -14,9 +14,10 @@ export type {
   SimpleSmartAccountParams,
 } from "./account/simple.js";
 export type * from "./account/types.js";
-export { type SmartAccountSigner } from "./signer/types";
-export { PrivateKeySigner } from "./signer/private-key";
-export { HdAccountSigner } from "./signer/hd-account";
+export { HdAccountSigner } from "./signer/hd-account.js";
+export { LocalAccountSigner } from "./signer/local-account.js";
+export { PrivateKeySigner } from "./signer/private-key.js";
+export type { SmartAccountSigner } from "./signer/types.js";
 
 export {
   createPublicErc4337Client,
@@ -35,8 +36,11 @@ export type * from "./types.js";
 export {
   asyncPipe,
   deepHexlify,
+  defineReadOnly,
   getChain,
   getUserOperationHash,
   resolveProperties,
-  defineReadOnly,
 } from "./utils.js";
+
+export { Logger } from "./logger.js";
+export type { LogLevel } from "./logger.js";
