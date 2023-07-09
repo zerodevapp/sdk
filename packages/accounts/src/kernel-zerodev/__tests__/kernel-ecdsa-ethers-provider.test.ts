@@ -22,7 +22,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
 
   it("should succesfully get counterfactual address", async () => {
     expect(await signer.getAddress()).toMatchInlineSnapshot(
-      `"0x59269BF95fA50690066523Ca86c8852a89e0Ad77"`
+      "0x59269BF95fA50690066523Ca86c8852a89e0Ad77"
     );
   });
 
