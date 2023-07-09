@@ -31,12 +31,12 @@ import {
   ZeroDevProvider,
   ECDSAValidator,
   type ValidatorMode,
-} from "@zerodevapp/sdk@alpha";
-import { PrivateKeySigner } from "@alchemy/aa-core";
-import { polygonMumbai } from "viem/chains";
+} from '@zerodevapp/sdk@alpha';
+import { PrivateKeySigner } from '@alchemy/aa-core';
+import { polygonMumbai } from 'viem/chains';
 
 const KERNEL_ACCOUNT_FACTORY_ADDRESS =
-  "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39";
+  '0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39';
 
 // 1. define the EOA owner of the Smart Account
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
@@ -56,8 +56,8 @@ let ecdsaProvider = await ECDSAProvider.init({
 
 // 3. send a UserOperation
 const { hash } = await ecdsaProvider.sendUserOperation({
-  target: "0xTargetAddress",
-  data: "0xcallData",
+  target: '0xTargetAddress',
+  data: '0xcallData',
   value: 0n, // value: bigint or undefined
 });
 ```
@@ -78,8 +78,8 @@ let ecdsaProvider = await ECDSAProvider.init({
   owner,
   opts: {
     paymasterConfig: {
-      policy: "TOKEN_PAYMASTER",
-      gasToken: "TEST_ERC20",
+      policy: 'TOKEN_PAYMASTER',
+      gasToken: 'TEST_ERC20',
     },
   },
 });
@@ -96,6 +96,70 @@ const ecdsaProvider = await ECDSAProvider.init({
 
 // 2. Change the owner of the Kernel Account
 const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
+```
+
+### Via `ethers`
+
+```ts
+import { Wallet } from '@ethersproject/wallet';
+import {
+  ECDSAEthersProvider,
+  convertWalletToAccountSigner,
+} from '@zerodevapp/sdk@alpha';
+
+// 1. Create an ethers Wallet
+const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
+
+// 2. Create a ZeroDev ECDSAEthersProvider passing the ethers Wallet as the signer
+const provider = await ECDSAEthersProvider.init({
+  projectId, // zeroDev projectId
+  owner: convertWalletToAccountSigner(owner),
+  opts: {
+    paymasterConfig: {
+      policy: 'VERIFYING_PAYMASTER',
+    },
+  },
+});
+
+// 3. Get the AccountSigner adapter of ethers signer
+const signer = provider.getAccountSigner();
+
+// 4. send a UserOperation
+const { hash } = signer.sendUserOperation({
+  target: '0xTargetAddress',
+  data: '0xcallData',
+  value: 0n, // value: bigint or undefined
+});
+```
+
+### Via `viem` using `custom` transport which supports EIP-1193 providers
+
+```ts
+import { createWalletClient, custom } from 'viem';
+import { polygonMumbai } from 'viem/chains';
+import {
+  ECDSAProvider,
+  convertWalletClientToAccountSigner,
+} from '@zerodevapp/sdk@alpha';
+
+// 1. Create a Viem Wallet Client using the custom transport
+const client = createWalletClient({
+  chain: polygonMumbai,
+  transport: custom(window.ethereum),
+});
+
+// 2. Create a ZeroDev ECDSAProvider passing the Viem Wallet Client as the signer
+let ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner: convertWalletClientToAccountSigner(client),
+});
+
+// 3. send a UserOperation
+const { hash } = await ecdsaProvider.sendUserOperation({
+  target: '0xTargetAddress',
+  data: '0xcallData',
+  value: 0n, // value: bigint or undefined
+});
 ```
 
 ## Components
