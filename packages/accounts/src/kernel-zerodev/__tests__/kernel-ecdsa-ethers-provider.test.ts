@@ -1,5 +1,5 @@
 import { Wallet } from "@ethersproject/wallet";
-import { ECDSAEthersProvider } from "../ethers-provider/ecdsa-ethers-provider.js";
+import { ZeroDevEthersProvider } from "../ethers-provider/ethers-provider.js";
 import { config } from "./kernel-account.test.js";
 import { convertWalletToAccountSigner } from "../utils.js";
 
@@ -8,7 +8,7 @@ const OWNER_MNEMONIC =
 
 describe("Kernel ECDSA ethers provider tests", async () => {
   const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
-  const provider = await ECDSAEthersProvider.init({
+  const provider = await ZeroDevEthersProvider.init("ECDSA", {
     projectId: config.projectIdWithGasSponsorship,
     owner: convertWalletToAccountSigner(owner),
     opts: {
@@ -53,7 +53,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
     "should fail to execute if account address is not deployed and not correct",
     async () => {
       const accountAddress = "0xc33AbD9621834CA7c6Fc9f9CC3c47b9c17B03f9F";
-      const provider = await ECDSAEthersProvider.init({
+      const provider = await ZeroDevEthersProvider.init("ECDSA", {
         projectId: config.projectId,
         owner: convertWalletToAccountSigner(owner),
         opts: {

@@ -103,15 +103,15 @@ const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```ts
 import { Wallet } from "@ethersproject/wallet";
 import {
-  ECDSAEthersProvider,
+  ZeroDevEthersProvider,
   convertWalletToAccountSigner,
 } from "@zerodevapp/sdk@alpha";
 
 // 1. Create an ethers Wallet
 const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
 
-// 2. Create a ZeroDev ECDSAEthersProvider passing the ethers Wallet as the signer
-const provider = await ECDSAEthersProvider.init({
+// 2. Create a ZeroDev ZeroDevEthersProvider passing the ethers Wallet as the signer
+const provider = await ZeroDevEthersProvider.init("ECDSA", {
   projectId, // zeroDev projectId
   owner: convertWalletToAccountSigner(owner),
   opts: {

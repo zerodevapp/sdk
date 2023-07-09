@@ -1,6 +1,4 @@
-import type { ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
-import type { ValidatorProviderParams } from "../validator-provider/base.js";
-import { getChainId } from "../api/index.js";
+import { getChainId } from '../api/index.js';
 import {
   SmartAccountProvider,
   getChain,
@@ -12,27 +10,32 @@ import {
   type GasEstimatorMiddleware,
   type PaymasterAndDataMiddleware,
   type PublicErc4337Client,
-} from "@alchemy/aa-core";
-import { AccountSigner } from "@alchemy/aa-ethers";
-import { JsonRpcProvider } from "@ethersproject/providers";
-import { ECDSAProvider } from "../validator-provider/ecdsa-provider.js";
+} from '@alchemy/aa-core';
+import { AccountSigner } from '@alchemy/aa-ethers';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import type { SupportedValidators } from '../validator/types.js';
+import type { ValidatorProviderParamsMap } from '../validator-provider/types.js';
+import { ValidatorProviders } from '../validator-provider/index.js';
 
-export class ECDSAEthersProvider extends JsonRpcProvider {
+export class ZeroDevEthersProvider<
+  V extends SupportedValidators
+> extends JsonRpcProvider {
   readonly accountProvider: SmartAccountProvider<HttpTransport>;
-  constructor(params: ValidatorProviderParams<ECDSAValidatorParams>) {
+  constructor(validatorType: V, params: ValidatorProviderParamsMap[V]) {
     super();
-    this.accountProvider = new ECDSAProvider(params);
+    this.accountProvider = new ValidatorProviders[validatorType](params);
   }
 
-  public static async init(
-    params: ValidatorProviderParams<ECDSAValidatorParams>
-  ): Promise<ECDSAEthersProvider> {
+  public static async init<V extends SupportedValidators>(
+    validatorType: V,
+    params: ValidatorProviderParamsMap[V]
+  ): Promise<ZeroDevEthersProvider<V>> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
-      throw new Error("ChainId not found");
+      throw new Error('ChainId not found');
     }
     const chain = getChain(chainId);
-    const instance = new ECDSAEthersProvider({
+    const instance = new ZeroDevEthersProvider(validatorType, {
       ...params,
       opts: {
         ...params.opts,
@@ -67,7 +70,7 @@ export class ECDSAEthersProvider extends JsonRpcProvider {
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
   ): AccountSigner {
-    defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn));
+    defineReadOnly(this, 'accountProvider', this.accountProvider.connect(fn));
     return this.getAccountSigner();
   }
 
