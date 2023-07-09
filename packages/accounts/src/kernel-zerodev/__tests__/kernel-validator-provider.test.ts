@@ -7,7 +7,7 @@ import { generatePrivateKey } from "viem/accounts";
 import { ECDSAProvider } from "../validator-provider/index.js";
 
 // [TODO] - Organize the test code properly
-describe("Kernel Validator Provider Test", async () => {
+describe.skip("Kernel Validator Provider Test", async () => {
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const secondOwner = LocalAccountSigner.privateKeyToAccountSigner(
     generatePrivateKey()

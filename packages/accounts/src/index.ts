@@ -10,6 +10,7 @@ export {
 } from "./kernel-zerodev/validator/base.js";
 export { ECDSAValidator } from "./kernel-zerodev/validator/ecdsa-validator.js";
 export { ECDSAProvider } from "./kernel-zerodev/validator-provider/index.js";
+export { ZeroDevEthersProvider } from "./kernel-zerodev/ethers-provider/ethers-provider.js";
 export type {
   ValidatorProviderParams,
   ValidatorProviderParamsOpts,
