@@ -24,6 +24,7 @@ export const config = {
   // Turn off all policies related to gas sponsorship for this projectId
   // To make all the testcases pass
   projectId: "8db3f9f0-f8d0-4c69-9bc6-5c522ee25844",
+  projectIdWithGasSponsorship: "c73037ef-8c0b-48be-a581-1f3d161151d3",
 };
 
 // [TODO] - Organize instantiations and tests properly
@@ -275,7 +276,7 @@ describe("Kernel Account Tests", () => {
     "sponsored sendUserOperation should execute properly",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({
-        projectId: "c73037ef-8c0b-48be-a581-1f3d161151d3",
+        projectId: config.projectIdWithGasSponsorship,
         owner,
         opts: {
           accountConfig: {
