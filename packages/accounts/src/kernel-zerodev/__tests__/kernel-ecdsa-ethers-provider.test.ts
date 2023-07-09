@@ -1,6 +1,6 @@
 import { Wallet } from '@ethersproject/wallet';
 import { ECDSAEthersProvider } from '../ethers-provider/ecdsa-ethers-provider.js';
-import { config } from './kernel-account.test';
+import { config } from './kernel-account.test.js';
 import { convertWalletToAccountSigner } from '../utils.js';
 
 const OWNER_MNEMONIC =
