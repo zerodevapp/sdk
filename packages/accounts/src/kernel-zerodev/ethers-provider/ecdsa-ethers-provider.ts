@@ -1,6 +1,6 @@
-import type { ECDSAValidatorParams } from '../validator/ecdsa-validator.js';
-import type { ValidatorProviderParams } from '../validator-provider/base.js';
-import { getChainId } from '../api/index.js';
+import type { ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
+import type { ValidatorProviderParams } from "../validator-provider/base.js";
+import { getChainId } from "../api/index.js";
 import {
   SmartAccountProvider,
   getChain,
@@ -12,10 +12,10 @@ import {
   type GasEstimatorMiddleware,
   type PaymasterAndDataMiddleware,
   type PublicErc4337Client,
-} from '@alchemy/aa-core';
-import { AccountSigner } from '@alchemy/aa-ethers';
-import { JsonRpcProvider } from '@ethersproject/providers';
-import { ECDSAProvider } from '../validator-provider/ecdsa-provider.js';
+} from "@alchemy/aa-core";
+import { AccountSigner } from "@alchemy/aa-ethers";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import { ECDSAProvider } from "../validator-provider/ecdsa-provider.js";
 
 export class ECDSAEthersProvider extends JsonRpcProvider {
   readonly accountProvider: SmartAccountProvider<HttpTransport>;
@@ -29,7 +29,7 @@ export class ECDSAEthersProvider extends JsonRpcProvider {
   ): Promise<ECDSAEthersProvider> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
-      throw new Error('ChainId not found');
+      throw new Error("ChainId not found");
     }
     const chain = getChain(chainId);
     const instance = new ECDSAEthersProvider({
@@ -67,7 +67,7 @@ export class ECDSAEthersProvider extends JsonRpcProvider {
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
   ): AccountSigner {
-    defineReadOnly(this, 'accountProvider', this.accountProvider.connect(fn));
+    defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn));
     return this.getAccountSigner();
   }
 
