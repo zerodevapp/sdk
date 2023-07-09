@@ -1,4 +1,4 @@
-import { getChainId } from '../api/index.js';
+import { getChainId } from "../api/index.js";
 import {
   SmartAccountProvider,
   getChain,
@@ -10,12 +10,12 @@ import {
   type GasEstimatorMiddleware,
   type PaymasterAndDataMiddleware,
   type PublicErc4337Client,
-} from '@alchemy/aa-core';
-import { AccountSigner } from '@alchemy/aa-ethers';
-import { JsonRpcProvider } from '@ethersproject/providers';
-import type { SupportedValidators } from '../validator/types.js';
-import type { ValidatorProviderParamsMap } from '../validator-provider/types.js';
-import { ValidatorProviders } from '../validator-provider/index.js';
+} from "@alchemy/aa-core";
+import { AccountSigner } from "@alchemy/aa-ethers";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import type { SupportedValidators } from "../validator/types.js";
+import type { ValidatorProviderParamsMap } from "../validator-provider/types.js";
+import { ValidatorProviders } from "../validator-provider/index.js";
 
 export class ZeroDevEthersProvider<
   V extends SupportedValidators
@@ -32,7 +32,7 @@ export class ZeroDevEthersProvider<
   ): Promise<ZeroDevEthersProvider<V>> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
-      throw new Error('ChainId not found');
+      throw new Error("ChainId not found");
     }
     const chain = getChain(chainId);
     const instance = new ZeroDevEthersProvider(validatorType, {
@@ -70,7 +70,7 @@ export class ZeroDevEthersProvider<
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
   ): AccountSigner {
-    defineReadOnly(this, 'accountProvider', this.accountProvider.connect(fn));
+    defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn));
     return this.getAccountSigner();
   }
 
