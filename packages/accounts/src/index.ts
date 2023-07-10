@@ -22,3 +22,4 @@ export type * from "./kernel-zerodev/paymaster/types.js";
 export * as constants from "./kernel-zerodev/constants.js";
 export { KernelSmartContractAccount } from "./kernel-zerodev/account.js";
 export { ZeroDevProvider } from "./kernel-zerodev/provider.js";
+export * from "./kernel-zerodev/utils.js";

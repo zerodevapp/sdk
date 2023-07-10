@@ -19,10 +19,7 @@ import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
 
 export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
   paymasterConfig?: PaymasterConfig<PaymasterPolicy>;
-  providerConfig?: Omit<
-    ZeroDevProviderConfig,
-    keyof ValidatorProviderParams<P>
-  >;
+  providerConfig?: Partial<ZeroDevProviderConfig>;
   accountConfig?: Omit<
     KernelSmartAccountParams,
     keyof ValidatorProviderParams<P>

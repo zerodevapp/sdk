@@ -202,7 +202,6 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         // @ts-ignore
         return this.account.signWithEip6492(data);
       default:
-        // @ts-expect-error
         return this.rpcClient.request(args);
     }
   };
