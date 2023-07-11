@@ -1,9 +1,6 @@
-# Zerodev Kernel Account API
+# ZeroDev SDK
 
-This package contains ZeroDev's KernelV2 implementation of the `@alchemy/aa-core` [`BaseSmartContractAccount`](https://github.com/alchemyplatform/aa-sdk/blob/main/packages/core/src/account/base.ts) class defined in `@alchemy/aa-core`.
-
-[What is Kernel V2?](https://docs.zerodev.app/blog/kernel-v2-and-the-lessons-we-learned)
-[Documentation](https://docs.zerodev.app/use-wallets/overview)
+SDK for [ZeroDev](https://docs.zerodev.app/), based on [Kernel](https://github.com/zerodevapp/kernel).
 
 ## Getting started
 
