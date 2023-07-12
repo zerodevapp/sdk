@@ -4,7 +4,10 @@ import {
   type SmartAccountSigner,
 } from "@alchemy/aa-core";
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider.js";
-import type { KernelBaseValidator, KernelBaseValidatorParams } from "../validator/base.js";
+import type {
+  KernelBaseValidator,
+  KernelBaseValidatorParams,
+} from "../validator/base.js";
 import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
 import {
   KernelSmartContractAccount,
@@ -31,7 +34,9 @@ export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   opts?: ValidatorProviderParamsOpts<P>;
 }
 
-export type ExtendedValidatorProviderParams<P extends KernelBaseValidatorParams> = ValidatorProviderParams<P> & RequiredProps<P>
+export type ExtendedValidatorProviderParams<
+  P extends KernelBaseValidatorParams
+> = ValidatorProviderParams<P> & RequiredProps<P>;
 
 // A simple facade abstraction for validator related provider operations
 // Needs to be implemented for each validator plugin

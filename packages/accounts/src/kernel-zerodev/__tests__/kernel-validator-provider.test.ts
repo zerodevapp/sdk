@@ -32,8 +32,8 @@ describe("Kernel Validator Provider Test", async () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10,
-            }
+              txMaxRetries: 10,
+            },
           },
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
@@ -48,9 +48,7 @@ describe("Kernel Validator Provider Test", async () => {
         abi: ECDSAValidatorAbi,
         address: config.validatorAddress,
       });
-      console.log(
-        `Owner before: ${currentOwner}}`
-      );
+      console.log(`Owner before: ${currentOwner}}`);
       accountAddress = await ecdsaProvider.getAccount().getAddress();
       const resp = await ecdsaProvider.changeOwner(
         await secondOwner.getAddress()
@@ -82,8 +80,8 @@ describe("Kernel Validator Provider Test", async () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10,
-            }
+              txMaxRetries: 10,
+            },
           },
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
@@ -98,9 +96,7 @@ describe("Kernel Validator Provider Test", async () => {
         abi: ECDSAValidatorAbi,
         address: config.validatorAddress,
       });
-      console.log(
-        `Owner before: ${currentOwner}}`
-      );
+      console.log(`Owner before: ${currentOwner}}`);
 
       const resp2 = await ecdsaProvider.changeOwner(await owner.getAddress());
       await ecdsaProvider.waitForUserOperationTransaction(resp2.hash as Hex);

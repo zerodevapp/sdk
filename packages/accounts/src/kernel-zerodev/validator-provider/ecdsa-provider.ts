@@ -1,5 +1,11 @@
-import { ValidatorProvider, type ExtendedValidatorProviderParams } from "./base.js";
-import { ECDSAValidator, type ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
+import {
+  ValidatorProvider,
+  type ExtendedValidatorProviderParams,
+} from "./base.js";
+import {
+  ECDSAValidator,
+  type ECDSAValidatorParams,
+} from "../validator/ecdsa-validator.js";
 import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";

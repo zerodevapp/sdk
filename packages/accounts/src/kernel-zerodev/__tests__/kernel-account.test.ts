@@ -254,9 +254,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
 
@@ -292,9 +292,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
 
@@ -332,9 +332,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
       //to fix bug in old versions
@@ -378,9 +378,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
 
@@ -435,9 +435,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
       const signer2 = ecdsaProvider.getAccount();
@@ -454,9 +454,9 @@ describe("Kernel Account Tests", () => {
           },
           providerConfig: {
             opts: {
-                txMaxRetries: 10
-            }
-          }
+              txMaxRetries: 10,
+            },
+          },
         },
       });
       const signer3 = ecdsaProvider.getAccount();
