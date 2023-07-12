@@ -252,6 +252,11 @@ describe("Kernel Account Tests", () => {
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
 
@@ -285,6 +290,11 @@ describe("Kernel Account Tests", () => {
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
 
@@ -320,6 +330,11 @@ describe("Kernel Account Tests", () => {
             policy: "TOKEN_PAYMASTER",
             gasToken: "TEST_ERC20",
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
       //to fix bug in old versions
@@ -361,6 +376,11 @@ describe("Kernel Account Tests", () => {
             policy: "TOKEN_PAYMASTER",
             gasToken: "TEST_ERC20",
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
 
@@ -413,6 +433,11 @@ describe("Kernel Account Tests", () => {
           accountConfig: {
             index: 3n,
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
       const signer2 = ecdsaProvider.getAccount();
@@ -427,6 +452,11 @@ describe("Kernel Account Tests", () => {
           accountConfig: {
             index: 4n,
           },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10
+            }
+          }
         },
       });
       const signer3 = ecdsaProvider.getAccount();

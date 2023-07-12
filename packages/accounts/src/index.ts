@@ -14,6 +14,7 @@ export { ZeroDevEthersProvider } from "./kernel-zerodev/ethers-provider/ethers-p
 export type {
   ValidatorProviderParams,
   ValidatorProviderParamsOpts,
+  ExtendedValidatorProviderParams,
 } from "./kernel-zerodev/validator-provider/base.js";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";

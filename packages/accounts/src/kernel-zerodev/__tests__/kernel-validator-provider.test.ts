@@ -28,7 +28,12 @@ describe.skip("Kernel Validator Provider Test", async () => {
         owner,
         opts: {
           accountConfig: {
-            index: 10041n,
+            index: 10045n,
+          },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10,
+            }
           },
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
@@ -37,6 +42,15 @@ describe.skip("Kernel Validator Provider Test", async () => {
       });
 
       await ecdsaProvider.getAccount().getInitCode();
+      let currentOwner = await client.readContract({
+        functionName: "ecdsaValidatorStorage",
+        args: [await ecdsaProvider.getAccount().getAddress()],
+        abi: ECDSAValidatorAbi,
+        address: config.validatorAddress,
+      });
+      console.log(
+        `Owner before: ${currentOwner}}`
+      );
       accountAddress = await ecdsaProvider.getAccount().getAddress();
       const resp = await ecdsaProvider.changeOwner(
         await secondOwner.getAddress()
@@ -64,8 +78,12 @@ describe.skip("Kernel Validator Provider Test", async () => {
         owner: secondOwner,
         opts: {
           accountConfig: {
-            index: 0n,
             accountAddress,
+          },
+          providerConfig: {
+            opts: {
+                txMaxRetries: 10,
+            }
           },
           paymasterConfig: {
             policy: "VERIFYING_PAYMASTER",
@@ -74,6 +92,15 @@ describe.skip("Kernel Validator Provider Test", async () => {
       });
 
       await ecdsaProvider.getAccount().getInitCode();
+      let currentOwner = await client.readContract({
+        functionName: "ecdsaValidatorStorage",
+        args: [await ecdsaProvider.getAccount().getAddress()],
+        abi: ECDSAValidatorAbi,
+        address: config.validatorAddress,
+      });
+      console.log(
+        `Owner before: ${currentOwner}}`
+      );
 
       const resp2 = await ecdsaProvider.changeOwner(await owner.getAddress());
       await ecdsaProvider.waitForUserOperationTransaction(resp2.hash as Hex);
