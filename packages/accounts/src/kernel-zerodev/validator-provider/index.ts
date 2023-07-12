@@ -4,7 +4,7 @@ import type { ValidatorProviderMap } from "./types.js";
 
 export const ValidatorProviders: ValidatorProviderMap = {
   ECDSA: ECDSAProvider,
-  MULTI_ECDSA: MultiECDSAProvider
+  MULTI_ECDSA: MultiECDSAProvider,
 };
 
 export { ECDSAProvider };

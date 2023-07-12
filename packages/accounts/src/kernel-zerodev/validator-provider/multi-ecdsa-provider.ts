@@ -1,4 +1,8 @@
-import { ValidatorProvider, type ExtendedValidatorProviderParams, type ValidatorProviderParams } from "./base.js";
+import {
+  ValidatorProvider,
+  type ExtendedValidatorProviderParams,
+  type ValidatorProviderParams,
+} from "./base.js";
 import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import {
@@ -13,7 +17,9 @@ export type MultiECDSAProviderParams =
     RequiredProps<MultiECDSAValidatorParams>;
 
 export class MultiECDSAProvider extends ValidatorProvider<MultiECDSAValidatorParams> {
-  constructor(params: ExtendedValidatorProviderParams<MultiECDSAValidatorParams>) {
+  constructor(
+    params: ExtendedValidatorProviderParams<MultiECDSAValidatorParams>
+  ) {
     const chain =
       typeof params.opts?.providerConfig?.chain === "number"
         ? getChain(params.opts.providerConfig.chain)
@@ -38,7 +44,7 @@ export class MultiECDSAProvider extends ValidatorProvider<MultiECDSAValidatorPar
   }
 
   public static async init(
-    params:  ExtendedValidatorProviderParams<MultiECDSAValidatorParams>
+    params: ExtendedValidatorProviderParams<MultiECDSAValidatorParams>
   ): Promise<MultiECDSAProvider> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
