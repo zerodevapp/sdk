@@ -1,11 +1,13 @@
 import {
-  getChain,
   type Hex,
   type SendUserOperationResult,
   type SmartAccountSigner,
 } from "@alchemy/aa-core";
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider.js";
-import type { KernelBaseValidatorParams } from "../validator/base.js";
+import type {
+  KernelBaseValidator,
+  KernelBaseValidatorParams,
+} from "../validator/base.js";
 import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
 import {
   KernelSmartContractAccount,
@@ -13,9 +15,8 @@ import {
   isKernelAccount,
 } from "../account.js";
 import { polygonMumbai } from "viem/chains";
-import type { SupportedValidators } from "../validator/types.js";
-import { Validators } from "../validator/index.js";
 import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
+import type { RequiredProps } from "../types.js";
 
 export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
   paymasterConfig?: PaymasterConfig<PaymasterPolicy>;
@@ -33,30 +34,24 @@ export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   opts?: ValidatorProviderParamsOpts<P>;
 }
 
+export type ExtendedValidatorProviderParams<
+  P extends KernelBaseValidatorParams
+> = ValidatorProviderParams<P> & RequiredProps<P>;
+
 // A simple facade abstraction for validator related provider operations
 // Needs to be implemented for each validator plugin
 export abstract class ValidatorProvider<
   P extends KernelBaseValidatorParams
 > extends ZeroDevProvider {
   constructor(
-    params: ValidatorProviderParams<P>,
-    validatorType: SupportedValidators = "ECDSA"
+    params: ExtendedValidatorProviderParams<P>,
+    validator: KernelBaseValidator
   ) {
-    const chain =
-      typeof params.opts?.providerConfig?.chain === "number"
-        ? getChain(params.opts.providerConfig.chain)
-        : params.opts?.providerConfig?.chain ?? polygonMumbai;
     super({
       ...params.opts?.providerConfig,
+      chain: params.opts?.providerConfig?.chain ?? polygonMumbai,
       rpcUrl: params.opts?.providerConfig?.rpcUrl,
       projectId: params.projectId,
-      chain,
-    });
-    const validator = new Validators[validatorType]({
-      projectId: params.projectId,
-      owner: params.owner,
-      chain,
-      ...params.opts?.validatorConfig,
     });
     this.connect(
       () =>

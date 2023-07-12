@@ -54,11 +54,11 @@ export class ECDSAValidator extends KernelBaseValidator {
     });
   }
 
-  encodeDisable(enableData: Hex = "0x"): Hex {
+  encodeDisable(disableData: Hex = "0x"): Hex {
     return encodeFunctionData({
       abi: ECDSAValidatorAbi,
       functionName: "disable",
-      args: [enableData],
+      args: [disableData],
     });
   }
 

@@ -1,15 +1,41 @@
-import { ValidatorProvider, type ValidatorProviderParams } from "./base.js";
-import { type ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
+import {
+  ValidatorProvider,
+  type ExtendedValidatorProviderParams,
+} from "./base.js";
+import {
+  ECDSAValidator,
+  type ECDSAValidatorParams,
+} from "../validator/ecdsa-validator.js";
 import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
+import { polygonMumbai } from "viem/chains";
 
 export class ECDSAProvider extends ValidatorProvider<ECDSAValidatorParams> {
-  constructor(params: ValidatorProviderParams<ECDSAValidatorParams>) {
-    super(params, "ECDSA");
+  constructor(params: ExtendedValidatorProviderParams<ECDSAValidatorParams>) {
+    const chain =
+      typeof params.opts?.providerConfig?.chain === "number"
+        ? getChain(params.opts.providerConfig.chain)
+        : params.opts?.providerConfig?.chain ?? polygonMumbai;
+    const validator = new ECDSAValidator({
+      projectId: params.projectId,
+      owner: params.owner,
+      chain,
+      ...params.opts?.validatorConfig,
+    });
+    super(
+      {
+        ...params,
+        opts: {
+          ...params.opts,
+          providerConfig: { ...params.opts?.providerConfig, chain },
+        },
+      },
+      validator
+    );
   }
 
   public static async init(
-    params: ValidatorProviderParams<ECDSAValidatorParams>
+    params: ExtendedValidatorProviderParams<ECDSAValidatorParams>
   ): Promise<ECDSAProvider> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
