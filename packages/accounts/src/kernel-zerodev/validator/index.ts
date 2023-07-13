@@ -4,3 +4,5 @@ import type { ValidatorMap } from "./types.js";
 export const Validators: ValidatorMap = {
   ECDSA: ECDSAValidator,
 };
+
+export { ECDSAValidator };
