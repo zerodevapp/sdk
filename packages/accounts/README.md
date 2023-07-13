@@ -162,6 +162,42 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 });
 ```
 
+### Using [Magic](https://magic.link/)
+
+```ts
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodevapp/sdk@alpha";
+import { Magic } from "magic-sdk";
+
+const magic = new Magic("MAGIC_API_KEY", {
+  // magic config...
+});
+
+let ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner: getRPCProviderOwner(magic.rpcProvider),
+});
+```
+
+### Using [Web3Auth](https://web3auth.io/)
+
+```ts
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodevapp/sdk@alpha";
+import { Web3Auth } from "@web3auth/modal";
+
+const web3auth = new Web3Auth({
+  // web3auth config...
+});
+
+await web3auth.initModal();
+
+web3auth.connect();
+
+let ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner: getRPCProviderOwner(web3auth.provider),
+});
+```
+
 ## Components
 
 ### Core Components
