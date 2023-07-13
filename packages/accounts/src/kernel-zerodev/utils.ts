@@ -10,6 +10,7 @@ import type {
   UserOperationCallData,
 } from "@alchemy/aa-core";
 import { Wallet } from "@ethersproject/wallet";
+import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
 import { gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
 
@@ -78,3 +79,15 @@ export const convertWalletToAccountSigner = (
       (await wallet.signMessage(msg)) as `0x${string}`,
   };
 };
+
+export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
+  const provider = new Web3Provider(web3Provider as ExternalProvider);
+  const signer = provider.getSigner();
+
+  return {
+    getAddress: async () =>
+      Promise.resolve((await signer.getAddress()) as `0x${string}`),
+    signMessage: async (msg: Uint8Array | string) =>
+      (await signer.signMessage(msg)) as `0x${string}`,
+  };
+}

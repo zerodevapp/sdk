@@ -1,6 +1,9 @@
-# ZeroDev SDK
+# Zerodev Kernel Account API
 
-SDK for [ZeroDev](https://docs.zerodev.app/), based on [Kernel](https://github.com/zerodevapp/kernel).
+This package contains ZeroDev's KernelV2 implementation of the `@alchemy/aa-core` [`BaseSmartContractAccount`](https://github.com/alchemyplatform/aa-sdk/blob/main/packages/core/src/account/base.ts) class defined in `@alchemy/aa-core`.
+
+[What is Kernel V2?](https://docs.zerodev.app/blog/kernel-v2-and-the-lessons-we-learned)
+[Documentation](https://docs.zerodev.app/use-wallets/overview)
 
 ## Getting started
 
@@ -156,6 +159,42 @@ const { hash } = await ecdsaProvider.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
+});
+```
+
+### Using [Magic](https://magic.link/)
+
+```ts
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodevapp/sdk@alpha";
+import { Magic } from "magic-sdk";
+
+const magic = new Magic("MAGIC_API_KEY", {
+  // magic config...
+});
+
+let ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner: getRPCProviderOwner(magic.rpcProvider),
+});
+```
+
+### Using [Web3Auth](https://web3auth.io/)
+
+```ts
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodevapp/sdk@alpha";
+import { Web3Auth } from "@web3auth/modal";
+
+const web3auth = new Web3Auth({
+  // web3auth config...
+});
+
+await web3auth.initModal();
+
+web3auth.connect();
+
+let ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner: getRPCProviderOwner(web3auth.provider),
 });
 ```
 
