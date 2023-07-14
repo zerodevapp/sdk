@@ -31,7 +31,7 @@
   "scripts": {
     "build": "yarn clean && yarn build:cjs && yarn build:esm && yarn build:types",
     "build:cjs": "tsc --project tsconfig.build.json --module commonjs --outDir ./dist/cjs --removeComments --verbatimModuleSyntax false && echo > ./dist/cjs/package.json '{\"type\":\"commonjs\"}'",
-    "build:esm": "tsc --project tsconfig.build.json --module es2015 --outDir ./dist/esm --removeComments && echo > ./dist/esm/package.json '{\"type\":\"module\"}'",
+    "build:esm": "tsc --project tsconfig.build.json --module es2020 --outDir ./dist/esm --removeComments && echo > ./dist/esm/package.json '{\"type\":\"module\"}'",
     "build:types": "tsc --project tsconfig.build.json --module esnext --declarationDir ./dist/types --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf ./dist",
     "test": "vitest",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.16",
     "@alchemy/aa-ethers": "^0.1.0-alpha.16",
+    "@turnkey/ethers": "^0.16.2",
     "typescript": "^5.0.4",
     "typescript-template": "*",
     "viem": "^1.1.7",
@@ -62,5 +63,8 @@
     "url": "https://github.com/zerodevapp/aa-sdk/issues"
   },
   "homepage": "https://github.com/zerodevapp/aa-sdk/blob/zd-provider/packages/accounts/src/kernel-zerodev/README.md#readme",
-  "gitHead": "68cd6767ddc09cac3b1f69050970d862f5902992"
+  "gitHead": "68cd6767ddc09cac3b1f69050970d862f5902992",
+  "dependencies": {
+    "axios": "^1.4.0"
+  }
 }
