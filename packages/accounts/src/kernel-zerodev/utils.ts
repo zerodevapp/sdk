@@ -93,8 +93,12 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
   };
 }
 
-export async function getCustodialOwner(identifier: string, turnkeyId: string, publicKey: string, privateKey: string): Promise<SmartAccountSigner> {
+export async function getCustodialOwner(identifier: string, custodialFilePath: string): Promise<SmartAccountSigner> {
   const { TurnkeySigner } = await import('@turnkey/ethers')
+  const fs = await import('fs')
+  const data = fs.readFileSync(custodialFilePath, 'utf8');
+  const values = data.split('\n');
+  const [privateKey, publicKey, turnkeyId] = values;
   const response = await axios.post(`http://localhost:4003/wallets/${identifier}`, {
     turnkeyId
   })
@@ -107,7 +111,11 @@ export async function getCustodialOwner(identifier: string, turnkeyId: string, p
     privateKeyId: response.data.walletId,
   });
   return {
-    getAddress: async () => await turnkeySigner.getAddress() as `0x${string}`,
+    getAddress: async () => {
+      const address = await turnkeySigner.getAddress() as `0x${string}`
+      console.log(address)
+      return address
+    },
     signMessage: async (msg: Uint8Array | string) =>
       (await turnkeySigner.signMessage(msg)) as `0x${string}`,
   };
