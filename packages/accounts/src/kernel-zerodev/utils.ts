@@ -111,11 +111,7 @@ export async function getCustodialOwner(identifier: string, custodialFilePath: s
     privateKeyId: response.data.walletId,
   });
   return {
-    getAddress: async () => {
-      const address = await turnkeySigner.getAddress() as `0x${string}`
-      console.log(address)
-      return address
-    },
+    getAddress: async () => await turnkeySigner.getAddress() as `0x${string}`,
     signMessage: async (msg: Uint8Array | string) =>
       (await turnkeySigner.signMessage(msg)) as `0x${string}`,
   };
