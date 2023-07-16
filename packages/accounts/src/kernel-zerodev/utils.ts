@@ -11,7 +11,7 @@ import type {
 } from "@alchemy/aa-core";
 import { Wallet } from "@ethersproject/wallet";
 import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
-import { gasTokenChainAddresses } from "./constants.js";
+import { API_URL, gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
 import axios from 'axios'
 
@@ -93,13 +93,13 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
   };
 }
 
-export async function getCustodialOwner(identifier: string, custodialFilePath: string): Promise<SmartAccountSigner> {
+export async function getCustodialOwner(identifier: string, custodialFilePath: string, apiUrl = API_URL): Promise<SmartAccountSigner> {
   const { TurnkeySigner } = await import('@turnkey/ethers')
   const fs = await import('fs')
   const data = fs.readFileSync(custodialFilePath, 'utf8');
   const values = data.split('\n');
   const [privateKey, publicKey, turnkeyId] = values;
-  const response = await axios.post(`http://localhost:4003/wallets/${identifier}`, {
+  const response = await axios.post(`${apiUrl}/wallets/${identifier}`, {
     turnkeyId
   })
 
