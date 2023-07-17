@@ -236,3 +236,13 @@ The `KernelBaseValidator` is a plugin that modify how transactions are validated
 3. Create a new validator provider that extends `ValidatorProvider` similar to [`ECDSAValidatorProvider`](`packages/accounts/src/kernel-zerodev/validator-provider/ecdsa-provider.ts`).
 
 4. Use the newly created validator provider as per above examples.
+
+#### `KernelBaseValidator` methods to be implemented in your validator class
+
+- `signer()` -- this method should return the signer as per your validator's implementation. For example, for Multi-Signature validator, this method should return one of the owner signer which is connected to the multisig wallet contract and currently using the DAPP.
+- `getOwner()` -- this method should return the address of the signer. For example, for Multi-Signature validator, this method should return the address of the signer which is connected to the multisig wallet contract and currently using the DAPP.
+- `getEnableData()` -- this method should return the bytes data for the `enable` method of your validator contract. For example, in ECDSA validator, this method returns `owner` address as bytes data. This method is used to enable the validator for the first time while creating the account wallet.
+- `encodeEnable(enableData: Hex)` -- this method should return the abi encoded function data for the `enable` method of your validator contract. For example, in ECDSA validator, this method returns the abi encoded function data for the `enable` method with owner address as bytes param.
+- `encodeDisable(disableData: Hex)` -- this method should return the abi encoded function data for the `disable` method of your validator contract. For example, in ECDSA validator, this method returns the abi encoded function data for the `disable` method with empty bytes param since ECDSA Validator doesn't require any param.
+- `signMessage(message: Uint8Array | string | Hex)` -- this method should return the signature of the message using the connected signer.
+- `signUserOp(userOp: UserOperationRequest)` -- this method should return the signature of the userOp hash using the connected signer.
