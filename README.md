@@ -226,3 +226,13 @@ The `KernelBaseValidator` is a plugin that modify how transactions are validated
 1. clone the repo
 2. run `yarn`
 3. Make changes to packages
+
+### Adding new custom validator plugin
+
+1. Create a new validator class that extends `KernelBaseValidator` similar to [`ECDSAValidator`](`packages/accounts/src/kernel-zerodev/validator/ecdsa-validator.ts`).
+
+2. Make sure to pass the `validatorAddress` of your validator to the `KernelBaseValidator` base class.
+
+3. Create a new validator provider that extends `ValidatorProvider` similar to [`ECDSAValidatorProvider`](`packages/accounts/src/kernel-zerodev/validator-provider/ecdsa-provider.ts`).
+
+4. Use the newly created validator provider as per above examples.
