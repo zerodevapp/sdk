@@ -11,8 +11,9 @@ import type {
 } from "@alchemy/aa-core";
 import { Wallet } from "@ethersproject/wallet";
 import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
-import { gasTokenChainAddresses } from "./constants.js";
+import { API_URL, gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
+import axios from 'axios'
 
 export type UserOperationCallDataWithDelegate = UserOperationCallData & {
   delegateCall?: boolean;
@@ -89,5 +90,29 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
       Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
       (await signer.signMessage(msg)) as `0x${string}`,
+  };
+}
+
+export async function getCustodialOwner(identifier: string, custodialFilePath: string, apiUrl = API_URL): Promise<SmartAccountSigner> {
+  const { TurnkeySigner } = await import('@turnkey/ethers')
+  const fs = await import('fs')
+  const data = fs.readFileSync(custodialFilePath, 'utf8');
+  const values = data.split('\n');
+  const [privateKey, publicKey, turnkeyId] = values;
+  const response = await axios.post(`${apiUrl}/wallets/${identifier}`, {
+    turnkeyId
+  })
+
+  const turnkeySigner = new TurnkeySigner({
+    apiPublicKey: publicKey,
+    apiPrivateKey: privateKey,
+    baseUrl: "https://coordinator-beta.turnkey.io",
+    organizationId: turnkeyId,
+    privateKeyId: response.data.walletId,
+  });
+  return {
+    getAddress: async () => await turnkeySigner.getAddress() as `0x${string}`,
+    signMessage: async (msg: Uint8Array | string) =>
+      (await turnkeySigner.signMessage(msg)) as `0x${string}`,
   };
 }
