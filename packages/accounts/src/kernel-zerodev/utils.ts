@@ -93,21 +93,51 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
   };
 }
 
-export async function getCustodialOwner(identifier: string, custodialFilePath: string, apiUrl = API_URL): Promise<SmartAccountSigner> {
-  const { TurnkeySigner } = await import('@turnkey/ethers')
-  const fs = await import('fs')
-  const data = fs.readFileSync(custodialFilePath, 'utf8');
-  const values = data.split('\n');
-  const [privateKey, publicKey, turnkeyId] = values;
+export async function getCustodialOwner(identifier: string, {
+  custodialFilePath, 
+  privateKey,
+  publicKey,
+  keyId,
+  apiUrl = API_URL
+}: {
+  privateKey?: string,
+  publicKey?: string,
+  keyId?: string,
+  custodialFilePath?: string,
+  apiUrl?: string
+}): Promise<SmartAccountSigner | undefined> {
+  if (custodialFilePath) {
+    let fsModule;
+      try {
+          fsModule = require.resolve('fs') && require('fs');
+      } catch (error) {
+          console.log("FS module not available. Skipping FS operation...");
+          return;
+    }
+    const data = fsModule.readFileSync(custodialFilePath, 'utf8');
+    const values = data.split('\n');
+    [privateKey, publicKey, keyId] = values;
+  }
+  let TurnkeySigner;
+  try {
+      TurnkeySigner = require.resolve('@turnkey/ethers') && require('@turnkey/ethers').TurnkeySigner;
+  } catch (error) {
+      console.log("@turnkey/ethers module not available. Skipping FS operation...");
+      return;
+  }
+  if (!privateKey || !publicKey || !keyId) {
+    throw new Error('Must provide custodialFilePath or privateKey, publicKey, and keyId.')
+  }
+
   const response = await axios.post(`${apiUrl}/wallets/${identifier}`, {
-    turnkeyId
+    keyId
   })
 
   const turnkeySigner = new TurnkeySigner({
     apiPublicKey: publicKey,
     apiPrivateKey: privateKey,
     baseUrl: "https://coordinator-beta.turnkey.io",
-    organizationId: turnkeyId,
+    organizationId: keyId,
     privateKeyId: response.data.walletId,
   });
   return {
