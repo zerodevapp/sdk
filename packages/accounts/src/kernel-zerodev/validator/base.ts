@@ -15,7 +15,12 @@ import {
   getContract,
 } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { ECDSA_VALIDATOR_ADDRESS, ENTRYPOINT_ADDRESS } from "../constants.js";
+import {
+  BUNDLER_URL,
+  ECDSA_VALIDATOR_ADDRESS,
+  ENTRYPOINT_ADDRESS,
+} from "../constants.js";
+import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
 
 export enum ValidatorMode {
   sudo = "0x00000000",
@@ -34,6 +39,8 @@ export interface KernelBaseValidatorParams {
   validAfter?: number;
   executor?: Address;
   selector?: string;
+  rpcUrl?: string;
+  bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
 //Kernel wallet implementation separates out validation and execution phase. It allows you to have
@@ -49,6 +56,8 @@ export abstract class KernelBaseValidator {
   protected validAfter: number;
   protected executor?: Address;
   protected selector?: string;
+  protected rpcUrl?: string;
+  protected bundlerProvider?: PaymasterAndBundlerProviders;
 
   constructor(params: KernelBaseValidatorParams) {
     this.projectId = params.projectId;
@@ -61,6 +70,8 @@ export abstract class KernelBaseValidator {
     this.executor = params.executor;
     this.selector = params.selector;
     this.chain = params.chain;
+    this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
+    this.bundlerProvider = params.bundlerProvider;
   }
 
   abstract encodeEnable(enableData: Hex): Hex;
@@ -131,7 +142,17 @@ export abstract class KernelBaseValidator {
       throw new Error("Validator uninitialized");
     }
     const publicClient = createPublicClient({
-      transport: http(),
+      transport: http(this.rpcUrl, {
+        fetchOptions: {
+          headers:
+            this.rpcUrl === BUNDLER_URL
+              ? {
+                  projectId: this.projectId,
+                  bundlerProvider: this.bundlerProvider,
+                }
+              : {},
+        },
+      }),
       chain: this.chain,
     });
     const kernel = getContract({
