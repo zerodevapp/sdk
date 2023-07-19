@@ -1,7 +1,7 @@
 import { Wallet } from "@ethersproject/wallet";
 import { ZeroDevEthersProvider } from "../ethers-provider/ethers-provider.js";
 import { config } from "./kernel-account.test.js";
-import { convertWalletToAccountSigner } from "../utils.js";
+import { convertEthersSignerToAccountSigner } from "../utils.js";
 
 const OWNER_MNEMONIC =
   "resource stem valve plug twice palace march notice olive skin stuff midnight";
@@ -10,7 +10,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
   const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
   const provider = await ZeroDevEthersProvider.init("ECDSA", {
     projectId: config.projectIdWithGasSponsorship,
-    owner: convertWalletToAccountSigner(owner),
+    owner: convertEthersSignerToAccountSigner(owner),
     opts: {
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -20,9 +20,10 @@ describe("Kernel ECDSA ethers provider tests", async () => {
 
   const signer = provider.getAccountSigner();
 
+  const accountAddress = "0x59269BF95fA50690066523Ca86c8852a89e0Ad77";
   it("should succesfully get counterfactual address", async () => {
     expect(await signer.getAddress()).toMatchInlineSnapshot(
-      "0x59269BF95fA50690066523Ca86c8852a89e0Ad77"
+      `"${accountAddress}"`
     );
   });
 
@@ -55,7 +56,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
       const accountAddress = "0xc33AbD9621834CA7c6Fc9f9CC3c47b9c17B03f9F";
       const provider = await ZeroDevEthersProvider.init("ECDSA", {
         projectId: config.projectId,
-        owner: convertWalletToAccountSigner(owner),
+        owner: convertEthersSignerToAccountSigner(owner),
         opts: {
           accountConfig: {
             accountAddress,
