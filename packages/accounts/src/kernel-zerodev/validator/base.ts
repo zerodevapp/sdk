@@ -106,14 +106,14 @@ export abstract class KernelBaseValidator {
       throw new Error("Validator uninitialized");
     }
     const sender = kernel;
-    const ownerSig = await ((await this.signer()) as any)._signTypedData(
-      {
+    const ownerSig = await ((await this.signer()) as any).signTypedData({
+      domain: {
         name: "Kernel",
         version: "0.0.2",
         chainId: this.chain.id,
         verifyingContract: sender,
       },
-      {
+      types: {
         ValidatorApproved: [
           { name: "sig", type: "bytes4" },
           { name: "validatorData", type: "uint256" },
@@ -121,7 +121,7 @@ export abstract class KernelBaseValidator {
           { name: "enableData", type: "bytes" },
         ],
       },
-      {
+      message: {
         sig: selector,
         validatorData: concat([
           pad(toHex(validUntil), { size: 6 }),
@@ -130,8 +130,9 @@ export abstract class KernelBaseValidator {
         ]),
         executor,
         enableData: toHex(await validator.getEnableData()),
-      }
-    );
+      },
+      primaryType: "ValidatorApproved",
+    });
     return ownerSig;
   }
 

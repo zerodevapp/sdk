@@ -10,7 +10,7 @@ import {
   type Transport,
 } from "viem";
 import { parseAbiParameters } from "abitype";
-import { KernelBaseValidator, ValidatorMode } from "./validator/base.js";
+import { KernelBaseValidator } from "./validator/base.js";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi.js";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi.js";
 import {
@@ -108,8 +108,8 @@ export class KernelSmartContractAccount<
     if (!this.validator) {
       throw new Error("Validator not connected");
     }
-    if (this.validator.mode !== ValidatorMode.sudo) {
-      throw new Error("Validator Mode not supported");
+    if (target.toLowerCase() === this.accountAddress?.toLowerCase()) {
+      return data;
     } else {
       return this.encodeExecuteAction(target, value, data, 0);
     }
