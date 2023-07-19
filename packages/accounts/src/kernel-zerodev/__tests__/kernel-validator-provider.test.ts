@@ -15,7 +15,7 @@ describe("Kernel Validator Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    transport: http('https://rpc.ankr.com/polygon_mumbai'),
+    transport: http("https://rpc.ankr.com/polygon_mumbai"),
   });
 
   let accountAddress: Hex = "0x";
