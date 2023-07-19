@@ -9,7 +9,7 @@ import type {
   SmartAccountSigner,
   UserOperationCallData,
 } from "@alchemy/aa-core";
-import { Wallet } from "@ethersproject/wallet";
+import { Signer } from "@ethersproject/abstract-signer";
 import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
 import { API_URL, gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
@@ -71,13 +71,14 @@ export const convertWalletClientToAccountSigner = (
   };
 };
 
-export const convertWalletToAccountSigner = (
-  wallet: Wallet
+export const convertEthersSignerToAccountSigner = (
+  signer: Signer
 ): SmartAccountSigner => {
   return {
-    getAddress: async () => Promise.resolve(wallet.address as `0x${string}`),
+    getAddress: async () =>
+      Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
-      (await wallet.signMessage(msg)) as `0x${string}`,
+      (await signer.signMessage(msg)) as `0x${string}`,
   };
 };
 

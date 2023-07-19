@@ -95,7 +95,7 @@ const ecdsaProvider = await ECDSAProvider.init({
 const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```
 
-### Via `ethers`
+### Via `ethers` Signer
 
 ```ts
 import { Wallet } from "@ethersproject/wallet";
@@ -111,6 +111,40 @@ const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
 const provider = await ZeroDevEthersProvider.init("ECDSA", {
   projectId, // zeroDev projectId
   owner: convertWalletToAccountSigner(owner),
+  opts: {
+    paymasterConfig: {
+      policy: "VERIFYING_PAYMASTER",
+    },
+  },
+});
+
+// 3. Get the AccountSigner adapter of ethers signer
+const signer = provider.getAccountSigner();
+
+// 4. send a UserOperation
+const { hash } = signer.sendUserOperation({
+  target: "0xTargetAddress",
+  data: "0xcallData",
+  value: 0n, // value: bigint or undefined
+});
+```
+
+### Via `ethers` Signer
+
+```ts
+import { Wallet } from "@ethersproject/wallet";
+import {
+  ZeroDevEthersProvider,
+  convertEthersSignerToAccountSigner,
+} from "@zerodevapp/sdk@alpha";
+
+// 1. Create an ethers Wallet
+const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
+
+// 2. Create a ZeroDev ZeroDevEthersProvider passing the ethers Wallet as the signer
+const provider = await ZeroDevEthersProvider.init("ECDSA", {
+  projectId, // zeroDev projectId
+  owner: convertEthersSignerToAccountSigner(owner),
   opts: {
     paymasterConfig: {
       policy: "VERIFYING_PAYMASTER",
