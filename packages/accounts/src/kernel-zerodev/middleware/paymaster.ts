@@ -29,14 +29,25 @@ export const zeroDevPaymasterAndDataMiddleware = <
       return struct;
     },
     paymasterDataMiddleware: async (struct) => {
-      struct.preVerificationGas = BigInt("100000");
-      struct.verificationGasLimit = BigInt("1000000");
-      struct.callGasLimit = BigInt("55000");
+      const preVerificationGas = BigInt("100000");
+      const verificationGasLimit = BigInt("1000000");
+      const callGasLimit = BigInt("55000");
       const paymaster = new Paymasters[paymasterConfig.policy](
         provider,
         paymasterConfig
       );
-      const paymasterResp = await paymaster.getPaymasterResponse(struct);
+      const paymasterResp = await paymaster.getPaymasterResponse({
+        ...struct,
+        preVerificationGas,
+        verificationGasLimit,
+        callGasLimit,
+      });
+      if (
+        paymasterConfig.onlySendSponsoredTransaction &&
+        (!paymasterResp || paymasterResp.paymasterAndData === "0x")
+      ) {
+        throw new Error("Transaction is not sponsored");
+      }
       if (paymasterResp === undefined) {
         return struct;
       }

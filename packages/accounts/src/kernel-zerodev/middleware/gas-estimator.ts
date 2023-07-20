@@ -14,28 +14,38 @@ import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas.js";
 export const withZeroDevGasEstimator = (
   provider: ZeroDevProvider
 ): ZeroDevProvider => {
-  provider.withFeeDataGetter(async () => {
+  provider.withFeeDataGetter(async (struct) => {
+    let overrides = await resolveProperties({
+      maxFeePerGas: struct.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: struct.maxPriorityFeePerGas ?? 0n,
+    });
+
+    let maxFeePerGas, maxPriorityFeePerGas;
+
     try {
-      let { maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(
+      ({ maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(
         provider
-      );
-      return {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-      };
+      ));
     } catch (error: any) {
       console.warn(
         "getGas: eth_maxPriorityFeePerGas failed, falling back to legacy gas price."
       );
     }
 
-    const feeData = await getFeeData(provider);
-    const maxFeePerGas = feeData?.maxFeePerGas
-      ? BigInt(feeData?.maxFeePerGas)
-      : 0n;
-    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
-      ? BigInt(feeData.maxPriorityFeePerGas)
-      : 0n;
+    if (maxFeePerGas === undefined || maxPriorityFeePerGas === undefined) {
+      const feeData = await getFeeData(provider);
+      maxFeePerGas = feeData?.maxFeePerGas ? BigInt(feeData?.maxFeePerGas) : 0n;
+      maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+        ? BigInt(feeData.maxPriorityFeePerGas)
+        : 0n;
+    }
+
+    if (
+      maxFeePerGas < BigInt(overrides.maxFeePerGas) ||
+      maxPriorityFeePerGas < BigInt(overrides.maxPriorityFeePerGas)
+    ) {
+      return overrides;
+    }
     return { maxFeePerGas, maxPriorityFeePerGas };
   });
 
