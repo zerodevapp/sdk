@@ -223,18 +223,15 @@ describe("Kernel Account Tests", () => {
           accountConfig: {
             index: 1001n,
           },
-          paymasterConfig: {
-            policy: "VERIFYING_PAYMASTER",
-          },
         },
       });
 
       const result = ecdsaProvider.sendUserOperation({
-        target: await ecdsaProvider.getAddress(),
+        target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
         data: "0x",
       });
 
-      await expect(result).rejects.toThrowError("AA21 didn't pay prefund");
+      await expect(result).rejects.toThrowError("AA23 reverted (or OOG)");
     },
     { timeout: 100000 }
   );
@@ -249,9 +246,6 @@ describe("Kernel Account Tests", () => {
         projectId: config.projectId,
         owner,
         opts: {
-          paymasterConfig: {
-            policy: "VERIFYING_PAYMASTER",
-          },
           providerConfig: {
             opts: {
               txMaxRetries: 10,

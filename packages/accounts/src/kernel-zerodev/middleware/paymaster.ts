@@ -36,19 +36,25 @@ export const zeroDevPaymasterAndDataMiddleware = <
         provider,
         paymasterConfig
       );
-      const paymasterResp = await paymaster.getPaymasterResponse({
-        ...struct,
-        preVerificationGas,
-        verificationGasLimit,
-        callGasLimit,
-      });
+      const paymasterResp = await paymaster.getPaymasterResponse(
+        {
+          ...struct,
+          preVerificationGas,
+          verificationGasLimit,
+          callGasLimit,
+        },
+        paymasterConfig.paymasterProvider
+      );
       if (
         paymasterConfig.onlySendSponsoredTransaction &&
         (!paymasterResp || paymasterResp.paymasterAndData === "0x")
       ) {
         throw new Error("Transaction is not sponsored");
       }
-      if (paymasterResp === undefined) {
+      if (
+        paymasterResp === undefined ||
+        paymasterResp.paymasterAndData === "0x"
+      ) {
         return struct;
       }
       return {

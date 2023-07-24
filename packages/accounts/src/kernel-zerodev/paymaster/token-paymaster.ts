@@ -25,7 +25,10 @@ import {
   type UserOperationCallDataWithDelegate,
 } from "../utils.js";
 import { Paymaster } from "./base.js";
-import { type PaymasterConfig } from "./types.js";
+import {
+  type PaymasterAndBundlerProviders,
+  type PaymasterConfig,
+} from "./types.js";
 import { getChainId } from "../api/index.js";
 
 export class TokenPaymaster extends Paymaster {
@@ -143,7 +146,8 @@ export class TokenPaymaster extends Paymaster {
   }
 
   async getPaymasterResponse(
-    struct: UserOperationStruct
+    struct: UserOperationStruct,
+    paymasterProvider?: PaymasterAndBundlerProviders
   ): Promise<UserOperationStruct> {
     try {
       const mainCall = await this.decodeMainCallFromCallData(struct.callData);
@@ -169,13 +173,14 @@ export class TokenPaymaster extends Paymaster {
         if (!erc20UserOp) {
           return struct;
         }
-        const paymasterResp = await this.signUserOp(
-          struct,
-          struct.callData,
+        const paymasterResp = await this.signUserOp({
+          userOp: struct,
+          callData: struct.callData,
           gasTokenAddress,
           erc20UserOp,
-          erc20UserOp.callData
-        );
+          erc20CallData: erc20UserOp.callData,
+          paymasterProvider,
+        });
         if (paymasterResp) {
           return {
             ...struct,

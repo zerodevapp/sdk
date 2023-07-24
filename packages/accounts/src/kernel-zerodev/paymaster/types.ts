@@ -15,6 +15,7 @@ interface PaymasterConfigOptions {
 
 export type PaymasterConfig<T extends PaymasterPolicy> = {
   policy: T;
+  paymasterProvider?: PaymasterAndBundlerProviders;
   onlySendSponsoredTransaction?: boolean;
 } & PaymasterConfigOptions[T];
 export interface IGasTokenAddresses {

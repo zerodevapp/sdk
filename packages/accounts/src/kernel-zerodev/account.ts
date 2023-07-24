@@ -33,6 +33,7 @@ import { MultiSendAbi } from "./abis/MultiSendAbi.js";
 import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
+import type { PaymasterAndBundlerProviders } from "./paymaster/types.js";
 
 export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
@@ -42,6 +43,7 @@ export interface KernelSmartAccountParams<
   factoryAddress?: Address;
   index?: bigint;
   validator?: KernelBaseValidator;
+  bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
 export function isKernelAccount(
@@ -85,6 +87,7 @@ export class KernelSmartContractAccount<
             chain,
             rpcUrl: params.rpcClient ?? BUNDLER_URL,
             projectId: params.projectId,
+            bundlerProvider: params.bundlerProvider,
           })
         : params.rpcClient;
     const instance = new KernelSmartContractAccount({

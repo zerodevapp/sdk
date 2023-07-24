@@ -18,7 +18,6 @@ import {
   type BytesLike,
   SmartAccountProvider,
   type AccountMiddlewareFn,
-  type UserOperationRequest,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -31,7 +30,11 @@ import { isValidRequest } from "./utils/ERC4337-utils.js";
 import { InvalidOperation } from "./errors.js";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
-import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types.js";
+import type {
+  PaymasterAndBundlerProviders,
+  PaymasterConfig,
+  PaymasterPolicy,
+} from "./paymaster/types.js";
 
 export type ZeroDevProviderConfig = {
   projectId: string;
@@ -39,6 +42,7 @@ export type ZeroDevProviderConfig = {
   entryPointAddress?: Address;
   rpcUrl?: string;
   account?: KernelSmartContractAccount;
+  bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: SmartAccountProviderOpts & { sendTxMaxRetries?: number };
 };
 
@@ -63,6 +67,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     entryPointAddress = ENTRYPOINT_ADDRESS,
     rpcUrl = BUNDLER_URL,
     account,
+    bundlerProvider,
     opts,
   }: ZeroDevProviderConfig) {
     const _chain = typeof chain === "number" ? getChain(chain) : chain;
@@ -70,6 +75,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       chain: _chain,
       rpcUrl,
       projectId,
+      bundlerProvider,
     });
 
     super(rpcClient, entryPointAddress, _chain, account, opts);
@@ -126,28 +132,28 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
     const initCode = await this.account.getInitCode();
     let hash: string = "";
-    let request: UserOperationRequest;
     let i = 0;
     let maxFeePerGas = 0n;
     let maxPriorityFeePerGas = 0n;
-    do {
-      const uoStruct = await asyncPipe(
-        this.dummyPaymasterDataMiddleware,
-        this.feeDataGetter,
-        this.paymasterDataMiddleware,
-        this.gasEstimator,
-        this.customMiddleware ?? noOpMiddleware
-      )({
-        initCode,
-        sender: this.getAddress(),
-        nonce: this.account.getNonce(),
-        callData,
-        signature: this.account.getDummySignature(),
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-      } as UserOperationStruct);
 
-      request = deepHexlify(await resolveProperties(uoStruct));
+    const uoStruct = await asyncPipe(
+      this.dummyPaymasterDataMiddleware,
+      this.feeDataGetter,
+      this.paymasterDataMiddleware,
+      this.gasEstimator,
+      this.customMiddleware ?? noOpMiddleware
+    )({
+      initCode,
+      sender: this.getAddress(),
+      nonce: this.account.getNonce(),
+      callData,
+      signature: this.account.getDummySignature(),
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    } as UserOperationStruct);
+    const request = deepHexlify(await resolveProperties(uoStruct));
+
+    do {
       if (!isValidRequest(request)) {
         // this pretty prints the uo
         throw new Error(
@@ -160,7 +166,6 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       }
 
       request.signature = await this.account.validator.getSignature(request);
-
       try {
         hash = await this.rpcClient.sendUserOperation(
           request,
@@ -190,9 +195,11 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     if (errorIn.cause != null) {
       const failedOpMessage: string | undefined = errorIn?.cause?.message;
       return (
-        failedOpMessage?.includes(
+        (failedOpMessage?.includes(
           "replacement op must increase maxFeePerGas and MaxPriorityFeePerGas"
-        ) ?? false
+        ) ||
+          failedOpMessage?.match(/.*replacement.*underpriced.*/) !== null) ??
+        false
       );
     }
     return false;
