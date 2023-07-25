@@ -78,7 +78,11 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       bundlerProvider,
     });
 
-    super(rpcClient, entryPointAddress, _chain, account, opts);
+    super(rpcClient, entryPointAddress, _chain, account, {
+      ...opts,
+      txMaxRetries: opts?.txMaxRetries ?? 10,
+      txRetryIntervalMs: opts?.txRetryIntervalMs ?? 10000,
+    });
 
     this.projectId = projectId;
     this.sendTxMaxRetries =
@@ -135,25 +139,26 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     let i = 0;
     let maxFeePerGas = 0n;
     let maxPriorityFeePerGas = 0n;
-
-    const uoStruct = await asyncPipe(
-      this.dummyPaymasterDataMiddleware,
-      this.feeDataGetter,
-      this.paymasterDataMiddleware,
-      this.gasEstimator,
-      this.customMiddleware ?? noOpMiddleware
-    )({
-      initCode,
-      sender: this.getAddress(),
-      nonce: this.account.getNonce(),
-      callData,
-      signature: this.account.getDummySignature(),
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-    } as UserOperationStruct);
-    const request = deepHexlify(await resolveProperties(uoStruct));
+    let request: UserOperationStruct;
 
     do {
+      const uoStruct = await asyncPipe(
+        this.dummyPaymasterDataMiddleware,
+        this.feeDataGetter,
+        this.paymasterDataMiddleware,
+        this.gasEstimator,
+        this.customMiddleware ?? noOpMiddleware
+      )({
+        initCode,
+        sender: this.getAddress(),
+        nonce: this.account.getNonce(),
+        callData,
+        signature: this.account.getDummySignature(),
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+      } as UserOperationStruct);
+      request = deepHexlify(await resolveProperties(uoStruct));
+
       if (!isValidRequest(request)) {
         // this pretty prints the uo
         throw new Error(
