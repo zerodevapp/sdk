@@ -1,6 +1,7 @@
 import { parseUnits, type Hex } from "viem";
 import type { IGasTokenAddresses } from "./paymaster/types.js";
 
+export const DEFAULT_SEND_TX_MAX_RETRIES = 3;
 export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
 export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
 export const ENTRYPOINT_ADDRESS: Hex =

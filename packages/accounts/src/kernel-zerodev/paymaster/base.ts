@@ -15,16 +15,24 @@ import { getChainId } from "../api/index.js";
 export abstract class Paymaster {
   constructor(protected provider: ZeroDevProvider) {}
   abstract getPaymasterResponse(
-    struct: UserOperationStruct
-  ): Promise<UserOperationStruct>;
-  protected async signUserOp(
-    userOp: UserOperationStruct,
-    callData?: PromiseOrValue<BytesLike>,
-    gasTokenAddress?: string,
-    erc20UserOp?: Partial<UserOperationStruct>,
-    erc20CallData?: PromiseOrValue<BytesLike>,
+    struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders
-  ): Promise<any> {
+  ): Promise<UserOperationStruct>;
+  protected async signUserOp({
+    userOp,
+    callData,
+    gasTokenAddress,
+    erc20UserOp,
+    erc20CallData,
+    paymasterProvider,
+  }: {
+    userOp: UserOperationStruct;
+    callData?: PromiseOrValue<BytesLike>;
+    gasTokenAddress?: string;
+    erc20UserOp?: Partial<UserOperationStruct>;
+    erc20CallData?: PromiseOrValue<BytesLike>;
+    paymasterProvider?: PaymasterAndBundlerProviders;
+  }): Promise<any> {
     try {
       const hexifiedUserOp = deepHexlify(await resolveProperties(userOp));
       let resolvedERC20UserOp;

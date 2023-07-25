@@ -5,7 +5,7 @@ import {
 } from "@alchemy/aa-core";
 import { Paymaster } from "./base.js";
 import type { ZeroDevProvider } from "../provider.js";
-import type { PaymasterConfig } from "./types.js";
+import type { PaymasterAndBundlerProviders, PaymasterConfig } from "./types.js";
 
 export class VerifyingPaymaster extends Paymaster {
   constructor(
@@ -15,11 +15,15 @@ export class VerifyingPaymaster extends Paymaster {
     super(provider);
   }
   async getPaymasterResponse(
-    struct: UserOperationStruct
+    struct: UserOperationStruct,
+    paymasterProvider?: PaymasterAndBundlerProviders
   ): Promise<UserOperationStruct> {
     try {
       const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
-      const paymasterResp = await this.signUserOp(hexifiedUserOp);
+      const paymasterResp = await this.signUserOp({
+        userOp: hexifiedUserOp,
+        paymasterProvider,
+      });
       if (paymasterResp) {
         return {
           ...struct,

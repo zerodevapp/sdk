@@ -59,6 +59,21 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 });
 ```
 
+### Optional params for ValidatorProvider:
+
+| Option                                            | Usage                                                                                                              | Type                            | Default                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------- |
+| bundlerProvider                                   | Bundler Provider                                                                                                   | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
+| opts:paymasterConfig:paymasterProvider            | Paymaster Provider                                                                                                 | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
+| opts:paymasterConfig:onlySendSponsoredTransaction | Only send sponsored transaction and revert if paymaster fails                                                      | boolean                         | false                                                                            |
+| opts:providerConfig:rpcUrl                        | Custom RPC URL for the bundler provider                                                                            | string                          | "https://v0-6-meta-bundler.onrender.com"                                         |
+| opts:providerConfig:opts:txMaxRetries             | The maximum number of times to try fetching a transaction receipt before giving up                                 | number                          | 5                                                                                |
+| opts:providerConfig:opts:txRetryIntervalMs        | The interval in milliseconds to wait between retries while waiting for tx receipts                                 | number                          | 2000                                                                             |
+| opts:providerConfig:opts:minPriorityFeePerBid     | used when computing the fees for a user operation                                                                  | bigint                          | 100_000_000n, [Chain-wise defaults](/packages/core/src/provider/base.ts#L61-L64) |
+| opts:providerConfig:opts:sendTxMaxRetries         | The maximum number of times to try sending a transaction before giving up                                          | number                          | 3                                                                                |
+| opts:accountConfig:index                          | Index variable to be used alongwith with owner address and validator data while calculating counterfactual address | number                          | 1000                                                                             |
+| [TODO] include other options                      |                                                                                                                    |                                 |                                                                                  |
+
 ### Pay gas in ERC20
 
 ZeroDev currently supports:

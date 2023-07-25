@@ -16,6 +16,7 @@ import { JsonRpcProvider } from "@ethersproject/providers";
 import type { SupportedValidators } from "../validator/types.js";
 import type { ValidatorProviderParamsMap } from "../validator-provider/types.js";
 import { ValidatorProviders } from "../validator-provider/index.js";
+import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
 
 export class ZeroDevEthersProvider<
   V extends SupportedValidators
@@ -23,7 +24,14 @@ export class ZeroDevEthersProvider<
   readonly accountProvider: SmartAccountProvider<HttpTransport>;
   constructor(validatorType: V, params: ValidatorProviderParamsMap[V]) {
     super();
-    this.accountProvider = new ValidatorProviders[validatorType](params);
+    let accountProvider = new ValidatorProviders[validatorType](params);
+    if (params.opts?.paymasterConfig) {
+      accountProvider = withZeroDevPaymasterAndData(
+        accountProvider,
+        params.opts.paymasterConfig
+      );
+    }
+    this.accountProvider = accountProvider;
   }
 
   public static async init<V extends SupportedValidators>(

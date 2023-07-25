@@ -31,7 +31,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
     "should execute successfully",
     async () => {
       const result = signer.sendUserOperation({
-        target: (await signer.getAddress()) as `0x${string}`,
+        target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
         data: "0x",
       });
 
