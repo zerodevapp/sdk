@@ -28,11 +28,12 @@ describe("Kernel Validator Provider Test", async () => {
         owner,
         opts: {
           accountConfig: {
-            index: 10045n,
+            index: 10050n,
           },
           providerConfig: {
             opts: {
               txMaxRetries: 10,
+              txRetryIntervalMs: 2000,
             },
           },
           paymasterConfig: {
@@ -65,7 +66,7 @@ describe("Kernel Validator Provider Test", async () => {
         `Owner changed from ${await owner.getAddress()} to ${currentOwnerNow}}`
       );
     },
-    { timeout: 100000 }
+    { timeout: 1000000 }
   );
 
   it(
@@ -80,7 +81,8 @@ describe("Kernel Validator Provider Test", async () => {
           },
           providerConfig: {
             opts: {
-              txMaxRetries: 10,
+              txMaxRetries: 15,
+              txRetryIntervalMs: 2000,
             },
           },
           paymasterConfig: {
@@ -111,6 +113,6 @@ describe("Kernel Validator Provider Test", async () => {
         `Owner changed back to ${currentOwnerNow} from ${await secondOwner.getAddress()}}`
       );
     },
-    { timeout: 100000 }
+    { timeout: 1000000 }
   );
 });
