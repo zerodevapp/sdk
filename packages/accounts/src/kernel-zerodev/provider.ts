@@ -23,6 +23,7 @@ import {
   BUNDLER_URL,
   DEFAULT_SEND_TX_MAX_RETRIES,
   ENTRYPOINT_ADDRESS,
+  minPriorityFeePerBidDefaults,
 } from "./constants.js";
 import { KernelSmartContractAccount, isKernelAccount } from "./account.js";
 import { withZeroDevGasEstimator } from "./middleware/gas-estimator.js";
@@ -82,6 +83,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       ...opts,
       txMaxRetries: opts?.txMaxRetries ?? 10,
       txRetryIntervalMs: opts?.txRetryIntervalMs ?? 10000,
+      minPriorityFeePerBid: opts?.minPriorityFeePerBid ?? minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
     this.projectId = projectId;
