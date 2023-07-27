@@ -13,6 +13,7 @@ import {
   http,
   concatHex,
   getContract,
+  hexToBigInt,
 } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
@@ -90,14 +91,18 @@ export abstract class KernelBaseValidator {
     this.enableSignature = enableSignature;
   }
 
+  getEnableSignature(): Hex | undefined {
+    return this.enableSignature;
+  }
+
   getAddress(): Hex {
     return this.validatorAddress;
   }
 
   async approveExecutor(
-    kernel: string,
-    selector: string,
-    executor: string,
+    kernel: Address,
+    selector: Hex,
+    executor: Address,
     validUntil: number,
     validAfter: number,
     validator: KernelBaseValidator
@@ -106,7 +111,8 @@ export abstract class KernelBaseValidator {
       throw new Error("Validator uninitialized");
     }
     const sender = kernel;
-    const ownerSig = await ((await this.signer()) as any).signTypedData({
+    const signer = await this.signer();
+    const ownerSig = await (signer as any).signTypedData({
       domain: {
         name: "Kernel",
         version: "0.0.2",
@@ -122,14 +128,17 @@ export abstract class KernelBaseValidator {
         ],
       },
       message: {
-        sig: selector,
-        validatorData: concat([
-          pad(toHex(validUntil), { size: 6 }),
-          pad(toHex(validAfter), { size: 6 }),
-          validator.getAddress(),
-        ]),
-        executor,
-        enableData: toHex(await validator.getEnableData()),
+        sig: selector as Hex,
+        validatorData: hexToBigInt(
+          concatHex([
+            pad(toHex(validUntil), { size: 6 }),
+            pad(toHex(validAfter), { size: 6 }),
+            validator.getAddress(),
+          ]),
+          { size: 32 }
+        ),
+        executor: executor as Address,
+        enableData: await validator.getEnableData(),
       },
       primaryType: "ValidatorApproved",
     });
@@ -137,7 +146,8 @@ export abstract class KernelBaseValidator {
   }
 
   async resolveValidatorMode(
-    userOp: UserOperationRequest
+    kernelAccountAddress: Address,
+    callData: Hex
   ): Promise<ValidatorMode> {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
@@ -158,14 +168,14 @@ export abstract class KernelBaseValidator {
     });
     const kernel = getContract({
       abi: KernelAccountAbi,
-      address: userOp.sender,
+      address: kernelAccountAddress,
       publicClient,
     });
     let mode: ValidatorMode;
     try {
       const defaultValidatorAddress = await kernel.read.getDefaultValidator();
       const executionData = await kernel.read.getExecution([
-        userOp.callData.slice(0, 6) as Hex,
+        callData.toString().slice(0, 10) as Hex,
       ]);
       if (
         defaultValidatorAddress?.toLowerCase() ===
@@ -191,12 +201,18 @@ export abstract class KernelBaseValidator {
   }
 
   async getSignature(userOp: UserOperationRequest): Promise<Hex> {
-    const mode = await this.resolveValidatorMode(userOp);
+    const mode = await this.resolveValidatorMode(
+      userOp.sender,
+      userOp.callData
+    );
     if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
       return concatHex([this.mode, await this.signUserOp(userOp)]);
     } else {
       const enableData = await this.getEnableData();
-      const enableSignature = this.enableSignature!;
+      const enableSignature = this.getEnableSignature();
+      if (!enableSignature) {
+        throw new Error("Enable signature not set");
+      }
       return concat([
         mode, // 4 bytes 0 - 4
         pad(toHex(this.validUntil), { size: 6 }), // 6 bytes 4 - 10
