@@ -126,8 +126,8 @@ export class KernelSmartContractAccount<
     if (validatorMode === ValidatorMode.enable) {
       const enableDataLength =
         (await this.validator.getEnableData()).length / 2 - 1;
-      const enableSigLength =
-        ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
+      const enableSigLength = 65;
+        // ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
       const staticDummySig = concatHex([
         "0x000000000000000000000000",
         this.validator.getAddress(),
@@ -135,7 +135,7 @@ export class KernelSmartContractAccount<
       ]);
       const enableDummyData = randomHexString(enableDataLength);
 
-      // [TODO] - Current dummy signature is hardcoded, need to generate it dynamically
+      // [TODO] - Current dummy enable signature is hardcoded, need to generate it dynamically
       // Only works if the actual enable signature is 65 bytes long ECDSA signature without extra encoding
       // const enableDummySig = concatHex([randomHexString(enableSigLength - 1), "0x1c"]);
       return concatHex([
