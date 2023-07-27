@@ -127,7 +127,7 @@ export class KernelSmartContractAccount<
       const enableDataLength =
         (await this.validator.getEnableData()).length / 2 - 1;
       const enableSigLength = 65;
-        // ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
+      // ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
       const staticDummySig = concatHex([
         "0x000000000000000000000000",
         this.validator.getAddress(),
