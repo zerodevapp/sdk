@@ -59,6 +59,23 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 });
 ```
 
+### Batch Transactions
+
+```ts
+const { hash } = await ecdsaProvider.sendUserOperation([
+  {
+    target: "0xTargetAddress1",
+    data: "0xcallData1",
+    value: 0n, // value: bigint or undefined
+  },
+  {
+    target: "0xTargetAddress2",
+    data: "0xcallData2",
+    value: 0n, // value: bigint or undefined
+  },
+]);
+```
+
 ### Optional params for ValidatorProvider:
 
 | Option                                            | Usage                                                                                                              | Type                            | Default                                                                          |
@@ -71,6 +88,7 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 | opts:providerConfig:opts:txRetryIntervalMs        | The interval in milliseconds to wait between retries while waiting for tx receipts                                 | number                          | 2000                                                                             |
 | opts:providerConfig:opts:minPriorityFeePerBid     | used when computing the fees for a user operation                                                                  | bigint                          | 100_000_000n, [Chain-wise defaults](/packages/core/src/provider/base.ts#L61-L64) |
 | opts:providerConfig:opts:sendTxMaxRetries         | The maximum number of times to try sending a transaction before giving up                                          | number                          | 3                                                                                |
+| opts:providerConfig:opts:sendTxRetryIntervalMs    | The interval in milliseconds to wait between retries while sending a transaction                                   | number                          | 180000                                                                           |
 | opts:accountConfig:index                          | Index variable to be used alongwith with owner address and validator data while calculating counterfactual address | number                          | 1000                                                                             |
 | [TODO] include other options                      |                                                                                                                    |                                 |                                                                                  |
 

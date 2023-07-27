@@ -4,6 +4,7 @@ import {
   toBytes,
   type Hex,
   type WalletClient,
+  toHex,
 } from "viem";
 import type {
   SmartAccountSigner,
@@ -156,3 +157,10 @@ export async function getCustodialOwner(
       (await turnkeySigner.signMessage(msg)) as `0x${string}`,
   };
 }
+
+export const randomHexString = (length: number): Hex =>
+  toHex(
+    Array.from({ length }, () =>
+      Math.floor(Math.random() * 16).toString(16)
+    ).join("")
+  );

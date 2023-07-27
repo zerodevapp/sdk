@@ -175,7 +175,7 @@ export abstract class KernelBaseValidator {
     try {
       const defaultValidatorAddress = await kernel.read.getDefaultValidator();
       const executionData = await kernel.read.getExecution([
-        callData.slice(0, 6) as Hex,
+        callData.toString().slice(0, 10) as Hex,
       ]);
       if (
         defaultValidatorAddress?.toLowerCase() ===

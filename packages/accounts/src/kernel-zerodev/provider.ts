@@ -1,6 +1,7 @@
 import {
   type Address,
   type Chain,
+  type Hex,
   type HttpTransport,
   type RpcTransactionRequest,
 } from "viem";
@@ -22,6 +23,7 @@ import {
 import {
   BUNDLER_URL,
   DEFAULT_SEND_TX_MAX_RETRIES,
+  DEFAULT_SEND_TX_RETRY_INTERVAL_MS,
   ENTRYPOINT_ADDRESS,
   minPriorityFeePerBidDefaults,
 } from "./constants.js";
@@ -44,7 +46,10 @@ export type ZeroDevProviderConfig = {
   rpcUrl?: string;
   account?: KernelSmartContractAccount;
   bundlerProvider?: PaymasterAndBundlerProviders;
-  opts?: SmartAccountProviderOpts & { sendTxMaxRetries?: number };
+  opts?: SmartAccountProviderOpts & {
+    sendTxMaxRetries?: number;
+    sendTxRetryIntervalMs?: number;
+  };
 };
 
 export enum Operation {
@@ -61,6 +66,7 @@ type UserOpDataOperationTypes<T> = T extends UserOperationCallData
 export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   protected projectId: string;
   protected sendTxMaxRetries: number;
+  protected sendTxRetryIntervalMs: number;
 
   constructor({
     projectId,
@@ -83,12 +89,16 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       ...opts,
       txMaxRetries: opts?.txMaxRetries ?? 10,
       txRetryIntervalMs: opts?.txRetryIntervalMs ?? 10000,
-      minPriorityFeePerBid: opts?.minPriorityFeePerBid ?? minPriorityFeePerBidDefaults.get(_chain.id),
+      minPriorityFeePerBid:
+        opts?.minPriorityFeePerBid ??
+        minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
     this.projectId = projectId;
     this.sendTxMaxRetries =
       opts?.sendTxMaxRetries ?? DEFAULT_SEND_TX_MAX_RETRIES;
+    this.sendTxRetryIntervalMs =
+      opts?.sendTxRetryIntervalMs ?? DEFAULT_SEND_TX_RETRY_INTERVAL_MS;
 
     withZeroDevGasEstimator(this);
   }
@@ -143,6 +153,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     let maxPriorityFeePerGas = 0n;
     let request: UserOperationStruct;
 
+    const nonce = await this.account.getNonce();
     do {
       const uoStruct = await asyncPipe(
         this.dummyPaymasterDataMiddleware,
@@ -153,9 +164,12 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       )({
         initCode,
         sender: this.getAddress(),
-        nonce: this.account.getNonce(),
+        nonce,
         callData,
-        signature: this.account.getDummySignature(),
+        signature: await this.account.getDynamicDummySignature(
+          await this.getAddress(),
+          callData as Hex
+        ),
         maxFeePerGas,
         maxPriorityFeePerGas,
       } as UserOperationStruct);
@@ -184,7 +198,12 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
           maxPriorityFeePerGas =
             (BigInt(request.maxPriorityFeePerGas) * 113n) / 100n;
           console.log(
-            `Resending tx with Increased Gas fees: maxFeePerGas: ${maxFeePerGas}, maxPriorityFeePerGas: ${maxPriorityFeePerGas}`
+            `After ${
+              this.sendTxRetryIntervalMs / 60000
+            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${maxFeePerGas}, maxPriorityFeePerGas: ${maxPriorityFeePerGas}`
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.sendTxRetryIntervalMs)
           );
           continue;
         }
@@ -226,7 +245,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         }
       }
       const error = new Error(
-        `The bundler has failed to include UserOperation in a batch: ${failedOpMessage} ${paymasterInfo})`
+        `The bundler has failed to include UserOperation in a batch: ${failedOpMessage} ${paymasterInfo}`
       );
       error.stack = errorIn.stack;
       return error;

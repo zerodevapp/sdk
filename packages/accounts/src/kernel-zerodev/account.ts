@@ -8,9 +8,11 @@ import {
   type Hex,
   toBytes,
   type Transport,
+  pad,
+  toHex,
 } from "viem";
 import { parseAbiParameters } from "abitype";
-import { KernelBaseValidator } from "./validator/base.js";
+import { KernelBaseValidator, ValidatorMode } from "./validator/base.js";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi.js";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi.js";
 import {
@@ -28,7 +30,7 @@ import {
   KERNEL_FACTORY_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
-import { encodeMultiSend } from "./utils.js";
+import { encodeMultiSend, randomHexString } from "./utils.js";
 import { MultiSendAbi } from "./abis/MultiSendAbi.js";
 import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";
@@ -104,7 +106,50 @@ export class KernelSmartContractAccount<
   }
 
   getDummySignature(): Hex {
-    return "0xfe7dbcab8aaee4eb67943c1e6be95b1d065985c6000000000000000000000000000000000000000000000000000001869aa31cf400000000000000000000000000000000000000000000000000000000000000007dfe2190f34af27b265bae608717cdc9368b471fc0c097ab7b4088f255b4961e57b039e7e571b15221081c5dce7bcb93459b27a3ab65d2f8a889f4a40b4022801b";
+    return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
+  }
+
+  async getDynamicDummySignature(
+    kernelAccountAddress: Address,
+    calldata: Hex
+  ): Promise<Hex> {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+
+    const dummyECDSASig =
+      "0x870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
+    const validatorMode = await this.validator.resolveValidatorMode(
+      kernelAccountAddress,
+      calldata
+    );
+    if (validatorMode === ValidatorMode.enable) {
+      const enableDataLength =
+        (await this.validator.getEnableData()).length / 2 - 1;
+      const enableSigLength =
+        ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
+      const staticDummySig = concatHex([
+        "0x000000000000000000000000",
+        this.validator.getAddress(),
+        "0x53dd285022D1512635823952d109dB39467a457E",
+      ]);
+      const enableDummyData = randomHexString(enableDataLength);
+
+      // [TODO] - Current dummy signature is hardcoded, need to generate it dynamically
+      // Only works if the actual enable signature is 65 bytes long ECDSA signature without extra encoding
+      // const enableDummySig = concatHex([randomHexString(enableSigLength - 1), "0x1c"]);
+      return concatHex([
+        ValidatorMode.enable,
+        staticDummySig,
+        pad(toHex(enableDataLength), { size: 32 }),
+        enableDummyData,
+        pad(toHex(enableSigLength), { size: 32 }),
+        // enableDummySig,
+        dummyECDSASig,
+        dummyECDSASig,
+      ]);
+    }
+    return concatHex([validatorMode, dummyECDSASig]);
   }
 
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
