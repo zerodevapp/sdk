@@ -1,6 +1,7 @@
 import {
   type Address,
   type Chain,
+  type Hex,
   type HttpTransport,
   type RpcTransactionRequest,
 } from "viem";
@@ -19,14 +20,24 @@ import {
   SmartAccountProvider,
   type AccountMiddlewareFn,
 } from "@alchemy/aa-core";
-import { BUNDLER_URL, ENTRYPOINT_ADDRESS } from "./constants.js";
+import {
+  BUNDLER_URL,
+  DEFAULT_SEND_TX_MAX_RETRIES,
+  DEFAULT_SEND_TX_RETRY_INTERVAL_MS,
+  ENTRYPOINT_ADDRESS,
+  minPriorityFeePerBidDefaults,
+} from "./constants.js";
 import { KernelSmartContractAccount, isKernelAccount } from "./account.js";
 import { withZeroDevGasEstimator } from "./middleware/gas-estimator.js";
 import { isValidRequest } from "./utils/ERC4337-utils.js";
 import { InvalidOperation } from "./errors.js";
 import { withZeroDevPaymasterAndData } from "./middleware/paymaster.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
-import type { PaymasterConfig, PaymasterPolicy } from "./paymaster/types.js";
+import type {
+  PaymasterAndBundlerProviders,
+  PaymasterConfig,
+  PaymasterPolicy,
+} from "./paymaster/types.js";
 
 export type ZeroDevProviderConfig = {
   projectId: string;
@@ -34,7 +45,11 @@ export type ZeroDevProviderConfig = {
   entryPointAddress?: Address;
   rpcUrl?: string;
   account?: KernelSmartContractAccount;
-  opts?: SmartAccountProviderOpts;
+  bundlerProvider?: PaymasterAndBundlerProviders;
+  opts?: SmartAccountProviderOpts & {
+    sendTxMaxRetries?: number;
+    sendTxRetryIntervalMs?: number;
+  };
 };
 
 export enum Operation {
@@ -50,6 +65,8 @@ type UserOpDataOperationTypes<T> = T extends UserOperationCallData
 
 export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   protected projectId: string;
+  protected sendTxMaxRetries: number;
+  protected sendTxRetryIntervalMs: number;
 
   constructor({
     projectId,
@@ -57,6 +74,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     entryPointAddress = ENTRYPOINT_ADDRESS,
     rpcUrl = BUNDLER_URL,
     account,
+    bundlerProvider,
     opts,
   }: ZeroDevProviderConfig) {
     const _chain = typeof chain === "number" ? getChain(chain) : chain;
@@ -64,11 +82,23 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       chain: _chain,
       rpcUrl,
       projectId,
+      bundlerProvider,
     });
 
-    super(rpcClient, entryPointAddress, _chain, account, opts);
+    super(rpcClient, entryPointAddress, _chain, account, {
+      ...opts,
+      txMaxRetries: opts?.txMaxRetries ?? 10,
+      txRetryIntervalMs: opts?.txRetryIntervalMs ?? 10000,
+      minPriorityFeePerBid:
+        opts?.minPriorityFeePerBid ??
+        minPriorityFeePerBidDefaults.get(_chain.id),
+    });
 
     this.projectId = projectId;
+    this.sendTxMaxRetries =
+      opts?.sendTxMaxRetries ?? DEFAULT_SEND_TX_MAX_RETRIES;
+    this.sendTxRetryIntervalMs =
+      opts?.sendTxRetryIntervalMs ?? DEFAULT_SEND_TX_RETRY_INTERVAL_MS;
 
     withZeroDevGasEstimator(this);
   }
@@ -117,42 +147,111 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     }
 
     const initCode = await this.account.getInitCode();
-    const uoStruct = await asyncPipe(
-      this.dummyPaymasterDataMiddleware,
-      this.feeDataGetter,
-      this.paymasterDataMiddleware,
-      this.gasEstimator,
-      this.customMiddleware ?? noOpMiddleware
-    )({
-      initCode,
-      sender: this.getAddress(),
-      nonce: this.account.getNonce(),
-      callData,
-      signature: this.account.getDummySignature(),
-    } as UserOperationStruct);
+    let hash: string = "";
+    let i = 0;
+    let maxFeePerGas = 0n;
+    let maxPriorityFeePerGas = 0n;
+    let request: UserOperationStruct;
 
-    const request = deepHexlify(await resolveProperties(uoStruct));
-    if (!isValidRequest(request)) {
-      // this pretty prints the uo
-      throw new Error(
-        `Request is missing parameters. All properties on UserOperationStruct must be set. uo: ${JSON.stringify(
+    const nonce = await this.account.getNonce();
+    do {
+      const uoStruct = await asyncPipe(
+        this.dummyPaymasterDataMiddleware,
+        this.feeDataGetter,
+        this.paymasterDataMiddleware,
+        this.gasEstimator,
+        this.customMiddleware ?? noOpMiddleware
+      )({
+        initCode,
+        sender: this.getAddress(),
+        nonce,
+        callData,
+        signature: await this.account.getDynamicDummySignature(
+          await this.getAddress(),
+          callData as Hex
+        ),
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+      } as UserOperationStruct);
+      request = deepHexlify(await resolveProperties(uoStruct));
+
+      if (!isValidRequest(request)) {
+        // this pretty prints the uo
+        throw new Error(
+          `Request is missing parameters. All properties on UserOperationStruct must be set. uo: ${JSON.stringify(
+            request,
+            null,
+            2
+          )}`
+        );
+      }
+
+      request.signature = await this.account.validator.getSignature(request);
+      try {
+        hash = await this.rpcClient.sendUserOperation(
           request,
-          null,
-          2
-        )}`
-      );
-    }
-
-    request.signature = await this.account.validator.getSignature(request);
+          this.entryPointAddress
+        );
+      } catch (error: any) {
+        if (this.isReplacementOpError(error) && i++ < this.sendTxMaxRetries) {
+          maxFeePerGas = (BigInt(request.maxFeePerGas) * 113n) / 100n;
+          maxPriorityFeePerGas =
+            (BigInt(request.maxPriorityFeePerGas) * 113n) / 100n;
+          console.log(
+            `After ${
+              this.sendTxRetryIntervalMs / 60000
+            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${maxFeePerGas}, maxPriorityFeePerGas: ${maxPriorityFeePerGas}`
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.sendTxRetryIntervalMs)
+          );
+          continue;
+        }
+        throw this.unwrapError(error);
+      }
+    } while (hash === "");
 
     return {
-      hash: await this.rpcClient.sendUserOperation(
-        request,
-        this.entryPointAddress
-      ),
+      hash,
       request,
     };
   };
+
+  isReplacementOpError(errorIn: any): boolean {
+    if (errorIn.cause != null) {
+      const failedOpMessage: string | undefined = errorIn?.cause?.message;
+      return (
+        (failedOpMessage?.includes(
+          "replacement op must increase maxFeePerGas and MaxPriorityFeePerGas"
+        ) ||
+          failedOpMessage?.match(/.*replacement.*underpriced.*/) !== null) ??
+        false
+      );
+    }
+    return false;
+  }
+
+  unwrapError(errorIn: any): Error {
+    if (errorIn?.cause != null) {
+      let paymasterInfo: string = "";
+      let failedOpMessage: string | undefined = errorIn?.cause?.message;
+      if (failedOpMessage?.includes("FailedOp") === true) {
+        // TODO: better error extraction methods will be needed
+        const matched = failedOpMessage.match(/FailedOp\((.*)\)/);
+        if (matched != null) {
+          const split = matched[1].split(",");
+          paymasterInfo = `(paymaster address: ${split[1]})`;
+          failedOpMessage = split[2];
+        }
+      }
+      const error = new Error(
+        `The bundler has failed to include UserOperation in a batch: ${failedOpMessage} ${paymasterInfo}`
+      );
+      error.stack = errorIn.stack;
+      return error;
+    }
+    return errorIn;
+  }
 
   getAccount: () => KernelSmartContractAccount = () => {
     if (!isKernelAccount(this.account)) {

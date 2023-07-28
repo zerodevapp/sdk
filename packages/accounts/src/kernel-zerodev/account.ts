@@ -8,6 +8,8 @@ import {
   type Hex,
   toBytes,
   type Transport,
+  pad,
+  toHex,
 } from "viem";
 import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator, ValidatorMode } from "./validator/base.js";
@@ -28,11 +30,12 @@ import {
   KERNEL_FACTORY_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
-import { encodeMultiSend } from "./utils.js";
+import { encodeMultiSend, randomHexString } from "./utils.js";
 import { MultiSendAbi } from "./abis/MultiSendAbi.js";
 import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
+import type { PaymasterAndBundlerProviders } from "./paymaster/types.js";
 
 export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
@@ -42,6 +45,7 @@ export interface KernelSmartAccountParams<
   factoryAddress?: Address;
   index?: bigint;
   validator?: KernelBaseValidator;
+  bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
 export function isKernelAccount(
@@ -85,6 +89,7 @@ export class KernelSmartContractAccount<
             chain,
             rpcUrl: params.rpcClient ?? BUNDLER_URL,
             projectId: params.projectId,
+            bundlerProvider: params.bundlerProvider,
           })
         : params.rpcClient;
     const instance = new KernelSmartContractAccount({
@@ -104,12 +109,55 @@ export class KernelSmartContractAccount<
     return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
   }
 
+  async getDynamicDummySignature(
+    kernelAccountAddress: Address,
+    calldata: Hex
+  ): Promise<Hex> {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+
+    const dummyECDSASig =
+      "0x870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
+    const validatorMode = await this.validator.resolveValidatorMode(
+      kernelAccountAddress,
+      calldata
+    );
+    if (validatorMode === ValidatorMode.enable) {
+      const enableDataLength =
+        (await this.validator.getEnableData()).length / 2 - 1;
+      const enableSigLength = 65;
+      // ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
+      const staticDummySig = concatHex([
+        "0x000000000000000000000000",
+        this.validator.getAddress(),
+        "0x53dd285022D1512635823952d109dB39467a457E",
+      ]);
+      const enableDummyData = randomHexString(enableDataLength);
+
+      // [TODO] - Current dummy enable signature is hardcoded, need to generate it dynamically
+      // Only works if the actual enable signature is 65 bytes long ECDSA signature without extra encoding
+      // const enableDummySig = concatHex([randomHexString(enableSigLength - 1), "0x1c"]);
+      return concatHex([
+        ValidatorMode.enable,
+        staticDummySig,
+        pad(toHex(enableDataLength), { size: 32 }),
+        enableDummyData,
+        pad(toHex(enableSigLength), { size: 32 }),
+        // enableDummySig,
+        dummyECDSASig,
+        dummyECDSASig,
+      ]);
+    }
+    return concatHex([validatorMode, dummyECDSASig]);
+  }
+
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
     if (!this.validator) {
       throw new Error("Validator not connected");
     }
-    if (this.validator.mode !== ValidatorMode.sudo) {
-      throw new Error("Validator Mode not supported");
+    if (target.toLowerCase() === this.accountAddress?.toLowerCase()) {
+      return data;
     } else {
       return this.encodeExecuteAction(target, value, data, 0);
     }

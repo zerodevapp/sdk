@@ -1,6 +1,9 @@
 import { parseUnits, type Hex } from "viem";
 import type { IGasTokenAddresses } from "./paymaster/types.js";
+import { polygon } from "viem/chains";
 
+export const DEFAULT_SEND_TX_MAX_RETRIES = 3;
+export const DEFAULT_SEND_TX_RETRY_INTERVAL_MS = 1_80_000; // 3 minutes
 export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
 export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
 export const ENTRYPOINT_ADDRESS: Hex =
@@ -53,3 +56,7 @@ export const ERC20_APPROVAL_AMOUNT: { [key: string]: bigint } = {
 
   "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B": parseUnits("100", 18),
 };
+
+export const minPriorityFeePerBidDefaults = new Map<number, bigint>([
+  [polygon.id, 30_000_000_000n],
+]);

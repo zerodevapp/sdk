@@ -59,6 +59,39 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 });
 ```
 
+### Batch Transactions
+
+```ts
+const { hash } = await ecdsaProvider.sendUserOperation([
+  {
+    target: "0xTargetAddress1",
+    data: "0xcallData1",
+    value: 0n, // value: bigint or undefined
+  },
+  {
+    target: "0xTargetAddress2",
+    data: "0xcallData2",
+    value: 0n, // value: bigint or undefined
+  },
+]);
+```
+
+### Optional params for ValidatorProvider:
+
+| Option                                            | Usage                                                                                                              | Type                            | Default                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------- |
+| bundlerProvider                                   | Bundler Provider                                                                                                   | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
+| opts:paymasterConfig:paymasterProvider            | Paymaster Provider                                                                                                 | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
+| opts:paymasterConfig:onlySendSponsoredTransaction | Only send sponsored transaction and revert if paymaster fails                                                      | boolean                         | false                                                                            |
+| opts:providerConfig:rpcUrl                        | Custom RPC URL for the bundler provider                                                                            | string                          | "https://v0-6-meta-bundler.onrender.com"                                         |
+| opts:providerConfig:opts:txMaxRetries             | The maximum number of times to try fetching a transaction receipt before giving up                                 | number                          | 5                                                                                |
+| opts:providerConfig:opts:txRetryIntervalMs        | The interval in milliseconds to wait between retries while waiting for tx receipts                                 | number                          | 2000                                                                             |
+| opts:providerConfig:opts:minPriorityFeePerBid     | used when computing the fees for a user operation                                                                  | bigint                          | 100_000_000n, [Chain-wise defaults](/packages/core/src/provider/base.ts#L61-L64) |
+| opts:providerConfig:opts:sendTxMaxRetries         | The maximum number of times to try sending a transaction before giving up                                          | number                          | 3                                                                                |
+| opts:providerConfig:opts:sendTxRetryIntervalMs    | The interval in milliseconds to wait between retries while sending a transaction                                   | number                          | 180000                                                                           |
+| opts:accountConfig:index                          | Index variable to be used alongwith with owner address and validator data while calculating counterfactual address | number                          | 1000                                                                             |
+| [TODO] include other options                      |                                                                                                                    |                                 |                                                                                  |
+
 ### Pay gas in ERC20
 
 ZeroDev currently supports:
@@ -95,13 +128,13 @@ const ecdsaProvider = await ECDSAProvider.init({
 const { hash } = await ecdsaProvider.changeOwner(<NEW_OWNER_ADDRESS>);
 ```
 
-### Via `ethers`
+### Via `ethers` Signer
 
 ```ts
 import { Wallet } from "@ethersproject/wallet";
 import {
   ZeroDevEthersProvider,
-  convertWalletToAccountSigner,
+  convertEthersSignerToAccountSigner,
 } from "@zerodevapp/sdk@alpha";
 
 // 1. Create an ethers Wallet
@@ -110,7 +143,7 @@ const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
 // 2. Create a ZeroDev ZeroDevEthersProvider passing the ethers Wallet as the signer
 const provider = await ZeroDevEthersProvider.init("ECDSA", {
   projectId, // zeroDev projectId
-  owner: convertWalletToAccountSigner(owner),
+  owner: convertEthersSignerToAccountSigner(owner),
   opts: {
     paymasterConfig: {
       policy: "VERIFYING_PAYMASTER",

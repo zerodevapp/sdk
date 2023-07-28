@@ -25,7 +25,10 @@ import {
   type UserOperationCallDataWithDelegate,
 } from "../utils.js";
 import { Paymaster } from "./base.js";
-import { type PaymasterConfig } from "./types.js";
+import {
+  type PaymasterAndBundlerProviders,
+  type PaymasterConfig,
+} from "./types.js";
 import { getChainId } from "../api/index.js";
 
 export class TokenPaymaster extends Paymaster {
@@ -54,23 +57,24 @@ export class TokenPaymaster extends Paymaster {
     }
   }
   async decodeMainCallFromCallData(
+    kernelAddress: PromiseOrValue<string>,
     callData: PromiseOrValue<BytesLike>
   ): Promise<UserOperationCallDataWithDelegate | undefined> {
-    try {
-      let data: Hex = "0x";
-      if (callData instanceof Promise) {
-        const _data = await callData;
-        if (_data instanceof Uint8Array) {
-          data = toHex(_data);
-        } else {
-          data = _data as Hex;
-        }
-      } else if (callData instanceof Uint8Array) {
-        data = toHex(callData);
+    let data: Hex = "0x";
+    if (callData instanceof Promise) {
+      const _data = await callData;
+      if (_data instanceof Uint8Array) {
+        data = toHex(_data);
       } else {
-        data = callData as Hex;
+        data = _data as Hex;
       }
+    } else if (callData instanceof Uint8Array) {
+      data = toHex(callData);
+    } else {
+      data = callData as Hex;
+    }
 
+    try {
       const { functionName, args } = decodeFunctionData({
         abi: KernelAccountAbi,
         data: data,
@@ -101,7 +105,16 @@ export class TokenPaymaster extends Paymaster {
         }
         return mainCall;
       }
-    } catch (error) {}
+    } catch (error) {
+      return {
+        target: (kernelAddress instanceof Promise
+          ? await kernelAddress
+          : kernelAddress) as Hex,
+        data,
+        value: 0n,
+        delegateCall: true,
+      };
+    }
     return;
   }
 
@@ -143,10 +156,14 @@ export class TokenPaymaster extends Paymaster {
   }
 
   async getPaymasterResponse(
-    struct: UserOperationStruct
+    struct: UserOperationStruct,
+    paymasterProvider?: PaymasterAndBundlerProviders
   ): Promise<UserOperationStruct> {
     try {
-      const mainCall = await this.decodeMainCallFromCallData(struct.callData);
+      const mainCall = await this.decodeMainCallFromCallData(
+        struct.sender,
+        struct.callData
+      );
       if (!mainCall) {
         throw IncorrectCallDataForTokenPaymaster;
       }
@@ -169,13 +186,14 @@ export class TokenPaymaster extends Paymaster {
         if (!erc20UserOp) {
           return struct;
         }
-        const paymasterResp = await this.signUserOp(
-          struct,
-          struct.callData,
+        const paymasterResp = await this.signUserOp({
+          userOp: struct,
+          callData: struct.callData,
           gasTokenAddress,
           erc20UserOp,
-          erc20UserOp.callData
-        );
+          erc20CallData: erc20UserOp.callData,
+          paymasterProvider,
+        });
         if (paymasterResp) {
           return {
             ...struct,

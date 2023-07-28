@@ -8,34 +8,43 @@ import {
   type UserOperationEstimateGasResponse,
 } from "@alchemy/aa-core";
 import { ENTRYPOINT_ADDRESS } from "../constants.js";
-import { toHex } from "viem";
 import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas.js";
 
 export const withZeroDevGasEstimator = (
   provider: ZeroDevProvider
 ): ZeroDevProvider => {
-  provider.withFeeDataGetter(async () => {
+  provider.withFeeDataGetter(async (struct) => {
+    let overrides = await resolveProperties({
+      maxFeePerGas: struct.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: struct.maxPriorityFeePerGas ?? 0n,
+    });
+
+    let maxFeePerGas, maxPriorityFeePerGas;
+
     try {
-      let { maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(
+      ({ maxFeePerGas, maxPriorityFeePerGas } = await eip1559GasPrice(
         provider
-      );
-      return {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-      };
+      ));
     } catch (error: any) {
       console.warn(
         "getGas: eth_maxPriorityFeePerGas failed, falling back to legacy gas price."
       );
     }
 
-    const feeData = await getFeeData(provider);
-    const maxFeePerGas = feeData?.maxFeePerGas
-      ? BigInt(feeData?.maxFeePerGas)
-      : 0n;
-    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
-      ? BigInt(feeData.maxPriorityFeePerGas)
-      : 0n;
+    if (maxFeePerGas === undefined || maxPriorityFeePerGas === undefined) {
+      const feeData = await getFeeData(provider);
+      maxFeePerGas = feeData?.maxFeePerGas ? BigInt(feeData?.maxFeePerGas) : 0n;
+      maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+        ? BigInt(feeData.maxPriorityFeePerGas)
+        : 0n;
+    }
+
+    if (
+      maxFeePerGas < BigInt(overrides.maxFeePerGas) ||
+      maxPriorityFeePerGas < BigInt(overrides.maxPriorityFeePerGas)
+    ) {
+      return overrides;
+    }
     return { maxFeePerGas, maxPriorityFeePerGas };
   });
 
@@ -54,8 +63,9 @@ export const withZeroDevGasEstimator = (
       callGasLimit:
         initCode !== undefined && initCode.length > 2
           ? BigInt("1000000")
-          : BigInt(40000),
+          : BigInt(55000),
       verificationGasLimit: BigInt(110000) + initGas,
+      preVerificationGas: BigInt(100000),
     };
 
     partialStruct.preVerificationGas = await getPreVerificationGas(
@@ -64,28 +74,19 @@ export const withZeroDevGasEstimator = (
 
     const request = deepHexlify(await resolveProperties(partialStruct));
     let userOpGasEstimates: UserOperationEstimateGasResponse | undefined;
-    try {
-      request.preVerificationGas = toHex(BigInt("100000"));
-      request.verificationGasLimit = toHex(BigInt("1000000"));
-      request.callGasLimit = toHex(BigInt("55000"));
-      userOpGasEstimates = await provider.rpcClient.estimateUserOperationGas(
-        request,
-        ENTRYPOINT_ADDRESS
-      );
-      const { preVerificationGas, verificationGasLimit, callGasLimit } =
-        userOpGasEstimates;
-      request.preVerificationGas = preVerificationGas
-        ? (BigInt(preVerificationGas) * 12n) / 10n
-        : request.preVerificationGas;
-      request.verificationGasLimit = verificationGasLimit
-        ? (BigInt(verificationGasLimit) * 12n) / 10n
-        : request.verificationGasLimit;
-      request.callGasLimit = callGasLimit
-        ? (BigInt(callGasLimit) * 12n) / 10n
-        : request.callGasLimit;
-    } catch (error) {
-      console.log(error);
-    }
+    userOpGasEstimates = await provider.rpcClient.estimateUserOperationGas(
+      request,
+      ENTRYPOINT_ADDRESS
+    );
+    const { preVerificationGas, verificationGasLimit, callGasLimit } =
+      userOpGasEstimates;
+    request.preVerificationGas =
+      (BigInt(preVerificationGas) * 12n) / 10n ?? request.preVerificationGas;
+    request.verificationGasLimit =
+      (BigInt(verificationGasLimit) * 12n) / 10n ??
+      request.verificationGasLimit;
+    request.callGasLimit =
+      (BigInt(callGasLimit) * 12n) / 10n ?? request.callGasLimit;
 
     return {
       ...struct,

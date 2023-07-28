@@ -1,6 +1,6 @@
 {
   "name": "@zerodevapp/sdk",
-  "version": "4.0.2-alpha.11",
+  "version": "4.0.2-alpha.18",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "ZeroDev",
   "license": "MIT",
@@ -63,7 +63,7 @@
     "url": "https://github.com/zerodevapp/aa-sdk/issues"
   },
   "homepage": "https://github.com/zerodevapp/aa-sdk/blob/zd-provider/packages/accounts/src/kernel-zerodev/README.md#readme",
-  "gitHead": "68cd6767ddc09cac3b1f69050970d862f5902992",
+  "gitHead": "19ba05a77e4f7a0e04f44f34eaecf675fe2c12f2",
   "dependencies": {
     "axios": "^1.4.0"
   }

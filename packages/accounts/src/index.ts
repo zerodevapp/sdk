@@ -35,5 +35,6 @@ export { ZeroDevProvider } from "./kernel-zerodev/provider.js";
 export * from "./kernel-zerodev/utils.js";
 export { getChainId } from "./kernel-zerodev/api/index.js";
 export { ZeroDevEthersProvider } from "./kernel-zerodev/ethers-provider/ethers-provider.js";
+export { ZeroDevLocalAccountSigner } from "./kernel-zerodev/signer/zd-local-account.js";
 
 export * as constants from "./kernel-zerodev/constants.js";

@@ -8,7 +8,11 @@ import type {
   KernelBaseValidator,
   KernelBaseValidatorParams,
 } from "../validator/base.js";
-import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
+import type {
+  PaymasterAndBundlerProviders,
+  PaymasterConfig,
+  PaymasterPolicy,
+} from "../paymaster/types.js";
 import {
   KernelSmartContractAccount,
   type KernelSmartAccountParams,
@@ -31,6 +35,7 @@ export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
 export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   projectId: string;
   owner: SmartAccountSigner;
+  bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: ValidatorProviderParamsOpts<P>;
 }
 
@@ -52,6 +57,7 @@ export abstract class ValidatorProvider<
       chain: params.opts?.providerConfig?.chain ?? polygonMumbai,
       rpcUrl: params.opts?.providerConfig?.rpcUrl,
       projectId: params.projectId,
+      bundlerProvider: params.bundlerProvider,
     });
     this.connect(
       () =>
@@ -60,6 +66,7 @@ export abstract class ValidatorProvider<
           owner: params.owner,
           validator,
           rpcClient: this.rpcClient,
+          bundlerProvider: params.bundlerProvider,
           ...params.opts?.accountConfig,
         })
     );
