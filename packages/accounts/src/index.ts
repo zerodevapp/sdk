@@ -2,8 +2,7 @@
 // Don't use wildcard exports, instead use named exports
 
 //kernel exports
-export { KernelFactoryAbi } from "./kernel-zerodev/abis/KernelFactoryAbi.js";
-export { KernelAccountAbi } from "./kernel-zerodev/abis/KernelAccountAbi.js";
+export * from "./kernel-zerodev/abis/index.js";
 
 // Validator exports
 export {
@@ -13,6 +12,7 @@ export {
 export * from "./kernel-zerodev/validator/index.js";
 export type * from "./kernel-zerodev/validator/types.js";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator.js";
+export type { KillSwitchValidatorParams } from "./kernel-zerodev/validator/kill-switch-validator.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
 
 // Validator Provider exports

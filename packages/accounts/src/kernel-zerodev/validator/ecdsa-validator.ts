@@ -9,6 +9,7 @@ import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import { encodeFunctionData, toBytes } from "viem";
 import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi.js";
 import { getChainId } from "../api/index.js";
+import { DUMMY_ECDSA_SIG } from "../constants.js";
 
 export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
   owner: SmartAccountSigner;
@@ -60,6 +61,10 @@ export class ECDSAValidator extends KernelBaseValidator {
       functionName: "disable",
       args: [disableData],
     });
+  }
+
+  async getDummyUserOpSignature(): Promise<Hex> {
+    return DUMMY_ECDSA_SIG;
   }
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {

@@ -29,7 +29,7 @@ export class ZeroDevEthersProvider<
       accountProvider = withZeroDevPaymasterAndData(
         accountProvider,
         params.opts.paymasterConfig
-      );
+      ) as typeof accountProvider;
     }
     this.accountProvider = accountProvider;
   }

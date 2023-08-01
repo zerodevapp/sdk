@@ -30,12 +30,13 @@ import {
   KERNEL_FACTORY_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
-import { encodeMultiSend, randomHexString } from "./utils.js";
+import { encodeMultiSend } from "./utils.js";
 import { MultiSendAbi } from "./abis/MultiSendAbi.js";
 import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
 import type { PaymasterAndBundlerProviders } from "./paymaster/types.js";
+import type { KillSwitchValidator } from "./validator/kill-switch-validator.js";
 
 export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
@@ -105,6 +106,13 @@ export class KernelSmartContractAccount<
     return this;
   }
 
+  getValidator(): KernelBaseValidator {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    return this.validator;
+  }
+
   getDummySignature(): Hex {
     return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
   }
@@ -118,34 +126,32 @@ export class KernelSmartContractAccount<
     }
 
     const dummyECDSASig =
-      "0x870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
+      "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     const validatorMode = await this.validator.resolveValidatorMode(
       kernelAccountAddress,
       calldata
     );
     if (validatorMode === ValidatorMode.enable) {
-      const enableDataLength =
-        (await this.validator.getEnableData()).length / 2 - 1;
+      const enableData = await this.validator.getEnableData();
+      const enableDataLength = enableData.length / 2 - 1;
       const enableSigLength = 65;
-      // ((await this.validator.getEnableSignature()) ?? "0x").length / 2 - 1;
       const staticDummySig = concatHex([
         "0x000000000000000000000000",
         this.validator.getAddress(),
         "0x53dd285022D1512635823952d109dB39467a457E",
       ]);
-      const enableDummyData = randomHexString(enableDataLength);
+      const pausedUntil = await (
+        this.validator as KillSwitchValidator
+      ).getPausedUntil();
 
-      // [TODO] - Current dummy enable signature is hardcoded, need to generate it dynamically
-      // Only works if the actual enable signature is 65 bytes long ECDSA signature without extra encoding
-      // const enableDummySig = concatHex([randomHexString(enableSigLength - 1), "0x1c"]);
       return concatHex([
         ValidatorMode.enable,
         staticDummySig,
         pad(toHex(enableDataLength), { size: 32 }),
-        enableDummyData,
+        enableData,
         pad(toHex(enableSigLength), { size: 32 }),
-        // enableDummySig,
         dummyECDSASig,
+        pad(toHex(pausedUntil), { size: 6 }),
         dummyECDSASig,
       ]);
     }

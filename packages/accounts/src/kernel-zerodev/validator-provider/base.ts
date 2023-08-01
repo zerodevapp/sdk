@@ -27,9 +27,9 @@ export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
   providerConfig?: Partial<ZeroDevProviderConfig>;
   accountConfig?: Omit<
     KernelSmartAccountParams,
-    keyof ValidatorProviderParams<P>
+    keyof ExtendedValidatorProviderParams<P>
   >;
-  validatorConfig?: Omit<P, keyof ValidatorProviderParams<P>>;
+  validatorConfig?: Omit<P, keyof ExtendedValidatorProviderParams<P>>;
 };
 
 export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
@@ -74,6 +74,15 @@ export abstract class ValidatorProvider<
       withZeroDevPaymasterAndData(this, params.opts.paymasterConfig);
     }
   }
+
+  getValidator = (): KernelBaseValidator => {
+    if (!isKernelAccount(this.account) || !this.account.validator) {
+      throw new Error(
+        "ValidatorProvider: account with validator is not set, did you call all connects first?"
+      );
+    }
+    return this.account.getValidator();
+  };
 
   getEncodedEnableData = async (enableData: Hex): Promise<Hex> => {
     if (!isKernelAccount(this.account) || !this.account.validator) {
