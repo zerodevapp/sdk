@@ -87,6 +87,41 @@ export abstract class KernelBaseValidator {
 
   abstract signer(): Promise<SmartAccountSigner>;
 
+  abstract getDummyUserOpSignature(): Promise<Hex>;
+
+  async getDynamicDummySignature(
+    kernelAccountAddress: Address,
+    calldata: Hex
+  ): Promise<Hex> {
+    const dummyECDSASig =
+      "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
+    const validatorMode = await this.resolveValidatorMode(
+      kernelAccountAddress,
+      calldata
+    );
+    if (validatorMode === ValidatorMode.enable) {
+      const enableData = await this.getEnableData();
+      const enableDataLength = enableData.length / 2 - 1;
+      const enableSigLength = 65;
+      const staticDummySig = concatHex([
+        "0x000000000000000000000000",
+        this.getAddress(),
+        "0x53dd285022D1512635823952d109dB39467a457E",
+      ]);
+
+      return concatHex([
+        ValidatorMode.enable,
+        staticDummySig,
+        pad(toHex(enableDataLength), { size: 32 }),
+        enableData,
+        pad(toHex(enableSigLength), { size: 32 }),
+        dummyECDSASig,
+        await this.getDummyUserOpSignature(),
+      ]);
+    }
+    return concatHex([validatorMode, await this.getDummyUserOpSignature()]);
+  }
+
   setEnableSignature(enableSignature: Hex) {
     this.enableSignature = enableSignature;
   }
@@ -106,7 +141,7 @@ export abstract class KernelBaseValidator {
     validUntil: number,
     validAfter: number,
     validator: KernelBaseValidator
-  ): Promise<string> {
+  ): Promise<Hex> {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
@@ -179,7 +214,8 @@ export abstract class KernelBaseValidator {
       ]);
       if (
         defaultValidatorAddress?.toLowerCase() ===
-        this.validatorAddress.toLowerCase()
+          this.validatorAddress.toLowerCase() ||
+        this.mode === ValidatorMode.sudo
       ) {
         mode = ValidatorMode.sudo;
       } else if (
@@ -209,6 +245,7 @@ export abstract class KernelBaseValidator {
       return concatHex([this.mode, await this.signUserOp(userOp)]);
     } else {
       const enableData = await this.getEnableData();
+      const enableDataLength = enableData.length / 2 - 1;
       const enableSignature = this.getEnableSignature();
       if (!enableSignature) {
         throw new Error("Enable signature not set");
@@ -219,7 +256,7 @@ export abstract class KernelBaseValidator {
         pad(toHex(this.validAfter), { size: 6 }), // 6 bytes 10 - 16
         pad(this.validatorAddress, { size: 20 }), // 20 bytes 16 - 36
         pad(this.executor!, { size: 20 }), // 20 bytes 36 - 56
-        pad(toHex(enableData.length / 2 - 1), { size: 32 }), // 32 bytes 56 - 88
+        pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
         enableData, // 88 - 88 + enableData.length
         pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
         enableSignature, // 120 + enableData.length - 120 + enableData.length + enableSignature.length

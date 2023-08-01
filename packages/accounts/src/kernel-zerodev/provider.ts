@@ -166,10 +166,9 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         sender: this.getAddress(),
         nonce,
         callData,
-        signature: await this.account.getDynamicDummySignature(
-          await this.getAddress(),
-          callData as Hex
-        ),
+        signature: await this.account
+          .getValidator()
+          .getDynamicDummySignature(await this.getAddress(), callData as Hex),
         maxFeePerGas,
         maxPriorityFeePerGas,
       } as UserOperationStruct);

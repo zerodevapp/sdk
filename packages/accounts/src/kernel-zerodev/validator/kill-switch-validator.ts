@@ -12,6 +12,7 @@ import {
 } from "./base.js";
 import {
   concat,
+  concatHex,
   encodeFunctionData,
   keccak256,
   pad,
@@ -20,6 +21,7 @@ import {
 } from "viem";
 import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
 import { getChainId } from "../api/index.js";
+import { DUMMY_ECDSA_SIG } from "../constants.js";
 
 export interface KillSwitchValidatorParams extends KernelBaseValidatorParams {
   guardian: SmartAccountSigner;
@@ -53,7 +55,11 @@ export class KillSwitchValidator extends KernelBaseValidator {
   }
 
   async getEnableData(): Promise<Hex> {
-    return (await this.signer()).getAddress();
+    return await (await this.signer()).getAddress();
+  }
+
+  getPausedUntil(): number {
+    return Math.floor(Date.now() / 1000) + this.delaySeconds;
   }
 
   encodeEnable(newGuardian: Hex): Hex {
@@ -72,12 +78,21 @@ export class KillSwitchValidator extends KernelBaseValidator {
     });
   }
 
+  async getDummyUserOpSignature(): Promise<Hex> {
+    if (this.mode === ValidatorMode.sudo) {
+      return DUMMY_ECDSA_SIG;
+    } else {
+      const pausedUntil = this.getPausedUntil();
+      return concatHex([pad(toHex(pausedUntil), { size: 6 }), DUMMY_ECDSA_SIG]);
+    }
+  }
+
   async signMessage(message: string | Uint8Array): Promise<Hex> {
     return await this.guardian.signMessage(message);
   }
 
   async signUserOp(userOp: UserOperationRequest): Promise<Hex> {
-    const pausedUntil = Math.floor(Date.now() / 1000) + this.delaySeconds;
+    const pausedUntil = this.getPausedUntil();
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
@@ -88,19 +103,15 @@ export class KillSwitchValidator extends KernelBaseValidator {
       },
       this.entryPointAddress,
       BigInt(this.chain.id)
+    ) as Hex;
+
+    const extendedHash = keccak256(
+      concat([pad(toHex(pausedUntil), { size: 6 }), hash])
     );
-    const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
-    if (this.mode === ValidatorMode.sudo) {
-      return await this.guardian.signMessage(formattedMessage);
-    } else {
-      const extendedHash = keccak256(
-        concat([pad(toHex(pausedUntil), { size: 6 }), formattedMessage])
-      );
-      const signature = concat([
-        pad(toHex(pausedUntil), { size: 6 }),
-        await this.guardian.signMessage(toBytes(extendedHash)),
-      ]);
-      return signature;
-    }
+    const signature = concat([
+      pad(toHex(pausedUntil), { size: 6 }),
+      await this.guardian.signMessage(toBytes(extendedHash)),
+    ]);
+    return signature;
   }
 }

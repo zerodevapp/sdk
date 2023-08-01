@@ -9,6 +9,7 @@ import {
 import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
+import { KILL_SWITCH_VALIDATOR_ADDRESS } from "../constants.js";
 
 export class KillSwitchProvider extends ValidatorProvider<KillSwitchValidatorParams> {
   constructor(
@@ -23,6 +24,9 @@ export class KillSwitchProvider extends ValidatorProvider<KillSwitchValidatorPar
       guardian: params.guardian,
       delaySeconds: params.delaySeconds,
       chain,
+      validatorAddress:
+        params.opts?.validatorConfig?.validatorAddress ??
+        KILL_SWITCH_VALIDATOR_ADDRESS,
       ...params.opts?.validatorConfig,
     });
     super(
@@ -58,7 +62,7 @@ export class KillSwitchProvider extends ValidatorProvider<KillSwitchValidatorPar
     return instance;
   }
 
-  changeOwner = this.sendEnableUserOperation;
+  changeGuardian = this.sendEnableUserOperation;
 
-  deleteOwner = this.sendDisableUserOperation;
+  deleteKillSwitchData = this.sendDisableUserOperation;
 }

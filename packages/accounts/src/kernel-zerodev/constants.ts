@@ -15,6 +15,11 @@ export const ECDSA_VALIDATOR_ADDRESS =
   "0x180D6465F921C7E0DEA0040107D342c87455fFF5";
 export const KERNEL_FACTORY_ADDRESS =
   "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39";
+export const KILL_SWITCH_VALIDATOR_ADDRESS =
+  "0x488A29DdEB806f7eBa7e9f3bd8fF04f689a9e550";
+export const KILL_SWITCH_ACTION = "0xA2E8a446b88515d7B2e3b0c3e2d5d412aD31Abb1";
+export const DUMMY_ECDSA_SIG =
+  "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
 
 export const gasTokenChainAddresses: IGasTokenAddresses = {
   USDC: {
