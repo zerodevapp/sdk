@@ -23,17 +23,8 @@ npm i -s @alchemy/aa-core @zerodevapp/sdk@alpha viem
 ### Basic Usage
 
 ```ts
-import {
-  KernelSmartContractAccount,
-  ZeroDevProvider,
-  ECDSAValidator,
-  type ValidatorMode,
-} from "@zerodevapp/sdk@alpha";
+import { ECDSAValidator } from "@zerodevapp/sdk@alpha";
 import { PrivateKeySigner } from "@alchemy/aa-core";
-import { polygonMumbai } from "viem/chains";
-
-const KERNEL_ACCOUNT_FACTORY_ADDRESS =
-  "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39";
 
 // 1. define the EOA owner of the Smart Account
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
