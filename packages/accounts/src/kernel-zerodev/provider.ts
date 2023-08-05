@@ -19,6 +19,7 @@ import {
   type BytesLike,
   SmartAccountProvider,
   type AccountMiddlewareFn,
+  type UserOperationOverrides,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -109,6 +110,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     T extends UserOperationCallData | BatchUserOperationCallData
   >(
     data: T,
+    overrides?: UserOperationOverrides,
     operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
   ): Promise<SendUserOperationResult> => {
     if (!isKernelAccount(this.account)) {
@@ -149,8 +151,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     const initCode = await this.account.getInitCode();
     let hash: string = "";
     let i = 0;
-    let maxFeePerGas = 0n;
-    let maxPriorityFeePerGas = 0n;
+    let maxFeePerGas = overrides?.maxFeePerGas ?? 0n;
+    let maxPriorityFeePerGas = overrides?.maxPriorityFeePerGas ?? 0n;
     let request: UserOperationStruct;
 
     const nonce = await this.account.getNonce();

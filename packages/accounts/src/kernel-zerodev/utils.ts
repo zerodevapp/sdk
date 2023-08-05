@@ -7,10 +7,11 @@ import {
   toHex,
 } from "viem";
 import type {
+  SignTypedDataParams,
   SmartAccountSigner,
   UserOperationCallData,
 } from "@alchemy/aa-core";
-import { Signer } from "@ethersproject/abstract-signer";
+import { Signer, type TypedDataSigner } from "@ethersproject/abstract-signer";
 import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
 import { API_URL, gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
@@ -69,17 +70,35 @@ export const convertWalletClientToAccountSigner = (
                 raw: message,
               },
       })) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) =>
+      await client.signTypedData({
+        account: client.account!,
+        domain: params.domain,
+        types: params.types,
+        message: params.message,
+        primaryType: params.primaryType,
+      }),
   };
 };
 
 export const convertEthersSignerToAccountSigner = (
-  signer: Signer
+  signer: Signer & TypedDataSigner
 ): SmartAccountSigner => {
   return {
     getAddress: async () =>
       Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
       (await signer.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) => {
+      if (params.domain === undefined) {
+        throw new Error("Missing domain in signTypedData params");
+      }
+      return (await signer._signTypedData(
+        params.domain,
+        params.types as any,
+        params.message
+      )) as `0x${string}`;
+    },
   };
 };
 
@@ -92,6 +111,16 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
       Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
       (await signer.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) => {
+      if (params.domain === undefined) {
+        throw new Error("Missing domain in signTypedData params");
+      }
+      return (await signer._signTypedData(
+        params.domain,
+        params.types as any,
+        params.message
+      )) as `0x${string}`;
+    },
   };
 }
 
@@ -155,6 +184,16 @@ export async function getCustodialOwner(
     getAddress: async () => (await turnkeySigner.getAddress()) as `0x${string}`,
     signMessage: async (msg: Uint8Array | string) =>
       (await turnkeySigner.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) => {
+      if (params.domain === undefined) {
+        throw new Error("Missing domain in signTypedData params");
+      }
+      return (await turnkeySigner._signTypedData(
+        params.domain,
+        params.types as any,
+        params.message
+      )) as `0x${string}`;
+    },
   };
 }
 

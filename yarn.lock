@@ -7,10 +7,34 @@
   resolved "https://registry.yarnpkg.com/@adraffy/ens-normalize/-/ens-normalize-1.9.0.tgz#223572538f6bea336750039bb43a4016dcc8182d"
   integrity sha512-iowxq3U30sghZotgl4s/oJRci6WPBfNO5YYgk2cIOMCHr3LeGPcsZjCEr+33Q4N+oV3OABDAtA+pyvWjbvBifQ==
 
+"@alchemy/aa-core@^0.1.0-alpha.20":
+  version "0.1.0-alpha.20"
+  resolved "https://registry.yarnpkg.com/@alchemy/aa-core/-/aa-core-0.1.0-alpha.20.tgz#c7548205b6bed6ff2adefdccbf56bffb9552d74b"
+  integrity sha512-cnsleIiN162c9i2GRRbT9EYoxwuqjvPIkim1AZ+/ucNwTNg6GQb34KOpQYSJC0+BcoUco1KAlccdOhj4QroCqQ==
+  dependencies:
+    abitype "^0.8.3"
+    eventemitter3 "^5.0.1"
+    viem "^1.5.3"
+
 "@alchemy/aa-core@file:packages/core":
   version "0.1.0-alpha.16"
   dependencies:
     abitype "^0.8.3"
+
+"@alchemy/aa-ethers@^0.1.0-alpha.20":
+  version "0.1.0-alpha.20"
+  resolved "https://registry.yarnpkg.com/@alchemy/aa-ethers/-/aa-ethers-0.1.0-alpha.20.tgz#c0822db438db20427b69ca0f901e3c7f4c585094"
+  integrity sha512-ZOMCcj0M+FufCcWPv2QWAOh0CuxHCTs2xdaihM1O1Ycjsf+KmTG4hIc+RQBxoAmO/WoRLk8ORQPUsqytH43Uiw==
+  dependencies:
+    "@ethersproject/abi" "^5.7.0"
+    "@ethersproject/abstract-signer" "^5.7.0"
+    "@ethersproject/bytes" "^5.7.0"
+    "@ethersproject/contracts" "^5.7.0"
+    "@ethersproject/hash" "^5.7.0"
+    "@ethersproject/keccak256" "^5.7.0"
+    "@ethersproject/providers" "^5.7.2"
+    "@ethersproject/wallet" "^5.7.0"
+    viem "^1.5.3"
 
 "@ampproject/remapping@^2.2.0":
   version "2.2.1"
@@ -4074,6 +4098,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/ws@^8.5.4":
+  version "8.5.5"
+  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.5.5.tgz#af587964aa06682702ee6dcbc7be41a80e4b28eb"
+  integrity sha512-lwhs8hktwxSjf9UaZ9tG5M03PGogvFaH8gUgLNbN9HKIg0dvv6q+gkSuJ8HN4/VbyxkuLzCjlN7GquQ0gUJfIg==
+  dependencies:
+    "@types/node" "*"
+
 "@typescript-eslint/eslint-plugin@^5.5.0", "@typescript-eslint/eslint-plugin@^5.56.0":
   version "5.59.9"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-5.59.9.tgz#2604cfaf2b306e120044f901e20c8ed926debf15"
@@ -4252,6 +4283,11 @@
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@wagmi/chains/-/chains-1.2.0.tgz#d59eaa70ec51a5fdcd113975926992acfb17ab12"
   integrity sha512-dmDRipsE54JfyudOBkuhEexqQWcrZqxn/qiujG8SBzMh/az/AH5xlJSA+j1CPWTx9+QofSMF3B7A4gb6XRmSaQ==
+
+"@wagmi/chains@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@wagmi/chains/-/chains-1.6.0.tgz#eb992ad28dbaaab729b5bcab3e5b461e8a035656"
+  integrity sha512-5FRlVxse5P4ZaHG3GTvxwVANSmYJas1eQrTBHhjxVtqXoorm0aLmCHbhmN8Xo1yu09PaWKlleEvfE98yH4AgIw==
 
 "@wagmi/connectors@2.1.0":
   version "2.1.0"
@@ -4684,6 +4720,11 @@ abitype@0.8.7, abitype@^0.8.3:
   version "0.8.7"
   resolved "https://registry.yarnpkg.com/abitype/-/abitype-0.8.7.tgz#e4b3f051febd08111f486c0cc6a98fa72d033622"
   integrity sha512-wQ7hV8Yg/yKmGyFpqrNZufCxbszDe5es4AZGYPBitocfSqXtjrTG9JMWFcc4N30ukl2ve48aBTwt7NJxVQdU3w==
+
+abitype@0.9.3:
+  version "0.9.3"
+  resolved "https://registry.yarnpkg.com/abitype/-/abitype-0.9.3.tgz#294d25288ee683d72baf4e1fed757034e3c8c277"
+  integrity sha512-dz4qCQLurx97FQhnb/EIYTk/ldQ+oafEDUqC0VVIeQS1Q48/YWt/9YNfMmp9SLFqN41ktxny3c8aYxHjmFIB/w==
 
 abort-controller@^3.0.0:
   version "3.0.0"
@@ -6819,6 +6860,11 @@ eventemitter3@^4.0.4, eventemitter3@^4.0.7:
   version "4.0.7"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-4.0.7.tgz#2de9b68f6528d5644ef5c59526a1b4a07306169f"
   integrity sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==
+
+eventemitter3@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-5.0.1.tgz#53f5ffd0a492ac800721bb42c66b841de96423c4"
+  integrity sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==
 
 events@^3.3.0:
   version "3.3.0"
@@ -11766,6 +11812,22 @@ viem@^1.1.7:
     "@scure/bip39" "1.2.0"
     "@wagmi/chains" "1.2.0"
     abitype "0.8.7"
+    isomorphic-ws "5.0.0"
+    ws "8.12.0"
+
+viem@^1.5.3:
+  version "1.5.3"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-1.5.3.tgz#076a95e0c11d03b6cfa8abb1bd19b48a2c02e056"
+  integrity sha512-oImpSDDvm8Y72qxXV0pCAGAqQLYgo8YENdz9EKS8ExnnOJLascpex4LNazNyp9cksjm3ORpVpbqGMr9Cy1z2mg==
+  dependencies:
+    "@adraffy/ens-normalize" "1.9.0"
+    "@noble/curves" "1.0.0"
+    "@noble/hashes" "1.3.0"
+    "@scure/bip32" "1.3.0"
+    "@scure/bip39" "1.2.0"
+    "@types/ws" "^8.5.4"
+    "@wagmi/chains" "1.6.0"
+    abitype "0.9.3"
     isomorphic-ws "5.0.0"
     ws "8.12.0"
 
