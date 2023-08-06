@@ -126,7 +126,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       } else {
         throw InvalidOperation;
       }
-    } else if (this.account instanceof KernelSmartContractAccount) {
+    } else if (isKernelAccount(this.account)) {
       if (operation === Operation.DelegateCall) {
         callData = await this.account.encodeExecuteDelegate(
           data.target,
