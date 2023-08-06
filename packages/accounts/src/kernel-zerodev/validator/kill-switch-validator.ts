@@ -1,19 +1,17 @@
 import {
   getChain,
   getUserOperationHash,
+  type Address,
   type Hex,
   type SmartAccountSigner,
   type UserOperationRequest,
 } from "@alchemy/aa-core";
-import {
-  KernelBaseValidator,
-  ValidatorMode,
-  type KernelBaseValidatorParams,
-} from "./base.js";
+import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import {
   concat,
   concatHex,
   encodeFunctionData,
+  getContract,
   keccak256,
   pad,
   toBytes,
@@ -22,6 +20,7 @@ import {
 import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
+import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 
 export interface KillSwitchValidatorParams extends KernelBaseValidatorParams {
   guardian: SmartAccountSigner;
@@ -78,13 +77,39 @@ export class KillSwitchValidator extends KernelBaseValidator {
     });
   }
 
-  async getDummyUserOpSignature(): Promise<Hex> {
-    if (this.mode === ValidatorMode.sudo) {
-      return DUMMY_ECDSA_SIG;
-    } else {
-      const pausedUntil = this.getPausedUntil();
-      return concatHex([pad(toHex(pausedUntil), { size: 6 }), DUMMY_ECDSA_SIG]);
+  async isPluginEnabled(
+    kernelAccountAddress: Address,
+    selector: Hex
+  ): Promise<boolean> {
+    if (!this.publicClient) {
+      throw new Error("Validator uninitialized: PublicClient missing");
     }
+    const kernel = getContract({
+      abi: KernelAccountAbi,
+      address: kernelAccountAddress,
+      publicClient: this.publicClient,
+    });
+    const execDetail = await kernel.read.getExecution([selector]);
+    const enableData = await this.publicClient.readContract({
+      abi: KillSwitchValidatorAbi,
+      address: this.validatorAddress,
+      functionName: "killSwitchValidatorStorage",
+      args: [kernelAccountAddress],
+    });
+    const pausedUntil = Math.floor(Date.now() / 1000) + this.delaySeconds;
+    return (
+      execDetail.validator.toLowerCase() ===
+        this.validatorAddress.toLowerCase() &&
+      enableData[0] === (await this.getEnableData()) &&
+      enableData[3] === (await kernel.read.getDisabledMode()) &&
+      enableData[2] === pausedUntil &&
+      enableData[1].toLowerCase() ===
+        (await kernel.read.getDefaultValidator()).toLowerCase()
+    );
+  }
+
+  async getDummyUserOpSignature(): Promise<Hex> {
+    return concatHex([pad("0xffffffffffff", { size: 6 }), DUMMY_ECDSA_SIG]);
   }
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {

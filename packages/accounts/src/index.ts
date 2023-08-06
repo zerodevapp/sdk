@@ -13,6 +13,7 @@ export * from "./kernel-zerodev/validator/index.js";
 export type * from "./kernel-zerodev/validator/types.js";
 export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-validator.js";
 export type { KillSwitchValidatorParams } from "./kernel-zerodev/validator/kill-switch-validator.js";
+export type { ERC165SessionKeyValidatorParams } from "./kernel-zerodev/validator/erc165-session-key-validator.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
 
 // Validator Provider exports

@@ -57,6 +57,11 @@ const { hash } = await ecdsaProvider.sendUserOperation({
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
 });
+
+// 4. Wait for UserOp
+const tx = await ecdsaProvider.waitForUserOperationTransaction(
+  result.hash as Hex
+);
 ```
 
 ### Batch Transactions
@@ -78,19 +83,22 @@ const { hash } = await ecdsaProvider.sendUserOperation([
 
 ### Optional params for ValidatorProvider:
 
-| Option                                            | Usage                                                                                                              | Type                            | Default                                                                          |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------- |
-| bundlerProvider                                   | Bundler Provider                                                                                                   | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
-| opts:paymasterConfig:paymasterProvider            | Paymaster Provider                                                                                                 | "ALCHEMY", "STACKUP", "PIMLICO" | "STACKUP"                                                                        |
-| opts:paymasterConfig:onlySendSponsoredTransaction | Only send sponsored transaction and revert if paymaster fails                                                      | boolean                         | false                                                                            |
-| opts:providerConfig:rpcUrl                        | Custom RPC URL for the bundler provider                                                                            | string                          | "https://v0-6-meta-bundler.onrender.com"                                         |
-| opts:providerConfig:opts:txMaxRetries             | The maximum number of times to try fetching a transaction receipt before giving up                                 | number                          | 5                                                                                |
-| opts:providerConfig:opts:txRetryIntervalMs        | The interval in milliseconds to wait between retries while waiting for tx receipts                                 | number                          | 2000                                                                             |
-| opts:providerConfig:opts:minPriorityFeePerBid     | used when computing the fees for a user operation                                                                  | bigint                          | 100_000_000n, [Chain-wise defaults](/packages/core/src/provider/base.ts#L61-L64) |
-| opts:providerConfig:opts:sendTxMaxRetries         | The maximum number of times to try sending a transaction before giving up                                          | number                          | 3                                                                                |
-| opts:providerConfig:opts:sendTxRetryIntervalMs    | The interval in milliseconds to wait between retries while sending a transaction                                   | number                          | 180000                                                                           |
-| opts:accountConfig:index                          | Index variable to be used alongwith with owner address and validator data while calculating counterfactual address | number                          | 1000                                                                             |
-| [TODO] include other options                      |                                                                                                                    |                                 |                                                                                  |
+| Option                                            | Usage                                                                                                              | Type                                     | Default                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------- |
+| bundlerProvider                                   | Bundler Provider                                                                                                   | "ALCHEMY", "STACKUP", "PIMLICO"          | "STACKUP"                                                                        |
+| usePaymaster                                      | Use paymaster to send userOps                                                                                      | boolean                                  | true                                                                             |
+| opts:paymasterConfig:paymasterProvider            | Paymaster Provider                                                                                                 | "ALCHEMY", "STACKUP", "PIMLICO"          | "STACKUP"                                                                        |
+| opts:paymasterConfig:onlySendSponsoredTransaction | Only send sponsored transaction and revert if somehow paymaster fails                                              | boolean                                  | false                                                                            |
+| opts:paymasterConfig:policy                       | Paymaster policy                                                                                                   | "TOKEN_PAYMASTER", "VERIFYING_PAYMASTER" | "VERIFYING_PAYMASTER"                                                            |
+| opts:paymasterConfig:gasToken                     | ERC20 token to use for gas fees in case of "TOKEN_PAYMASTER"                                                       | "USDC", "PEPE", "TEST_ERC20"             | (Required)                                                                       |
+| opts:providerConfig:rpcUrl                        | Custom RPC URL for the bundler provider                                                                            | string                                   | "https://v0-6-meta-bundler.onrender.com"                                         |
+| opts:providerConfig:opts:txMaxRetries             | The maximum number of times to try fetching a transaction receipt before giving up                                 | number                                   | 5                                                                                |
+| opts:providerConfig:opts:txRetryIntervalMs        | The interval in milliseconds to wait between retries while waiting for tx receipts                                 | number                                   | 2000                                                                             |
+| opts:providerConfig:opts:minPriorityFeePerBid     | used when computing the fees for a user operation                                                                  | bigint                                   | 100_000_000n, [Chain-wise defaults](/packages/core/src/provider/base.ts#L61-L64) |
+| opts:providerConfig:opts:sendTxMaxRetries         | The maximum number of times to try sending a transaction before giving up                                          | number                                   | 3                                                                                |
+| opts:providerConfig:opts:sendTxRetryIntervalMs    | The interval in milliseconds to wait between retries while sending a transaction                                   | number                                   | 180000                                                                           |
+| opts:accountConfig:index                          | Index variable to be used alongwith with owner address and validator data while calculating counterfactual address | number                                   | 1000                                                                             |
+| [TODO] include other options                      |                                                                                                                    |                                          |                                                                                  |
 
 ### Pay gas in ERC20
 
@@ -155,7 +163,7 @@ const provider = await ZeroDevEthersProvider.init("ECDSA", {
 const signer = provider.getAccountSigner();
 
 // 4. send a UserOperation
-const { hash } = signer.sendUserOperation({
+const { hash } = await signer.sendUserOperation({
   target: "0xTargetAddress",
   data: "0xcallData",
   value: 0n, // value: bigint or undefined
@@ -257,7 +265,7 @@ const selector = getFunctionSelector("toggleKillSwitch()");
 const blockerKillSwitchProvider = await KillSwitchProvider.init({
   projectId, // zeroDev projectId
   owner,
-  guardian, // Guardian address
+  guardian, // Guardian signer
   delaySeconds: 1000, // Delay in seconds
   opts: {
     accountConfig: {
@@ -325,6 +333,77 @@ let result = await sudoModeKillSwitchProvider.sendUserOperation({
 await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
   result.hash as Hex
 );
+```
+
+### ERC165 Session Key Validator
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Deploy the Kernel account if not already by sending an empty transaction
+let result = await ecdsaProvider.sendUserOperation({
+  target: "0xADDRESS",
+  data: "0x",
+});
+await ecdsaProvider.waitForUserOperationTransaction(result.hash as Hex);
+
+// 3. Initialize required variables
+const accountAddress = await ecdsaProvider.getAccount().getAddress();
+const selector = getFunctionSelector(
+  "transferERC721Action(address, uint256, address)"
+);
+
+// 4. Initialize ERC165SessionKey Validator Provider
+const erc165SessionKeyProvider = await ERC165SessionKeyProvider.init({
+  projectId, // ZeroDev projectId
+  owner,
+  sessionKey, // Session Key signer
+  sessionKeyData: {
+    selector, // Function selector in the executor contract to execute
+    erc165InterfaceId: "0x80ac58cd", // Supported interfaceId of the contract the executor calls
+    validAfter: 0,
+    validUntil: 0,
+    addressOffset: 16, // Address offest of the contract called by the executor in the calldata
+  },
+  opts: {
+    accountConfig: {
+      accountAddress,
+    },
+    validatorConfig: {
+      mode: ValidatorMode.plugin,
+      executor: constants.TOKEN_ACTION, // Address of the executor contract
+      selector, // Function selector in the executor contract to execute
+    },
+  },
+});
+
+// 5. Get enable signature from default ECDSA validator provider and set it in ERC165SessionKey Validator Provider
+const enableSig = await ecdsaProvider
+  .getValidator()
+  .approveExecutor(
+    accountAddress,
+    selector,
+    constants.TOKEN_ACTION,
+    0,
+    0,
+    erc165SessionKeyProvider.getValidator()
+  );
+
+erc165SessionKeyProvider.getValidator().setEnableSignature(enableSig);
+
+// 6. Send the transaction
+const { hash } = await erc165SessionKeyProvider.sendUserOperation({
+  target: accountAddress,
+  data: encodeFunctionData({
+    abi: TokenActionsAbi,
+    functionName: "transferERC721Action",
+    args: ["TOKEN_ADDRESS", "TOKEN_ID", "RECIPIENT_ADDRESS"],
+  }),
+});
 ```
 
 ## Components

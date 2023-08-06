@@ -1,6 +1,7 @@
 import {
   getChain,
   getUserOperationHash,
+  type Address,
   type Hex,
   type SmartAccountSigner,
   type UserOperationRequest,
@@ -10,6 +11,7 @@ import { encodeFunctionData, toBytes } from "viem";
 import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
+import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 
 export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
   owner: SmartAccountSigner;
@@ -65,6 +67,32 @@ export class ECDSAValidator extends KernelBaseValidator {
 
   async getDummyUserOpSignature(): Promise<Hex> {
     return DUMMY_ECDSA_SIG;
+  }
+
+  async isPluginEnabled(
+    kernelAccountAddress: Address,
+    selector: Hex
+  ): Promise<boolean> {
+    if (!this.publicClient) {
+      throw new Error("Validator uninitialized: PublicClient missing");
+    }
+    const execDetail = await this.publicClient.readContract({
+      abi: KernelAccountAbi,
+      address: kernelAccountAddress,
+      functionName: "getExecution",
+      args: [selector],
+    });
+    const enableData = await this.publicClient.readContract({
+      abi: ECDSAValidatorAbi,
+      address: this.validatorAddress,
+      functionName: "ecdsaValidatorStorage",
+      args: [kernelAccountAddress],
+    });
+    return (
+      execDetail.validator.toLowerCase() ===
+        this.validatorAddress.toLowerCase() &&
+      enableData.toLowerCase() === (await this.getEnableData()).toLowerCase()
+    );
   }
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {
