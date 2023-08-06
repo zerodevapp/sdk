@@ -37,6 +37,7 @@ export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   owner: SmartAccountSigner;
   bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: ValidatorProviderParamsOpts<P>;
+  usePaymaster?: boolean;
 }
 
 export type ExtendedValidatorProviderParams<
@@ -70,8 +71,11 @@ export abstract class ValidatorProvider<
           ...params.opts?.accountConfig,
         })
     );
-    if (params.opts?.paymasterConfig) {
-      withZeroDevPaymasterAndData(this, params.opts.paymasterConfig);
+    if (params.usePaymaster === undefined || params.usePaymaster) {
+      withZeroDevPaymasterAndData(
+        this,
+        params.opts?.paymasterConfig ?? { policy: "VERIFYING_PAYMASTER" }
+      );
     }
   }
 

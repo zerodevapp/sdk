@@ -219,6 +219,7 @@ describe("Kernel Account Tests", () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectId,
         owner,
+        usePaymaster: false,
         opts: {
           accountConfig: {
             index: 1001n,
@@ -245,6 +246,7 @@ describe("Kernel Account Tests", () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectId,
         owner,
+        usePaymaster: false,
         opts: {
           providerConfig: {
             opts: {

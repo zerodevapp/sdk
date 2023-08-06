@@ -9,11 +9,12 @@ import {
   pad,
   toHex,
   type Address,
+  concatHex,
+  hexToBigInt,
+  type PublicClient,
+  type Transport,
   createPublicClient,
   http,
-  concatHex,
-  getContract,
-  hexToBigInt,
 } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
@@ -59,6 +60,7 @@ export abstract class KernelBaseValidator {
   protected selector?: string;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
+  protected publicClient?: PublicClient<Transport, Chain, true>;
 
   constructor(params: KernelBaseValidatorParams) {
     this.projectId = params.projectId;
@@ -73,6 +75,20 @@ export abstract class KernelBaseValidator {
     this.chain = params.chain;
     this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
     this.bundlerProvider = params.bundlerProvider;
+    this.publicClient = createPublicClient({
+      transport: http(this.rpcUrl, {
+        fetchOptions: {
+          headers:
+            this.rpcUrl === BUNDLER_URL
+              ? {
+                  projectId: this.projectId,
+                  bundlerProvider: this.bundlerProvider,
+                }
+              : {},
+        },
+      }),
+      chain: this.chain,
+    });
   }
 
   abstract encodeEnable(enableData: Hex): Hex;
@@ -88,6 +104,11 @@ export abstract class KernelBaseValidator {
   abstract signer(): Promise<SmartAccountSigner>;
 
   abstract getDummyUserOpSignature(): Promise<Hex>;
+
+  abstract isPluginEnabled(
+    kernelAccountAddress: Address,
+    selector: Hex
+  ): Promise<boolean>;
 
   async getDynamicDummySignature(
     kernelAccountAddress: Address,
@@ -184,34 +205,17 @@ export abstract class KernelBaseValidator {
     kernelAccountAddress: Address,
     callData: Hex
   ): Promise<ValidatorMode> {
-    if (!this.chain) {
+    if (!this.chain || !this.publicClient) {
       throw new Error("Validator uninitialized");
     }
-    const publicClient = createPublicClient({
-      transport: http(this.rpcUrl, {
-        fetchOptions: {
-          headers:
-            this.rpcUrl === BUNDLER_URL
-              ? {
-                  projectId: this.projectId,
-                  bundlerProvider: this.bundlerProvider,
-                }
-              : {},
-        },
-      }),
-      chain: this.chain,
-    });
-    const kernel = getContract({
-      abi: KernelAccountAbi,
-      address: kernelAccountAddress,
-      publicClient,
-    });
+
     let mode: ValidatorMode;
     try {
-      const defaultValidatorAddress = await kernel.read.getDefaultValidator();
-      const executionData = await kernel.read.getExecution([
-        callData.toString().slice(0, 10) as Hex,
-      ]);
+      const defaultValidatorAddress = await this.publicClient.readContract({
+        abi: KernelAccountAbi,
+        address: kernelAccountAddress,
+        functionName: "getDefaultValidator",
+      });
       if (
         defaultValidatorAddress?.toLowerCase() ===
           this.validatorAddress.toLowerCase() ||
@@ -219,8 +223,10 @@ export abstract class KernelBaseValidator {
       ) {
         mode = ValidatorMode.sudo;
       } else if (
-        executionData?.validator.toLowerCase() ===
-        this.validatorAddress.toLowerCase()
+        await this.isPluginEnabled(
+          kernelAccountAddress,
+          callData.toString().slice(0, 10) as Hex
+        )
       ) {
         mode = ValidatorMode.plugin;
       } else {

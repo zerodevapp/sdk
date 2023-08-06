@@ -9,8 +9,8 @@ import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
 
 interface ZeroDevClientConfig {
   chain: Chain;
-  rpcUrl: string;
   projectId: string;
+  rpcUrl?: string;
   bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
