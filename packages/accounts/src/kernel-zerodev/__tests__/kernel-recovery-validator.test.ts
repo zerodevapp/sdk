@@ -1,9 +1,10 @@
 import { LocalAccountSigner } from "@alchemy/aa-core";
 import { config } from "./kernel-account.test.js";
-import type { Hash, PrivateKeyAccount } from "viem";
+import { encodeFunctionData, type Hash, type PrivateKeyAccount } from "viem";
 import { SocialRecoveryValidator } from "../validator/social-recovery-validator.js";
 import { MockSigner } from "./mocks/mock-signer.js";
 import { SocialRecoveryProvider } from "../validator-provider/social-recovery-provider.js";
+import { SocialRecoveryValidatorAbi } from "../abis/SocialRecoveryValidatorAbi.js";
 
 describe("Recovery Validator Test", async () => {
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
@@ -40,7 +41,7 @@ describe("Recovery Validator Test", async () => {
   });
 
   it(
-    "sendUserOperation should execute properly",
+    "sendUserOperation should execute properly to add guardians",
     async () => {
       let socialRecoveryProvider = await SocialRecoveryProvider.init({
         projectId: config.projectId,
@@ -56,9 +57,16 @@ describe("Recovery Validator Test", async () => {
       });
 
       await socialRecoveryProvider.getAccount().getInitCode();
+
+      const enableData = encodeFunctionData({
+        abi: SocialRecoveryValidatorAbi,
+        args: ["0x0000000000000000000000000000000000000000000000000000000000000000327c8999dc9a822c1f0df42023113edb4fdd5432665b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000000000000000000000000000000000000000000064"],
+        functionName: "enable"
+      })
+
       const result = socialRecoveryProvider.sendUserOperation({
-        target: "0x118aefa610ceb7c42c73d83dfc3d8c54124a4946",
-        data: "0x",
+        target: "0x113EAAF894AF251Ae61E83Ea78Baced99d81F1dc",
+        data: enableData,
         value: 0n,
       });
       await expect(result).resolves.not.toThrowError();
