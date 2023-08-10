@@ -15,6 +15,7 @@ export type { ECDSAValidatorParams } from "./kernel-zerodev/validator/ecdsa-vali
 export type { KillSwitchValidatorParams } from "./kernel-zerodev/validator/kill-switch-validator.js";
 export type { ERC165SessionKeyValidatorParams } from "./kernel-zerodev/validator/erc165-session-key-validator.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
+export type { SocialRecoveryValidatorParams } from "./kernel-zerodev/validator/social-recovery-validator.js";
 
 // Validator Provider exports
 export { ValidatorProvider } from "./kernel-zerodev/validator-provider/base.js";
