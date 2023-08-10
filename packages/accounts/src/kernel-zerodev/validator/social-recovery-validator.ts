@@ -83,12 +83,15 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
       functionName: "getExecution",
       args: [selector],
     });
-    const enableData = await this.publicClient.readContract({
+    const enableDataResponse = await this.publicClient.readContract({
       abi: SocialRecoveryValidatorAbi,
       address: this.validatorAddress,
       functionName: "recoveryPluginStorage",
       args: [kernelAccountAddress],
     });
+
+    const enableData = enableDataResponse as `0x${string}`;
+
     return (
       execDetail.validator.toLowerCase() ===
         this.validatorAddress.toLowerCase() &&
