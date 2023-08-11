@@ -24,11 +24,17 @@ import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
 import type { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
+import { base64ToBytes, bytesToBase64 } from "../utils.js";
 
 export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
   sessionKey: SmartAccountSigner;
   sessionKeyData: SessionKeyData;
 }
+
+export type SessionData = Pick<
+  SessionKeyValidatorParams,
+  "sessionKey" | "sessionKeyData"
+>;
 
 export enum ParamCondition {
   EQUAL = 0,
@@ -168,6 +174,24 @@ export class SessionKeyValidator extends KernelBaseValidator {
       values = [permission];
     }
     return encodeAbiParameters(params, values);
+  }
+
+  serializeSessionData(): string {
+    const sessionData: SessionData = {
+      sessionKey: this.sessionKey,
+      sessionKeyData: this.sessionKeyData,
+    };
+    const jsonString = JSON.stringify(sessionData);
+    const uint8Array = new TextEncoder().encode(jsonString);
+    const base64String = bytesToBase64(uint8Array);
+    return base64String;
+  }
+
+  deserializeSessionData(base64String: string): SessionData {
+    const uint8Array = base64ToBytes(base64String);
+    const jsonString = new TextDecoder().decode(uint8Array);
+    const sessionKeyData = JSON.parse(jsonString) as SessionData;
+    return sessionKeyData;
   }
 
   async signer(): Promise<SmartAccountSigner> {
