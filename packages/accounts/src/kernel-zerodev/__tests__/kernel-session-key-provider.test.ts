@@ -293,13 +293,6 @@ describe("Kernel SessionKey Provider Test", async () => {
               Test_ERC20Address,
               amountToTransfer,
               await secondOwner.getAddress(),
-              //   0n,
-              //   encodeFunctionData({
-              //     abi: TEST_ERC20Abi,
-              //     functionName: "transfer",
-              //     args: [await secondOwner.getAddress(), amountToTransfer],
-              //   }),
-              //   Operation.Call,
             ],
           }),
         });
