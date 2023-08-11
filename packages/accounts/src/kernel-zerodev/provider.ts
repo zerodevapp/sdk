@@ -53,8 +53,8 @@ export type ZeroDevProviderConfig = {
 };
 
 export enum Operation {
-  Call,
-  DelegateCall,
+  Call = 0,
+  DelegateCall = 1,
 }
 
 type UserOpDataOperationTypes<T> = T extends UserOperationCallData
@@ -126,7 +126,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       } else {
         throw InvalidOperation;
       }
-    } else if (this.account instanceof KernelSmartContractAccount) {
+    } else if (isKernelAccount(this.account)) {
       if (operation === Operation.DelegateCall) {
         callData = await this.account.encodeExecuteDelegate(
           data.target,

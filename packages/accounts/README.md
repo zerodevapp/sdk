@@ -397,6 +397,115 @@ const { hash } = await erc165SessionKeyProvider.sendUserOperation({
 });
 ```
 
+### Session Key Validator
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Deploy the Kernel account if not already by sending an empty transaction
+let result = await ecdsaProvider.sendUserOperation({
+  target: "0xADDRESS",
+  data: "0x",
+});
+await ecdsaProvider.waitForUserOperationTransaction(result.hash as Hex);
+
+// 3. Initialize required variables
+const accountAddress = await ecdsaProvider.getAccount().getAddress();
+const selector = getFunctionSelector("execute(address, uint256, bytes, uint8)");
+const sig = getFunctionSelector(
+    "transfer(address, uint256)"
+  )
+const permissions = [
+    {
+        target: <ERC20Address>, // address of the target contract
+        valueLimit: 0, // max value the session key can use in tx
+        sig, // The function selector of the function that can be called on the target contract
+        operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL
+        rules: [ // Parameter rules
+        {
+            condition: ParamCondition.LESS_THAN_OR_EQUAL, // The condition to check
+            offset: 32, // The offset where the param is in the calldata
+            param: pad(toHex(10000), { size: 32 }), // The value to check in condition
+        },
+        {
+            condition: ParamCondition.EQUAL,
+            offset: 0,
+            param: pad(<SPECIFIC_ADDRESS>, { size: 32 }),
+        },
+        ],
+    }
+]
+
+// 4. Initialize SessionKey Validator Provider
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      owner,
+      sessionKey, // Session Key Signer
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        permissionIndex, // The index of the permission to use for the tx through this provider
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      },
+      opts: {
+        accountConfig: {
+          accountAddress,
+        },
+        validatorConfig: {
+          mode: ValidatorMode.plugin,
+          executor: zeroAddress,
+          selector,
+        },
+      },
+});
+
+// 5. Get the validator instance
+// If the session key is generated in the client and need to be approved from the server
+// create an EmptyValidator instance and send it to the server
+let validator = await EmptyValidator.fromValidator(sessionKeyProvider.getValidator());
+// OR else just get the validator instance from the SessionKeyProvider
+validator = sessionKeyProvider.getValidator();
+
+// 6. Get enable signature from default ECDSA validator provider
+const enableSig = await ecdsaProvider
+    .getValidator()
+    .approveExecutor(
+        accountAddress,
+        executeSelector,
+        zeroAddress,
+        0,
+        0,
+        validator
+    );
+
+// 7. Set enable sig in SessionKey Validator Provider
+sessionKeyProvider.getValidator().setEnableSignature(enableSig);
+
+// 8. Send the transaction
+const { hash } = await sessionKeyProvider.sendUserOperation({
+          target: accountAddress,
+          data: encodeFunctionData({
+            abi: KernelAccountAbi,
+            functionName: "execute",
+            args: [
+              ERC20Address,
+              0n,
+              encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: ["RECIPIENT_ADDRESS", "AMOUNT_TO_TRANSFER"],
+              }),
+              Operation.Call,
+            ],
+          }),
+});
+```
+
 ## Components
 
 ### Core Components

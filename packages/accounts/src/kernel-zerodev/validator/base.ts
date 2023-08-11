@@ -127,7 +127,7 @@ export abstract class KernelBaseValidator {
       const staticDummySig = concatHex([
         "0x000000000000000000000000",
         this.getAddress(),
-        "0x53dd285022D1512635823952d109dB39467a457E",
+        this.executor!,
       ]);
 
       return concatHex([
