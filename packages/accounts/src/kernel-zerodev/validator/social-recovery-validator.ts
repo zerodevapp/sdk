@@ -7,16 +7,28 @@ import {
   type UserOperationRequest,
 } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
-import { encodeFunctionData, toBytes } from "viem";
+import { encodeFunctionData, toBytes, type Hash } from "viem";
 import { SocialRecoveryValidatorAbi } from "../abis/SocialRecoveryValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
+import axios from "axios";
+import type { SocialRecoveryProvider } from "../validator-provider/social-recovery-provider.js";
 
 export interface SocialRecoveryValidatorParams
   extends KernelBaseValidatorParams {
   owner: SmartAccountSigner;
 }
+
+type Guardians = {
+  [address: string]: number;
+};
+
+type GuardianData = {
+  guardians: Guardians;
+  threshold: number;
+  owneraddress: string;
+};
 
 export class SocialRecoveryValidator extends KernelBaseValidator {
   protected owner: SmartAccountSigner;
@@ -48,6 +60,34 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
 
   async getEnableData(): Promise<Hex> {
     return this.getOwner();
+  }
+
+  async setGuardian(
+    guardians: GuardianData,
+    socialrecoveryprovider: SocialRecoveryProvider
+  ): Promise<any> {
+    const API_URL = "http://localhost:4000/v1/socialrecovery/setguardian";
+    const response = await axios.post(API_URL, guardians);
+    const guardiancalldata = response.data.data.guardiancalldata;
+
+    console.log(guardiancalldata)
+    const enablecalldata = this.encodeEnable(guardiancalldata);
+
+    await socialrecoveryprovider.getAccount().getInitCode();
+
+    const result = socialrecoveryprovider.sendUserOperation({
+      target: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
+      data: enablecalldata,
+      value: 0n,
+    });
+
+    const res = await socialrecoveryprovider.waitForUserOperationTransaction(
+      (
+        await result
+      ).hash as Hash
+    );
+
+    return res;
   }
 
   encodeEnable(calldata: Hex): Hex {

@@ -13,12 +13,12 @@ describe("Recovery Validator Test", async () => {
   const validator = await SocialRecoveryValidator.init({
     owner: mockOwner,
     projectId: config.projectId,
-    validatorAddress: "0x113EAAF894AF251Ae61E83Ea78Baced99d81F1dc",
+    validatorAddress: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
   });
 
   it("should return proper validator address", async () => {
     expect(await validator.getAddress()).toMatchInlineSnapshot(
-      `"${"0x113EAAF894AF251Ae61E83Ea78Baced99d81F1dc"}"`
+      `"${"0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3"}"`
     );
   });
 
@@ -41,7 +41,41 @@ describe("Recovery Validator Test", async () => {
   });
 
   it(
-    "sendUserOperation should execute properly to add guardians",
+    "should correctly make an api call to set guardians",
+    async () => {
+      const data = {
+        guardians: {
+          "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4": 100,
+          "0x28a292f4dC182492F7E23CFda4354bff688f6ea8": 100,
+        },
+        threshold: 50,
+        owneraddress: "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+      };
+
+      let socialRecoveryProvider = await SocialRecoveryProvider.init({
+        projectId: config.projectId,
+        owner,
+        usePaymaster: false,
+        opts: {
+          providerConfig: {
+            opts: {
+              txMaxRetries: 10,
+            },
+          },
+        },
+      });
+
+      const response = await validator.setGuardian(
+        data,
+        socialRecoveryProvider
+      );
+      expect(response).toBeDefined();
+    },
+    { timeout: 100000 }
+  );
+
+  it.skip(
+    "sendUserOperation should execute properly",
     async () => {
       let socialRecoveryProvider = await SocialRecoveryProvider.init({
         projectId: config.projectId,
@@ -58,15 +92,9 @@ describe("Recovery Validator Test", async () => {
 
       await socialRecoveryProvider.getAccount().getInitCode();
 
-      const enableData = encodeFunctionData({
-        abi: SocialRecoveryValidatorAbi,
-        args: ["0x0000000000000000000000000000000000000000000000000000000000000000327c8999dc9a822c1f0df42023113edb4fdd5432665b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000000000000000000000000000000000000000000064"],
-        functionName: "enable"
-      })
-
       const result = socialRecoveryProvider.sendUserOperation({
-        target: "0x113EAAF894AF251Ae61E83Ea78Baced99d81F1dc",
-        data: enableData,
+        target: "0x28a292f4dC182492F7E23CFda4354bff688f6ea8",
+        data: "0x",
         value: 0n,
       });
       await expect(result).resolves.not.toThrowError();
