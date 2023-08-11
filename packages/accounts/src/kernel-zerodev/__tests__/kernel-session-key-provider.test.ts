@@ -13,7 +13,7 @@ import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
-import { oneAddress } from "../constants.js";
+import { TOKEN_ACTION, oneAddress } from "../constants.js";
 import { ZeroDevLocalAccountSigner } from "../signer/zd-local-account.js";
 import { ValidatorMode } from "../validator/base.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
@@ -26,6 +26,7 @@ import { Operation } from "../provider.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { EmptyValidator } from "../validator/empty-validator.js";
+import { TokenActionsAbi } from "../abis/TokenActionsAbi.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel SessionKey Provider Test", async () => {
@@ -48,6 +49,9 @@ describe("Kernel SessionKey Provider Test", async () => {
   const erc20TransferSelector = getFunctionSelector(
     "transfer(address, uint256)"
   );
+  const transfer20ActionSelector = getFunctionSelector(
+    "transfer20Action(address, uint256, address)"
+  );
   const executeSelector = getFunctionSelector(
     "execute(address, uint256, bytes, uint8)"
   );
@@ -69,6 +73,8 @@ describe("Kernel SessionKey Provider Test", async () => {
 
   async function createProvider(
     sessionKey: SmartAccountSigner,
+    executor: Hex,
+    selector: Address,
     amount?: bigint,
     permissions?: Permission[],
     paymaster?: Address,
@@ -128,8 +134,8 @@ describe("Kernel SessionKey Provider Test", async () => {
         },
         validatorConfig: {
           mode: ValidatorMode.plugin,
-          executor: zeroAddress,
-          selector: executeSelector,
+          executor,
+          selector,
         },
       },
     });
@@ -139,14 +145,7 @@ describe("Kernel SessionKey Provider Test", async () => {
 
     const enableSig = await ecdsaProvider
       .getValidator()
-      .approveExecutor(
-        accountAddress,
-        executeSelector,
-        zeroAddress,
-        0,
-        0,
-        validator
-      );
+      .approveExecutor(accountAddress, selector, executor, 0, 0, validator);
 
     sessionKeyProvider.getValidator().setEnableSignature(enableSig);
   }
@@ -154,7 +153,7 @@ describe("Kernel SessionKey Provider Test", async () => {
   it(
     "should execute the any tx using SessionKey when no permissions set",
     async () => {
-      await createProvider(secondOwner);
+      await createProvider(secondOwner, zeroAddress, executeSelector);
 
       let result = sessionKeyProvider.sendUserOperation({
         target: accountAddress,
@@ -175,7 +174,7 @@ describe("Kernel SessionKey Provider Test", async () => {
   );
 
   it(
-    "should execute the erc721 token transfer action using SessionKey",
+    "should execute the erc20 token transfer action using SessionKey",
     async () => {
       const balanceOfAccount = await client.readContract({
         address: Test_ERC20Address,
@@ -184,26 +183,32 @@ describe("Kernel SessionKey Provider Test", async () => {
         args: [accountAddress],
       });
       const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
-      await createProvider(secondOwner, amountToMint, [
-        {
-          target: Test_ERC20Address,
-          valueLimit: 0,
-          sig: erc20TransferSelector,
-          operation: Operation.Call,
-          rules: [
-            {
-              condition: ParamCondition.LESS_THAN_OR_EQUAL,
-              offset: 32,
-              param: pad(toHex(10000), { size: 32 }),
-            },
-            {
-              condition: ParamCondition.EQUAL,
-              offset: 0,
-              param: pad(await secondOwner.getAddress(), { size: 32 }),
-            },
-          ],
-        },
-      ]);
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          {
+            target: Test_ERC20Address,
+            valueLimit: 0,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [
+              {
+                condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                offset: 32,
+                param: pad(toHex(10000), { size: 32 }),
+              },
+              {
+                condition: ParamCondition.EQUAL,
+                offset: 0,
+                param: pad(await secondOwner.getAddress(), { size: 32 }),
+              },
+            ],
+          },
+        ]
+      );
 
       let result, tx;
       const balanceOfBefore = await client.readContract({
@@ -253,6 +258,72 @@ describe("Kernel SessionKey Provider Test", async () => {
   );
 
   it(
+    "should execute the erc20 token transfer action using SessionKey and Token Action executor",
+    async () => {
+      const balanceOfAccount = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [accountAddress],
+      });
+      const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
+      await createProvider(
+        secondOwner,
+        TOKEN_ACTION,
+        transfer20ActionSelector,
+        amountToMint
+      );
+
+      let result, tx;
+      const balanceOfBefore = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfBefore", balanceOfBefore);
+      const amountToTransfer = 10000n;
+      try {
+        result = await sessionKeyProvider.sendUserOperation({
+          target: accountAddress,
+          data: encodeFunctionData({
+            abi: TokenActionsAbi,
+            functionName: "transfer20Action",
+            args: [
+              Test_ERC20Address,
+              amountToTransfer,
+              await secondOwner.getAddress(),
+              //   0n,
+              //   encodeFunctionData({
+              //     abi: TEST_ERC20Abi,
+              //     functionName: "transfer",
+              //     args: [await secondOwner.getAddress(), amountToTransfer],
+              //   }),
+              //   Operation.Call,
+            ],
+          }),
+        });
+        console.log(result);
+        tx = await sessionKeyProvider.waitForUserOperationTransaction(
+          result.hash as Hex
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      console.log(tx);
+      const balanceOfAfter = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfAfter", balanceOfAfter);
+      expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
+    },
+    { timeout: 1000000 }
+  );
+
+  it(
     "should reject the tx using SessionKey if valueLimit exceeds",
     async () => {
       const balanceOfAccount = await client.readContract({
@@ -262,26 +333,32 @@ describe("Kernel SessionKey Provider Test", async () => {
         args: [accountAddress],
       });
       const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
-      await createProvider(secondOwner, amountToMint, [
-        {
-          target: Test_ERC20Address,
-          valueLimit: 0,
-          sig: erc20TransferSelector,
-          operation: Operation.Call,
-          rules: [
-            {
-              condition: ParamCondition.LESS_THAN_OR_EQUAL,
-              offset: 32,
-              param: pad(toHex(10000), { size: 32 }),
-            },
-            {
-              condition: ParamCondition.EQUAL,
-              offset: 0,
-              param: pad(await secondOwner.getAddress(), { size: 32 }),
-            },
-          ],
-        },
-      ]);
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          {
+            target: Test_ERC20Address,
+            valueLimit: 0,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [
+              {
+                condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                offset: 32,
+                param: pad(toHex(10000), { size: 32 }),
+              },
+              {
+                condition: ParamCondition.EQUAL,
+                offset: 0,
+                param: pad(await secondOwner.getAddress(), { size: 32 }),
+              },
+            ],
+          },
+        ]
+      );
 
       let result;
       const amountToTransfer = 10000n;
@@ -313,7 +390,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     { timeout: 1000000 }
   );
   it(
-    "should reject the erc721 token transfer action using SessionKey without paymaster",
+    "should reject the erc20 token transfer action using SessionKey without paymaster",
     async () => {
       const balanceOfAccount = await client.readContract({
         address: Test_ERC20Address,
@@ -324,6 +401,8 @@ describe("Kernel SessionKey Provider Test", async () => {
       const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
       await createProvider(
         randomOwner,
+        zeroAddress,
+        executeSelector,
         amountToMint,
         [
           {
