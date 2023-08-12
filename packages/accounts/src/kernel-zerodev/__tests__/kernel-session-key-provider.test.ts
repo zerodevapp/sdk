@@ -108,7 +108,6 @@ describe("Kernel SessionKey Provider Test", async () => {
 
     sessionKeyProvider = await SessionKeyProvider.init({
       projectId: config.projectIdWithGasSponsorship,
-      owner,
       sessionKey,
       sessionKeyData: {
         validAfter: 0,

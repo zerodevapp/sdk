@@ -16,7 +16,6 @@ import { KernelFactoryAbi } from "./abis/KernelFactoryAbi.js";
 import {
   type BaseSmartAccountParams,
   BaseSmartContractAccount,
-  type SmartAccountSigner,
   type BatchUserOperationCallData,
   type UserOperationRequest,
   defineReadOnly,
@@ -39,7 +38,6 @@ export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
 > extends Partial<BaseSmartAccountParams<TTransport>> {
   projectId: string;
-  owner: SmartAccountSigner;
   factoryAddress?: Address;
   index?: bigint;
   validator?: KernelBaseValidator;
@@ -55,7 +53,6 @@ export function isKernelAccount(
 export class KernelSmartContractAccount<
   TTransport extends Transport | FallbackTransport = Transport
 > extends BaseSmartContractAccount<TTransport> {
-  private owner: SmartAccountSigner;
   private readonly factoryAddress: Address;
   private readonly index: bigint;
   validator?: KernelBaseValidator;
@@ -68,7 +65,6 @@ export class KernelSmartContractAccount<
       rpcClient: params.rpcClient ?? BUNDLER_URL,
     });
     this.index = params.index ?? 0n;
-    this.owner = params.owner;
     this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
     this.validator = params.validator;
   }
@@ -150,8 +146,11 @@ export class KernelSmartContractAccount<
 
   async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
     try {
+      if (!this.validator) {
+        throw new Error("Validator not connected");
+      }
       const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
-      let sig = await this.owner.signMessage(
+      let sig = await this.validator.signMessage(
         toBytes(hashMessage({ raw: formattedMessage }))
       );
       // If the account is undeployed, use ERC-6492

@@ -33,8 +33,10 @@ export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
 
 export type SessionData = Pick<
   SessionKeyValidatorParams,
-  "sessionKey" | "sessionKeyData"
->;
+  "sessionKeyData" | "enableSignature"
+> & {
+  sessionPrivateKey: Hex;
+};
 
 export enum ParamCondition {
   EQUAL = 0,
@@ -176,10 +178,11 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return encodeAbiParameters(params, values);
   }
 
-  serializeSessionData(): string {
+  serializeSessionData(sessionPrivateKey: Hex): string {
     const sessionData: SessionData = {
-      sessionKey: this.sessionKey,
+      sessionPrivateKey: sessionPrivateKey,
       sessionKeyData: this.sessionKeyData,
+      enableSignature: this.enableSignature,
     };
     const jsonString = JSON.stringify(sessionData);
     const uint8Array = new TextEncoder().encode(jsonString);
@@ -187,7 +190,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return base64String;
   }
 
-  deserializeSessionData(base64String: string): SessionData {
+  public static deserializeSessionData(base64String: string): SessionData {
     const uint8Array = base64ToBytes(base64String);
     const jsonString = new TextDecoder().decode(uint8Array);
     const sessionKeyData = JSON.parse(jsonString) as SessionData;

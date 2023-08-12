@@ -91,7 +91,6 @@ describe("Kernel ERC165SessionKey Provider Test", async () => {
 
     erc165SessionKeyProvider = await ERC165SessionKeyProvider.init({
       projectId: config.projectIdWithGasSponsorship,
-      owner,
       sessionKey,
       sessionKeyData: {
         selector,

@@ -1,8 +1,4 @@
-import {
-  type Hex,
-  type SendUserOperationResult,
-  type SmartAccountSigner,
-} from "@alchemy/aa-core";
+import { type Hex, type SendUserOperationResult } from "@alchemy/aa-core";
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider.js";
 import type {
   KernelBaseValidator,
@@ -34,7 +30,6 @@ export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
 
 export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   projectId: string;
-  owner: SmartAccountSigner;
   bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: ValidatorProviderParamsOpts<P>;
   usePaymaster?: boolean;
@@ -47,6 +42,7 @@ export type ExtendedValidatorProviderParams<
 // A simple facade abstraction for validator related provider operations
 // Needs to be implemented for each validator plugin
 export abstract class ValidatorProvider<
+  V extends KernelBaseValidator,
   P extends KernelBaseValidatorParams
 > extends ZeroDevProvider {
   constructor(
@@ -64,7 +60,6 @@ export abstract class ValidatorProvider<
       () =>
         new KernelSmartContractAccount({
           projectId: params.projectId,
-          owner: params.owner,
           validator,
           rpcClient: this.rpcClient,
           bundlerProvider: params.bundlerProvider,
@@ -79,13 +74,13 @@ export abstract class ValidatorProvider<
     }
   }
 
-  getValidator = (): KernelBaseValidator => {
+  getValidator = (): V => {
     if (!isKernelAccount(this.account) || !this.account.validator) {
       throw new Error(
         "ValidatorProvider: account with validator is not set, did you call all connects first?"
       );
     }
-    return this.account.getValidator();
+    return this.account.getValidator() as unknown as V;
   };
 
   getEncodedEnableData = async (enableData: Hex): Promise<Hex> => {

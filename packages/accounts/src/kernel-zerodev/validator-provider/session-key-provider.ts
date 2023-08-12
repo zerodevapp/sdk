@@ -11,7 +11,10 @@ import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
 
-export class SessionKeyProvider extends ValidatorProvider<SessionKeyValidatorParams> {
+export class SessionKeyProvider extends ValidatorProvider<
+  SessionKeyValidator,
+  SessionKeyValidatorParams
+> {
   constructor(
     params: ExtendedValidatorProviderParams<SessionKeyValidatorParams>
   ) {

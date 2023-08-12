@@ -255,7 +255,6 @@ const selector = getFunctionSelector("toggleKillSwitch()");
 // 4. Initialize KillSwitch Validator Provider
 const blockerKillSwitchProvider = await KillSwitchProvider.init({
   projectId, // zeroDev projectId
-  owner,
   guardian, // Guardian signer
   delaySeconds: 1000, // Delay in seconds
   opts: {
@@ -297,7 +296,6 @@ await blockerKillSwitchProvider.waitForUserOperationTransaction(
 // 7. Get KillSwitch validator provider instance with SUDO mode
 const sudoModeKillSwitchProvider = await KillSwitchProvider.init({
   projectId, // zeroDev projectId
-  owner,
   guardian,
   delaySeconds: 0,
   opts: {
@@ -351,7 +349,6 @@ const selector = getFunctionSelector(
 // 4. Initialize ERC165SessionKey Validator Provider
 const erc165SessionKeyProvider = await ERC165SessionKeyProvider.init({
   projectId, // ZeroDev projectId
-  owner,
   sessionKey, // Session Key signer
   sessionKeyData: {
     selector, // Function selector in the executor contract to execute
@@ -443,7 +440,6 @@ const permissions = [
 // 4. Initialize SessionKey Validator Provider
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
-      owner,
       sessionKey, // Session Key Signer
       sessionKeyData: {
         validAfter: 0,
@@ -504,6 +500,34 @@ const { hash } = await sessionKeyProvider.sendUserOperation({
             ],
           }),
 });
+
+
+// Creating session key on the server
+// After step 7. above do following server-side and send the sessionData to the client
+const sessionData = sessionKeyProvider
+      .getValidator()
+      .serializeSessionData(<SESSION_PRIVATE_KEY>);
+
+// On client side
+const sessionDataClient =
+    SessionKeyValidator.deserializeSessionData(sessionData);
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      sessionKey: ZeroDevLocalAccountSigner.privateKeyToAccountSigner(sessionDataClient.sessionPrivateKey),
+      sessionKeyData: sessionDataClient.sessionKeyData,
+      opts: {
+        accountConfig: {
+          accountAddress,
+        },
+        validatorConfig: {
+          mode: ValidatorMode.plugin,
+          executor: zeroAddress,
+          selector,
+          enableSignature: sessionDataClient.enableSignature
+        },
+      },
+    });
+// Then use sessionKeyProvider in same way as step 8 above
 ```
 
 ## Components
