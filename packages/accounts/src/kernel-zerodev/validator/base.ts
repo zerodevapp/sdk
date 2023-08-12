@@ -110,6 +110,10 @@ export abstract class KernelBaseValidator {
     selector: Hex
   ): Promise<boolean>;
 
+  shouldDelegateViaFallback(): boolean {
+    return true;
+  }
+
   async getDynamicDummySignature(
     kernelAccountAddress: Address,
     calldata: Hex

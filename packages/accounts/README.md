@@ -484,21 +484,12 @@ sessionKeyProvider.getValidator().setEnableSignature(enableSig);
 
 // 8. Send the transaction
 const { hash } = await sessionKeyProvider.sendUserOperation({
-          target: accountAddress,
+          target: ERC20Address,
           data: encodeFunctionData({
-            abi: KernelAccountAbi,
-            functionName: "execute",
-            args: [
-              ERC20Address,
-              0n,
-              encodeFunctionData({
-                abi: TEST_ERC20Abi,
-                functionName: "transfer",
-                args: ["RECIPIENT_ADDRESS", "AMOUNT_TO_TRANSFER"],
-              }),
-              Operation.Call,
-            ],
-          }),
+                    abi: TEST_ERC20Abi,
+                    functionName: "transfer",
+                    args: ["RECIPIENT_ADDRESS", "AMOUNT_TO_TRANSFER"],
+                }),
 });
 
 

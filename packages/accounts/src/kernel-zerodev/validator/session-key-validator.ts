@@ -97,6 +97,10 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return instance;
   }
 
+  shouldDelegateViaFallback(): boolean {
+    return this.merkleTree.getHexRoot() === pad("0x00", { size: 32 });
+  }
+
   getMerkleTree(): MerkleTree {
     const permissionPacked = this.sessionKeyData.permissions?.map(
       (permission) => this.encodePermissionData(permission)

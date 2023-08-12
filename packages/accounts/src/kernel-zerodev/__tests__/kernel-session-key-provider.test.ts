@@ -150,7 +150,7 @@ describe("Kernel SessionKey Provider Test", async () => {
   }
 
   it(
-    "should execute the any tx using SessionKey when no permissions set",
+    "should execute any tx using SessionKey when no permissions set",
     async () => {
       await createProvider(secondOwner, zeroAddress, executeSelector);
 
@@ -220,20 +220,11 @@ describe("Kernel SessionKey Provider Test", async () => {
       const amountToTransfer = 10000n;
       try {
         result = await sessionKeyProvider.sendUserOperation({
-          target: accountAddress,
+          target: Test_ERC20Address,
           data: encodeFunctionData({
-            abi: KernelAccountAbi,
-            functionName: "execute",
-            args: [
-              Test_ERC20Address,
-              0n,
-              encodeFunctionData({
-                abi: TEST_ERC20Abi,
-                functionName: "transfer",
-                args: [await secondOwner.getAddress(), amountToTransfer],
-              }),
-              Operation.Call,
-            ],
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), amountToTransfer],
           }),
         });
         console.log(result);
@@ -356,21 +347,13 @@ describe("Kernel SessionKey Provider Test", async () => {
       const amountToTransfer = 10000n;
       try {
         result = sessionKeyProvider.sendUserOperation({
-          target: accountAddress,
+          target: Test_ERC20Address,
           data: encodeFunctionData({
-            abi: KernelAccountAbi,
-            functionName: "execute",
-            args: [
-              Test_ERC20Address,
-              1n,
-              encodeFunctionData({
-                abi: TEST_ERC20Abi,
-                functionName: "transfer",
-                args: [await secondOwner.getAddress(), amountToTransfer],
-              }),
-              Operation.Call,
-            ],
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), amountToTransfer],
           }),
+          value: 1n,
         });
       } catch (e) {
         console.log(e);
@@ -426,18 +409,9 @@ describe("Kernel SessionKey Provider Test", async () => {
         result = sessionKeyProvider.sendUserOperation({
           target: accountAddress,
           data: encodeFunctionData({
-            abi: KernelAccountAbi,
-            functionName: "execute",
-            args: [
-              Test_ERC20Address,
-              0n,
-              encodeFunctionData({
-                abi: TEST_ERC20Abi,
-                functionName: "transfer",
-                args: [await randomOwner.getAddress(), amountToTransfer],
-              }),
-              Operation.Call,
-            ],
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await randomOwner.getAddress(), amountToTransfer],
           }),
         });
       } catch (e) {
