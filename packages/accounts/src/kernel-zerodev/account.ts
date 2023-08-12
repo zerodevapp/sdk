@@ -115,7 +115,8 @@ export class KernelSmartContractAccount<
       throw new Error("Validator not connected");
     }
     if (
-      target.toLowerCase() === this.accountAddress?.toLowerCase() && this.validator.shouldDelegateViaFallback()
+      target.toLowerCase() === this.accountAddress?.toLowerCase() &&
+      this.validator.shouldDelegateViaFallback()
     ) {
       return data;
     } else {
