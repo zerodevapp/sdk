@@ -70,7 +70,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     const response = await axios.post(API_URL, guardians);
     const guardiancalldata = response.data.data.guardiancalldata;
 
-    console.log(guardiancalldata)
+    console.log(guardiancalldata);
     const enablecalldata = this.encodeEnable(guardiancalldata);
 
     await socialrecoveryprovider.getAccount().getInitCode();
@@ -87,7 +87,92 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
       ).hash as Hash
     );
 
-    return res;
+    return {
+      txhash: res,
+      recoveryid: response.data.data.recoveryid,
+    };
+  }
+
+  async addSignatures(
+    recoveryid: string,
+    signature: string,
+    owneraddress: Address
+  ): Promise<any> {
+    try {
+      const API_URL = "http://localhost:4000/v1/socialrecovery/addsignature";
+      const response = await axios.post(API_URL, {
+        recoveryid,
+        signature,
+        owneraddress,
+      });
+      return response.data.data;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async getGuardianCallData(
+    recoveryid: string,
+    owneraddress: string
+  ): Promise<any> {
+    try {
+      const API_URL =
+        "http://localhost:4000/v1/socialrecovery/getguardiancalldata";
+      const response = await axios.post(API_URL, {
+        recoveryid,
+        owneraddress,
+      });
+      return response.data.data;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async getrecoveryCallData(
+    recoveryid: string,
+    owneraddress: Address,
+    newowner: Address,
+    messagehash: Hash
+  ): Promise<any> {
+    try {
+      const API_URL =
+        "http://localhost:4000/v1/socialrecovery/generaterecoverycalldata";
+      const response = await axios.post(API_URL, {
+        recoveryid,
+        owneraddress,
+        newowner,
+        messagehash,
+      });
+      return response.data.data;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async initRecovery(
+    calldata: Hash,
+    socialrecoveryprovider: SocialRecoveryProvider
+  ): Promise<any> {
+    try {
+      const enablecalldata = this.encodeEnable(calldata);
+
+      await socialrecoveryprovider.getAccount().getInitCode();
+
+      const result = socialrecoveryprovider.sendUserOperation({
+        target: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
+        data: enablecalldata,
+        value: 0n,
+      });
+
+      const res = await socialrecoveryprovider.waitForUserOperationTransaction(
+        (
+          await result
+        ).hash as Hash
+      );
+      return res;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   encodeEnable(calldata: Hex): Hex {

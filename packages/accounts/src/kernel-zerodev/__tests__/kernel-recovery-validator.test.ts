@@ -9,6 +9,9 @@ import { SocialRecoveryValidatorAbi } from "../abis/SocialRecoveryValidatorAbi.j
 describe("Recovery Validator Test", async () => {
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const mockOwner = new MockSigner();
+  const owneraddress = await mockOwner.getAddress();
+    let globalrecoveryid = "";
+    let globalrecoverycalldata:Hash;
 
   const validator = await SocialRecoveryValidator.init({
     owner: mockOwner,
@@ -41,40 +44,6 @@ describe("Recovery Validator Test", async () => {
   });
 
   it(
-    "should correctly make an api call to set guardians",
-    async () => {
-      const data = {
-        guardians: {
-          "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4": 100,
-          "0x28a292f4dC182492F7E23CFda4354bff688f6ea8": 100,
-        },
-        threshold: 50,
-        owneraddress: "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
-      };
-
-      let socialRecoveryProvider = await SocialRecoveryProvider.init({
-        projectId: config.projectId,
-        owner,
-        usePaymaster: false,
-        opts: {
-          providerConfig: {
-            opts: {
-              txMaxRetries: 10,
-            },
-          },
-        },
-      });
-
-      const response = await validator.setGuardian(
-        data,
-        socialRecoveryProvider
-      );
-      expect(response).toBeDefined();
-    },
-    { timeout: 100000 }
-  );
-
-  it.skip(
     "sendUserOperation should execute properly",
     async () => {
       let socialRecoveryProvider = await SocialRecoveryProvider.init({
@@ -106,4 +75,93 @@ describe("Recovery Validator Test", async () => {
     },
     { timeout: 100000 }
   );
+
+  it(
+    "should correctly make an api call to set guardians",
+    async () => {
+      const data = {
+        guardians: {
+          "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4": 100,
+        },
+        threshold: 50,
+        owneraddress: "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+      };
+
+      let socialRecoveryProvider = await SocialRecoveryProvider.init({
+        projectId: config.projectId,
+        owner,
+        usePaymaster: false,
+        opts: {
+          providerConfig: {
+            opts: {
+              txMaxRetries: 10,
+            },
+          },
+        },
+      });
+
+      const response = await validator.setGuardian(
+        data,
+        socialRecoveryProvider
+      );
+      expect(response).toBeDefined();
+      console.log("Set Guardian",response);
+      let recoveryid = response.recoveryid;
+      globalrecoveryid = recoveryid;
+    },
+    { timeout: 100000 }
+  );
+
+  it("should add signatures correctly", async () => {
+    const res = await validator.addSignatures(
+      globalrecoveryid,
+      "0xf0745420866c7ec0615a2fa25afaa271cd763596fb4b87fbde763f4cb9cfe142575c22419490fb9db86a6d18801c7919f49b9042619ee339ea200cd8ad533cf41b",
+      "0x7c8999dc9a822c1f0df42023113edb4fdd543266"
+    );
+    // console.log(res);
+    expect(res).toBeDefined();
+  });
+
+  it("should generate recovery calldata correctly", async () => {
+    try {
+      const res = await validator.getrecoveryCallData(
+        globalrecoveryid,
+        "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+        "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
+        "0xaa744ba2ca576ec62ca0045eca00ad3917fdf7ffa34fbbae50828a5a69c1580e"
+      );
+      expect(res).toBeDefined();
+      globalrecoverycalldata = res;
+      console.log(res);
+    } catch (e) {
+      console.log(e);
+    }
+  });
+
+  it("should complete recovery correctly", async () => {
+    try{
+
+        let socialRecoveryProvider = await SocialRecoveryProvider.init({
+            projectId: config.projectId,
+            owner,
+            usePaymaster: false,
+            opts: {
+              providerConfig: {
+                opts: {
+                  txMaxRetries: 10,
+                },
+              },
+            },
+          });
+
+        const res = await validator.initRecovery(
+            globalrecoverycalldata,
+            socialRecoveryProvider
+        )
+        expect(res).toBeDefined();
+        console.log(res);
+    }catch(e){
+        console.log(e);
+    }
+  },{timeout:100000});
 });
