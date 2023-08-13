@@ -17,6 +17,8 @@ import {
   encodeAbiParameters,
   concatHex,
   zeroAddress,
+  decodeFunctionData,
+  isHex,
 } from "viem";
 import { SessionKeyValidatorAbi } from "../abis/SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
@@ -66,7 +68,6 @@ export interface SessionKeyData {
   validAfter: number;
   paymaster?: Address;
   permissions?: Permission[];
-  permissionIndex?: number;
 }
 
 export class SessionKeyValidator extends KernelBaseValidator {
@@ -79,7 +80,6 @@ export class SessionKeyValidator extends KernelBaseValidator {
     this.sessionKey = params.sessionKey;
     this.sessionKeyData = {
       ...params.sessionKeyData,
-      permissionIndex: params.sessionKeyData.permissionIndex ?? 0,
       paymaster: params.sessionKeyData.paymaster ?? zeroAddress,
     };
     this.merkleTree = this.getMerkleTree();
@@ -99,6 +99,129 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
   shouldDelegateViaFallback(): boolean {
     return this.merkleTree.getHexRoot() === pad("0x00", { size: 32 });
+  }
+
+  findMatchingPermission(callData: Hex): Permission | undefined {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: KernelAccountAbi,
+        data: callData,
+      });
+
+      if (functionName !== "execute") return undefined;
+
+      const permissionsList = this.sessionKeyData.permissions;
+      if (!permissionsList || !permissionsList.length) return undefined;
+
+      const targetToMatch = args[0].toLowerCase();
+
+      // Filter permissions by target
+      let targetPermissions = permissionsList.filter(
+        (permission) => permission.target.toLowerCase() === targetToMatch
+      );
+
+      // If no permissions match the exact target, check for generic permissions (using zero address)
+      if (!targetPermissions.length) {
+        targetPermissions = permissionsList.filter(
+          (permission) =>
+            permission.target.toLowerCase() === zeroAddress.toLowerCase()
+        );
+      }
+
+      if (!targetPermissions.length) return undefined;
+
+      const operationPermissions = this.filterByOperation(
+        targetPermissions,
+        args[3]
+      );
+
+      if (!operationPermissions.length) return undefined;
+
+      const signaturePermissions = this.filterBySignature(
+        operationPermissions,
+        args[2].slice(0, 10).toLowerCase()
+      );
+
+      const valueLimitPermissions = signaturePermissions.filter(
+        (permission) => permission.valueLimit >= args[1]
+      );
+
+      if (!valueLimitPermissions.length) return undefined;
+
+      const sortedPermissions = valueLimitPermissions.sort(
+        (a, b) => b.valueLimit - a.valueLimit
+      );
+
+      return this.findPermissionByRule(sortedPermissions, args[2]);
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  private filterByOperation(
+    permissions: Permission[],
+    operation: Operation
+  ): Permission[] {
+    return permissions.filter(
+      (permission) => permission.operation === operation
+    );
+  }
+
+  private filterBySignature(
+    permissions: Permission[],
+    signature: string
+  ): Permission[] {
+    return permissions.filter(
+      (permission) => permission.sig.toLowerCase() === signature
+    );
+  }
+
+  private findPermissionByRule(
+    permissions: Permission[],
+    data: string
+  ): Permission | undefined {
+    return permissions.find((permission) => {
+      for (const rule of permission.rules) {
+        const dataParam: Hex = this.getFormattedHex(
+          "0x" + data.slice(10 + rule.offset * 2, 10 + rule.offset * 2 + 64)
+        );
+        const ruleParam: Hex = this.getFormattedHex(rule.param);
+
+        if (!this.evaluateRuleCondition(dataParam, ruleParam, rule.condition)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  private getFormattedHex(value: string): Hex {
+    return pad(isHex(value) ? value : toHex(value), {
+      size: 32,
+    }).toLowerCase() as Hex;
+  }
+
+  private evaluateRuleCondition(
+    dataParam: Hex,
+    ruleParam: Hex,
+    condition: ParamCondition
+  ): boolean {
+    switch (condition) {
+      case ParamCondition.EQUAL:
+        return dataParam === ruleParam;
+      case ParamCondition.GREATER_THAN:
+        return dataParam > ruleParam;
+      case ParamCondition.LESS_THAN:
+        return dataParam < ruleParam;
+      case ParamCondition.GREATER_THAN_OR_EQUAL:
+        return dataParam >= ruleParam;
+      case ParamCondition.LESS_THAN_OR_EQUAL:
+        return dataParam <= ruleParam;
+      case ParamCondition.NOT_EQUAL:
+        return dataParam !== ruleParam;
+      default:
+        return false;
+    }
   }
 
   getMerkleTree(): MerkleTree {
@@ -252,28 +375,27 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
   }
 
-  async getDummyUserOpSignature(): Promise<Hex> {
+  async getDummyUserOpSignature(callData: Hex): Promise<Hex> {
+    const matchingPermission = this.findMatchingPermission(callData);
+    if (!matchingPermission && !this.shouldDelegateViaFallback()) {
+      throw Error(
+        "SessionKeyValidator: No matching permission found for the userOp"
+      );
+    }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0
-        ? this.encodePermissionData(
-            this.sessionKeyData.permissions[
-              this.sessionKeyData.permissionIndex ?? 0
-            ]
-          )
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+        ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
       keccak256(encodedPermissionData)
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0
-        ? this.encodePermissionData(
-            this.sessionKeyData.permissions[
-              this.sessionKeyData.permissionIndex ?? 0
-            ],
-            merkleProof
-          )
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+        ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     return concatHex([
       await this.sessionKey.getAddress(),
@@ -316,27 +438,26 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
 
+    const matchingPermission = this.findMatchingPermission(userOp.callData);
+    if (!matchingPermission && !this.shouldDelegateViaFallback()) {
+      throw Error(
+        "SessionKeyValidator: No matching permission found for the userOp"
+      );
+    }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0
-        ? this.encodePermissionData(
-            this.sessionKeyData.permissions[
-              this.sessionKeyData.permissionIndex ?? 0
-            ]
-          )
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+        ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
       keccak256(encodedPermissionData)
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0
-        ? this.encodePermissionData(
-            this.sessionKeyData.permissions[
-              this.sessionKeyData.permissionIndex ?? 0
-            ],
-            merkleProof
-          )
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+        ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     const signature = concat([
       await this.sessionKey.getAddress(),

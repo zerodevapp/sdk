@@ -103,7 +103,7 @@ export abstract class KernelBaseValidator {
 
   abstract signer(): Promise<SmartAccountSigner>;
 
-  abstract getDummyUserOpSignature(): Promise<Hex>;
+  abstract getDummyUserOpSignature(callData?: Hex): Promise<Hex>;
 
   abstract isPluginEnabled(
     kernelAccountAddress: Address,
@@ -141,10 +141,13 @@ export abstract class KernelBaseValidator {
         enableData,
         pad(toHex(enableSigLength), { size: 32 }),
         dummyECDSASig,
-        await this.getDummyUserOpSignature(),
+        await this.getDummyUserOpSignature(calldata),
       ]);
     }
-    return concatHex([validatorMode, await this.getDummyUserOpSignature()]);
+    return concatHex([
+      validatorMode,
+      await this.getDummyUserOpSignature(calldata),
+    ]);
   }
 
   setEnableSignature(enableSignature: Hex) {

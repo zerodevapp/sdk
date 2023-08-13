@@ -172,6 +172,67 @@ describe("Kernel SessionKey Provider Test", async () => {
     { timeout: 1000000 }
   );
 
+  it.skip(
+    "should test findMatchingPermission",
+    async () => {
+      const amountToMint = 0n;
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          {
+            target: Test_ERC20Address,
+            valueLimit: 0,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [
+              {
+                condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                offset: 32,
+                param: pad(toHex(10000), { size: 32 }),
+              },
+              {
+                condition: ParamCondition.EQUAL,
+                offset: 0,
+                param: pad(await secondOwner.getAddress(), { size: 32 }),
+              },
+            ],
+          },
+          {
+            target: Test_ERC20Address,
+            valueLimit: 1,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [
+              {
+                condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                offset: 32,
+                param: pad(toHex(10000), { size: 32 }),
+              },
+              {
+                condition: ParamCondition.EQUAL,
+                offset: 0,
+                param: pad(await owner.getAddress(), { size: 32 }),
+              },
+            ],
+          },
+        ]
+      );
+      await sessionKeyProvider.sendUserOperation({
+        target: Test_ERC20Address,
+        data: encodeFunctionData({
+          abi: TEST_ERC20Abi,
+          functionName: "transfer",
+          args: [await secondOwner.getAddress(), 100n],
+        }),
+        value: 0n,
+      });
+    },
+    { timeout: 1000000 }
+  );
+
   it(
     "should execute the erc20 token transfer action using SessionKey",
     async () => {
@@ -359,7 +420,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         console.log(e);
       }
       await expect(result).rejects.toThrowError(
-        "AA23 reverted: SessionKeyValidator: value limit exceeded"
+        "SessionKeyValidator: No matching permission found for the userOp"
       );
     },
     { timeout: 1000000 }
@@ -407,7 +468,7 @@ describe("Kernel SessionKey Provider Test", async () => {
       const amountToTransfer = 10000n;
       try {
         result = sessionKeyProvider.sendUserOperation({
-          target: accountAddress,
+          target: Test_ERC20Address,
           data: encodeFunctionData({
             abi: TEST_ERC20Abi,
             functionName: "transfer",

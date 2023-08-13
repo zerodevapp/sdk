@@ -445,7 +445,6 @@ const sessionKeyProvider = await SessionKeyProvider.init({
         validAfter: 0,
         validUntil: 0,
         permissions,
-        permissionIndex, // The index of the permission to use for the tx through this provider
         paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
       },
       opts: {
