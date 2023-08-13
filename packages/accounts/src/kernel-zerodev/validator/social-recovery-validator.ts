@@ -62,7 +62,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     return this.getOwner();
   }
 
-  async setGuardian(
+  async setGuardians(
     guardians: GuardianData,
     socialrecoveryprovider: SocialRecoveryProvider
   ): Promise<any> {

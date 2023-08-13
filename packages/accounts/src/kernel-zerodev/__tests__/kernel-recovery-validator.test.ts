@@ -100,7 +100,7 @@ describe("Recovery Validator Test", async () => {
         },
       });
 
-      const response = await validator.setGuardian(
+      const response = await validator.setGuardians(
         data,
         socialRecoveryProvider
       );
