@@ -471,7 +471,7 @@ const enableSig = await ecdsaProvider
     .getValidator()
     .approveExecutor(
         accountAddress,
-        executeSelector,
+        selector,
         zeroAddress,
         0,
         0,
