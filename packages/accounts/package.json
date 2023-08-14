@@ -12,6 +12,7 @@
   "typings": "./dist/types/index.d.ts",
   "sideEffects": false,
   "files": [
+    "passkey",
     "dist",
     "src/**/*.ts",
     "!dist/**/*.tsbuildinfo",
@@ -25,6 +26,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
       "default": "./dist/cjs/index.js"
+    },
+    "./passkey": {
+      "import": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
+      "default": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
+      "types": "./dist/types/kernel-zerodev/owner/passkey/index.d.ts"
     },
     "./package.json": "./package.json"
   },
