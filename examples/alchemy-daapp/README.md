@@ -34,11 +34,15 @@ export const serverConfigs: Record<number, ServerConfiguration> = {
     nftContractAddress: "<your-nft-contract-address>",
     simpleAccountFactoryAddress: "<your-simple-account-factory-address>",
     gasManagerPolicyId: "<your-gas-manager-policy-id>",
-    chain: polygon,
+    chain: polygonMumbai,
   },
   // Repeat for other chains as needed
 };
 ```
+### **🗒️ Notes:** for `nftContractAddress` and `simpleAccountFactoryAddress` 
+- There are already contract addresses deployed for them across [various chains here](https://github.com/alchemyplatform/aa-sdk/blob/main/examples/alchemy-daapp/src/configs/clientConfigs.ts).
+- We used eth-infinitism's [simpleAccountFactory here](https://github.com/eth-infinitism/account-abstraction/blob/main/contracts/samples/SimpleAccountFactory.sol).
+- Finally, the contracts sibling package has the copy of the [NFT contract](https://github.com/alchemyplatform/aa-sdk/tree/main/examples/contracts/DAAppNFT/src) along instructions on [how to deploy it](https://github.com/alchemyplatform/aa-sdk/blob/main/examples/contracts/README.md).
 
 4. Update the serverConfigs.ts file with your alchemy API keys:
 ```typescript
@@ -63,12 +67,12 @@ You can replace the default values with your contract addresses and policy ids a
 ## Contributing
 We welcome contributions to the examples/alchemy-daapp repo! If you would like to contribute, please follow these steps:
 
+**This repository follows an MIT license**
+
 1. Clone the repository
 2. Create a new branch for your changes
 3. Make your changes and commit them
-4. Push your changes to the repository
-5. Submit a pull request to the examples/aa-SDK repo
+4. Push your changes to your forked repository
+5. Submit a pull request to the examples/aa-sdk repo
 
 Please ensure that your code follows our coding standards and that you have added appropriate tests for your changes. We appreciate your contributions and look forward to working with you.
-
-**This repository follows an MIT license**

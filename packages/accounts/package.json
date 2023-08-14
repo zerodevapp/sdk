@@ -35,21 +35,19 @@
     "build:types": "tsc --project tsconfig.build.json --module esnext --declarationDir ./dist/types --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf ./dist",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:run-e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "devDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.16",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.16",
+    "@alchemy/aa-core": "^0.1.0-alpha.23",
+    "@alchemy/aa-ethers": "^0.1.0-alpha.23",
     "@turnkey/ethers": "^0.16.2",
     "typescript": "^5.0.4",
     "typescript-template": "*",
-    "viem": "^1.1.7",
     "vitest": "^0.31.0"
   },
   "peerDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.16",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.16",
-    "viem": "^1.1.7"
+    "@alchemy/aa-core": "^0.1.0-alpha.23"
   },
   "publishConfig": {
     "access": "public",
@@ -65,6 +63,7 @@
   "homepage": "https://github.com/zerodevapp/aa-sdk/blob/zd-provider/packages/accounts/src/kernel-zerodev/README.md#readme",
   "gitHead": "19ba05a77e4f7a0e04f44f34eaecf675fe2c12f2",
   "dependencies": {
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "viem": "^1.5.3"
   }
 }

@@ -1,13 +1,17 @@
+import { default as EventEmitter } from "eventemitter3";
 import {
   fromHex,
+  toHex,
   type Address,
   type Chain,
   type Hash,
   type RpcTransactionRequest,
+  type Transaction,
   type Transport,
 } from "viem";
 import { arbitrum, arbitrumGoerli } from "viem/chains";
 import { BaseSmartContractAccount } from "../account/base.js";
+import type { SignTypedDataParams } from "../account/types.js";
 import { createPublicErc4337Client } from "../client/create-client.js";
 import type {
   PublicErc4337Client,
@@ -17,6 +21,7 @@ import {
   isValidRequest,
   type BatchUserOperationCallData,
   type UserOperationCallData,
+  type UserOperationOverrides,
   type UserOperationReceipt,
   type UserOperationResponse,
   type UserOperationStruct,
@@ -35,6 +40,7 @@ import type {
   GasEstimatorMiddleware,
   ISmartAccountProvider,
   PaymasterAndDataMiddleware,
+  ProviderEvents,
   SendUserOperationResult,
 } from "./types.js";
 
@@ -43,17 +49,22 @@ export const noOpMiddleware: AccountMiddlewareFn = async (
 ) => struct;
 export interface SmartAccountProviderOpts {
   /**
-   * The maximum number of times tot try fetching a transaction receipt before giving up
+   * The maximum number of times to try fetching a transaction receipt before giving up (default: 5)
    */
   txMaxRetries?: number;
 
   /**
-   * The interval in milliseconds to wait between retries while waiting for tx receipts
+   * The interval in milliseconds to wait between retries while waiting for tx receipts (default: 2_000n)
    */
   txRetryIntervalMs?: number;
 
   /**
-   * used when computing the fees for a user operation (default: 1000000000n)
+   * The mulitplier on interval length to wait between retries while waiting for tx receipts (default: 1.5)
+   */
+  txRetryMulitplier?: number;
+
+  /**
+   * used when computing the fees for a user operation (default: 100_000_000n)
    */
   minPriorityFeePerBid?: bigint;
 }
@@ -70,11 +81,15 @@ export type ConnectedSmartAccountProvider<
 };
 
 export class SmartAccountProvider<
-  TTransport extends SupportedTransports = Transport
-> implements ISmartAccountProvider<TTransport>
+    TTransport extends SupportedTransports = Transport
+  >
+  extends EventEmitter<ProviderEvents>
+  implements ISmartAccountProvider<TTransport>
 {
   private txMaxRetries: number;
   private txRetryIntervalMs: number;
+  private txRetryMulitplier: number;
+
   minPriorityFeePerBid: bigint;
   rpcClient: PublicErc4337Client<Transport>;
 
@@ -85,8 +100,12 @@ export class SmartAccountProvider<
     readonly account?: BaseSmartContractAccount<TTransport>,
     opts?: SmartAccountProviderOpts
   ) {
+    super();
+
     this.txMaxRetries = opts?.txMaxRetries ?? 5;
     this.txRetryIntervalMs = opts?.txRetryIntervalMs ?? 2000;
+    this.txRetryMulitplier = opts?.txRetryMulitplier ?? 1.5;
+
     this.minPriorityFeePerBid =
       opts?.minPriorityFeePerBid ??
       minPriorityFeePerBidDefaults.get(chain.id) ??
@@ -140,12 +159,22 @@ export class SmartAccountProvider<
       throw new Error("transaction is missing to address");
     }
 
-    // TODO: need to add support for overriding gas prices
-    const { hash } = await this.sendUserOperation({
-      target: request.to,
-      data: request.data ?? "0x",
-      value: request.value ? fromHex(request.value, "bigint") : 0n,
-    });
+    const overrides: UserOperationOverrides = {};
+    if (request.maxFeePerGas) {
+      overrides.maxFeePerGas = request.maxFeePerGas;
+    }
+    if (request.maxPriorityFeePerGas) {
+      overrides.maxPriorityFeePerGas = request.maxPriorityFeePerGas;
+    }
+
+    const { hash } = await this.sendUserOperation(
+      {
+        target: request.to,
+        data: request.data ?? "0x",
+        value: request.value ? fromHex(request.value, "bigint") : 0n,
+      },
+      overrides
+    );
 
     return await this.waitForUserOperationTransaction(hash as Hash);
   };
@@ -157,6 +186,30 @@ export class SmartAccountProvider<
     return this.account.signMessage(msg);
   };
 
+  signTypedData = async (params: SignTypedDataParams): Promise<Hash> => {
+    if (!this.account) {
+      throw new Error("account not connected!");
+    }
+
+    return this.account.signTypedData(params);
+  };
+
+  signMessageWith6492(msg: string | Uint8Array): Promise<`0x${string}`> {
+    if (!this.account) {
+      throw new Error("account not connected!");
+    }
+
+    return this.account.signMessageWith6492(msg);
+  }
+
+  signTypedDataWith6492(params: SignTypedDataParams): Promise<`0x${string}`> {
+    if (!this.account) {
+      throw new Error("account not connected!");
+    }
+
+    return this.account.signTypedDataWith6492(params);
+  }
+
   sendTransactions = async (requests: RpcTransactionRequest[]) => {
     const batch = requests.map((request) => {
       if (!request.to) {
@@ -165,7 +218,6 @@ export class SmartAccountProvider<
         );
       }
 
-      // TODO: need to add support for overriding gas prices
       return {
         target: request.to,
         data: request.data ?? "0x",
@@ -173,24 +225,55 @@ export class SmartAccountProvider<
       };
     });
 
-    const { hash } = await this.sendUserOperation(batch);
+    const bigIntMax = (...args: bigint[]) => {
+      if (!args.length) {
+        return undefined;
+      }
+
+      return args.reduce((m, c) => (m > c ? m : c));
+    };
+
+    const maxFeePerGas = bigIntMax(
+      ...requests
+        .filter((x) => x.maxFeePerGas != null)
+        .map((x) => fromHex(x.maxFeePerGas!, "bigint"))
+    );
+
+    const maxPriorityFeePerGas = bigIntMax(
+      ...requests
+        .filter((x) => x.maxPriorityFeePerGas != null)
+        .map((x) => fromHex(x.maxPriorityFeePerGas!, "bigint"))
+    );
+    const overrides: UserOperationOverrides = {};
+    if (maxFeePerGas != null) {
+      overrides.maxFeePerGas = maxFeePerGas;
+    }
+
+    if (maxPriorityFeePerGas != null) {
+      overrides.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    }
+
+    const { hash } = await this.sendUserOperation(batch, overrides);
 
     return await this.waitForUserOperationTransaction(hash as Hash);
   };
 
   waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
     for (let i = 0; i < this.txMaxRetries; i++) {
+      const txRetryIntervalWithJitterMs =
+        this.txRetryIntervalMs * Math.pow(this.txRetryMulitplier, i) +
+        Math.random() * 100;
+
       await new Promise((resolve) =>
-        setTimeout(resolve, this.txRetryIntervalMs)
+        setTimeout(resolve, txRetryIntervalWithJitterMs)
       );
-      const receipt = await this.rpcClient
-        .getUserOperationReceipt(hash as `0x${string}`)
+      const receipt = await this.getUserOperationReceipt(hash as `0x${string}`)
         // TODO: should maybe log the error?
         .catch(() => null);
       if (receipt) {
-        return this.rpcClient
-          .getTransaction({ hash: receipt.receipt.transactionHash })
-          .then((x) => x.hash);
+        return this.getTransaction(receipt.receipt.transactionHash).then(
+          (x) => x.hash
+        );
       }
     }
 
@@ -205,8 +288,13 @@ export class SmartAccountProvider<
     return this.rpcClient.getUserOperationReceipt(hash);
   };
 
+  getTransaction = (hash: Hash): Promise<Transaction> => {
+    return this.rpcClient.getTransaction({ hash: hash });
+  };
+
   sendUserOperation = async (
-    data: UserOperationCallData | BatchUserOperationCallData
+    data: UserOperationCallData | BatchUserOperationCallData,
+    overrides?: UserOperationOverrides
   ): Promise<SendUserOperationResult> => {
     if (!this.account) {
       throw new Error("account not connected!");
@@ -215,10 +303,12 @@ export class SmartAccountProvider<
     const initCode = await this.account.getInitCode();
     const uoStruct = await asyncPipe(
       this.dummyPaymasterDataMiddleware,
-      this.gasEstimator,
       this.feeDataGetter,
+      this.gasEstimator,
       this.paymasterDataMiddleware,
-      this.customMiddleware ?? noOpMiddleware
+      this.customMiddleware ?? noOpMiddleware,
+      // This applies the overrides if they've been passed in
+      async (struct) => ({ ...struct, ...overrides })
     )({
       initCode,
       sender: this.getAddress(),
@@ -363,7 +453,27 @@ export class SmartAccountProvider<
   ): this & { account: BaseSmartContractAccount } {
     const account = fn(this.rpcClient);
     defineReadOnly(this, "account", account);
+
+    this.emit("connect", {
+      chainId: toHex(this.chain.id),
+    });
+
+    account
+      .getAddress()
+      .then((address) => this.emit("accountsChanged", [address]));
+
     return this as this & { account: typeof account };
+  }
+
+  disconnect(): this & { account: undefined } {
+    if (this.account) {
+      this.emit("disconnect");
+      this.emit("accountsChanged", []);
+    }
+
+    defineReadOnly(this, "account", undefined);
+
+    return this as this & { account: undefined };
   }
 
   isConnected(): this is ConnectedSmartAccountProvider<TTransport> {
