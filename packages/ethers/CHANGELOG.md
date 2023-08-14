@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.1.0-alpha.23 (2023-08-14)
+
+### Features
+
+- **alchemy:** modify fee defaults ([0a0a65c](https://github.com/alchemyplatform/aa-sdk/commit/0a0a65c03a6991a1c57473ae9e65c4b727d937e2))
+
+# 0.1.0-alpha.22 (2023-08-11)
+
+**Note:** Version bump only for package @alchemy/aa-ethers
+
+# 0.1.0-alpha.21 (2023-08-08)
+
+### Features
+
+- allow overriding alchemy provider rpc url ([#70](https://github.com/alchemyplatform/aa-sdk/issues/70)) ([6b7c4b9](https://github.com/alchemyplatform/aa-sdk/commit/6b7c4b911b97dfcd1cfb00b2892548644fbe2fc6))
+
+# 0.1.0-alpha.20 (2023-08-05)
+
+### Features
+
+- add signTypedData to providers ([#66](https://github.com/alchemyplatform/aa-sdk/issues/66)) ([e0a99f6](https://github.com/alchemyplatform/aa-sdk/commit/e0a99f694a6ed6e88b15d6cc73f99e74fd985667))
+
+# 0.1.0-alpha.19 (2023-08-03)
+
+### Features
+
+- add event emitter to the provider so that we can listen to connected events in dapps ([#65](https://github.com/alchemyplatform/aa-sdk/issues/65)) ([35ee990](https://github.com/alchemyplatform/aa-sdk/commit/35ee990afa1c8be7c4685631af6654ac51b094cd))
+
+# 0.1.0-alpha.18 (2023-07-28)
+
+**Note:** Version bump only for package @alchemy/aa-ethers
+
+# 0.1.0-alpha.17 (2023-07-19)
+
+### Features
+
+- add support for fetch options when creating public clients ([#59](https://github.com/alchemyplatform/aa-sdk/issues/59)) ([5028e7b](https://github.com/alchemyplatform/aa-sdk/commit/5028e7b21a208ad8f88e81d455c2c8e24d57d953))
+
 # 0.1.0-alpha.16 (2023-07-06)
 
 ### Bug Fixes

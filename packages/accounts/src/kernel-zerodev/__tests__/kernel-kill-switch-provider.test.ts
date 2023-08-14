@@ -18,19 +18,17 @@ import {
   KILL_SWITCH_VALIDATOR_ADDRESS,
 } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { ZeroDevLocalAccountSigner } from "../signer/zd-local-account.js";
 import { ValidatorMode } from "../validator/base.js";
 import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
+import { LocalAccountSigner } from "@alchemy/aa-core";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Kill Switch Provider Test", async () => {
   const dummyPrivateKey =
     "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
-  const owner = ZeroDevLocalAccountSigner.privateKeyToAccountSigner(
-    config.privateKey
-  );
+  const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const secondOwner =
-    ZeroDevLocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
+    LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
   console.log("secondOwner", secondOwner);
 
   const client = createPublicClient({

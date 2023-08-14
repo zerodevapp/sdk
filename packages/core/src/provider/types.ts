@@ -1,6 +1,8 @@
 import type { Address } from "abitype";
-import type { Hash, RpcTransactionRequest, Transport } from "viem";
+import type { Hash, Hex, RpcTransactionRequest, Transport } from "viem";
+import type { SignTypedDataParameters } from "viem/accounts";
 import type { BaseSmartContractAccount } from "../account/base.js";
+import type { SignTypedDataParams } from "../account/types.js";
 import type {
   PublicErc4337Client,
   SupportedTransports,
@@ -16,6 +18,19 @@ import type {
 
 type WithRequired<T, K extends keyof T> = Required<Pick<T, K>>;
 type WithOptional<T, K extends keyof T> = Pick<Partial<T>, K>;
+
+export type ConnectorData = {
+  chainId?: Hex;
+};
+
+export interface ProviderEvents {
+  chainChanged(chainId: Hex): void;
+  accountsChanged(accounts: Address[]): void;
+  connect(data: ConnectorData): void;
+  message({ type, data }: { type: string; data?: unknown }): void;
+  disconnect(): void;
+  error(error: Error): void;
+}
 
 export type SendUserOperationResult = {
   hash: string;
@@ -144,6 +159,30 @@ export interface ISmartAccountProvider<
    */
   signMessage: (msg: string | Uint8Array) => Promise<Hash>;
 
+  /**
+   * This method is used to sign typed data as per ERC-712
+   *
+   * @param params - {@link SignTypedDataParameters}
+   * @returns the signed hash for the message passed
+   */
+  signTypedData: (params: SignTypedDataParameters) => Promise<Hash>;
+
+  /**
+   * If the account is not deployed, it will sign the message and then wrap it in 6492 format
+   *
+   * @param msg - the message to sign
+   * @returns ths signature wrapped in 6492 format
+   */
+  signMessageWith6492(msg: string | Uint8Array | Hex): Promise<Hex>;
+
+  /**
+   * If the account is not deployed, it will sign the typed data blob and then wrap it in 6492 format
+   *
+   * @param params - {@link SignTypedDataParameters}
+   * @returns the signed hash for the params passed in wrapped in 6492 format
+   */
+  signTypedDataWith6492(params: SignTypedDataParams): Promise<Hash>;
+
   // TODO: potentially add methods here for something like viem's walletActions?
   /**
    * @returns the address of the connected account
@@ -204,4 +243,11 @@ export interface ISmartAccountProvider<
   connect(
     fn: (provider: PublicErc4337Client<TTransport>) => BaseSmartContractAccount
   ): this & { account: BaseSmartContractAccount };
+
+  /**
+   * Allows for disconnecting the account from the provider so you can connect the provider to another account instance
+   *
+   * @returns the provider with the account disconnected
+   */
+  disconnect(): this & { account: undefined };
 }

@@ -12,25 +12,22 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
 import { TOKEN_ACTION } from "../constants.js";
-import { ZeroDevLocalAccountSigner } from "../signer/zd-local-account.js";
 import { ValidatorMode } from "../validator/base.js";
 import { Test_ERC721Abi } from "../abis/Test_ERC721Abi.js";
 import { ERC165SessionKeyProvider } from "../validator-provider/erc165-session-key-provider.js";
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js";
-import type { SmartAccountSigner } from "@alchemy/aa-core";
+import { LocalAccountSigner, type SmartAccountSigner } from "@alchemy/aa-core";
 
 // [TODO] - Organize the test code properly
 describe("Kernel ERC165SessionKey Provider Test", async () => {
   const Test_ERC721Address = "0x811646a83850B25Bfc423d71D345cC85791CbeF6";
   const dummyPrivateKey =
     "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
-  const owner = ZeroDevLocalAccountSigner.privateKeyToAccountSigner(
-    config.privateKey
-  );
+  const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const secondOwner =
-    ZeroDevLocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
+    LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
   console.log("secondOwner", secondOwner);
-  const randomOwner = ZeroDevLocalAccountSigner.privateKeyToAccountSigner(
+  const randomOwner = LocalAccountSigner.privateKeyToAccountSigner(
     generatePrivateKey()
   );
   console.log("randomOwner", randomOwner);

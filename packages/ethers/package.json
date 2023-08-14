@@ -1,7 +1,7 @@
 {
   "name": "@alchemy/aa-ethers",
   "license": "MIT",
-  "version": "0.1.0-alpha.16",
+  "version": "0.1.0-alpha.23",
   "description": "Ethers.js wrapper for @alchemy/aa-core",
   "author": "Alchemy",
   "type": "module",
@@ -38,10 +38,11 @@
     "build:types": "tsc --project tsconfig.build.json --module esnext --declarationDir ./dist/types --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf ./dist",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:run-e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "devDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.16",
+    "@alchemy/aa-core": "^0.1.0-alpha.23",
     "alchemy-sdk": "^2.8.3",
     "dotenv": "^16.0.3",
     "typescript": "^5.0.4",
@@ -59,7 +60,8 @@
     "@ethersproject/hash": "^5.7.0",
     "@ethersproject/keccak256": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
-    "@ethersproject/wallet": "^5.7.0"
+    "@ethersproject/wallet": "^5.7.0",
+    "viem": "^1.5.3"
   },
   "repository": {
     "type": "git",

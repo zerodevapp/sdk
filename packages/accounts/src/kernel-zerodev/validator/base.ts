@@ -23,6 +23,7 @@ import {
   ENTRYPOINT_ADDRESS,
 } from "../constants.js";
 import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
+import { polygonMumbai } from "viem/dist/types/chains/index.js";
 
 export enum ValidatorMode {
   sudo = "0x00000000",
@@ -60,7 +61,7 @@ export abstract class KernelBaseValidator {
   protected selector?: string;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
-  protected publicClient?: PublicClient<Transport, Chain, true>;
+  protected publicClient?: PublicClient<Transport, Chain>;
 
   constructor(params: KernelBaseValidatorParams) {
     this.projectId = params.projectId;
@@ -87,7 +88,7 @@ export abstract class KernelBaseValidator {
               : {},
         },
       }),
-      chain: this.chain,
+      chain: this.chain ?? polygonMumbai,
     });
   }
 
