@@ -23,7 +23,7 @@ import {
   ENTRYPOINT_ADDRESS,
 } from "../constants.js";
 import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
-import { polygonMumbai } from "viem/dist/types/chains/index.js";
+import { polygonMumbai } from "viem/chains";
 
 export enum ValidatorMode {
   sudo = "0x00000000",
