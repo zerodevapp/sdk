@@ -11,6 +11,26 @@ export const KernelAccountAbi = [
     type: "constructor",
   },
   {
+    inputs: [],
+    name: "AlreadyInitialized",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "DisabledMode",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotAuthorizedCaller",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "NotEntryPoint",
+    type: "error",
+  },
+  {
     anonymous: false,
     inputs: [
       {
@@ -81,7 +101,50 @@ export const KernelAccountAbi = [
     ],
     name: "disableMode",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "eip712Domain",
+    outputs: [
+      {
+        internalType: "bytes1",
+        name: "fields",
+        type: "bytes1",
+      },
+      {
+        internalType: "string",
+        name: "name",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "version",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "chainId",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "verifyingContract",
+        type: "address",
+      },
+      {
+        internalType: "bytes32",
+        name: "salt",
+        type: "bytes32",
+      },
+      {
+        internalType: "uint256[]",
+        name: "extensions",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -122,7 +185,7 @@ export const KernelAccountAbi = [
     ],
     name: "execute",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -131,7 +194,7 @@ export const KernelAccountAbi = [
     outputs: [
       {
         internalType: "contract IKernelValidator",
-        name: "",
+        name: "validator",
         type: "address",
       },
     ],
@@ -144,7 +207,7 @@ export const KernelAccountAbi = [
     outputs: [
       {
         internalType: "bytes4",
-        name: "",
+        name: "disabled",
         type: "bytes4",
       },
     ],
@@ -165,12 +228,12 @@ export const KernelAccountAbi = [
         components: [
           {
             internalType: "uint48",
-            name: "validUntil",
+            name: "validAfter",
             type: "uint48",
           },
           {
             internalType: "uint48",
-            name: "validAfter",
+            name: "validUntil",
             type: "uint48",
           },
           {
@@ -252,7 +315,7 @@ export const KernelAccountAbi = [
     ],
     name: "initialize",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -419,7 +482,7 @@ export const KernelAccountAbi = [
     ],
     name: "setDefaultValidator",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -457,7 +520,7 @@ export const KernelAccountAbi = [
     ],
     name: "setExecution",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -470,7 +533,7 @@ export const KernelAccountAbi = [
     ],
     name: "upgradeTo",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -556,7 +619,7 @@ export const KernelAccountAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {

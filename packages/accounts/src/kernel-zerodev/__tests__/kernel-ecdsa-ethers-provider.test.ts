@@ -20,7 +20,7 @@ describe("Kernel ECDSA ethers provider tests", async () => {
 
   const signer = provider.getAccountSigner();
 
-  const accountAddress = "0x59269BF95fA50690066523Ca86c8852a89e0Ad77";
+  const accountAddress = "0x282e5A7d7009aE8AB6B69Dc0EBC91f65Aa5EeE45";
   it("should succesfully get counterfactual address", async () => {
     expect(await signer.getAddress()).toMatchInlineSnapshot(
       `"${accountAddress}"`

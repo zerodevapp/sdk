@@ -34,7 +34,7 @@ export const ECDSAValidatorAbi = [
     ],
     name: "disable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -66,7 +66,31 @@ export const ECDSAValidatorAbi = [
     ],
     name: "enable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_caller",
+        type: "address",
+      },
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    name: "validCaller",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -176,7 +200,7 @@ export const ECDSAValidatorAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "payable",
     type: "function",
   },
 ] as const;

@@ -10,6 +10,8 @@ import {
   type Transport,
   pad,
   toHex,
+  getContract,
+  type PublicClient,
 } from "viem";
 import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator, ValidatorMode } from "./validator/base.js";
@@ -28,6 +30,7 @@ import {
   BUNDLER_URL,
   ENTRYPOINT_ADDRESS,
   KERNEL_FACTORY_ADDRESS,
+  KERNEL_IMPL_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
 import { encodeMultiSend } from "./utils.js";
@@ -99,6 +102,37 @@ export class KernelSmartContractAccount<
       rpcClient,
     });
     return instance;
+  }
+
+  async getAddress(): Promise<Address> {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    if (!this.accountAddress) {
+      try {
+        const initializeData = encodeFunctionData({
+          abi: KernelAccountAbi,
+          functionName: "initialize",
+          args: [
+            this.validator.getAddress(),
+            await this.validator.getEnableData(),
+          ],
+        });
+        const kernelFactory = getContract({
+          abi: KernelFactoryAbi,
+          address: KERNEL_FACTORY_ADDRESS,
+          publicClient: this.rpcProvider as PublicClient,
+        });
+        return await kernelFactory.read.getAccountAddress([
+          initializeData,
+          this.index,
+        ]);
+      } catch (error) {
+        throw new Error(`getCounterFactualAddress failed: ${error}`);
+      }
+    }
+
+    return this.accountAddress;
   }
 
   connectValidator(validator: KernelBaseValidator): this {
@@ -254,8 +288,15 @@ export class KernelSmartContractAccount<
         abi: KernelFactoryAbi,
         functionName: "createAccount",
         args: [
-          this.validator.getAddress(),
-          await this.validator.getEnableData(),
+          KERNEL_IMPL_ADDRESS,
+          encodeFunctionData({
+            abi: KernelAccountAbi,
+            functionName: "initialize",
+            args: [
+              this.validator.getAddress(),
+              await this.validator.getEnableData(),
+            ],
+          }),
           this.index,
         ],
       });

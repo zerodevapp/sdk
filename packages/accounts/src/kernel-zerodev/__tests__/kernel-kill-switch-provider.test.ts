@@ -152,6 +152,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
         tx = await blockerKillSwitchProvider.waitForUserOperationTransaction(
           result.hash as Hex
         );
+        console.log("tx", tx);
       } catch (e) {
         console.log(e);
       }
@@ -213,7 +214,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
       let tx = await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
         result.hash as Hex
       );
-      console.log(tx);
+      console.log("tx", tx);
 
       const defaultValidator = await client.readContract({
         address: accountAddress,
