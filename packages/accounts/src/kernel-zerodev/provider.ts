@@ -1,6 +1,8 @@
 import {
+  fromHex,
   type Address,
   type Chain,
+  type Hash,
   type Hex,
   type HttpTransport,
   type RpcTransactionRequest,
@@ -19,6 +21,7 @@ import {
   type BytesLike,
   SmartAccountProvider,
   type AccountMiddlewareFn,
+  type UserOperationOverrides,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -105,10 +108,40 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
   getProjectId = (): string => this.projectId;
 
+  sendTransaction = async (
+    request: RpcTransactionRequest,
+    operation: UserOpDataOperationTypes<UserOperationCallData> = Operation.Call
+  ): Promise<Hash> => {
+    if (!request.to) {
+      throw new Error("transaction is missing to address");
+    }
+
+    const overrides: UserOperationOverrides = {};
+    if (request.maxFeePerGas) {
+      overrides.maxFeePerGas = request.maxFeePerGas;
+    }
+    if (request.maxPriorityFeePerGas) {
+      overrides.maxPriorityFeePerGas = request.maxPriorityFeePerGas;
+    }
+
+    const { hash } = await this.sendUserOperation(
+      {
+        target: request.to,
+        data: request.data ?? "0x",
+        value: request.value ? fromHex(request.value, "bigint") : 0n,
+      },
+      overrides,
+      operation
+    );
+
+    return await this.waitForUserOperationTransaction(hash as Hash);
+  };
+
   sendUserOperation = async <
     T extends UserOperationCallData | BatchUserOperationCallData
   >(
     data: T,
+    overrides?: UserOperationOverrides,
     operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
   ): Promise<SendUserOperationResult> => {
     if (!isKernelAccount(this.account)) {
@@ -160,7 +193,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         this.feeDataGetter,
         this.paymasterDataMiddleware,
         this.gasEstimator,
-        this.customMiddleware ?? noOpMiddleware
+        this.customMiddleware ?? noOpMiddleware,
+        async (struct) => ({ ...struct, ...overrides })
       )({
         initCode,
         sender: this.getAddress(),

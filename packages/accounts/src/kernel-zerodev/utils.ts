@@ -7,10 +7,12 @@ import {
   toHex,
 } from "viem";
 import type {
+  SignTypedDataParams,
   SmartAccountSigner,
   UserOperationCallData,
 } from "@alchemy/aa-core";
-import { Signer } from "@ethersproject/abstract-signer";
+import { Signer, type TypedDataField } from "@ethersproject/abstract-signer";
+import { Wallet } from "@ethersproject/wallet";
 import { Web3Provider, type ExternalProvider } from "@ethersproject/providers";
 import { API_URL, gasTokenChainAddresses } from "./constants.js";
 import type { SupportedGasToken } from "./paymaster/types.js";
@@ -69,17 +71,32 @@ export const convertWalletClientToAccountSigner = (
                 raw: message,
               },
       })) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) =>
+      await client.signTypedData({ ...params, account: client.account! }),
   };
 };
 
+export const isWallet = (signer: any): signer is Wallet =>
+  signer && signer._signTypedData !== undefined;
+
 export const convertEthersSignerToAccountSigner = (
-  signer: Signer
+  signer: Signer | Wallet
 ): SmartAccountSigner => {
   return {
     getAddress: async () =>
       Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
       (await signer.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) => {
+      if (!isWallet(signer)) {
+        throw Error("signTypedData method not implemented in signer");
+      }
+      return (await signer._signTypedData(
+        params.domain!,
+        params.types as unknown as Record<string, TypedDataField[]>,
+        params.message
+      )) as Hex;
+    },
   };
 };
 
@@ -92,6 +109,12 @@ export function getRPCProviderOwner(web3Provider: any): SmartAccountSigner {
       Promise.resolve((await signer.getAddress()) as `0x${string}`),
     signMessage: async (msg: Uint8Array | string) =>
       (await signer.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) =>
+      (await signer._signTypedData(
+        params.domain!,
+        params.types as unknown as Record<string, TypedDataField[]>,
+        params.message
+      )) as Hex,
   };
 }
 
@@ -155,6 +178,12 @@ export async function getCustodialOwner(
     getAddress: async () => (await turnkeySigner.getAddress()) as `0x${string}`,
     signMessage: async (msg: Uint8Array | string) =>
       (await turnkeySigner.signMessage(msg)) as `0x${string}`,
+    signTypedData: async (params: SignTypedDataParams) =>
+      (await turnkeySigner.signTypedData(
+        params.domain,
+        params.types,
+        params.message
+      )) as Hex,
   };
 }
 
