@@ -9,7 +9,7 @@ export const KillSwitchValidatorAbi = [
     ],
     name: "disable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -22,7 +22,7 @@ export const KillSwitchValidatorAbi = [
     ],
     name: "enable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -63,12 +63,12 @@ export const KillSwitchValidatorAbi = [
     inputs: [
       {
         internalType: "address",
-        name: "_caller",
+        name: "",
         type: "address",
       },
       {
         internalType: "bytes",
-        name: "_data",
+        name: "",
         type: "bytes",
       },
     ],
@@ -80,7 +80,7 @@ export const KillSwitchValidatorAbi = [
         type: "bool",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -190,7 +190,7 @@ export const KillSwitchValidatorAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
 ] as const;

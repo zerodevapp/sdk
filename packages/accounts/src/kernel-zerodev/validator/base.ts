@@ -171,7 +171,7 @@ export abstract class KernelBaseValidator {
     const ownerSig = await (signer as any).signTypedData({
       domain: {
         name: "Kernel",
-        version: "0.0.2",
+        version: "0.2.1",
         chainId: this.chain.id,
         verifyingContract: sender,
       },

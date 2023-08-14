@@ -53,7 +53,7 @@ describe("Kernel ERC165SessionKey Provider Test", async () => {
     owner,
     opts: {
       accountConfig: {
-        index: 40006n,
+        index: 40007n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
