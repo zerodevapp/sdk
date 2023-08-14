@@ -119,11 +119,14 @@ export class KernelSmartContractAccount<
           ],
         });
         const kernelFactory = getContract({
-            abi: KernelFactoryAbi,
-            address: KERNEL_FACTORY_ADDRESS,
-            publicClient: this.rpcProvider as PublicClient
-        })
-        return await kernelFactory.read.getAccountAddress([initializeData, this.index]);
+          abi: KernelFactoryAbi,
+          address: KERNEL_FACTORY_ADDRESS,
+          publicClient: this.rpcProvider as PublicClient,
+        });
+        return await kernelFactory.read.getAccountAddress([
+          initializeData,
+          this.index,
+        ]);
       } catch (error) {
         throw new Error(`getCounterFactualAddress failed: ${error}`);
       }
