@@ -9,13 +9,13 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @zerodev/sdk@alpha
+yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk@alpha
 ```
 
 via `npm`
 
 ```bash
-npm i -s @zerodev/sdk@alpha
+npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk@alpha
 ```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
