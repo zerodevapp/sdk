@@ -66,9 +66,9 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     guardians: GuardianData,
     socialrecoveryprovider: SocialRecoveryProvider
   ): Promise<any> {
-    const API_URL = "http://localhost:4000/v1/socialrecovery/setguardian";
+    const API_URL = "http://localhost:4001/v1/socialrecovery/setguardian";
     const response = await axios.post(API_URL, guardians);
-    const guardiancalldata = response.data.data.guardiancalldata;
+    const guardiancalldata = response.data.data.guardian_calldata;
 
     console.log(guardiancalldata);
     const enablecalldata = this.encodeEnable(guardiancalldata);
@@ -76,7 +76,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     await socialrecoveryprovider.getAccount().getInitCode();
 
     const result = socialrecoveryprovider.sendUserOperation({
-      target: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
+      target: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
       data: enablecalldata,
       value: 0n,
     });
@@ -88,9 +88,20 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     );
 
     return {
-      txhash: res,
-      recoveryid: response.data.data.recoveryid,
+     res
     };
+  }
+
+  async initRecovery(
+    ownerAddress: Address,
+    newOwnerAddress: Address
+  ){
+    const API_URL = "http://localhost:4001/v1/socialrecovery/initrecovery";
+    const response = await axios.post(API_URL, {
+      owneraddress: ownerAddress,
+      newowneraddress: newOwnerAddress,
+    });
+    return response.data.data;
   }
 
   async addSignatures(
@@ -99,7 +110,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     owneraddress: Address
   ): Promise<any> {
     try {
-      const API_URL = "http://localhost:4000/v1/socialrecovery/addsignature";
+      const API_URL = "http://localhost:4001/v1/socialrecovery/addsignature";
       const response = await axios.post(API_URL, {
         recoveryid,
         signature,
@@ -131,17 +142,13 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
   async getrecoveryCallData(
     recoveryid: string,
     owneraddress: Address,
-    newowner: Address,
-    messagehash: Hash
   ): Promise<any> {
     try {
       const API_URL =
-        "http://localhost:4000/v1/socialrecovery/generaterecoverycalldata";
+        "http://localhost:4001/v1/socialrecovery/generaterecoverycalldata";
       const response = await axios.post(API_URL, {
         recoveryid,
         owneraddress,
-        newowner,
-        messagehash,
       });
       return response.data.data;
     } catch (e) {
@@ -149,17 +156,18 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     }
   }
 
-  async initRecovery(
+  async submitRecovery(
     calldata: Hash,
     socialrecoveryprovider: SocialRecoveryProvider
   ): Promise<any> {
     try {
+
       const enablecalldata = this.encodeEnable(calldata);
 
       await socialrecoveryprovider.getAccount().getInitCode();
 
       const result = socialrecoveryprovider.sendUserOperation({
-        target: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
+        target: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
         data: enablecalldata,
         value: 0n,
       });

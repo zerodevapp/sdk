@@ -10,18 +10,25 @@ describe("Recovery Validator Test", async () => {
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const mockOwner = new MockSigner();
   const owneraddress = await mockOwner.getAddress();
-    let globalrecoveryid = "";
-    let globalrecoverycalldata:Hash;
+
+    let globalRecoveryId = "";
+    let globalRecoveryCallData:Hash;
+    let globalMessageHash:Hash;
+    let globalMessageContent:string;
+    let globalGuardianSignature:Hash;
+
+    const guardianPvtKey = '0x503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb';
+    let guardianWallet = LocalAccountSigner.privateKeyToAccountSigner(guardianPvtKey);
 
   const validator = await SocialRecoveryValidator.init({
     owner: mockOwner,
     projectId: config.projectId,
-    validatorAddress: "0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3",
+    validatorAddress: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
   });
 
   it("should return proper validator address", async () => {
     expect(await validator.getAddress()).toMatchInlineSnapshot(
-      `"${"0x862F3A0ab84f4e70cC338B876cC0cbacb2706Ac3"}"`
+      `"${"0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B"}"`
     );
   });
 
@@ -105,34 +112,44 @@ describe("Recovery Validator Test", async () => {
         socialRecoveryProvider
       );
       expect(response).toBeDefined();
-      console.log("Set Guardian",response);
-      let recoveryid = response.recoveryid;
-      globalrecoveryid = recoveryid;
     },
     { timeout: 100000 }
   );
 
+  it("should initiate recovery correctly", async () => {
+    const res = await validator.initRecovery(
+      "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+      "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4"
+    );
+    globalRecoveryId = res.recoveryid;
+    globalMessageHash = res.message_hash;
+    globalMessageContent = res.message_content;
+    expect(res).toBeDefined();
+  },{timeout:100000});
+
+  it("Guardian should sign messsage correctly", async () => {
+    const res = await guardianWallet.signMessage(globalMessageContent);
+    globalGuardianSignature = res;
+    expect(res).toBeDefined();
+  });
+
   it("should add signatures correctly", async () => {
     const res = await validator.addSignatures(
-      globalrecoveryid,
-      "0xf0745420866c7ec0615a2fa25afaa271cd763596fb4b87fbde763f4cb9cfe142575c22419490fb9db86a6d18801c7919f49b9042619ee339ea200cd8ad533cf41b",
+      globalRecoveryId,
+      globalGuardianSignature,
       "0x7c8999dc9a822c1f0df42023113edb4fdd543266"
     );
-    // console.log(res);
     expect(res).toBeDefined();
   });
 
   it("should generate recovery calldata correctly", async () => {
     try {
       const res = await validator.getrecoveryCallData(
-        globalrecoveryid,
+        globalRecoveryId,
         "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
-        "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
-        "0xaa744ba2ca576ec62ca0045eca00ad3917fdf7ffa34fbbae50828a5a69c1580e"
       );
       expect(res).toBeDefined();
-      globalrecoverycalldata = res;
-      console.log(res);
+      globalRecoveryCallData = res;
     } catch (e) {
       console.log(e);
     }
@@ -154,12 +171,11 @@ describe("Recovery Validator Test", async () => {
             },
           });
 
-        const res = await validator.initRecovery(
-            globalrecoverycalldata,
+        const res = await validator.submitRecovery(
+            globalRecoveryCallData,
             socialRecoveryProvider
         )
         expect(res).toBeDefined();
-        console.log(res);
     }catch(e){
         console.log(e);
     }
