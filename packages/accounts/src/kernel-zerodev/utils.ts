@@ -98,7 +98,6 @@ export const convertEthersSignerToAccountSigner = (
   };
 };
 
-
 export const randomHexString = (length: number): Hex =>
   toHex(
     Array.from({ length }, () =>
