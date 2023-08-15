@@ -18,7 +18,7 @@ export const config = {
   chain: polygonMumbai,
   rpcProvider: "https://mumbai-bundler.etherspot.io/",
   validatorAddress: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390" as Hex,
-  accountFactoryAddress: "0x85DF6Dc686FBDcAc7da61651D116fc71B2246B50" as Hex,
+  accountFactoryAddress: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3" as Hex,
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,
   // Turn off all policies related to gas sponsorship for this projectId
   // To make all the testcases pass
@@ -47,7 +47,7 @@ describe("Kernel Account Tests", () => {
 
       //contract already deployed
       expect(await ecdsaProvider.getAddress()).eql(
-        "0x383ac806FE8E99BD2381427105124B00c796847C"
+        "0xe06bD73f970cBaC97eAc5C700868FC9a0915D172"
       );
 
       ecdsaProvider = await ECDSAProvider.init({
@@ -62,7 +62,7 @@ describe("Kernel Account Tests", () => {
 
       //contract already deployed
       expect(await ecdsaProvider.getAddress()).eql(
-        "0x8f8ACf90694f7CC345C06d763B0B14842D4E9F17"
+        "0x9E72ED5478fEdB6875e244Ad8F6F6f3A2dCA5549"
       );
     },
     { timeout: 100000 }
@@ -72,7 +72,7 @@ describe("Kernel Account Tests", () => {
     "getNonce returns valid nonce",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({
-        projectId: config.projectId,
+        projectId: config.projectIdWithGasSponsorship,
         owner: mockOwner,
         opts: {
           accountConfig: {
@@ -83,7 +83,7 @@ describe("Kernel Account Tests", () => {
 
       const signer2 = ecdsaProvider.getAccount();
 
-      expect(await signer2.getNonce()).eql(3n);
+      expect(await signer2.getNonce()).eql(1n);
     },
     { timeout: 1000000 }
   );
@@ -132,7 +132,7 @@ describe("Kernel Account Tests", () => {
       const ownerSignedMessage =
         "0xdad9efc9364e94756f6b16380b7d60c24a14526946ddaa52ef181e7ad065eaa146c9125b7ee62258caad708f57344cfc80d74bd69c0c1e95d75e7c7645c71e401b";
       const factoryCode =
-        "0x296601cd000000000000000000000000d2063be7c610eb55492c05385743eddbf5b6b9510000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000084d1f57894000000000000000000000000d9ab5096a832b9ce79914329daee236f8eea039000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000014abcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc00000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        "0x296601cd000000000000000000000000f048ad83cb2dfd6037a43902a2a5be04e53cd2eb0000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000084d1f57894000000000000000000000000d9ab5096a832b9ce79914329daee236f8eea039000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000014abcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc00000000000000000000000000000000000000000000000000000000000000000000000000000000";
       const signature =
         encodeAbiParameters(parseAbiParameters("address, bytes, bytes"), [
           config.accountFactoryAddress,

@@ -19,6 +19,7 @@ import {
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
   BUNDLER_URL,
+  CHAIN_ID_TO_NODE,
   ECDSA_VALIDATOR_ADDRESS,
   ENTRYPOINT_ADDRESS,
 } from "../constants.js";
@@ -61,7 +62,7 @@ export abstract class KernelBaseValidator {
   protected selector?: string;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
-  protected publicClient?: PublicClient<Transport, Chain>;
+  publicClient?: PublicClient<Transport, Chain>;
 
   constructor(params: KernelBaseValidatorParams) {
     this.projectId = params.projectId;
@@ -77,17 +78,7 @@ export abstract class KernelBaseValidator {
     this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
     this.bundlerProvider = params.bundlerProvider;
     this.publicClient = createPublicClient({
-      transport: http(this.rpcUrl, {
-        fetchOptions: {
-          headers:
-            this.rpcUrl === BUNDLER_URL
-              ? {
-                  projectId: this.projectId,
-                  bundlerProvider: this.bundlerProvider,
-                }
-              : {},
-        },
-      }),
+      transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
       chain: this.chain ?? polygonMumbai,
     });
   }
