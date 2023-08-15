@@ -4,13 +4,13 @@ import { polygon } from "viem/chains";
 
 export const DEFAULT_SEND_TX_MAX_RETRIES = 3;
 export const DEFAULT_SEND_TX_RETRY_INTERVAL_MS = 1_80_000; // 3 minutes
-export const BUNDLER_URL = "http://localhost:3456";
-export const PAYMASTER_URL = "http://localhost:4001";
+export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
+export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
 export const ENTRYPOINT_ADDRESS: Hex =
   "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
-export const BACKEND_URL = "http://localhost:4000";
-export const API_URL = "http://localhost:4003";
+export const BACKEND_URL = "https://backend-vikp.onrender.com";
+export const API_URL = "https://prod-api.zerodev.app";
 export const ECDSA_VALIDATOR_ADDRESS =
   "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390";
 export const KERNEL_FACTORY_ADDRESS =
