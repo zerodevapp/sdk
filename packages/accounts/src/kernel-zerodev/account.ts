@@ -1,5 +1,6 @@
 import type { Address } from "abitype";
 import {
+  keccak256,
   concatHex,
   encodeAbiParameters,
   encodeFunctionData,
@@ -28,7 +29,6 @@ import {
   BUNDLER_URL,
   ENTRYPOINT_ADDRESS,
   KERNEL_FACTORY_ADDRESS,
-  KERNEL_IMPL_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
 import { encodeMultiSend } from "./utils.js";
@@ -255,7 +255,7 @@ export class KernelSmartContractAccount<
         abi: KernelFactoryAbi,
         functionName: "createAccount",
         args: [
-          KERNEL_IMPL_ADDRESS,
+          keccak256(toHex("v2.1")),
           encodeFunctionData({
             abi: KernelAccountAbi,
             functionName: "initialize",

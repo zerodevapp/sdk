@@ -140,9 +140,9 @@ export const KernelFactoryAbi = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "_implementation",
-        type: "address",
+        internalType: "bytes32",
+        name: "_tagHash",
+        type: "bytes32",
       },
       {
         internalType: "bytes",
