@@ -3,7 +3,6 @@ import axios from "axios";
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import { base64UrlEncode, es256, generateRandomBuffer, getCredentials, publicKey, signMessage, signTypedData } from "./utils.js";
 import { API_URL } from "../../constants.js";
-import { type TypedDataField } from "@ethersproject/abstract-signer";
 
 export async function createPasskeyOwner({name, projectId, fallback, apiUrl = API_URL}: {name: string, projectId: string, fallback?: () => Promise<SmartAccountSigner | undefined>, apiUrl?: string}  ): Promise<SmartAccountSigner | undefined> {
   //@ts-expect-error

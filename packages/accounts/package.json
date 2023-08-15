@@ -29,7 +29,7 @@
     },
     "./passkey": {
       "import": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
-      "default": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
+      "default": "./dist/cjs/kernel-zerodev/owner/passkey/index.js",
       "types": "./dist/types/kernel-zerodev/owner/passkey/index.d.ts"
     },
     "./package.json": "./package.json"
