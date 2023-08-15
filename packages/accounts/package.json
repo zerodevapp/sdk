@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/sdk",
-  "version": "4.0.2-passkey.0",
+  "version": "4.0.2-passkey.1",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "ZeroDev",
   "license": "MIT",
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.23",
     "@alchemy/aa-ethers": "^0.1.0-alpha.23",
-    "@turnkey/ethers": "^0.16.2",
+    "@turnkey/ethers": "^0.16.5",
     "typescript": "^5.0.4",
     "typescript-template": "*",
     "vitest": "^0.31.0"

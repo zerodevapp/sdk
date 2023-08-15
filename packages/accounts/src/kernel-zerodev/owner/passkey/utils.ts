@@ -55,7 +55,7 @@ export const signMessage = async (
   credentialId: string,
   apiUrl = API_URL
 ) => {
-  const signedRequest = await TurnkeyApi.federatedPostSignRawPayload(
+  const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {
         type: "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD",
