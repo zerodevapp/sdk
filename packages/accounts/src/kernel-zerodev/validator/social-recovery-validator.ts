@@ -66,7 +66,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     guardians: GuardianData,
     socialrecoveryprovider: SocialRecoveryProvider
   ): Promise<any> {
-    const API_URL = "http://localhost:4001/v1/socialrecovery/setguardian";
+    const API_URL = "http://localhost:4001/v1/socialrecovery/set-guardian";
     const response = await axios.post(API_URL, guardians);
     const guardiancalldata = response.data.data.guardian_calldata;
 
@@ -96,7 +96,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     ownerAddress: Address,
     newOwnerAddress: Address
   ){
-    const API_URL = "http://localhost:4001/v1/socialrecovery/initrecovery";
+    const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
     const response = await axios.post(API_URL, {
       owneraddress: ownerAddress,
       newowneraddress: newOwnerAddress,
@@ -110,7 +110,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     owneraddress: Address
   ): Promise<any> {
     try {
-      const API_URL = "http://localhost:4001/v1/socialrecovery/addsignature";
+      const API_URL = "http://localhost:4001/v1/socialrecovery/add-signature";
       const response = await axios.post(API_URL, {
         recoveryid,
         signature,
@@ -128,7 +128,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
   ): Promise<any> {
     try {
       const API_URL =
-        "http://localhost:4000/v1/socialrecovery/getguardiancalldata";
+        "http://localhost:4000/v1/socialrecovery/get-guardian-calldata";
       const response = await axios.post(API_URL, {
         recoveryid,
         owneraddress,
@@ -145,7 +145,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
   ): Promise<any> {
     try {
       const API_URL =
-        "http://localhost:4001/v1/socialrecovery/generaterecoverycalldata";
+        "http://localhost:4001/v1/socialrecovery/generate-recovery-calldata";
       const response = await axios.post(API_URL, {
         recoveryid,
         owneraddress,
