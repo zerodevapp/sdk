@@ -8,7 +8,7 @@
   integrity sha512-iowxq3U30sghZotgl4s/oJRci6WPBfNO5YYgk2cIOMCHr3LeGPcsZjCEr+33Q4N+oV3OABDAtA+pyvWjbvBifQ==
 
 "@alchemy/aa-core@file:packages/core":
-  version "0.1.0-alpha.19"
+  version "0.1.0-alpha.23"
   dependencies:
     abitype "^0.8.3"
     eventemitter3 "^5.0.1"
@@ -3917,18 +3917,18 @@
     "@tufjs/canonical-json" "1.0.0"
     minimatch "^9.0.0"
 
-"@turnkey/ethers@^0.16.2":
-  version "0.16.2"
-  resolved "https://registry.yarnpkg.com/@turnkey/ethers/-/ethers-0.16.2.tgz#3d3d1425381e35eeeb26c3dc1e35e5fd4772bb04"
-  integrity sha512-l3VYFZoTEdgAhUtiw8LYolKII8Ba1u61slrgVWegT9gnJWcfCqohCp2Ii2lNoF8G8LDzV+MJwoyr6MFqojrMIg==
+"@turnkey/ethers@^0.16.5":
+  version "0.16.5"
+  resolved "https://registry.yarnpkg.com/@turnkey/ethers/-/ethers-0.16.5.tgz#1ec887d64fcae87f67863a27587f31b044b15421"
+  integrity sha512-g33kCZowrh62qUCCvcG4EsDuv86sOaY0oyyeu7B39DS9xq2Oj8YDNPVh9JefKRgQaSbAmt3INz768FNAEJDCDA==
   dependencies:
     "@ethersproject/abstract-signer" "^5.7.0"
-    "@turnkey/http" "0.18.0"
+    "@turnkey/http" "1.0.1"
 
-"@turnkey/http@0.18.0":
-  version "0.18.0"
-  resolved "https://registry.yarnpkg.com/@turnkey/http/-/http-0.18.0.tgz#85b5bf0d0d1ad74b5ae7c51a791f723a7174e05d"
-  integrity sha512-jxgmh6Ykrk/8BF/S6KqXuTuE+x4Eap3S6bIp5sksMaN/iApWykuLSmmvtm9fYred0O9BjRZFEvbGqZqiGeMWJw==
+"@turnkey/http@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@turnkey/http/-/http-1.0.1.tgz#21aadcbbe67c60278ce187bbe6642ffa614e7779"
+  integrity sha512-Tp2SKHeZa03HYMnXDFfAUw1akS+VBwTKOqKe2GOusLVQAcOXMhLIXCjipRkAfYynD/kDXPkr8sEVhDXxdSejsw==
   dependencies:
     cross-fetch "^3.1.5"
 
