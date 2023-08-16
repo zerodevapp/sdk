@@ -12,6 +12,7 @@
   "typings": "./dist/types/index.d.ts",
   "sideEffects": false,
   "files": [
+    "passkey",
     "dist",
     "src/**/*.ts",
     "!dist/**/*.tsbuildinfo",
@@ -25,6 +26,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
       "default": "./dist/cjs/index.js"
+    },
+    "./passkey": {
+      "import": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
+      "default": "./dist/cjs/kernel-zerodev/owner/passkey/index.js",
+      "types": "./dist/types/kernel-zerodev/owner/passkey/index.d.ts"
     },
     "./package.json": "./package.json"
   },
@@ -41,7 +47,7 @@
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.23",
     "@alchemy/aa-ethers": "^0.1.0-alpha.23",
-    "@turnkey/ethers": "^0.16.2",
+    "@turnkey/ethers": "^0.16.5",
     "typescript": "^5.0.4",
     "typescript-template": "*",
     "vitest": "^0.31.0"

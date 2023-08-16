@@ -38,3 +38,6 @@ export { getChainId } from "./kernel-zerodev/api/index.js";
 export { ZeroDevEthersProvider } from "./kernel-zerodev/ethers-provider/ethers-provider.js";
 
 export * as constants from "./kernel-zerodev/constants.js";
+
+// Owner exports
+export * from "./kernel-zerodev/owner/index.js";
