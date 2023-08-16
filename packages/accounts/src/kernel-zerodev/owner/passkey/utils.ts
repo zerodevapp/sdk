@@ -7,7 +7,7 @@ import type { SignTypedDataParams } from "@alchemy/aa-core";
 import { hashTypedData } from "viem";
 
 browserInit({
-  baseUrl: "https://coordinator-beta.turnkey.io",
+  baseUrl: "https://api.turnkey.com",
 });
 
 export const publicKey = "public-key";

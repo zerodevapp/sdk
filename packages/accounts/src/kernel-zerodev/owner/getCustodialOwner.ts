@@ -56,7 +56,7 @@ export async function getCustodialOwner(
   const turnkeySigner = new TurnkeySigner({
     apiPublicKey: publicKey,
     apiPrivateKey: privateKey,
-    baseUrl: "https://coordinator-beta.turnkey.io",
+    baseUrl: "https://api.turnkey.com",
     organizationId: keyId,
     privateKeyId: response.data.walletId,
   });
