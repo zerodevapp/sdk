@@ -9,13 +9,13 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk@alpha
+yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk
 ```
 
 via `npm`
 
 ```bash
-npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk@alpha
+npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
 ```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
@@ -23,7 +23,7 @@ npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk@alpha
 ### Basic Usage
 
 ```ts
-import { ECDSAValidator } from "@zerodev/sdk@alpha";
+import { ECDSAValidator } from "@zerodev/sdk";
 import { PrivateKeySigner } from "@alchemy/aa-core";
 
 // 1. define the EOA owner of the Smart Account
@@ -134,7 +134,7 @@ import { Wallet } from "@ethersproject/wallet";
 import {
   ZeroDevEthersProvider,
   convertEthersSignerToAccountSigner,
-} from "@zerodev/sdk@alpha";
+} from "@zerodev/sdk";
 
 // 1. Create an ethers Wallet
 const owner = Wallet.fromMnemonic(OWNER_MNEMONIC);
@@ -169,7 +169,7 @@ import { polygonMumbai } from "viem/chains";
 import {
   ECDSAProvider,
   convertWalletClientToAccountSigner,
-} from "@zerodev/sdk@alpha";
+} from "@zerodev/sdk";
 
 // 1. Create a Viem Wallet Client using the custom transport
 const client = createWalletClient({
@@ -194,7 +194,7 @@ const { hash } = await ecdsaProvider.sendUserOperation({
 ### Using [Magic](https://magic.link/)
 
 ```ts
-import { ECDSAProvider, getRPCProviderOwner } from "@zerodev/sdk@alpha";
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodev/sdk";
 import { Magic } from "magic-sdk";
 
 const magic = new Magic("MAGIC_API_KEY", {
@@ -210,7 +210,7 @@ let ecdsaProvider = await ECDSAProvider.init({
 ### Using [Web3Auth](https://web3auth.io/)
 
 ```ts
-import { ECDSAProvider, getRPCProviderOwner } from "@zerodev/sdk@alpha";
+import { ECDSAProvider, getRPCProviderOwner } from "@zerodev/sdk";
 import { Web3Auth } from "@web3auth/modal";
 
 const web3auth = new Web3Auth({
@@ -234,7 +234,7 @@ let ecdsaProvider = await ECDSAProvider.init({
 A designated guardian can "turn off" the account and set a new owner.
 
 ```ts
-import { constants } from "@zerodev/sdk@alpha";
+import { constants } from "@zerodev/sdk";
 // 1. Get the default ecdsa validator provider
 const ecdsaProvider = await ECDSAProvider.init({
   projectId, // zeroDev projectId
