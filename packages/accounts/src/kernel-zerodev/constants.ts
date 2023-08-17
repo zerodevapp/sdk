@@ -85,8 +85,7 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
   43113: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
   1313161554: `https://aurora-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   1313161555: `https://aurora-testnet.infura.io/v3/${INFURA_API_KEY}`,
-  56: "https://wandering-quaint-reel.bsc.quiknode.pro/508c3d245c14adb8689ed4073d29aa5795dfa24e/",
-  97: "https://sly-indulgent-paper.bsc-testnet.quiknode.pro/ab7e00c229f5967334160958e40fd6a4d893fb93/",
+  56: "https://neat-greatest-layer.bsc.quiknode.pro/9405a499ceee314e5f2f68c9d47518d3537fce6a/",
   8453: "https://twilight-red-tree.base-mainnet.quiknode.pro/dc6eb27bf0f917df215922488dd97f4de7d9b08e/",
   84531:
     "https://icy-long-mountain.base-goerli.quiknode.pro/5b80d93e97cc9412a63c10a30841869abbef9596/",
