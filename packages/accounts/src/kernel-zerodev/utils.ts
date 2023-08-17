@@ -118,8 +118,7 @@ export const fixSignedData = (sig: Hex): Hex => {
   }
 
   let { r, s, v } = hexToSignature(signature);
-  if (v === BigInt(0)) v = BigInt(27);
-  if (v === BigInt(1)) v = BigInt(28);
+  if (v === 0n || v === 1n) v += 27n;
   const joined = signatureToHex({ r, s, v });
   return joined;
 };
