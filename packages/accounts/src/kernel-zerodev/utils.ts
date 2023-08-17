@@ -6,6 +6,8 @@ import {
   type WalletClient,
   toHex,
   isHex,
+  hexToSignature,
+  signatureToHex,
 } from "viem";
 import type {
   SignTypedDataParams,
@@ -14,7 +16,6 @@ import type {
 } from "@alchemy/aa-core";
 import { Signer, type TypedDataField } from "@ethersproject/abstract-signer";
 import { Wallet } from "@ethersproject/wallet";
-import { splitSignature, joinSignature } from "@ethersproject/bytes";
 import type { SupportedGasToken } from "./paymaster/types.js";
 import { gasTokenChainAddresses } from "./constants.js";
 
@@ -115,9 +116,10 @@ export const fixSignedData = (sig: Hex): Hex => {
       throw new Error("Invalid signed data " + sig);
     }
   }
-  let { r, s, v } = splitSignature(signature);
-  if (v === 0) v = 27;
-  if (v === 1) v = 28;
-  const joined = joinSignature({ r, s, v });
-  return joined as Hex;
+
+  let { r, s, v } = hexToSignature(signature);
+  if (v === BigInt(0)) v = BigInt(27);
+  if (v === BigInt(1)) v = BigInt(28);
+  const joined = signatureToHex({ r, s, v });
+  return joined;
 };
