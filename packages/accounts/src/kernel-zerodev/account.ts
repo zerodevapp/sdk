@@ -23,6 +23,7 @@ import {
   type UserOperationRequest,
   defineReadOnly,
   getChain,
+  type SignTypedDataParams,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -221,6 +222,13 @@ export class KernelSmartContractAccount<
     }
     const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
     return await this.validator.signMessage(formattedMessage);
+  }
+
+  async signTypedData(params: SignTypedDataParams): Promise<Hex> {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    return await this.validator.signTypedData(params);
   }
 
   signUserOp(userOp: UserOperationRequest): Promise<Hex> {

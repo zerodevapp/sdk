@@ -9,7 +9,7 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers 
+yarn add @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers
 ```
 
 via `npm`

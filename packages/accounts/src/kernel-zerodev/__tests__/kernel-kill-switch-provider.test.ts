@@ -47,7 +47,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
       owner,
       opts: {
         accountConfig: {
-          index: 70001n,
+          index: 70002n,
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",

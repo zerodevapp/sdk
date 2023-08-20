@@ -1,4 +1,5 @@
 import {
+  type SignTypedDataParams,
   type SmartAccountSigner,
   type UserOperationRequest,
 } from "@alchemy/aa-core";
@@ -91,6 +92,8 @@ export abstract class KernelBaseValidator {
 
   abstract signMessage(message: Uint8Array | string | Hex): Promise<Hex>;
 
+  abstract signTypedData(params: SignTypedDataParams): Promise<Hex>;
+
   abstract signUserOp(userOp: UserOperationRequest): Promise<Hex>;
 
   abstract signer(): Promise<SmartAccountSigner>;
@@ -160,7 +163,7 @@ export abstract class KernelBaseValidator {
     }
     const sender = kernel;
     const signer = await this.signer();
-    const ownerSig = await (signer as any).signTypedData({
+    const ownerSig = await signer.signTypedData({
       domain: {
         name: "Kernel",
         version: "0.2.1",

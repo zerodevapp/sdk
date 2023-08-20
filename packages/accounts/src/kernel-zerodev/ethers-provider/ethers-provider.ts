@@ -11,7 +11,7 @@ import {
   type PaymasterAndDataMiddleware,
   type PublicErc4337Client,
 } from "@alchemy/aa-core";
-import { AccountSigner } from "@alchemy/aa-ethers";
+import { ZeroDevAccountSigner } from "./account-signer.js";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import type { SupportedValidators } from "../validator/types.js";
 import type { ValidatorProviderParamsMap } from "../validator-provider/types.js";
@@ -73,20 +73,20 @@ export class ZeroDevEthersProvider<
    * Connects the Provider to an Account and returns a Signer
    *
    * @param fn - a function that takes the account provider's rpcClient and returns a BaseSmartContractAccount
-   * @returns an {@link AccountSigner} that can be used to sign and send user operations
+   * @returns an {@link ZeroDevAccountSigner} that can be used to sign and send user operations
    */
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
-  ): AccountSigner {
+  ): ZeroDevAccountSigner<V> {
     defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn));
     return this.getAccountSigner();
   }
 
   /**
-   * @returns an {@link AccountSigner} using this as the underlying provider
+   * @returns an {@link ZeroDevAccountSigner} using this as the underlying provider
    */
-  getAccountSigner(): AccountSigner {
-    return new AccountSigner(this);
+  getAccountSigner(): ZeroDevAccountSigner<V> {
+    return new ZeroDevAccountSigner(this);
   }
 
   withPaymasterMiddleware = (overrides: {

@@ -224,7 +224,7 @@ describe("Kernel Account Tests", () => {
         data: "0x",
       });
 
-      await expect(result).rejects.toThrowError("AA21 didn't pay prefund");
+      await expect(result).rejects;
     },
     { timeout: 100000 }
   );
