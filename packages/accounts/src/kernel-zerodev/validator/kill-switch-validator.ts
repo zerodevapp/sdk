@@ -5,6 +5,7 @@ import {
   type Hex,
   type SmartAccountSigner,
   type UserOperationRequest,
+  type SignTypedDataParams,
 } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import {
@@ -21,6 +22,7 @@ import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
+import { fixSignedData } from "../utils.js";
 
 export interface KillSwitchValidatorParams extends KernelBaseValidatorParams {
   guardian: SmartAccountSigner;
@@ -114,6 +116,10 @@ export class KillSwitchValidator extends KernelBaseValidator {
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {
     return await this.guardian.signMessage(message);
+  }
+
+  async signTypedData(params: SignTypedDataParams): Promise<Hex> {
+    return fixSignedData(await this.guardian.signTypedData(params));
   }
 
   async signUserOp(userOp: UserOperationRequest): Promise<Hex> {
