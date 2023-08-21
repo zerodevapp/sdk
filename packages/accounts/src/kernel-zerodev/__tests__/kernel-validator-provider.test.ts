@@ -49,7 +49,7 @@ describe("Kernel Validator Provider Test", async () => {
         abi: ECDSAValidatorAbi,
         address: config.validatorAddress,
       });
-      console.log(`Owner before: ${currentOwner}}`);
+      console.log(`Owner before: ${currentOwner}`);
       accountAddress = await ecdsaProvider.getAccount().getAddress();
       const resp = await ecdsaProvider.changeOwner(
         await secondOwner.getAddress()
@@ -63,7 +63,7 @@ describe("Kernel Validator Provider Test", async () => {
       });
       expect(currentOwnerNow).to.equal(await secondOwner.getAddress());
       console.log(
-        `Owner changed from ${await owner.getAddress()} to ${currentOwnerNow}}`
+        `Owner changed from ${await owner.getAddress()} to ${currentOwnerNow}`
       );
     },
     { timeout: 1000000 }
@@ -98,7 +98,7 @@ describe("Kernel Validator Provider Test", async () => {
         abi: ECDSAValidatorAbi,
         address: config.validatorAddress,
       });
-      console.log(`Owner before: ${currentOwner}}`);
+      console.log(`Owner before: ${currentOwner}`);
 
       const resp2 = await ecdsaProvider.changeOwner(await owner.getAddress());
       await ecdsaProvider.waitForUserOperationTransaction(resp2.hash as Hex);
@@ -110,7 +110,7 @@ describe("Kernel Validator Provider Test", async () => {
       });
       expect(currentOwnerNow).to.equal(await owner.getAddress());
       console.log(
-        `Owner changed back to ${currentOwnerNow} from ${await secondOwner.getAddress()}}`
+        `Owner changed back to ${currentOwnerNow} from ${await secondOwner.getAddress()}`
       );
     },
     { timeout: 1000000 }
