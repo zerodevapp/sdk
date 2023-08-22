@@ -5,30 +5,33 @@ import { SocialRecoveryValidator } from "../validator/social-recovery-validator.
 import { MockSigner } from "./mocks/mock-signer.js";
 import { SocialRecoveryProvider } from "../validator-provider/social-recovery-provider.js";
 import { SocialRecoveryValidatorAbi } from "../abis/SocialRecoveryValidatorAbi.js";
+import { ethers } from "ethers";
 
 describe("Recovery Validator Test", async () => {
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const mockOwner = new MockSigner();
   const owneraddress = await mockOwner.getAddress();
 
-    let globalRecoveryId = "";
-    let globalRecoveryCallData:Hash;
-    let globalMessageHash:Hash;
-    let globalMessageContent:string;
-    let globalGuardianSignature:Hash;
+  let globalRecoveryId = "";
+  let globalRecoveryCallData: Hash;
+  let globalMessageHash: Hash;
+  let globalMessageContent: string;
+  let globalGuardianSignature: string;
 
-    const guardianPvtKey = '0x503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb';
-    let guardianWallet = LocalAccountSigner.privateKeyToAccountSigner(guardianPvtKey);
+  const guardianPvtKey =
+    "0x503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb";
+  let guardianWallet =
+    LocalAccountSigner.privateKeyToAccountSigner(guardianPvtKey);
 
   const validator = await SocialRecoveryValidator.init({
     owner: mockOwner,
     projectId: config.projectId,
-    validatorAddress: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
+    validatorAddress: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
   });
 
   it("should return proper validator address", async () => {
     expect(await validator.getAddress()).toMatchInlineSnapshot(
-      `"${"0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B"}"`
+      `"${"0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13"}"`
     );
   });
 
@@ -116,21 +119,60 @@ describe("Recovery Validator Test", async () => {
     { timeout: 100000 }
   );
 
-  it("should initiate recovery correctly", async () => {
-    const res = await validator.initRecovery(
-      "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
-      "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4"
-    );
-    globalRecoveryId = res.recoveryid;
-    globalMessageHash = res.message_hash;
-    globalMessageContent = res.message_content;
-    expect(res).toBeDefined();
-  },{timeout:100000});
+  it(
+    "should initiate recovery correctly",
+    async () => {
+      let socialRecoveryProvider = await SocialRecoveryProvider.init({
+        projectId: config.projectId,
+        owner,
+        usePaymaster: false,
+        opts: {
+          providerConfig: {
+            opts: {
+              txMaxRetries: 10,
+            },
+          },
+        },
+      });
+
+      const res = await validator.initRecovery(
+        "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+        "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
+        socialRecoveryProvider
+      );
+      globalRecoveryId = res.recoveryid;
+      globalMessageHash = res.message_hash;
+      globalMessageContent = res.message_content;
+      expect(res).toBeDefined();
+    },
+    { timeout: 100000 }
+  );
 
   it("Guardian should sign messsage correctly", async () => {
-    const res = await guardianWallet.signMessage(globalMessageContent);
-    globalGuardianSignature = res;
-    expect(res).toBeDefined();
+    async function signEIP712Message() {
+      const domain = {
+        name: "Social Recovery Plugin",
+        version: "1",
+        chainId: 1,
+        verifyingContract: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
+      };
+
+      const types = {
+        Message: [{ name: "content", type: "string" }],
+      };
+
+      const message = {
+        content: `Change owner to 0x5b38da6a701c568545dcfcb03fcb875f56beddc4`,
+      };
+
+      const signer = new ethers.Wallet(config.privateKey);
+      const signature = await signer._signTypedData(domain, types, message);
+      return signature;
+    }
+
+    const sig = await signEIP712Message();
+    globalGuardianSignature = sig;
+    expect(globalGuardianSignature).toBeDefined();
   });
 
   it("should add signatures correctly", async () => {
@@ -146,38 +188,42 @@ describe("Recovery Validator Test", async () => {
     try {
       const res = await validator.getrecoveryCallData(
         globalRecoveryId,
-        "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
+        "0x7c8999dc9a822c1f0df42023113edb4fdd543266"
       );
       expect(res).toBeDefined();
       globalRecoveryCallData = res;
+      console.log(res);
     } catch (e) {
       console.log(e);
     }
   });
 
-  it("should complete recovery correctly", async () => {
-    try{
-
+  it(
+    "should complete recovery correctly",
+    async () => {
+      try {
         let socialRecoveryProvider = await SocialRecoveryProvider.init({
-            projectId: config.projectId,
-            owner,
-            usePaymaster: false,
-            opts: {
-              providerConfig: {
-                opts: {
-                  txMaxRetries: 10,
-                },
+          projectId: config.projectId,
+          owner,
+          usePaymaster: false,
+          opts: {
+            providerConfig: {
+              opts: {
+                txMaxRetries: 10,
               },
             },
-          });
+          },
+        });
 
         const res = await validator.submitRecovery(
-            globalRecoveryCallData,
-            socialRecoveryProvider
-        )
+          globalRecoveryCallData,
+          socialRecoveryProvider
+        );
         expect(res).toBeDefined();
-    }catch(e){
+      } catch (e) {
         console.log(e);
-    }
-  },{timeout:100000});
+      }
+    },
+    { timeout: 100000 }
+  );
 });

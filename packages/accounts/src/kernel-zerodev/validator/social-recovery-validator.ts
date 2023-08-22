@@ -76,7 +76,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     await socialrecoveryprovider.getAccount().getInitCode();
 
     const result = socialrecoveryprovider.sendUserOperation({
-      target: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
+      target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
       data: enablecalldata,
       value: 0n,
     });
@@ -94,13 +94,29 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
 
   async initRecovery(
     ownerAddress: Address,
-    newOwnerAddress: Address
+    newOwnerAddress: Address,
+    socialrecoveryprovider: SocialRecoveryProvider
   ){
     const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
     const response = await axios.post(API_URL, {
       owneraddress: ownerAddress,
       newowneraddress: newOwnerAddress,
     });
+
+    const calldata:Hash = `0x03${newOwnerAddress.slice(2)}`;
+    const enablecalldata = this.encodeEnable(calldata);
+
+    const result = socialrecoveryprovider.sendUserOperation({
+      target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
+      data: enablecalldata,
+      value: 0n,
+    });
+
+    await socialrecoveryprovider.waitForUserOperationTransaction(
+      (
+        await result
+      ).hash as Hash
+    );
     return response.data.data;
   }
 
@@ -167,7 +183,7 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
       await socialrecoveryprovider.getAccount().getInitCode();
 
       const result = socialrecoveryprovider.sendUserOperation({
-        target: "0x9c20F2c943C8d8c0691ACf9237Ca93429ee8898B",
+        target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
         data: enablecalldata,
         value: 0n,
       });
