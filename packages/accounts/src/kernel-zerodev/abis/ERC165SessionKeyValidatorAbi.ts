@@ -9,7 +9,7 @@ export const ERC165SessionKeyValidatorAbi = [
     ],
     name: "disable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -22,7 +22,7 @@ export const ERC165SessionKeyValidatorAbi = [
     ],
     name: "enable",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -72,6 +72,30 @@ export const ERC165SessionKeyValidatorAbi = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    name: "validCaller",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -181,7 +205,7 @@ export const ERC165SessionKeyValidatorAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "payable",
     type: "function",
   },
 ] as const;

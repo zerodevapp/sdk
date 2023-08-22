@@ -1,0 +1,5 @@
+{
+  "main": "../dist/cjs/kernel-zerodev/owner/passkey/index.js",
+  "module": "../dist/esm/kernel-zerodev/owner/passkey/index.js",
+  "types": "../dist/types/kernel-zerodev/owner/passkey/index.d.ts"
+}

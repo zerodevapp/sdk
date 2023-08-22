@@ -5,6 +5,7 @@ import {
   type SmartAccountSigner,
   type UserOperationRequest,
   getChain,
+  type SignTypedDataParams,
 } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import { encodeFunctionData, toBytes, concat, pad, toHex } from "viem";
@@ -12,6 +13,7 @@ import { ERC165SessionKeyValidatorAbi } from "../abis/ERC165SessionKeyValidatorA
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { getChainId } from "../api/index.js";
+import { fixSignedData } from "../utils.js";
 
 export interface ERC165SessionKeyValidatorParams
   extends KernelBaseValidatorParams {
@@ -121,6 +123,10 @@ export class ERC165SessionKeyValidator extends KernelBaseValidator {
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {
     return await this.sessionKey.signMessage(message);
+  }
+
+  async signTypedData(params: SignTypedDataParams): Promise<Hex> {
+    return fixSignedData(await this.sessionKey.signTypedData(params));
   }
 
   async signUserOp(userOp: UserOperationRequest): Promise<Hex> {

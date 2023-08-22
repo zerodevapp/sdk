@@ -12,17 +12,18 @@ export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
 export const BACKEND_URL = "https://backend-vikp.onrender.com";
 export const API_URL = "https://prod-api.zerodev.app";
 export const ECDSA_VALIDATOR_ADDRESS =
-  "0x180D6465F921C7E0DEA0040107D342c87455fFF5";
+  "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390";
 export const KERNEL_FACTORY_ADDRESS =
-  "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39";
+  "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3";
+export const KERNEL_IMPL_ADDRESS = "0xf048AD83CB2dfd6037A43902a2A5Be04e53cd2Eb";
 export const KILL_SWITCH_VALIDATOR_ADDRESS =
-  "0xe88F96e72fB5e0Ebb5E03B13AF47De1510E10C1a";
-export const KILL_SWITCH_ACTION = "0x6A3D43E0DBaFD83973333f7ab2588cdbE26273E0";
+  "0x2db0DbfDf90Dbe2859158Aa71db1FcDCb3E579c8";
+export const KILL_SWITCH_ACTION = "0xf5aa34DD2cba311947e143183ED325A4A8C674Af";
 export const DUMMY_ECDSA_SIG =
   "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
 export const ERC165_SESSION_KEY_VALIDATOR_ADDRESS =
-  "0xAe4b50D43491Db39cE4f352D7D8d0aF1a3820AE1";
-export const TOKEN_ACTION = "0xc54638764B2b8da469A98a90578f76e4f04c96f0";
+  "0xe149290800De29D4b0BF9dB82c508255D81902E6";
+export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1";
 export const SESSION_KEY_VALIDATOR_ADDRESS =
   "0x8e632447954036ee940eB0a6bC5a20A18543C4Fd";
 export const oneAddress = "0x0000000000000000000000000000000000000001";
@@ -71,3 +72,26 @@ export const ERC20_APPROVAL_AMOUNT: { [key: string]: bigint } = {
 export const minPriorityFeePerBidDefaults = new Map<number, bigint>([
   [polygon.id, 30_000_000_000n],
 ]);
+
+export const INFURA_API_KEY = "f36f7f706a58477884ce6fe89165666c";
+export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
+  1: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  5: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
+  137: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  80001: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
+  10: `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  420: `https://optimism-goerli.infura.io/v3/${INFURA_API_KEY}`,
+  42161: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  // 42161: 'https://evocative-stylish-dinghy.arbitrum-mainnet.discover.quiknode.pro/80b526d14fa9fd9a8b0db1e65554acaf00c6a1ab/',
+  421613: `https://arbitrum-goerli.infura.io/v3/${INFURA_API_KEY}`,
+  43114: `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  43113: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
+  1313161554: `https://aurora-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  1313161555: `https://aurora-testnet.infura.io/v3/${INFURA_API_KEY}`,
+  56: "https://neat-greatest-layer.bsc.quiknode.pro/9405a499ceee314e5f2f68c9d47518d3537fce6a/",
+  8453: "https://twilight-red-tree.base-mainnet.quiknode.pro/dc6eb27bf0f917df215922488dd97f4de7d9b08e/",
+  84531:
+    "https://icy-long-mountain.base-goerli.quiknode.pro/5b80d93e97cc9412a63c10a30841869abbef9596/",
+  100: "https://thrilling-fluent-film.xdai.quiknode.pro/305955cffb9868cdd95b5e3dc9775f20678ad9ac/",
+  10200: "https://nd-810-853-201.p2pify.com/e828b09f0d43591de96c297b3f36fffd",
+};
