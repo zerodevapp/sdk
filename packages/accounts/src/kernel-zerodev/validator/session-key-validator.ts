@@ -5,6 +5,7 @@ import {
   type SmartAccountSigner,
   type UserOperationRequest,
   getChain,
+  type SignTypedDataParams,
 } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
 import {
@@ -26,7 +27,7 @@ import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
 import type { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
-import { base64ToBytes, bytesToBase64 } from "../utils.js";
+import { base64ToBytes, bytesToBase64, fixSignedData } from "../utils.js";
 
 export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
   sessionKey: SmartAccountSigner;
@@ -422,6 +423,10 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
   async signMessage(message: string | Uint8Array): Promise<Hex> {
     return await this.sessionKey.signMessage(message);
+  }
+
+  async signTypedData(params: SignTypedDataParams): Promise<Hex> {
+    return fixSignedData(await this.sessionKey.signTypedData(params));
   }
 
   async signUserOp(userOp: UserOperationRequest): Promise<Hex> {

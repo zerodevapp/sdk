@@ -14,10 +14,9 @@ import { generatePrivateKey } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
 import { TOKEN_ACTION, oneAddress } from "../constants.js";
-import { ZeroDevLocalAccountSigner } from "../signer/zd-local-account.js";
 import { ValidatorMode } from "../validator/base.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
-import type { Address, SmartAccountSigner } from "@alchemy/aa-core";
+import { LocalAccountSigner, type Address, type SmartAccountSigner } from "@alchemy/aa-core";
 import {
   ParamCondition,
   type Permission,
@@ -33,12 +32,12 @@ describe("Kernel SessionKey Provider Test", async () => {
   const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B";
   const dummyPrivateKey =
     "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
-  const owner = ZeroDevLocalAccountSigner.privateKeyToAccountSigner(
+  const owner = LocalAccountSigner.privateKeyToAccountSigner(
     config.privateKey
   );
   const secondOwner =
-    ZeroDevLocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
-  const randomOwner = ZeroDevLocalAccountSigner.privateKeyToAccountSigner(
+    LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
+  const randomOwner = LocalAccountSigner.privateKeyToAccountSigner(
     generatePrivateKey()
   );
 

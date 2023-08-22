@@ -1,6 +1,7 @@
 import {
   type Address,
   type Hex,
+  type SignTypedDataParams,
   type SmartAccountSigner,
   type UserOperationRequest,
 } from "@alchemy/aa-core";
@@ -57,6 +58,10 @@ export class EmptyValidator extends KernelBaseValidator {
   }
 
   async signMessage(_message: string | Uint8Array): Promise<Hex> {
+    throw new Error("Method not implemented.");
+  }
+
+  async signTypedData(_params: SignTypedDataParams): Promise<Hex> {
     throw new Error("Method not implemented.");
   }
 
