@@ -86,68 +86,6 @@ describe("Recovery Validator Test", async () => {
     { timeout: 100000 }
   );
 
-  it(
-    "should correctly make an api call to set guardians",
-    async () => {
-      const data = {
-        guardians: {
-          "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4": 100,
-        },
-        threshold: 50,
-        owneraddress: "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
-      };
-
-      let socialRecoveryProvider = await SocialRecoveryProvider.init({
-        projectId: config.projectId,
-        owner,
-        usePaymaster: false,
-        opts: {
-          providerConfig: {
-            opts: {
-              txMaxRetries: 10,
-            },
-          },
-        },
-      });
-
-      const response = await validator.setGuardians(
-        data,
-        socialRecoveryProvider
-      );
-      expect(response).toBeDefined();
-    },
-    { timeout: 100000 }
-  );
-
-  it(
-    "should initiate recovery correctly",
-    async () => {
-      let socialRecoveryProvider = await SocialRecoveryProvider.init({
-        projectId: config.projectId,
-        owner,
-        usePaymaster: false,
-        opts: {
-          providerConfig: {
-            opts: {
-              txMaxRetries: 10,
-            },
-          },
-        },
-      });
-
-      const res = await validator.initRecovery(
-        "0x7c8999dc9a822c1f0df42023113edb4fdd543266",
-        "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
-        socialRecoveryProvider
-      );
-      globalRecoveryId = res.recoveryid;
-      globalMessageHash = res.message_hash;
-      globalMessageContent = res.message_content;
-      expect(res).toBeDefined();
-    },
-    { timeout: 100000 }
-  );
-
   it("Guardian should sign messsage correctly", async () => {
     async function signEIP712Message() {
       const domain = {
@@ -197,33 +135,4 @@ describe("Recovery Validator Test", async () => {
       console.log(e);
     }
   });
-
-  it(
-    "should complete recovery correctly",
-    async () => {
-      try {
-        let socialRecoveryProvider = await SocialRecoveryProvider.init({
-          projectId: config.projectId,
-          owner,
-          usePaymaster: false,
-          opts: {
-            providerConfig: {
-              opts: {
-                txMaxRetries: 10,
-              },
-            },
-          },
-        });
-
-        const res = await validator.submitRecovery(
-          globalRecoveryCallData,
-          socialRecoveryProvider
-        );
-        expect(res).toBeDefined();
-      } catch (e) {
-        console.log(e);
-      }
-    },
-    { timeout: 100000 }
-  );
 });

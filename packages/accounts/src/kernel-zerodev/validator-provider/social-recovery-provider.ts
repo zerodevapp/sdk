@@ -9,19 +9,37 @@ import {
   SocialRecoveryValidator,
   type SocialRecoveryValidatorParams,
 } from "../validator/social-recovery-validator.js";
+import type { Address, Hash } from "viem";
+import axios from "axios";
+import {
+  KernelSmartContractAccount,
+  type KernelSmartAccountParams,
+  isKernelAccount,
+} from "../account.js";
+import { SOCIAL_RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
+
+type Guardians = {
+  [address: string]: number;
+};
+
+type GuardianData = {
+  guardians: Guardians;
+  threshold: number;
+  owneraddress: string;
+};
 
 export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryValidatorParams> {
   constructor(
     params: ExtendedValidatorProviderParams<SocialRecoveryValidatorParams>
   ) {
-    const chain =
-      typeof params.opts?.providerConfig?.chain === "number"
-        ? getChain(params.opts.providerConfig.chain)
-        : params.opts?.providerConfig?.chain ?? polygonMumbai;
+    const chain = polygonMumbai;
+
     const validator = new SocialRecoveryValidator({
       projectId: params.projectId,
       owner: params.owner,
       chain,
+      validatorAddress:
+        SOCIAL_RECOVERY_VALIDATOR_ADDRESS,
       ...params.opts?.validatorConfig,
     });
     super(
@@ -57,6 +75,112 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
     return instance;
   }
 
-  changeOwner = this.sendEnableUserOperation;
-  deleteOwner = this.sendDisableUserOperation;
+  async setGuardians(guardians: GuardianData): Promise<any> {
+    try {
+      const API_URL = "http://localhost:4001/v1/socialrecovery/set-guardian";
+      const response = await axios.post(API_URL, guardians);
+      const guardiancalldata = response.data.data.guardian_calldata;
+
+      console.log(guardiancalldata);
+
+      const enablecalldata = await this.getEncodedEnableData(guardiancalldata);
+
+      await this.getAccount().getInitCode();
+
+
+      if (!isKernelAccount(this.account) || !this.account.validator) {
+        throw new Error(
+          "ValidatorProvider: account with validator is not set, did you call all connects first?"
+        );
+      }
+
+      const result =await this.sendUserOperation({
+        target: this.getValidator().getAddress(),
+        data: enablecalldata,
+        value: 0n,
+      });
+
+      console.log(result);
+
+      const res = await this.waitForUserOperationTransaction(
+        (
+          await result
+        ).hash as Hash
+      );
+
+      return res;
+    } catch (err) {
+      console.log("Error in setGuardians", err);
+    }
+  }
+
+  async initRecovery(ownerAddress: Address, newOwnerAddress: Address) {
+    try {
+      const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
+      const response = await axios.post(API_URL, {
+        owneraddress: ownerAddress,
+        newowneraddress: newOwnerAddress,
+      });
+
+      const calldata: Hash = `0x03${newOwnerAddress.slice(2)}`;
+
+      const encodeCallData = await this.getEncodedEnableData(calldata);
+
+      await this.getAccount().getInitCode();
+
+      if (!isKernelAccount(this.account) || !this.account.validator) {
+        throw new Error(
+          "ValidatorProvider: account with validator is not set, did you call all connects first?"
+        );
+      }
+
+      const result = this.sendUserOperation({
+        target: this.getValidator().getAddress(),
+        data: encodeCallData,
+        value: 0n,
+      });
+
+      const res = await this.waitForUserOperationTransaction(
+        (
+          await result
+        ).hash as Hash
+      );
+
+      return res;
+    } catch (err) {
+      console.log("Error in initRecovery", err);
+    }
+  }
+
+  async submitRecovery(
+    calldata: Hash,
+  ){
+    try {
+      const encodeCallData = await this.getEncodedEnableData(calldata);
+
+      await this.getAccount().getInitCode();
+
+      if (!isKernelAccount(this.account) || !this.account.validator) {
+        throw new Error(
+          "ValidatorProvider: account with validator is not set, did you call all connects first?"
+        );
+      }
+
+      const result = this.sendUserOperation({
+        target: this.getValidator().getAddress(),
+        data: encodeCallData,
+        value: 0n,
+      });
+
+      const res = await this.waitForUserOperationTransaction(
+        (
+          await result
+        ).hash as Hash
+      );
+
+      return res;
+    } catch (err) {
+      console.log("Error in submitRecovery", err);
+    }
+  }
 }
