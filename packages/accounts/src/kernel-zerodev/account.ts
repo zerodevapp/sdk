@@ -142,6 +142,10 @@ export class KernelSmartContractAccount<
     this.initCode = initCode;
   }
 
+  setAccountAddress(accountAddress: Address) {
+    this.accountAddress = accountAddress;
+  }
+
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
     if (!this.validator) {
       throw new Error("Validator not connected");

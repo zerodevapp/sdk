@@ -7,7 +7,11 @@ import {
   getChain,
   type SignTypedDataParams,
 } from "@alchemy/aa-core";
-import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
+import {
+  KernelBaseValidator,
+  ValidatorMode,
+  type KernelBaseValidatorParams,
+} from "./base.js";
 import {
   encodeFunctionData,
   toBytes,
@@ -20,6 +24,7 @@ import {
   zeroAddress,
   decodeFunctionData,
   isHex,
+  getFunctionSelector,
 } from "viem";
 import { SessionKeyValidatorAbi } from "../abis/SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
@@ -40,6 +45,7 @@ export type SessionData = Pick<
 > & {
   sessionPrivateKey?: Hex;
   initCode?: Hex;
+  accountAddress?: Address;
 };
 
 export enum ParamCondition {
@@ -85,6 +91,11 @@ export class SessionKeyValidator extends KernelBaseValidator {
       paymaster: params.sessionKeyData.paymaster ?? zeroAddress,
     };
     this.merkleTree = this.getMerkleTree();
+    this.selector =
+      params.selector ??
+      getFunctionSelector("execute(address, uint256, bytes, uint8)");
+    this.executor = params.executor ?? zeroAddress;
+    this.mode = params.mode ?? ValidatorMode.plugin;
   }
 
   public static async init(
@@ -312,6 +323,11 @@ export class SessionKeyValidator extends KernelBaseValidator {
       sessionKeyData: this.sessionKeyData,
       enableSignature: this.enableSignature,
     };
+  }
+
+  setSessionData(sessionData: SessionData) {
+    this.sessionKeyData = sessionData.sessionKeyData;
+    this.enableSignature = sessionData.enableSignature;
   }
 
   async signer(): Promise<SmartAccountSigner> {

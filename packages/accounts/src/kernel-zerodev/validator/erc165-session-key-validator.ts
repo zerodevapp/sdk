@@ -7,7 +7,11 @@ import {
   getChain,
   type SignTypedDataParams,
 } from "@alchemy/aa-core";
-import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
+import {
+  KernelBaseValidator,
+  ValidatorMode,
+  type KernelBaseValidatorParams,
+} from "./base.js";
 import { encodeFunctionData, toBytes, concat, pad, toHex } from "viem";
 import { ERC165SessionKeyValidatorAbi } from "../abis/ERC165SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
@@ -37,6 +41,7 @@ export class ERC165SessionKeyValidator extends KernelBaseValidator {
     super(params);
     this.sessionKey = params.sessionKey;
     this.sessionKeyData = params.sessionKeyData;
+    this.mode = params.mode ?? ValidatorMode.plugin;
   }
 
   public static async init(

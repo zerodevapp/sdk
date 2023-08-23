@@ -405,7 +405,6 @@ const ecdsaProvider = await ECDSAProvider.init({
 
 // 2. Initialize SessionKey Validator Provider
 const accountAddress = await ecdsaProvider.getAccount().getAddress();
-const selector = getFunctionSelector("execute(address, uint256, bytes, uint8)");
 const sig = getFunctionSelector(
     "transfer(address, uint256)"
   )
@@ -442,12 +441,7 @@ const sessionKeyProvider = await SessionKeyProvider.init({
       opts: {
         accountConfig: {
           accountAddress,
-        },
-        validatorConfig: {
-          mode: ValidatorMode.plugin,
-          executor: zeroAddress,
-          selector,
-        },
+        }
       },
 });
 
@@ -483,17 +477,14 @@ const sessionDataClient =
     SessionKeyProvider.deserializeSessionData(sessionData);
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
-      sessionKey: ZeroDevLocalAccountSigner.privateKeyToAccountSigner(sessionDataClient.sessionPrivateKey),
+      sessionKey: LocalAccountSigner.privateKeyToAccountSigner(sessionDataClient.sessionPrivateKey),
       sessionKeyData: sessionDataClient.sessionKeyData,
       opts: {
         accountConfig: {
-          accountAddress,
+          accountAddress: sessionDataClient.accountAddress,
           initCode: sessionDataClient.initCode
         },
         validatorConfig: {
-          mode: ValidatorMode.plugin,
-          executor: zeroAddress,
-          selector,
           enableSignature: sessionDataClient.enableSignature
         },
       },

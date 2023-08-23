@@ -70,6 +70,7 @@ export class SessionKeyProvider extends ValidatorProvider<
   async serializeSessionData(sessionPrivateKey: Hex): Promise<string> {
     let sessionData = this.getValidator().getSessionData();
     const initCode = await this.getAccount().getInitCode();
+    const accountAddress = await this.getAddress();
     if (!initCode) {
       throw Error("initCode not set");
     }
@@ -77,6 +78,7 @@ export class SessionKeyProvider extends ValidatorProvider<
       ...sessionData,
       sessionPrivateKey,
       initCode,
+      accountAddress,
     };
     const jsonString = JSON.stringify(sessionData);
     const uint8Array = new TextEncoder().encode(jsonString);
@@ -85,9 +87,9 @@ export class SessionKeyProvider extends ValidatorProvider<
   }
 
   public static deserializeSessionData(
-    base64String: string
+    sessionData: string
   ): Required<SessionData> {
-    const uint8Array = base64ToBytes(base64String);
+    const uint8Array = base64ToBytes(sessionData);
     const jsonString = new TextDecoder().decode(uint8Array);
     const sessionKeyData = JSON.parse(jsonString) as Required<SessionData>;
     return sessionKeyData;

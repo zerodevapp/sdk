@@ -14,7 +14,6 @@ import { generatePrivateKey } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
 import { TOKEN_ACTION, oneAddress } from "../constants.js";
-import { ValidatorMode } from "../validator/base.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
 import {
   LocalAccountSigner,
@@ -62,7 +61,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     owner,
     opts: {
       accountConfig: {
-        index: 40013n,
+        index: 40015n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -133,7 +132,6 @@ describe("Kernel SessionKey Provider Test", async () => {
           paymasterProvider: "ALCHEMY",
         },
         validatorConfig: {
-          mode: ValidatorMode.plugin,
           executor,
           selector,
         },
@@ -149,7 +147,6 @@ describe("Kernel SessionKey Provider Test", async () => {
       dummyPrivateKey
     );
 
-    // On client side
     const sessionDataClient =
       SessionKeyProvider.deserializeSessionData(sessionData);
 
@@ -163,7 +160,7 @@ describe("Kernel SessionKey Provider Test", async () => {
       usePaymaster,
       opts: {
         accountConfig: {
-          accountAddress,
+          accountAddress: sessionDataClient.accountAddress,
           initCode: sessionDataClient.initCode,
         },
         providerConfig: {
@@ -177,18 +174,12 @@ describe("Kernel SessionKey Provider Test", async () => {
           paymasterProvider: "ALCHEMY",
         },
         validatorConfig: {
-          mode: ValidatorMode.plugin,
           executor,
           selector,
           enableSignature: sessionDataClient.enableSignature,
         },
       },
     });
-    // const enableSig = await ecdsaProvider
-    //   .getValidator()
-    //   .approveExecutor(accountAddress, selector, executor, 0, 0, validator);
-
-    // sessionKeyProvider.getValidator().setEnableSignature(enableSig);
   }
 
   it(

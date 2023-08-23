@@ -28,7 +28,7 @@ export const config = {
 
 // [TODO] - Organize instantiations and tests properly
 
-describe.skip("Kernel Account Tests", () => {
+describe("Kernel Account Tests", () => {
   //any wallet should work
 
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
