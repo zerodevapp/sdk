@@ -35,6 +35,11 @@ export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   usePaymaster?: boolean;
 }
 
+export interface PluginValidatorExecData {
+  enableSig: Hex;
+  initCode: Hex;
+}
+
 export type ExtendedValidatorProviderParams<
   P extends KernelBaseValidatorParams
 > = ValidatorProviderParams<P> & RequiredProps<P>;
@@ -81,6 +86,30 @@ export abstract class ValidatorProvider<
       );
     }
     return this.account.getValidator() as unknown as V;
+  };
+
+  getPluginValidatorExecData = async (
+    pluginValidator: KernelBaseValidator
+  ): Promise<PluginValidatorExecData> => {
+    const pluginData = pluginValidator.getPluginValidatorData();
+    const enableSig = await this.getValidator().approveExecutor(
+      await this.account?.getAddress()!,
+      pluginData.selector,
+      pluginData.executor,
+      pluginData.validUntil,
+      pluginData.validAfter,
+      pluginValidator
+    );
+    const initCode = await this.getAccount().getInitCode();
+    return {
+      enableSig,
+      initCode,
+    };
+  };
+
+  setPluginValidatorExecData = async (execData: PluginValidatorExecData) => {
+    this.getValidator().setEnableSignature(execData.enableSig);
+    this.getAccount().setInitCode(execData.initCode);
   };
 
   getEncodedEnableData = async (enableData: Hex): Promise<Hex> => {

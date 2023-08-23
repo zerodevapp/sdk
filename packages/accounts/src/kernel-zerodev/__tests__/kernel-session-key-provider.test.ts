@@ -16,7 +16,11 @@ import { ECDSAProvider } from "../validator-provider/index.js";
 import { TOKEN_ACTION, oneAddress } from "../constants.js";
 import { ValidatorMode } from "../validator/base.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
-import { LocalAccountSigner, type Address, type SmartAccountSigner } from "@alchemy/aa-core";
+import {
+  LocalAccountSigner,
+  type Address,
+  type SmartAccountSigner,
+} from "@alchemy/aa-core";
 import {
   ParamCondition,
   type Permission,
@@ -32,9 +36,7 @@ describe("Kernel SessionKey Provider Test", async () => {
   const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B";
   const dummyPrivateKey =
     "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
-  const owner = LocalAccountSigner.privateKeyToAccountSigner(
-    config.privateKey
-  );
+  const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
   const secondOwner =
     LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
   const randomOwner = LocalAccountSigner.privateKeyToAccountSigner(
@@ -60,7 +62,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     owner,
     opts: {
       accountConfig: {
-        index: 40006n,
+        index: 40013n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -79,16 +81,16 @@ describe("Kernel SessionKey Provider Test", async () => {
     paymaster?: Address,
     usePaymaster = true
   ) {
-    if (!(await ecdsaProvider.getAccount().isAccountDeployed())) {
-      const depResult = await ecdsaProvider.sendUserOperation({
-        target: await owner.getAddress(),
-        data: "0x",
-      });
-      console.log("depResult", depResult);
-      await ecdsaProvider.waitForUserOperationTransaction(
-        depResult.hash as Hex
-      );
-    }
+    // if (!(await ecdsaProvider.getAccount().isAccountDeployed())) {
+    //   const depResult = await ecdsaProvider.sendUserOperation({
+    //     target: await owner.getAddress(),
+    //     data: "0x",
+    //   });
+    //   console.log("depResult", depResult);
+    //   await ecdsaProvider.waitForUserOperationTransaction(
+    //     depResult.hash as Hex
+    //   );
+    // }
 
     if (amount) {
       const mintData = encodeFunctionData({
@@ -141,11 +143,52 @@ describe("Kernel SessionKey Provider Test", async () => {
       sessionKeyProvider.getValidator()
     );
 
-    const enableSig = await ecdsaProvider
-      .getValidator()
-      .approveExecutor(accountAddress, selector, executor, 0, 0, validator);
+    const execData = await ecdsaProvider.getPluginValidatorExecData(validator);
+    sessionKeyProvider.setPluginValidatorExecData(execData);
+    const sessionData = await sessionKeyProvider.serializeSessionData(
+      dummyPrivateKey
+    );
 
-    sessionKeyProvider.getValidator().setEnableSignature(enableSig);
+    // On client side
+    const sessionDataClient =
+      SessionKeyProvider.deserializeSessionData(sessionData);
+
+    sessionKeyProvider = await SessionKeyProvider.init({
+      projectId: config.projectIdWithGasSponsorship,
+      sessionKey: LocalAccountSigner.privateKeyToAccountSigner(
+        sessionDataClient.sessionPrivateKey
+      ),
+      sessionKeyData: sessionDataClient.sessionKeyData,
+      bundlerProvider: "ALCHEMY",
+      usePaymaster,
+      opts: {
+        accountConfig: {
+          accountAddress,
+          initCode: sessionDataClient.initCode,
+        },
+        providerConfig: {
+          opts: {
+            txMaxRetries: 10,
+            txRetryIntervalMs: 2000,
+          },
+        },
+        paymasterConfig: {
+          policy: "VERIFYING_PAYMASTER",
+          paymasterProvider: "ALCHEMY",
+        },
+        validatorConfig: {
+          mode: ValidatorMode.plugin,
+          executor,
+          selector,
+          enableSignature: sessionDataClient.enableSignature,
+        },
+      },
+    });
+    // const enableSig = await ecdsaProvider
+    //   .getValidator()
+    //   .approveExecutor(accountAddress, selector, executor, 0, 0, validator);
+
+    // sessionKeyProvider.getValidator().setEnableSignature(enableSig);
   }
 
   it(

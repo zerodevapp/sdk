@@ -22,10 +22,12 @@ export class EmptyValidator extends KernelBaseValidator {
   public static async fromValidator(
     validator: KernelBaseValidator
   ): Promise<EmptyValidator> {
+    const pluginData = validator.getPluginValidatorData();
     const instance = new EmptyValidator({
       enableData: await validator.getEnableData(),
       validatorAddress: validator.getAddress(),
       projectId: "",
+      ...pluginData,
     });
     return instance;
   }

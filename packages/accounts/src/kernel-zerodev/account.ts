@@ -36,6 +36,11 @@ import { getChainId } from "./api/index.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
 import type { PaymasterAndBundlerProviders } from "./paymaster/types.js";
 
+export enum DeploymentState {
+  UNDEFINED = "0x0",
+  NOT_DEPLOYED = "0x1",
+  DEPLOYED = "0x2",
+}
 export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
 > extends Partial<BaseSmartAccountParams<TTransport>> {
@@ -44,6 +49,7 @@ export interface KernelSmartAccountParams<
   index?: bigint;
   validator?: KernelBaseValidator;
   bundlerProvider?: PaymasterAndBundlerProviders;
+  initCode?: Hex;
 }
 
 export function isKernelAccount(
@@ -57,6 +63,7 @@ export class KernelSmartContractAccount<
 > extends BaseSmartContractAccount<TTransport> {
   private readonly factoryAddress: Address;
   private readonly index: bigint;
+  private initCode?: Hex;
   validator?: KernelBaseValidator;
 
   constructor(params: KernelSmartAccountParams) {
@@ -69,6 +76,7 @@ export class KernelSmartContractAccount<
     this.index = params.index ?? 0n;
     this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
     this.validator = params.validator;
+    this.initCode = params.initCode;
   }
 
   public static async init(
@@ -110,6 +118,28 @@ export class KernelSmartContractAccount<
 
   getDummySignature(): Hex {
     return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
+  }
+
+  async getInitCode(): Promise<Hex> {
+    if (this.deploymentState === DeploymentState.DEPLOYED) {
+      return "0x";
+    }
+    const contractCode = await this.rpcProvider.getContractCode(
+      await this.getAddress()
+    );
+
+    if ((contractCode?.length ?? 0) > 2) {
+      this.deploymentState = DeploymentState.DEPLOYED;
+      return "0x";
+    } else {
+      this.deploymentState = DeploymentState.NOT_DEPLOYED;
+    }
+
+    return this.initCode ?? this.getAccountInitCode();
+  }
+
+  setInitCode(initCode: Hex) {
+    this.initCode = initCode;
   }
 
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {

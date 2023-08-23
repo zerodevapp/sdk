@@ -9,13 +9,13 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers
+yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk
 ```
 
 via `npm`
 
 ```bash
-npm i -s @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers
+npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
 ```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
@@ -403,14 +403,7 @@ const ecdsaProvider = await ECDSAProvider.init({
   owner,
 });
 
-// 2. Deploy the Kernel account if not already by sending an empty transaction
-let result = await ecdsaProvider.sendUserOperation({
-  target: "0xADDRESS",
-  data: "0x",
-});
-await ecdsaProvider.waitForUserOperationTransaction(result.hash as Hex);
-
-// 3. Initialize required variables
+// 2. Initialize SessionKey Validator Provider
 const accountAddress = await ecdsaProvider.getAccount().getAddress();
 const selector = getFunctionSelector("execute(address, uint256, bytes, uint8)");
 const sig = getFunctionSelector(
@@ -437,7 +430,6 @@ const permissions = [
     }
 ]
 
-// 4. Initialize SessionKey Validator Provider
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
       sessionKey, // Session Key Signer
@@ -459,29 +451,18 @@ const sessionKeyProvider = await SessionKeyProvider.init({
       },
 });
 
-// 5. Get the validator instance
+// 3. Get the validator instance
 // If the session key is generated in the client and need to be approved from the server
 // create an EmptyValidator instance and send it to the server
 let validator = await EmptyValidator.fromValidator(sessionKeyProvider.getValidator());
 // OR else just get the validator instance from the SessionKeyProvider
 validator = sessionKeyProvider.getValidator();
 
-// 6. Get enable signature from default ECDSA validator provider
-const enableSig = await ecdsaProvider
-    .getValidator()
-    .approveExecutor(
-        accountAddress,
-        selector,
-        zeroAddress,
-        0,
-        0,
-        validator
-    );
+// 4. Get exec data from default ECDSA validator provider and set it in SessionKey Validator Provider
+const execData = await ecdsaProvider.getPluginValidatorExecData(validator);
+sessionKeyProvider.setPluginValidatorExecData(execData);
 
-// 7. Set enable sig in SessionKey Validator Provider
-sessionKeyProvider.getValidator().setEnableSignature(enableSig);
-
-// 8. Send the transaction
+// 5. Send the transaction
 const { hash } = await sessionKeyProvider.sendUserOperation({
           target: ERC20Address,
           data: encodeFunctionData({
@@ -493,14 +474,13 @@ const { hash } = await sessionKeyProvider.sendUserOperation({
 
 
 // Creating session key on the server
-// After step 7. above do following server-side and send the sessionData to the client
-const sessionData = sessionKeyProvider
-      .getValidator()
-      .serializeSessionData(<SESSION_PRIVATE_KEY>);
+// After step 4. above do following server-side and send the sessionData to the client
+const sessionData = await sessionKeyProvider
+    .serializeSessionData(<SESSION_PRIVATE_KEY>);
 
 // On client side
 const sessionDataClient =
-    SessionKeyValidator.deserializeSessionData(sessionData);
+    SessionKeyProvider.deserializeSessionData(sessionData);
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
       sessionKey: ZeroDevLocalAccountSigner.privateKeyToAccountSigner(sessionDataClient.sessionPrivateKey),
@@ -508,6 +488,7 @@ const sessionKeyProvider = await SessionKeyProvider.init({
       opts: {
         accountConfig: {
           accountAddress,
+          initCode: sessionDataClient.initCode
         },
         validatorConfig: {
           mode: ValidatorMode.plugin,

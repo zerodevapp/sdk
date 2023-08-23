@@ -4,12 +4,14 @@ import {
 } from "./base.js";
 import {
   SessionKeyValidator,
+  type SessionData,
   type SessionKeyValidatorParams,
 } from "../validator/session-key-validator.js";
-import { getChain } from "@alchemy/aa-core";
+import { getChain, type Hex } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
+import { base64ToBytes, bytesToBase64 } from "../utils.js";
 
 export class SessionKeyProvider extends ValidatorProvider<
   SessionKeyValidator,
@@ -63,6 +65,32 @@ export class SessionKeyProvider extends ValidatorProvider<
       },
     });
     return instance;
+  }
+
+  async serializeSessionData(sessionPrivateKey: Hex): Promise<string> {
+    let sessionData = this.getValidator().getSessionData();
+    const initCode = await this.getAccount().getInitCode();
+    if (!initCode) {
+      throw Error("initCode not set");
+    }
+    sessionData = {
+      ...sessionData,
+      sessionPrivateKey,
+      initCode,
+    };
+    const jsonString = JSON.stringify(sessionData);
+    const uint8Array = new TextEncoder().encode(jsonString);
+    const base64String = bytesToBase64(uint8Array);
+    return base64String;
+  }
+
+  public static deserializeSessionData(
+    base64String: string
+  ): Required<SessionData> {
+    const uint8Array = base64ToBytes(base64String);
+    const jsonString = new TextDecoder().decode(uint8Array);
+    const sessionKeyData = JSON.parse(jsonString) as Required<SessionData>;
+    return sessionKeyData;
   }
 
   changeSessionKeyData = this.sendEnableUserOperation;

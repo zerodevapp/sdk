@@ -43,10 +43,17 @@ export interface KernelBaseValidatorParams {
   validUntil?: number;
   validAfter?: number;
   executor?: Address;
-  selector?: string;
+  selector?: Hex;
   rpcUrl?: string;
   bundlerProvider?: PaymasterAndBundlerProviders;
 }
+
+export type ValidatorPluginData = Required<
+  Pick<
+    KernelBaseValidatorParams,
+    "executor" | "selector" | "validAfter" | "validUntil"
+  >
+>;
 
 //Kernel wallet implementation separates out validation and execution phase. It allows you to have
 // custom wrapper logic for the validation phase in addition to signature of choice.
@@ -60,7 +67,7 @@ export abstract class KernelBaseValidator {
   protected validUntil: number;
   protected validAfter: number;
   protected executor?: Address;
-  protected selector?: string;
+  protected selector?: Hex;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
   publicClient?: PublicClient<Transport, Chain>;
@@ -107,6 +114,18 @@ export abstract class KernelBaseValidator {
 
   shouldDelegateViaFallback(): boolean {
     return true;
+  }
+
+  getPluginValidatorData(): ValidatorPluginData {
+    if (!this.selector || !this.executor) {
+      throw Error("Plugin Validator data params uninitialised");
+    }
+    return {
+      selector: this.selector,
+      executor: this.executor,
+      validAfter: this.validAfter,
+      validUntil: this.validUntil,
+    };
   }
 
   async getDynamicDummySignature(
