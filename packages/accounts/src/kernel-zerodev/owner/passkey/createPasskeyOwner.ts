@@ -5,7 +5,6 @@ import {
   base64UrlEncode,
   es256,
   generateRandomBuffer,
-  getCredentials,
   publicKey,
   signMessage,
   signTypedData,
@@ -26,6 +25,7 @@ export async function createPasskeyOwner({
   //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
+    const authenticatorUserId = generateRandomBuffer();
     try {
       const attestation = await getWebAuthnAttestation({
         publicKey: {
@@ -39,7 +39,7 @@ export async function createPasskeyOwner({
             residentKey: "required", // or 'preferred', 'discouraged'
             userVerification: "required",
           },
-          excludeCredentials: await getCredentials(projectId),
+          // excludeCredentials: await getCredentials(projectId),
           extensions: { credProps: true },
           challenge,
           pubKeyCredParams: [
@@ -49,7 +49,7 @@ export async function createPasskeyOwner({
             },
           ],
           user: {
-            id: Uint8Array.from(name, (c) => c.charCodeAt(0)),
+            id: authenticatorUserId,
             name,
             displayName: name,
           },
