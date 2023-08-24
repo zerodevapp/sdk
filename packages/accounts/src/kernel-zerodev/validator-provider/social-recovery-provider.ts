@@ -12,8 +12,6 @@ import {
 import type { Address, Hash } from "viem";
 import axios from "axios";
 import {
-  KernelSmartContractAccount,
-  type KernelSmartAccountParams,
   isKernelAccount,
 } from "../account.js";
 import { SOCIAL_RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
@@ -114,13 +112,14 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
       return res;
     } catch (err) {
       console.log("Error in setGuardians", err);
+      return err;
     }
   }
 
   async initRecovery(ownerAddress: Address, newOwnerAddress: Address) {
     try {
       const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
-      const response = await axios.post(API_URL, {
+      await axios.post(API_URL, {
         owneraddress: ownerAddress,
         newowneraddress: newOwnerAddress,
       });
@@ -152,6 +151,7 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
       return res;
     } catch (err) {
       console.log("Error in initRecovery", err);
+      return err;
     }
   }
 
@@ -184,6 +184,7 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
       return res;
     } catch (err) {
       console.log("Error in submitRecovery", err);
+      return err;
     }
   }
 }
