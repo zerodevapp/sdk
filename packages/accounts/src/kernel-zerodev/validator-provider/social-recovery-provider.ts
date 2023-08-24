@@ -32,7 +32,10 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
   constructor(
     params: ExtendedValidatorProviderParams<SocialRecoveryValidatorParams>
   ) {
-    const chain = polygonMumbai;
+    const chain =
+      typeof params.opts?.providerConfig?.chain === "number"
+        ? getChain(params.opts.providerConfig.chain)
+        : params.opts?.providerConfig?.chain ?? polygonMumbai;
 
     const validator = new SocialRecoveryValidator({
       projectId: params.projectId,
