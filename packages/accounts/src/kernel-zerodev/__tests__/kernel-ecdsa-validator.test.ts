@@ -2,6 +2,7 @@ import { ECDSAValidator } from "../validator/ecdsa-validator.js";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 import { config } from "./kernel-account.test.js";
 import type { PrivateKeyAccount } from "viem";
+import { ECDSA_VALIDATOR_ADDRESS } from "../constants.js";
 
 describe("Base Validator Test", async () => {
   const dummyPrivateKey =
@@ -9,8 +10,6 @@ describe("Base Validator Test", async () => {
   const dummyAddress = "0xabcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc";
   const signer: LocalAccountSigner<PrivateKeyAccount> =
     LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
-
-  const ECDSA_VALIDATOR_ADDRESS = "0x180D6465F921C7E0DEA0040107D342c87455fFF5";
 
   const validator = await ECDSAValidator.init({
     owner: signer,

@@ -1,4 +1,5 @@
 import {
+  type SignTypedDataParams,
   type SmartAccountSigner,
   type UserOperationRequest,
 } from "@alchemy/aa-core";
@@ -19,10 +20,12 @@ import {
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
   BUNDLER_URL,
+  CHAIN_ID_TO_NODE,
   ECDSA_VALIDATOR_ADDRESS,
   ENTRYPOINT_ADDRESS,
 } from "../constants.js";
 import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
+import { polygonMumbai } from "viem/chains";
 
 export enum ValidatorMode {
   sudo = "0x00000000",
@@ -60,7 +63,7 @@ export abstract class KernelBaseValidator {
   protected selector?: string;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
-  protected publicClient?: PublicClient<Transport, Chain, true>;
+  publicClient?: PublicClient<Transport, Chain>;
 
   constructor(params: KernelBaseValidatorParams) {
     this.projectId = params.projectId;
@@ -76,18 +79,8 @@ export abstract class KernelBaseValidator {
     this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
     this.bundlerProvider = params.bundlerProvider;
     this.publicClient = createPublicClient({
-      transport: http(this.rpcUrl, {
-        fetchOptions: {
-          headers:
-            this.rpcUrl === BUNDLER_URL
-              ? {
-                  projectId: this.projectId,
-                  bundlerProvider: this.bundlerProvider,
-                }
-              : {},
-        },
-      }),
-      chain: this.chain,
+      transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
+      chain: this.chain ?? polygonMumbai,
     });
   }
 
@@ -98,6 +91,8 @@ export abstract class KernelBaseValidator {
   abstract getEnableData(): Promise<Hex>;
 
   abstract signMessage(message: Uint8Array | string | Hex): Promise<Hex>;
+
+  abstract signTypedData(params: SignTypedDataParams): Promise<Hex>;
 
   abstract signUserOp(userOp: UserOperationRequest): Promise<Hex>;
 
@@ -168,10 +163,10 @@ export abstract class KernelBaseValidator {
     }
     const sender = kernel;
     const signer = await this.signer();
-    const ownerSig = await (signer as any).signTypedData({
+    const ownerSig = await signer.signTypedData({
       domain: {
         name: "Kernel",
-        version: "0.0.2",
+        version: "0.2.1",
         chainId: this.chain.id,
         verifyingContract: sender,
       },

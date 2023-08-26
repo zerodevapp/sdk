@@ -13,36 +13,63 @@ import {
   optimism,
   optimismGoerli,
 } from "viem/chains";
-import { ChainFeeStrategies, SupportedChains } from "./chains.js";
-import {
-  GasFeeStrategy,
-  withAlchemyGasFeeEstimator,
-} from "./middleware/gas-fees.js";
+import { SupportedChains } from "./chains.js";
 import {
   withAlchemyGasManager,
   type AlchemyGasManagerConfig,
+  alchemyPaymasterAndDataMiddleware,
 } from "./middleware/gas-manager.js";
+import { withAlchemyGasFeeEstimator } from "./middleware/gas-fees.js";
+import type { ClientWithAlchemyMethods } from "./middleware/client.js";
+
+type ConnectionConfig =
+  | {
+      apiKey: string;
+      rpcUrl?: undefined;
+    }
+  | { rpcUrl: string; apiKey?: undefined };
 
 export type AlchemyProviderConfig = {
-  apiKey: string;
   chain: Chain | number;
   entryPointAddress: Address;
   account?: BaseSmartContractAccount;
   opts?: SmartAccountProviderOpts;
   feeOpts?: {
-    /** this adds a percent buffer on top of the fee estimated (default 5%)*/
+    /** this adds a percent buffer on top of the base fee estimated (default 50%)
+     * NOTE: this is only applied if the default fee estimator is used.
+     */
+    baseFeeBufferPercent?: bigint;
+    /** this adds a percent buffer on top of the priority fee estimated (default 5%)'
+     * * NOTE: this is only applied if the default fee estimator is used.
+     */
     maxPriorityFeeBufferPercent?: bigint;
+    /** this adds a percent buffer on top of the preVerificationGasEstimated
+     *
+     * Defaults 5% on Arbitrum and Optimism, 0% elsewhere
+     *
+     * This is only useful on Arbitrum and Optimism, where the preVerificationGas is
+     * dependent on the gas fee during the time of estimation. To improve chances of
+     * the UserOperation being mined, users can increase the preVerificationGas by
+     * a buffer. This buffer will always be charged, regardless of price at time of mine.
+     *
+     * NOTE: this is only applied if the defualt gas estimator is used.
+     */
+    preVerificationGasBufferPercent?: bigint;
   };
-};
+} & ConnectionConfig;
 
 export class AlchemyProvider extends SmartAccountProvider<HttpTransport> {
+  alchemyClient: ClientWithAlchemyMethods;
+  private pvgBuffer: bigint;
+  private feeOptsSet: boolean;
+
   constructor({
-    apiKey,
     chain,
     entryPointAddress,
     account,
     opts,
     feeOpts,
+    ...connectionConfig
   }: AlchemyProviderConfig) {
     const _chain =
       typeof chain === "number" ? SupportedChains.get(chain) : chain;
@@ -50,17 +77,36 @@ export class AlchemyProvider extends SmartAccountProvider<HttpTransport> {
       throw new Error(`AlchemyProvider: chain (${chain}) not supported`);
     }
 
-    const rpcUrl = `${_chain.rpcUrls.alchemy.http[0]}/${apiKey}`;
+    const rpcUrl =
+      connectionConfig.apiKey !== undefined
+        ? `${_chain.rpcUrls.alchemy.http[0]}/${connectionConfig.apiKey}`
+        : connectionConfig.rpcUrl;
+
     super(rpcUrl, entryPointAddress, _chain, account, opts);
 
+    this.alchemyClient = this.rpcClient as ClientWithAlchemyMethods;
     withAlchemyGasFeeEstimator(
       this,
-      ChainFeeStrategies.get(_chain.id) ?? {
-        strategy: GasFeeStrategy.DEFAULT,
-        value: 0n,
-      },
+      feeOpts?.baseFeeBufferPercent ?? 50n,
       feeOpts?.maxPriorityFeeBufferPercent ?? 5n
     );
+
+    if (feeOpts?.preVerificationGasBufferPercent) {
+      this.pvgBuffer = feeOpts?.preVerificationGasBufferPercent;
+    } else if (
+      new Set<number>([
+        arbitrum.id,
+        arbitrumGoerli.id,
+        optimism.id,
+        optimismGoerli.id,
+      ]).has(this.chain.id)
+    ) {
+      this.pvgBuffer = 5n;
+    } else {
+      this.pvgBuffer = 0n;
+    }
+
+    this.feeOptsSet = !!feeOpts;
   }
 
   gasEstimator: AccountMiddlewareFn = async (struct) => {
@@ -69,20 +115,8 @@ export class AlchemyProvider extends SmartAccountProvider<HttpTransport> {
       request,
       this.entryPointAddress
     );
-
-    // On Arbitrum and Optimism, we need to increase the preVerificationGas by 10%
-    // to ensure the transaction is mined
-    if (
-      new Set<number>([
-        arbitrum.id,
-        arbitrumGoerli.id,
-        optimism.id,
-        optimismGoerli.id,
-      ]).has(this.chain.id)
-    ) {
-      estimates.preVerificationGas =
-        (BigInt(estimates.preVerificationGas) * 110n) / 100n;
-    }
+    estimates.preVerificationGas =
+      (BigInt(estimates.preVerificationGas) * (100n + this.pvgBuffer)) / 100n;
 
     return {
       ...struct,
@@ -97,6 +131,12 @@ export class AlchemyProvider extends SmartAccountProvider<HttpTransport> {
       );
     }
 
-    return withAlchemyGasManager(this, config);
+    if (this.feeOptsSet) {
+      return this.withPaymasterMiddleware(
+        alchemyPaymasterAndDataMiddleware(this, config)
+      );
+    } else {
+      return withAlchemyGasManager(this, config);
+    }
   }
 }

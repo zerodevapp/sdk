@@ -1,6 +1,6 @@
 {
-  "name": "@zerodevapp/sdk",
-  "version": "4.0.2-alpha.22",
+  "name": "@zerodev/sdk",
+  "version": "4.0.9",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "ZeroDev",
   "license": "MIT",
@@ -12,6 +12,7 @@
   "typings": "./dist/types/index.d.ts",
   "sideEffects": false,
   "files": [
+    "passkey",
     "dist",
     "src/**/*.ts",
     "!dist/**/*.tsbuildinfo",
@@ -26,6 +27,11 @@
       "import": "./dist/esm/index.js",
       "default": "./dist/cjs/index.js"
     },
+    "./passkey": {
+      "import": "./dist/esm/kernel-zerodev/owner/passkey/index.js",
+      "default": "./dist/cjs/kernel-zerodev/owner/passkey/index.js",
+      "types": "./dist/types/kernel-zerodev/owner/passkey/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -35,21 +41,20 @@
     "build:types": "tsc --project tsconfig.build.json --module esnext --declarationDir ./dist/types --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf ./dist",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:run-e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "devDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.16",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.16",
-    "@turnkey/ethers": "^0.16.2",
+    "@alchemy/aa-core": "^0.1.0-alpha.23",
+    "@alchemy/aa-ethers": "^0.1.0-alpha.23",
+    "@turnkey/ethers": "^0.16.5",
     "typescript": "^5.0.4",
     "typescript-template": "*",
-    "viem": "^1.1.7",
     "vitest": "^0.31.0"
   },
   "peerDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.16",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.16",
-    "viem": "^1.1.7"
+    "@alchemy/aa-core": "^0.1.0-alpha.23",
+    "@alchemy/aa-ethers": "^0.1.0-alpha.23"
   },
   "publishConfig": {
     "access": "public",
@@ -57,14 +62,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zerodevapp/aa-sdk.git"
+    "url": "git+https://github.com/zerodevapp/sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/zerodevapp/aa-sdk/issues"
+    "url": "https://github.com/zerodevapp/sdk/issues"
   },
-  "homepage": "https://github.com/zerodevapp/aa-sdk/blob/zd-provider/packages/accounts/src/kernel-zerodev/README.md#readme",
+  "homepage": "https://github.com/zerodevapp/sdk/blob/main/README.md#readme",
   "gitHead": "19ba05a77e4f7a0e04f44f34eaecf675fe2c12f2",
   "dependencies": {
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "viem": "^1.5.3"
   }
 }

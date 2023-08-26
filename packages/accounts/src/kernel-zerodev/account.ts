@@ -23,11 +23,13 @@ import {
   type UserOperationRequest,
   defineReadOnly,
   getChain,
+  type SignTypedDataParams,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
   ENTRYPOINT_ADDRESS,
   KERNEL_FACTORY_ADDRESS,
+  KERNEL_IMPL_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
 import { encodeMultiSend } from "./utils.js";
@@ -222,6 +224,13 @@ export class KernelSmartContractAccount<
     return await this.validator.signMessage(formattedMessage);
   }
 
+  async signTypedData(params: SignTypedDataParams): Promise<Hex> {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    return await this.validator.signTypedData(params);
+  }
+
   signUserOp(userOp: UserOperationRequest): Promise<Hex> {
     if (!this.validator) {
       throw new Error("Validator not connected");
@@ -254,8 +263,15 @@ export class KernelSmartContractAccount<
         abi: KernelFactoryAbi,
         functionName: "createAccount",
         args: [
-          this.validator.getAddress(),
-          await this.validator.getEnableData(),
+          KERNEL_IMPL_ADDRESS,
+          encodeFunctionData({
+            abi: KernelAccountAbi,
+            functionName: "initialize",
+            args: [
+              this.validator.getAddress(),
+              await this.validator.getEnableData(),
+            ],
+          }),
           this.index,
         ],
       });

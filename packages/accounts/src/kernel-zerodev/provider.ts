@@ -1,6 +1,8 @@
 import {
+  fromHex,
   type Address,
   type Chain,
+  type Hash,
   type Hex,
   type HttpTransport,
   type RpcTransactionRequest,
@@ -19,6 +21,7 @@ import {
   type BytesLike,
   SmartAccountProvider,
   type AccountMiddlewareFn,
+  type UserOperationOverrides,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -105,10 +108,40 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
   getProjectId = (): string => this.projectId;
 
+  sendTransaction = async (
+    request: RpcTransactionRequest,
+    operation: UserOpDataOperationTypes<UserOperationCallData> = Operation.Call
+  ): Promise<Hash> => {
+    if (!request.to) {
+      throw new Error("transaction is missing to address");
+    }
+
+    const overrides: UserOperationOverrides = {};
+    if (request.maxFeePerGas) {
+      overrides.maxFeePerGas = request.maxFeePerGas;
+    }
+    if (request.maxPriorityFeePerGas) {
+      overrides.maxPriorityFeePerGas = request.maxPriorityFeePerGas;
+    }
+
+    const { hash } = await this.sendUserOperation(
+      {
+        target: request.to,
+        data: request.data ?? "0x",
+        value: request.value ? fromHex(request.value, "bigint") : 0n,
+      },
+      overrides,
+      operation
+    );
+
+    return await this.waitForUserOperationTransaction(hash as Hash);
+  };
+
   sendUserOperation = async <
     T extends UserOperationCallData | BatchUserOperationCallData
   >(
     data: T,
+    overrides?: UserOperationOverrides,
     operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
   ): Promise<SendUserOperationResult> => {
     if (!isKernelAccount(this.account)) {
@@ -149,29 +182,25 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     const initCode = await this.account.getInitCode();
     let hash: string = "";
     let i = 0;
-    let maxFeePerGas = 0n;
-    let maxPriorityFeePerGas = 0n;
-    let request: UserOperationStruct;
-
     const nonce = await this.account.getNonce();
+    const uoStruct = await asyncPipe(
+      this.dummyPaymasterDataMiddleware,
+      this.feeDataGetter,
+      this.paymasterDataMiddleware,
+      this.gasEstimator,
+      this.customMiddleware ?? noOpMiddleware,
+      async (struct) => ({ ...struct, ...overrides })
+    )({
+      initCode,
+      sender: this.getAddress(),
+      nonce,
+      callData,
+      signature: await this.account
+        .getValidator()
+        .getDynamicDummySignature(await this.getAddress(), callData as Hex),
+    } as UserOperationStruct);
+    let request: UserOperationStruct;
     do {
-      const uoStruct = await asyncPipe(
-        this.dummyPaymasterDataMiddleware,
-        this.feeDataGetter,
-        this.paymasterDataMiddleware,
-        this.gasEstimator,
-        this.customMiddleware ?? noOpMiddleware
-      )({
-        initCode,
-        sender: this.getAddress(),
-        nonce,
-        callData,
-        signature: await this.account
-          .getValidator()
-          .getDynamicDummySignature(await this.getAddress(), callData as Hex),
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-      } as UserOperationStruct);
       request = deepHexlify(await resolveProperties(uoStruct));
 
       if (!isValidRequest(request)) {
@@ -193,13 +222,16 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         );
       } catch (error: any) {
         if (this.isReplacementOpError(error) && i++ < this.sendTxMaxRetries) {
-          maxFeePerGas = (BigInt(request.maxFeePerGas) * 113n) / 100n;
-          maxPriorityFeePerGas =
+          uoStruct.maxFeePerGas = (BigInt(request.maxFeePerGas) * 113n) / 100n;
+          uoStruct.maxPriorityFeePerGas =
             (BigInt(request.maxPriorityFeePerGas) * 113n) / 100n;
+
           console.log(
             `After ${
               this.sendTxRetryIntervalMs / 60000
-            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${maxFeePerGas}, maxPriorityFeePerGas: ${maxPriorityFeePerGas}`
+            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${
+              uoStruct.maxFeePerGas
+            }, maxPriorityFeePerGas: ${uoStruct.maxPriorityFeePerGas}`
           );
           await new Promise((resolve) =>
             setTimeout(resolve, this.sendTxRetryIntervalMs)

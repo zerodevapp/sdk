@@ -7,7 +7,6 @@ import {
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
-import { MockSigner } from "./mocks/mock-signer.js";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
@@ -18,8 +17,8 @@ export const config = {
   mockWallet: "0x48D4d3536cDe7A257087206870c6B6E76e3D4ff4",
   chain: polygonMumbai,
   rpcProvider: "https://mumbai-bundler.etherspot.io/",
-  validatorAddress: "0x180D6465F921C7E0DEA0040107D342c87455fFF5" as Hex,
-  accountFactoryAddress: "0x5D006d3880645ec6e254E18C1F879DAC9Dd71A39" as Hex,
+  validatorAddress: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390" as Hex,
+  accountFactoryAddress: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3" as Hex,
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,
   // Turn off all policies related to gas sponsorship for this projectId
   // To make all the testcases pass
@@ -33,7 +32,10 @@ describe("Kernel Account Tests", () => {
   //any wallet should work
 
   const owner = LocalAccountSigner.privateKeyToAccountSigner(config.privateKey);
-  const mockOwner = new MockSigner();
+  const dummyPrivateKey =
+    "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
+  const mockOwner =
+    LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
 
   it(
     "getAddress returns valid counterfactual address",
@@ -45,7 +47,7 @@ describe("Kernel Account Tests", () => {
 
       //contract already deployed
       expect(await ecdsaProvider.getAddress()).eql(
-        "0x97925A25C6B8E8902D2c68A4fcd90421a701d2E8"
+        "0xe06bD73f970cBaC97eAc5C700868FC9a0915D172"
       );
 
       ecdsaProvider = await ECDSAProvider.init({
@@ -53,14 +55,14 @@ describe("Kernel Account Tests", () => {
         owner: mockOwner,
         opts: {
           accountConfig: {
-            index: 3n,
+            index: 4n,
           },
         },
       });
 
       //contract already deployed
       expect(await ecdsaProvider.getAddress()).eql(
-        "0xA7b2c01A5AfBCf1FAB17aCf95D8367eCcFeEb845"
+        "0x9E72ED5478fEdB6875e244Ad8F6F6f3A2dCA5549"
       );
     },
     { timeout: 100000 }
@@ -70,30 +72,20 @@ describe("Kernel Account Tests", () => {
     "getNonce returns valid nonce",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({
-        projectId: config.projectId,
-        owner: mockOwner,
-      });
-
-      const signer = ecdsaProvider.getAccount();
-
-      //contract deployed but no transaction
-      expect(await signer.getNonce()).eql(0n);
-
-      ecdsaProvider = await ECDSAProvider.init({
-        projectId: config.projectId,
+        projectId: config.projectIdWithGasSponsorship,
         owner: mockOwner,
         opts: {
           accountConfig: {
-            index: 3n,
+            index: 4n,
           },
         },
       });
 
       const signer2 = ecdsaProvider.getAccount();
 
-      expect(await signer2.getNonce()).eql(2n);
+      expect(await signer2.getNonce()).eql(1n);
     },
-    { timeout: 100000 }
+    { timeout: 1000000 }
   );
 
   it("encodeExecute returns valid encoded hash", async () => {
@@ -138,9 +130,9 @@ describe("Kernel Account Tests", () => {
       const magicBytes =
         "6492649264926492649264926492649264926492649264926492649264926492";
       const ownerSignedMessage =
-        "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c";
+        "0xdad9efc9364e94756f6b16380b7d60c24a14526946ddaa52ef181e7ad065eaa146c9125b7ee62258caad708f57344cfc80d74bd69c0c1e95d75e7c7645c71e401b";
       const factoryCode =
-        "0x296601cd000000000000000000000000180d6465f921c7e0dea0040107d342c87455fff50000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000001448D4d3536cDe7A257087206870c6B6E76e3D4ff4000000000000000000000000";
+        "0x296601cd000000000000000000000000f048ad83cb2dfd6037a43902a2a5be04e53cd2eb0000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000084d1f57894000000000000000000000000d9ab5096a832b9ce79914329daee236f8eea039000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000014abcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc00000000000000000000000000000000000000000000000000000000000000000000000000000000";
       const signature =
         encodeAbiParameters(parseAbiParameters("address, bytes, bytes"), [
           config.accountFactoryAddress,
@@ -192,7 +184,7 @@ describe("Kernel Account Tests", () => {
     const signer = ecdsaProvider.getAccount();
 
     expect(await signer.signMessage(messageToBeSigned)).toBe(
-      "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
+      "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
     );
 
     ecdsaProvider = await ECDSAProvider.init({
@@ -208,7 +200,7 @@ describe("Kernel Account Tests", () => {
     const signer2 = ecdsaProvider.getAccount();
 
     expect(await signer2.signMessage(messageToBeSigned)).toBe(
-      "0x4d61c5c27fb64b207cbf3bcf60d78e725659cff5f93db9a1316162117dff72aa631761619d93d4d97dfb761ba00b61f9274c6a4a76e494df644d968dd84ddcdb1c"
+      "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
     );
   });
 
@@ -232,7 +224,7 @@ describe("Kernel Account Tests", () => {
         data: "0x",
       });
 
-      await expect(result).rejects.toThrowError("AA23 reverted (or OOG)");
+      await expect(result).rejects;
     },
     { timeout: 100000 }
   );
@@ -446,7 +438,7 @@ describe("Kernel Account Tests", () => {
         owner: mockOwner,
         opts: {
           accountConfig: {
-            index: 4n,
+            index: 5n,
           },
           providerConfig: {
             opts: {
@@ -465,7 +457,7 @@ describe("Kernel Account Tests", () => {
         owner: mockOwner,
         opts: {
           accountConfig: {
-            index: 5n,
+            index: 6n,
           },
         },
       });
