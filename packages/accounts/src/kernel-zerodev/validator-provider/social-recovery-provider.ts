@@ -101,8 +101,6 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
         value: 0n,
       });
 
-      console.log(result);
-
       const res = await this.waitForUserOperationTransaction(
         (
           await result
@@ -119,10 +117,11 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
   async initRecovery(ownerAddress: Address, newOwnerAddress: Address) {
     try {
       const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
-      await axios.post(API_URL, {
+      const dbResponse = await axios.post(API_URL, {
         owneraddress: ownerAddress,
         newowneraddress: newOwnerAddress,
       });
+      const recoveryId = dbResponse.data.data.recoveryid;
 
       const calldata: Hash = `0x03${newOwnerAddress.slice(2)}`;
 
@@ -148,7 +147,7 @@ export class SocialRecoveryProvider extends ValidatorProvider<SocialRecoveryVali
         ).hash as Hash
       );
 
-      return res;
+      return {res, recoveryId};
     } catch (err) {
       console.log("Error in initRecovery", err);
       return err;

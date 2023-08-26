@@ -13,22 +13,11 @@ import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import axios from "axios";
-import type { SocialRecoveryProvider } from "../validator-provider/social-recovery-provider.js";
 
 export interface SocialRecoveryValidatorParams
   extends KernelBaseValidatorParams {
   owner: SmartAccountSigner;
 }
-
-type Guardians = {
-  [address: string]: number;
-};
-
-type GuardianData = {
-  guardians: Guardians;
-  threshold: number;
-  owneraddress: string;
-};
 
 export class SocialRecoveryValidator extends KernelBaseValidator {
   protected owner: SmartAccountSigner;
@@ -62,62 +51,35 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
     return this.getOwner();
   }
 
-  async setGuardians(
-    guardians: GuardianData,
-    socialrecoveryprovider: SocialRecoveryProvider
-  ): Promise<any> {
-    const API_URL = "http://localhost:4001/v1/socialrecovery/set-guardian";
-    const response = await axios.post(API_URL, guardians);
-    const guardiancalldata = response.data.data.guardian_calldata;
-
-    console.log(guardiancalldata);
-    const enablecalldata = this.encodeEnable(guardiancalldata);
-
-    await socialrecoveryprovider.getAccount().getInitCode();
-
-    const result = socialrecoveryprovider.sendUserOperation({
-      target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
-      data: enablecalldata,
-      value: 0n,
-    });
-
-    const res = await socialrecoveryprovider.waitForUserOperationTransaction(
-      (
-        await result
-      ).hash as Hash
-    );
-
-    return {
-     res
-    };
+  async getRecoveryIdByOwner(owneraddress: Address): Promise<any> {
+    try {
+      const API_URL =
+        "http://localhost:4001/v1/socialrecovery/get-recovery-id-by-owner";
+      const response = await axios.post(API_URL, {
+        owneraddress,
+      });
+      return response.data.data;
+    } catch (e) {
+      console.log(e);
+      return e;
+    }
   }
 
-  async initRecovery(
-    ownerAddress: Address,
-    newOwnerAddress: Address,
-    socialrecoveryprovider: SocialRecoveryProvider
-  ){
-    const API_URL = "http://localhost:4001/v1/socialrecovery/init-recovery";
-    const response = await axios.post(API_URL, {
-      owneraddress: ownerAddress,
-      newowneraddress: newOwnerAddress,
-    });
-
-    const calldata:Hash = `0x03${newOwnerAddress.slice(2)}`;
-    const enablecalldata = this.encodeEnable(calldata);
-
-    const result = socialrecoveryprovider.sendUserOperation({
-      target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
-      data: enablecalldata,
-      value: 0n,
-    });
-
-    await socialrecoveryprovider.waitForUserOperationTransaction(
-      (
-        await result
-      ).hash as Hash
-    );
-    return response.data.data;
+  async getRecoveryMessageDetails(
+    recoveryid: string,
+    owneraddress: Address
+  ): Promise<any> {
+    try {
+      const API_URL =
+        "http://localhost:4001/v1/socialrecovery/get-messagedetails";
+      const response = await axios.post(API_URL, {
+        recoveryid,
+        owneraddress,
+      });
+      return response.data.data;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async addSignatures(
@@ -167,33 +129,6 @@ export class SocialRecoveryValidator extends KernelBaseValidator {
         owneraddress,
       });
       return response.data.data;
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  async submitRecovery(
-    calldata: Hash,
-    socialrecoveryprovider: SocialRecoveryProvider
-  ): Promise<any> {
-    try {
-
-      const enablecalldata = this.encodeEnable(calldata);
-
-      await socialrecoveryprovider.getAccount().getInitCode();
-
-      const result = socialrecoveryprovider.sendUserOperation({
-        target: "0xcf6A8492E379c3fCd61D8085C7FFBc4A0F014e13",
-        data: enablecalldata,
-        value: 0n,
-      });
-
-      const res = await socialrecoveryprovider.waitForUserOperationTransaction(
-        (
-          await result
-        ).hash as Hash
-      );
-      return res;
     } catch (e) {
       console.log(e);
     }

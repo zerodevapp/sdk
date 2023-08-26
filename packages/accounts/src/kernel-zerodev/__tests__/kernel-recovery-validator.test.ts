@@ -13,9 +13,6 @@ describe("Recovery Validator Test", async () => {
   const owneraddress = await mockOwner.getAddress();
 
   let globalRecoveryId = "";
-  let globalRecoveryCallData: Hash;
-  let globalMessageHash: Hash;
-  let globalMessageContent: string;
   let globalGuardianSignature: string;
 
   const guardianPvtKey =
@@ -85,6 +82,14 @@ describe("Recovery Validator Test", async () => {
     },
     { timeout: 100000 }
   );
+
+  it("should return correct recovery id", async () => {
+    const res = await validator.getRecoveryIdByOwner(
+      "0x28a292f4dC182492F7E23CFda4354bff688f6ea8",
+    );
+    expect(res).toBeDefined();
+    console.log("Recovery Id : ",res);
+  });
 
   it("Guardian should sign messsage correctly", async () => {
     async function signEIP712Message() {
