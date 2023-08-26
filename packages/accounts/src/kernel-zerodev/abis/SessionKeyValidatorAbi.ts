@@ -46,12 +46,12 @@ export const SessionKeyValidatorAbi = [
         type: "bytes32",
       },
       {
-        internalType: "uint48",
+        internalType: "ValidAfter",
         name: "validAfter",
         type: "uint48",
       },
       {
-        internalType: "uint48",
+        internalType: "ValidUntil",
         name: "validUntil",
         type: "uint48",
       },
@@ -109,7 +109,7 @@ export const SessionKeyValidatorAbi = [
     name: "validateSignature",
     outputs: [
       {
-        internalType: "uint256",
+        internalType: "ValidationData",
         name: "",
         type: "uint256",
       },
@@ -195,7 +195,7 @@ export const SessionKeyValidatorAbi = [
     name: "validateUserOp",
     outputs: [
       {
-        internalType: "uint256",
+        internalType: "ValidationData",
         name: "",
         type: "uint256",
       },

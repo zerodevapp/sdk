@@ -109,7 +109,7 @@ export const ECDSAValidatorAbi = [
     name: "validateSignature",
     outputs: [
       {
-        internalType: "uint256",
+        internalType: "ValidationData",
         name: "",
         type: "uint256",
       },
@@ -195,7 +195,7 @@ export const ECDSAValidatorAbi = [
     name: "validateUserOp",
     outputs: [
       {
-        internalType: "uint256",
+        internalType: "ValidationData",
         name: "validationData",
         type: "uint256",
       },

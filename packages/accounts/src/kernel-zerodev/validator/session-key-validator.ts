@@ -11,6 +11,7 @@ import {
   KernelBaseValidator,
   ValidatorMode,
   type KernelBaseValidatorParams,
+  type ValidatorPluginData,
 } from "./base.js";
 import {
   encodeFunctionData,
@@ -39,14 +40,15 @@ export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
   sessionKeyData: SessionKeyData;
 }
 
-export type SessionData = Pick<
+export type SessionKeyParams = Pick<
   SessionKeyValidatorParams,
   "sessionKeyData" | "enableSignature"
-> & {
-  sessionPrivateKey?: Hex;
-  initCode?: Hex;
-  accountAddress?: Address;
-};
+> &
+  ValidatorPluginData & {
+    sessionPrivateKey?: Hex;
+    initCode?: Hex;
+    accountAddress?: Address;
+  };
 
 export enum ParamCondition {
   EQUAL = 0,
@@ -318,16 +320,18 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return encodeAbiParameters(params, values);
   }
 
-  getSessionData(): SessionData {
+  getSessionData(): SessionKeyParams {
+    if (!this.selector || !this.executor) {
+      throw Error("Plugin Validator data params uninitialised");
+    }
     return {
+      selector: this.selector,
+      executor: this.executor,
+      validUntil: this.validUntil,
+      validAfter: this.validAfter,
       sessionKeyData: this.sessionKeyData,
       enableSignature: this.enableSignature,
     };
-  }
-
-  setSessionData(sessionData: SessionData) {
-    this.sessionKeyData = sessionData.sessionKeyData;
-    this.enableSignature = sessionData.enableSignature;
   }
 
   async signer(): Promise<SmartAccountSigner> {

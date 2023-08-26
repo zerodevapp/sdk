@@ -49,6 +49,7 @@ export interface KernelSmartAccountParams<
   index?: bigint;
   validator?: KernelBaseValidator;
   bundlerProvider?: PaymasterAndBundlerProviders;
+  defaultValidator?: KernelBaseValidator;
   initCode?: Hex;
 }
 
@@ -65,6 +66,7 @@ export class KernelSmartContractAccount<
   private readonly index: bigint;
   private initCode?: Hex;
   validator?: KernelBaseValidator;
+  defaultValidator?: KernelBaseValidator;
 
   constructor(params: KernelSmartAccountParams) {
     super({
@@ -76,6 +78,7 @@ export class KernelSmartContractAccount<
     this.index = params.index ?? 0n;
     this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
     this.validator = params.validator;
+    this.defaultValidator = params.defaultValidator;
     this.initCode = params.initCode;
   }
 
@@ -138,12 +141,27 @@ export class KernelSmartContractAccount<
     return this.initCode ?? this.getAccountInitCode();
   }
 
-  setInitCode(initCode: Hex) {
-    this.initCode = initCode;
+  getIndex(): bigint {
+    return this.index;
   }
 
-  setAccountAddress(accountAddress: Address) {
-    this.accountAddress = accountAddress;
+  async approvePlugin() {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    if (this.defaultValidator && !this.validator.getEnableSignature()) {
+      const { executor, selector, validAfter, validUntil } =
+        this.validator.getPluginValidatorData();
+      const enableSig = await this.defaultValidator.approveExecutor(
+        await this.getAddress(),
+        selector,
+        executor,
+        validUntil,
+        validAfter,
+        this.validator
+      );
+      this.validator.setEnableSignature(enableSig);
+    }
   }
 
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
@@ -151,7 +169,7 @@ export class KernelSmartContractAccount<
       throw new Error("Validator not connected");
     }
     if (
-      target.toLowerCase() === this.accountAddress?.toLowerCase() &&
+      target.toLowerCase() === (await this.getAddress()).toLowerCase() &&
       this.validator.shouldDelegateViaFallback()
     ) {
       return data;
@@ -247,7 +265,8 @@ export class KernelSmartContractAccount<
   }
 
   protected async getFactoryInitCode(): Promise<Hex> {
-    if (!this.validator) {
+    const validator = this.defaultValidator ?? this.validator;
+    if (!validator) {
       throw new Error("Validator not connected");
     }
     try {
@@ -259,10 +278,7 @@ export class KernelSmartContractAccount<
           encodeFunctionData({
             abi: KernelAccountAbi,
             functionName: "initialize",
-            args: [
-              this.validator.getAddress(),
-              await this.validator.getEnableData(),
-            ],
+            args: [validator.getAddress(), await validator.getEnableData()],
           }),
           this.index,
         ],

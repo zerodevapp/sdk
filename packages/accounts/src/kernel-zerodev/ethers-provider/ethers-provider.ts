@@ -26,9 +26,18 @@ export class ZeroDevEthersProvider<
     super();
     let accountProvider = new ValidatorProviders[validatorType](params);
     if (params.usePaymaster === undefined || params.usePaymaster) {
+      let paymasterConfig = params.opts?.paymasterConfig ?? {
+        policy: "VERIFYING_PAYMASTER",
+      };
+      paymasterConfig = {
+        ...paymasterConfig,
+        paymasterProvider:
+          params.opts?.paymasterConfig?.paymasterProvider ??
+          params.bundlerProvider,
+      };
       accountProvider = withZeroDevPaymasterAndData(
         accountProvider,
-        params.opts?.paymasterConfig ?? { policy: "VERIFYING_PAYMASTER" }
+        paymasterConfig
       ) as typeof accountProvider;
     }
     this.accountProvider = accountProvider;

@@ -7,7 +7,11 @@ import type { ExtendedValidatorProviderParams } from "./base.js";
 import type { ECDSAProvider } from "./ecdsa-provider.js";
 import type { ERC165SessionKeyProvider } from "./erc165-session-key-provider.js";
 import type { KillSwitchProvider } from "./kill-switch-provider.js";
-import type { SessionKeyProvider } from "./session-key-provider.js";
+import type {
+  SessionKeyProvider,
+  PrefillSessionData,
+  SessionKeyProviderParams,
+} from "./session-key-provider.js";
 
 export type ValidatorProviderTypeMap = {
   ECDSA: ECDSAProvider;
@@ -28,3 +32,5 @@ export type ValidatorProviderMap = {
     params: ValidatorProviderParamsMap[V]
   ) => ValidatorProviderTypeMap[V];
 };
+
+export type { PrefillSessionData, SessionKeyProviderParams };

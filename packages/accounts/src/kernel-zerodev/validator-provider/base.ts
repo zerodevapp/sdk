@@ -33,11 +33,10 @@ export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: ValidatorProviderParamsOpts<P>;
   usePaymaster?: boolean;
-}
-
-export interface PluginValidatorExecData {
-  enableSig: Hex;
-  initCode: Hex;
+  defaultProvider?: ValidatorProvider<
+    KernelBaseValidator,
+    KernelBaseValidatorParams
+  >;
 }
 
 export type ExtendedValidatorProviderParams<
@@ -50,6 +49,10 @@ export abstract class ValidatorProvider<
   V extends KernelBaseValidator,
   P extends KernelBaseValidatorParams
 > extends ZeroDevProvider {
+  protected defaultProvider?: ValidatorProvider<
+    KernelBaseValidator,
+    KernelBaseValidatorParams
+  >;
   constructor(
     params: ExtendedValidatorProviderParams<P>,
     validator: KernelBaseValidator
@@ -66,16 +69,24 @@ export abstract class ValidatorProvider<
         new KernelSmartContractAccount({
           projectId: params.projectId,
           validator,
+          defaultValidator: params.defaultProvider?.getValidator(),
           rpcClient: this.rpcClient,
           bundlerProvider: params.bundlerProvider,
+          index: params.defaultProvider?.getAccount().getIndex(),
           ...params.opts?.accountConfig,
         })
     );
     if (params.usePaymaster === undefined || params.usePaymaster) {
-      withZeroDevPaymasterAndData(
-        this,
-        params.opts?.paymasterConfig ?? { policy: "VERIFYING_PAYMASTER" }
-      );
+      let paymasterConfig = params.opts?.paymasterConfig ?? {
+        policy: "VERIFYING_PAYMASTER",
+      };
+      paymasterConfig = {
+        ...paymasterConfig,
+        paymasterProvider:
+          params.opts?.paymasterConfig?.paymasterProvider ??
+          params.bundlerProvider,
+      };
+      withZeroDevPaymasterAndData(this, paymasterConfig);
     }
   }
 
@@ -86,30 +97,6 @@ export abstract class ValidatorProvider<
       );
     }
     return this.account.getValidator() as unknown as V;
-  };
-
-  getPluginValidatorExecData = async (
-    pluginValidator: KernelBaseValidator
-  ): Promise<PluginValidatorExecData> => {
-    const pluginData = pluginValidator.getPluginValidatorData();
-    const enableSig = await this.getValidator().approveExecutor(
-      await this.account?.getAddress()!,
-      pluginData.selector,
-      pluginData.executor,
-      pluginData.validUntil,
-      pluginData.validAfter,
-      pluginValidator
-    );
-    const initCode = await this.getAccount().getInitCode();
-    return {
-      enableSig,
-      initCode,
-    };
-  };
-
-  setPluginValidatorExecData = async (execData: PluginValidatorExecData) => {
-    this.getValidator().setEnableSignature(execData.enableSig);
-    this.getAccount().setInitCode(execData.initCode);
   };
 
   getEncodedEnableData = async (enableData: Hex): Promise<Hex> => {

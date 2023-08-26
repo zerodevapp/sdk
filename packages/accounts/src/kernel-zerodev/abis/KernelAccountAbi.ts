@@ -227,12 +227,12 @@ export const KernelAccountAbi = [
       {
         components: [
           {
-            internalType: "uint48",
+            internalType: "ValidAfter",
             name: "validAfter",
             type: "uint48",
           },
           {
-            internalType: "uint48",
+            internalType: "ValidUntil",
             name: "validUntil",
             type: "uint48",
           },
@@ -614,7 +614,7 @@ export const KernelAccountAbi = [
     name: "validateUserOp",
     outputs: [
       {
-        internalType: "uint256",
+        internalType: "ValidationData",
         name: "validationData",
         type: "uint256",
       },

@@ -214,6 +214,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         );
       }
 
+      this.account.approvePlugin();
+
       request.signature = await this.account.validator.getSignature(request);
       try {
         hash = await this.rpcClient.sendUserOperation(

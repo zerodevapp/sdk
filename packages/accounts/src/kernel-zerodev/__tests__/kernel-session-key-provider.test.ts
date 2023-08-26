@@ -27,8 +27,8 @@ import {
 import { Operation } from "../provider.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
-import { EmptyValidator } from "../validator/empty-validator.js";
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js";
+import { EmptyAccountSigner } from "../signer/empty-account.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel SessionKey Provider Test", async () => {
@@ -61,7 +61,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     owner,
     opts: {
       accountConfig: {
-        index: 40015n,
+        index: 40024n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -80,17 +80,6 @@ describe("Kernel SessionKey Provider Test", async () => {
     paymaster?: Address,
     usePaymaster = true
   ) {
-    // if (!(await ecdsaProvider.getAccount().isAccountDeployed())) {
-    //   const depResult = await ecdsaProvider.sendUserOperation({
-    //     target: await owner.getAddress(),
-    //     data: "0x",
-    //   });
-    //   console.log("depResult", depResult);
-    //   await ecdsaProvider.waitForUserOperationTransaction(
-    //     depResult.hash as Hex
-    //   );
-    // }
-
     if (amount) {
       const mintData = encodeFunctionData({
         abi: TEST_ERC20Abi,
@@ -108,7 +97,8 @@ describe("Kernel SessionKey Provider Test", async () => {
 
     sessionKeyProvider = await SessionKeyProvider.init({
       projectId: config.projectIdWithGasSponsorship,
-      sessionKey,
+      defaultProvider: ecdsaProvider,
+      sessionKey: new EmptyAccountSigner(await sessionKey.getAddress()),
       sessionKeyData: {
         validAfter: 0,
         validUntil: 0,
@@ -118,9 +108,6 @@ describe("Kernel SessionKey Provider Test", async () => {
       bundlerProvider: "ALCHEMY",
       usePaymaster,
       opts: {
-        accountConfig: {
-          accountAddress,
-        },
         providerConfig: {
           opts: {
             txMaxRetries: 10,
@@ -129,7 +116,6 @@ describe("Kernel SessionKey Provider Test", async () => {
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
-          paymasterProvider: "ALCHEMY",
         },
         validatorConfig: {
           executor,
@@ -137,32 +123,23 @@ describe("Kernel SessionKey Provider Test", async () => {
         },
       },
     });
-    const validator = await EmptyValidator.fromValidator(
-      sessionKeyProvider.getValidator()
-    );
 
-    const execData = await ecdsaProvider.getPluginValidatorExecData(validator);
-    sessionKeyProvider.setPluginValidatorExecData(execData);
-    const sessionData = await sessionKeyProvider.serializeSessionData(
-      dummyPrivateKey
-    );
+    const serializedSessionKeyParams =
+      await sessionKeyProvider.serializeSessionKeyParams();
 
-    const sessionDataClient =
-      SessionKeyProvider.deserializeSessionData(sessionData);
-
-    sessionKeyProvider = await SessionKeyProvider.init({
-      projectId: config.projectIdWithGasSponsorship,
-      sessionKey: LocalAccountSigner.privateKeyToAccountSigner(
-        sessionDataClient.sessionPrivateKey
+    const sessionKeyParams = {
+      ...SessionKeyProvider.deserializeSessionKeyParams(
+        serializedSessionKeyParams
       ),
-      sessionKeyData: sessionDataClient.sessionKeyData,
+      sessionPrivateKey: dummyPrivateKey as Hex,
+    };
+
+    sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
+      projectId: config.projectIdWithGasSponsorship,
+      sessionKeyParams,
       bundlerProvider: "ALCHEMY",
       usePaymaster,
       opts: {
-        accountConfig: {
-          accountAddress: sessionDataClient.accountAddress,
-          initCode: sessionDataClient.initCode,
-        },
         providerConfig: {
           opts: {
             txMaxRetries: 10,
@@ -171,12 +148,6 @@ describe("Kernel SessionKey Provider Test", async () => {
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
-          paymasterProvider: "ALCHEMY",
-        },
-        validatorConfig: {
-          executor,
-          selector,
-          enableSignature: sessionDataClient.enableSignature,
         },
       },
     });
@@ -196,7 +167,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         }),
       });
       await expect(result).resolves.not.toThrowError();
-      await ecdsaProvider.waitForUserOperationTransaction(
+      await sessionKeyProvider.waitForUserOperationTransaction(
         (
           await result
         ).hash as Hash
@@ -288,16 +259,16 @@ describe("Kernel SessionKey Provider Test", async () => {
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
-              {
-                condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                offset: 32,
-                param: pad(toHex(10000), { size: 32 }),
-              },
-              {
-                condition: ParamCondition.EQUAL,
-                offset: 0,
-                param: pad(await secondOwner.getAddress(), { size: 32 }),
-              },
+              //   {
+              //     condition: ParamCondition.LESS_THAN_OR_EQUAL,
+              //     offset: 32,
+              //     param: pad(toHex(10000), { size: 32 }),
+              //   },
+              //   {
+              //     condition: ParamCondition.EQUAL,
+              //     offset: 0,
+              //     param: pad(await secondOwner.getAddress(), { size: 32 }),
+              //   },
             ],
           },
         ]

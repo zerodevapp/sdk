@@ -404,6 +404,7 @@ const ecdsaProvider = await ECDSAProvider.init({
 });
 
 // 2. Initialize SessionKey Validator Provider
+const sessionKey = LocalAccountSigner.privateKeyToAccountSigner(<SESSION_PRIVATE_KEY>);
 const accountAddress = await ecdsaProvider.getAccount().getAddress();
 const sig = getFunctionSelector(
     "transfer(address, uint256)"
@@ -431,32 +432,17 @@ const permissions = [
 
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
+      defaultProvider: ecdsaProvider, // Pass the ECDSAProvider as default provider
       sessionKey, // Session Key Signer
       sessionKeyData: {
         validAfter: 0,
         validUntil: 0,
         permissions,
         paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
-      },
-      opts: {
-        accountConfig: {
-          accountAddress,
-        }
-      },
+      }
 });
 
-// 3. Get the validator instance
-// If the session key is generated in the client and need to be approved from the server
-// create an EmptyValidator instance and send it to the server
-let validator = await EmptyValidator.fromValidator(sessionKeyProvider.getValidator());
-// OR else just get the validator instance from the SessionKeyProvider
-validator = sessionKeyProvider.getValidator();
-
-// 4. Get exec data from default ECDSA validator provider and set it in SessionKey Validator Provider
-const execData = await ecdsaProvider.getPluginValidatorExecData(validator);
-sessionKeyProvider.setPluginValidatorExecData(execData);
-
-// 5. Send the transaction
+// 3. Send the transaction
 const { hash } = await sessionKeyProvider.sendUserOperation({
           target: ERC20Address,
           data: encodeFunctionData({
@@ -465,31 +451,72 @@ const { hash } = await sessionKeyProvider.sendUserOperation({
                     args: ["RECIPIENT_ADDRESS", "AMOUNT_TO_TRANSFER"],
                 }),
 });
+```
 
+#### Creating Session Key on the server and using it on the client side
 
-// Creating session key on the server
-// After step 4. above do following server-side and send the sessionData to the client
-const sessionData = await sessionKeyProvider
-    .serializeSessionData(<SESSION_PRIVATE_KEY>);
-
-// On client side
-const sessionDataClient =
-    SessionKeyProvider.deserializeSessionData(sessionData);
+```ts
+// 1. Initilize the session key provider
 const sessionKeyProvider = await SessionKeyProvider.init({
       projectId, //ZeroDevProject
-      sessionKey: LocalAccountSigner.privateKeyToAccountSigner(sessionDataClient.sessionPrivateKey),
-      sessionKeyData: sessionDataClient.sessionKeyData,
-      opts: {
-        accountConfig: {
-          accountAddress: sessionDataClient.accountAddress,
-          initCode: sessionDataClient.initCode
-        },
-        validatorConfig: {
-          enableSignature: sessionDataClient.enableSignature
-        },
-      },
+      defaultProvider: ecdsaProvider,
+      sessionKey, // Session Key Signer
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      }
+});
+
+// 2. Serialize the session key params with the private key and send it to the client
+const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams(<SESSION_PRIVATE_KEY>);
+
+// On client side
+// 3. Deserialize the session key params
+const sessionKeyParams = SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams);
+
+// 4 Initialize the SessionKey Provider from the session key params
+const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
+      projectId, //ZeroDevProject
+      sessionKeyParams
     });
-// Then use sessionKeyProvider in same way as step 8 above
+```
+
+#### Creating Session Key on the client and approving on the server
+
+```ts
+// On the server
+// 1. Create an EmptyAccountSigner from the session key address sent from the client and pass to the provider
+const sessionKey = new EmptyAccountSigner(<SESSION_KEY_ADDRESS>);
+
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      defaultProvider: ecdsaProvider,
+      sessionKey,
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      }
+});
+
+// 2. Serialize the session key params and send it to the client
+const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams();
+
+// On client side
+// 3. Deserialize the session key params and pass the session private key to the object
+const sessionKeyParams = {
+    ...SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams)
+    sessionPrivateKey
+}
+
+// 4. Initialize the SessionKey Provider from the session key params
+const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
+      projectId, //ZeroDevProject
+      sessionKeyParams
+    });
 ```
 
 ## Components

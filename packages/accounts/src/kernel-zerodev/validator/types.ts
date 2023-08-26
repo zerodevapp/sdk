@@ -14,6 +14,11 @@ import type {
 import type {
   SessionKeyValidator,
   SessionKeyValidatorParams,
+  ParamCondition,
+  ParamRules,
+  Permission,
+  SessionKeyData,
+  SessionKeyParams,
 } from "./session-key-validator.js";
 
 export type SupportedValidators =
@@ -40,4 +45,12 @@ export type ValidatorMap = {
   [V in SupportedValidators]: new (
     params: ValidatorParamsMap[V]
   ) => ValidatorTypeMap[V];
+};
+
+export type {
+  ParamCondition,
+  ParamRules,
+  Permission,
+  SessionKeyData,
+  SessionKeyParams,
 };
