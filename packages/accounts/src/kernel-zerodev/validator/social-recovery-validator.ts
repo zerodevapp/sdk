@@ -7,12 +7,13 @@ import {
   type UserOperationRequest,
 } from "@alchemy/aa-core";
 import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
-import { encodeFunctionData, toBytes, type Hash } from "viem";
+import { encodeFunctionData, toBytes } from "viem";
 import { SocialRecoveryValidatorAbi } from "../abis/SocialRecoveryValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import axios from "axios";
+import type { SignTypedDataParams } from "@alchemy/aa-core";
 
 export interface SocialRecoveryValidatorParams
   extends KernelBaseValidatorParams {
@@ -20,6 +21,10 @@ export interface SocialRecoveryValidatorParams
 }
 
 export class SocialRecoveryValidator extends KernelBaseValidator {
+  
+  signTypedData(_params: SignTypedDataParams): Promise<`0x${string}`> {
+    throw new Error("Method not implemented.");
+  }
   protected owner: SmartAccountSigner;
 
   constructor(params: SocialRecoveryValidatorParams) {
