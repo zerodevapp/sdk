@@ -64,6 +64,10 @@ export class ZeroDevEthersProvider<
     return instance;
   }
 
+  getAccountProvider(): ValidatorProviderTypeMap[V] {
+    return this.accountProvider;
+  }
+
   /**
    * Rewrites the send method to use the account provider's EIP-1193
    * compliant request method
