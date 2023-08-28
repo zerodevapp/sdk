@@ -7,7 +7,11 @@ import {
   type UserOperationRequest,
   type SignTypedDataParams,
 } from "@alchemy/aa-core";
-import { KernelBaseValidator, type KernelBaseValidatorParams } from "./base.js";
+import {
+  KernelBaseValidator,
+  ValidatorMode,
+  type KernelBaseValidatorParams,
+} from "./base.js";
 import {
   concat,
   concatHex,
@@ -37,6 +41,7 @@ export class KillSwitchValidator extends KernelBaseValidator {
     super(params);
     this.guardian = params.guardian;
     this.delaySeconds = params.delaySeconds;
+    this.mode = params.mode ?? ValidatorMode.plugin;
   }
 
   public static async init(

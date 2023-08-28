@@ -73,7 +73,6 @@ describe("Kernel Kill Switch Provider Test", async () => {
 
     blockerKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
-      owner,
       guardian: secondOwner,
       delaySeconds: 10,
       opts: {
@@ -112,7 +111,6 @@ describe("Kernel Kill Switch Provider Test", async () => {
 
     sudoModeKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
-      owner,
       guardian: secondOwner,
       delaySeconds: 0,
       opts: {

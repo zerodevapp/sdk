@@ -1,8 +1,4 @@
-import {
-  type Hex,
-  type SendUserOperationResult,
-  type SmartAccountSigner,
-} from "@alchemy/aa-core";
+import { type Hex, type SendUserOperationResult } from "@alchemy/aa-core";
 import { ZeroDevProvider, type ZeroDevProviderConfig } from "../provider.js";
 import type {
   KernelBaseValidator,
@@ -34,10 +30,13 @@ export type ValidatorProviderParamsOpts<P extends KernelBaseValidatorParams> = {
 
 export interface ValidatorProviderParams<P extends KernelBaseValidatorParams> {
   projectId: string;
-  owner: SmartAccountSigner;
   bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: ValidatorProviderParamsOpts<P>;
   usePaymaster?: boolean;
+  defaultProvider?: ValidatorProvider<
+    KernelBaseValidator,
+    KernelBaseValidatorParams
+  >;
 }
 
 export type ExtendedValidatorProviderParams<
@@ -47,8 +46,13 @@ export type ExtendedValidatorProviderParams<
 // A simple facade abstraction for validator related provider operations
 // Needs to be implemented for each validator plugin
 export abstract class ValidatorProvider<
+  V extends KernelBaseValidator,
   P extends KernelBaseValidatorParams
 > extends ZeroDevProvider {
+  protected defaultProvider?: ValidatorProvider<
+    KernelBaseValidator,
+    KernelBaseValidatorParams
+  >;
   constructor(
     params: ExtendedValidatorProviderParams<P>,
     validator: KernelBaseValidator
@@ -64,28 +68,35 @@ export abstract class ValidatorProvider<
       () =>
         new KernelSmartContractAccount({
           projectId: params.projectId,
-          owner: params.owner,
           validator,
+          defaultValidator: params.defaultProvider?.getValidator(),
           rpcClient: this.rpcClient,
           bundlerProvider: params.bundlerProvider,
+          index: params.defaultProvider?.getAccount().getIndex(),
           ...params.opts?.accountConfig,
         })
     );
     if (params.usePaymaster === undefined || params.usePaymaster) {
-      withZeroDevPaymasterAndData(
-        this,
-        params.opts?.paymasterConfig ?? { policy: "VERIFYING_PAYMASTER" }
-      );
+      let paymasterConfig = params.opts?.paymasterConfig ?? {
+        policy: "VERIFYING_PAYMASTER",
+      };
+      paymasterConfig = {
+        ...paymasterConfig,
+        paymasterProvider:
+          params.opts?.paymasterConfig?.paymasterProvider ??
+          params.bundlerProvider,
+      };
+      withZeroDevPaymasterAndData(this, paymasterConfig);
     }
   }
 
-  getValidator = (): KernelBaseValidator => {
+  getValidator = (): V => {
     if (!isKernelAccount(this.account) || !this.account.validator) {
       throw new Error(
         "ValidatorProvider: account with validator is not set, did you call all connects first?"
       );
     }
-    return this.account.getValidator();
+    return this.account.getValidator() as unknown as V;
   };
 
   getEncodedEnableData = async (enableData: Hex): Promise<Hex> => {

@@ -8,17 +8,14 @@ import {
   type Hex,
   toBytes,
   type Transport,
-  pad,
-  toHex,
 } from "viem";
 import { parseAbiParameters } from "abitype";
-import { KernelBaseValidator, ValidatorMode } from "./validator/base.js";
+import { KernelBaseValidator } from "./validator/base.js";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi.js";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi.js";
 import {
   type BaseSmartAccountParams,
   BaseSmartContractAccount,
-  type SmartAccountSigner,
   type BatchUserOperationCallData,
   type UserOperationRequest,
   defineReadOnly,
@@ -38,17 +35,22 @@ import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";
 import { createZeroDevPublicErc4337Client } from "./client/create-client.js";
 import type { PaymasterAndBundlerProviders } from "./paymaster/types.js";
-import type { KillSwitchValidator } from "./validator/kill-switch-validator.js";
 
+export enum DeploymentState {
+  UNDEFINED = "0x0",
+  NOT_DEPLOYED = "0x1",
+  DEPLOYED = "0x2",
+}
 export interface KernelSmartAccountParams<
   TTransport extends Transport | FallbackTransport = Transport
 > extends Partial<BaseSmartAccountParams<TTransport>> {
   projectId: string;
-  owner: SmartAccountSigner;
   factoryAddress?: Address;
   index?: bigint;
   validator?: KernelBaseValidator;
   bundlerProvider?: PaymasterAndBundlerProviders;
+  defaultValidator?: KernelBaseValidator;
+  initCode?: Hex;
 }
 
 export function isKernelAccount(
@@ -60,10 +62,11 @@ export function isKernelAccount(
 export class KernelSmartContractAccount<
   TTransport extends Transport | FallbackTransport = Transport
 > extends BaseSmartContractAccount<TTransport> {
-  private owner: SmartAccountSigner;
   private readonly factoryAddress: Address;
   private readonly index: bigint;
+  private initCode?: Hex;
   validator?: KernelBaseValidator;
+  defaultValidator?: KernelBaseValidator;
 
   constructor(params: KernelSmartAccountParams) {
     super({
@@ -73,9 +76,10 @@ export class KernelSmartContractAccount<
       rpcClient: params.rpcClient ?? BUNDLER_URL,
     });
     this.index = params.index ?? 0n;
-    this.owner = params.owner;
     this.factoryAddress = params.factoryAddress ?? KERNEL_FACTORY_ADDRESS;
     this.validator = params.validator;
+    this.defaultValidator = params.defaultValidator;
+    this.initCode = params.initCode;
   }
 
   public static async init(
@@ -119,52 +123,55 @@ export class KernelSmartContractAccount<
     return "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c";
   }
 
-  async getDynamicDummySignature(
-    kernelAccountAddress: Address,
-    calldata: Hex
-  ): Promise<Hex> {
+  async getInitCode(): Promise<Hex> {
+    if (this.deploymentState === DeploymentState.DEPLOYED) {
+      return "0x";
+    }
+    const contractCode = await this.rpcProvider.getContractCode(
+      await this.getAddress()
+    );
+
+    if ((contractCode?.length ?? 0) > 2) {
+      this.deploymentState = DeploymentState.DEPLOYED;
+      return "0x";
+    } else {
+      this.deploymentState = DeploymentState.NOT_DEPLOYED;
+    }
+
+    return this.initCode ?? this.getAccountInitCode();
+  }
+
+  getIndex(): bigint {
+    return this.index;
+  }
+
+  async approvePlugin() {
     if (!this.validator) {
       throw new Error("Validator not connected");
     }
-
-    const dummyECDSASig =
-      "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
-    const validatorMode = await this.validator.resolveValidatorMode(
-      kernelAccountAddress,
-      calldata
-    );
-    if (validatorMode === ValidatorMode.enable) {
-      const enableData = await this.validator.getEnableData();
-      const enableDataLength = enableData.length / 2 - 1;
-      const enableSigLength = 65;
-      const staticDummySig = concatHex([
-        "0x000000000000000000000000",
-        this.validator.getAddress(),
-        "0x53dd285022D1512635823952d109dB39467a457E",
-      ]);
-      const pausedUntil = await (
-        this.validator as KillSwitchValidator
-      ).getPausedUntil();
-
-      return concatHex([
-        ValidatorMode.enable,
-        staticDummySig,
-        pad(toHex(enableDataLength), { size: 32 }),
-        enableData,
-        pad(toHex(enableSigLength), { size: 32 }),
-        dummyECDSASig,
-        pad(toHex(pausedUntil), { size: 6 }),
-        dummyECDSASig,
-      ]);
+    if (this.defaultValidator && !this.validator.getEnableSignature()) {
+      const { executor, selector, validAfter, validUntil } =
+        this.validator.getPluginValidatorData();
+      const enableSig = await this.defaultValidator.approveExecutor(
+        await this.getAddress(),
+        selector,
+        executor,
+        validUntil,
+        validAfter,
+        this.validator
+      );
+      this.validator.setEnableSignature(enableSig);
     }
-    return concatHex([validatorMode, dummyECDSASig]);
   }
 
   async encodeExecute(target: Hex, value: bigint, data: Hex): Promise<Hex> {
     if (!this.validator) {
       throw new Error("Validator not connected");
     }
-    if (target.toLowerCase() === this.accountAddress?.toLowerCase()) {
+    if (
+      target.toLowerCase() === (await this.getAddress()).toLowerCase() &&
+      this.validator.shouldDelegateViaFallback()
+    ) {
       return data;
     } else {
       return this.encodeExecuteAction(target, value, data, 0);
@@ -196,8 +203,11 @@ export class KernelSmartContractAccount<
 
   async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
     try {
+      if (!this.validator) {
+        throw new Error("Validator not connected");
+      }
       const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
-      let sig = await this.owner.signMessage(
+      let sig = await this.validator.signMessage(
         toBytes(hashMessage({ raw: formattedMessage }))
       );
       // If the account is undeployed, use ERC-6492
@@ -255,7 +265,8 @@ export class KernelSmartContractAccount<
   }
 
   protected async getFactoryInitCode(): Promise<Hex> {
-    if (!this.validator) {
+    const validator = this.defaultValidator ?? this.validator;
+    if (!validator) {
       throw new Error("Validator not connected");
     }
     try {
@@ -267,10 +278,7 @@ export class KernelSmartContractAccount<
           encodeFunctionData({
             abi: KernelAccountAbi,
             functionName: "initialize",
-            args: [
-              this.validator.getAddress(),
-              await this.validator.getEnableData(),
-            ],
+            args: [validator.getAddress(), await validator.getEnableData()],
           }),
           this.index,
         ],

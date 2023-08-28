@@ -71,6 +71,7 @@
   "gitHead": "19ba05a77e4f7a0e04f44f34eaecf675fe2c12f2",
   "dependencies": {
     "axios": "^1.4.0",
+    "merkletreejs": "^0.3.10",
     "viem": "^1.5.3"
   }
 }

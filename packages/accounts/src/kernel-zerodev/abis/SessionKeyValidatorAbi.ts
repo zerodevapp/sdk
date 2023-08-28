@@ -1,59 +1,15 @@
-export const ECDSAValidatorAbi = [
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "oldOwner",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "OwnerChanged",
-    type: "event",
-  },
+export const SessionKeyValidatorAbi = [
   {
     inputs: [
       {
         internalType: "bytes",
-        name: "",
+        name: "_data",
         type: "bytes",
       },
     ],
     name: "disable",
     outputs: [],
     stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    name: "ecdsaValidatorStorage",
-    outputs: [
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
   },
   {
@@ -73,7 +29,51 @@ export const ECDSAValidatorAbi = [
     inputs: [
       {
         internalType: "address",
-        name: "_caller",
+        name: "sessionKey",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "kernel",
+        type: "address",
+      },
+    ],
+    name: "sessionData",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "merkleRoot",
+        type: "bytes32",
+      },
+      {
+        internalType: "ValidAfter",
+        name: "validAfter",
+        type: "uint48",
+      },
+      {
+        internalType: "ValidUntil",
+        name: "validUntil",
+        type: "uint48",
+      },
+      {
+        internalType: "address",
+        name: "paymaster",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "enabled",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
         type: "address",
       },
       {
@@ -90,19 +90,19 @@ export const ECDSAValidatorAbi = [
         type: "bool",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
   {
     inputs: [
       {
         internalType: "bytes32",
-        name: "hash",
+        name: "",
         type: "bytes32",
       },
       {
         internalType: "bytes",
-        name: "signature",
+        name: "",
         type: "bytes",
       },
     ],
@@ -114,7 +114,7 @@ export const ECDSAValidatorAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -178,12 +178,12 @@ export const ECDSAValidatorAbi = [
           },
         ],
         internalType: "struct UserOperation",
-        name: "_userOp",
+        name: "userOp",
         type: "tuple",
       },
       {
         internalType: "bytes32",
-        name: "_userOpHash",
+        name: "userOpHash",
         type: "bytes32",
       },
       {
@@ -196,7 +196,7 @@ export const ECDSAValidatorAbi = [
     outputs: [
       {
         internalType: "ValidationData",
-        name: "validationData",
+        name: "",
         type: "uint256",
       },
     ],

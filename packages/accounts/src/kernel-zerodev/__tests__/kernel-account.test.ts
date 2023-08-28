@@ -330,7 +330,7 @@ describe("Kernel Account Tests", () => {
 
       const mintData = encodeFunctionData({
         abi: TEST_ERC20Abi,
-        args: [await ecdsaProvider.getAddress(), "700000000000000000"],
+        args: [await ecdsaProvider.getAddress(), 700000000000000000n],
         functionName: "mint",
       });
       const result = ecdsaProvider.sendUserOperation({
@@ -377,12 +377,12 @@ describe("Kernel Account Tests", () => {
 
       const mintData = encodeFunctionData({
         abi: TEST_ERC20Abi,
-        args: [await ecdsaProvider.getAddress(), "133700000000000000"],
+        args: [await ecdsaProvider.getAddress(), 133700000000000000n],
         functionName: "mint",
       });
       const transferData = encodeFunctionData({
         abi: TEST_ERC20Abi,
-        args: [await owner.getAddress(), "133700000000"],
+        args: [await owner.getAddress(), 133700000000n],
         functionName: "transfer",
       });
       const result = ecdsaProvider.sendUserOperation([

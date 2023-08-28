@@ -1,8 +1,6 @@
 import { getChainId } from "../api/index.js";
 import {
-  SmartAccountProvider,
   getChain,
-  type HttpTransport,
   BaseSmartContractAccount,
   defineReadOnly,
   type AccountMiddlewareFn,
@@ -14,22 +12,34 @@ import {
 import { ZeroDevAccountSigner } from "./account-signer.js";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import type { SupportedValidators } from "../validator/types.js";
-import type { ValidatorProviderParamsMap } from "../validator-provider/types.js";
+import type {
+  ValidatorProviderParamsMap,
+  ValidatorProviderTypeMap,
+} from "../validator-provider/types.js";
 import { ValidatorProviders } from "../validator-provider/index.js";
 import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
 
 export class ZeroDevEthersProvider<
   V extends SupportedValidators
 > extends JsonRpcProvider {
-  readonly accountProvider: SmartAccountProvider<HttpTransport>;
+  readonly accountProvider: ValidatorProviderTypeMap[V];
   constructor(validatorType: V, params: ValidatorProviderParamsMap[V]) {
     super();
     let accountProvider = new ValidatorProviders[validatorType](params);
     if (params.usePaymaster === undefined || params.usePaymaster) {
+      let paymasterConfig = params.opts?.paymasterConfig ?? {
+        policy: "VERIFYING_PAYMASTER",
+      };
+      paymasterConfig = {
+        ...paymasterConfig,
+        paymasterProvider:
+          params.opts?.paymasterConfig?.paymasterProvider ??
+          params.bundlerProvider,
+      };
       accountProvider = withZeroDevPaymasterAndData(
         accountProvider,
-        params.opts?.paymasterConfig ?? { policy: "VERIFYING_PAYMASTER" }
-      ) as typeof accountProvider;
+        paymasterConfig
+      ) as ValidatorProviderTypeMap[V];
     }
     this.accountProvider = accountProvider;
   }
@@ -57,6 +67,10 @@ export class ZeroDevEthersProvider<
     return instance;
   }
 
+  getAccountProvider(): ValidatorProviderTypeMap[V] {
+    return this.accountProvider;
+  }
+
   /**
    * Rewrites the send method to use the account provider's EIP-1193
    * compliant request method
@@ -78,7 +92,11 @@ export class ZeroDevEthersProvider<
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
   ): ZeroDevAccountSigner<V> {
-    defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn));
+    defineReadOnly(
+      this,
+      "accountProvider",
+      this.accountProvider.connect(fn) as ValidatorProviderTypeMap[V]
+    );
     return this.getAccountSigner();
   }
 

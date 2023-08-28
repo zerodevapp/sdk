@@ -1,5 +1,4 @@
 import {
-  BaseSmartContractAccount,
   resolveProperties,
   type AccountMiddlewareFn,
   type FeeDataMiddleware,
@@ -23,6 +22,7 @@ import {
 } from "@ethersproject/providers";
 import { ZeroDevEthersProvider } from "./ethers-provider.js";
 import type { SupportedValidators } from "../validator/types.js";
+import type { KernelSmartContractAccount } from "../account.js";
 
 const hexlifyOptional = (value: any): `0x${string}` | undefined => {
   if (value == null) {
@@ -36,14 +36,14 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
   extends Signer
   implements TypedDataSigner
 {
-  private account?: BaseSmartContractAccount;
+  private account?: KernelSmartContractAccount;
 
   sendUserOperation;
   waitForUserOperationTransaction;
 
   constructor(readonly provider: ZeroDevEthersProvider<V>) {
     super();
-    this.account = this.provider.accountProvider.account;
+    this.account = this.provider.accountProvider.getAccount();
 
     this.sendUserOperation =
       this.provider.accountProvider.sendUserOperation.bind(

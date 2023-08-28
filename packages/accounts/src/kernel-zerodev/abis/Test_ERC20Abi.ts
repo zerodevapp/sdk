@@ -154,4 +154,4 @@ export const TEST_ERC20Abi = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+] as const;

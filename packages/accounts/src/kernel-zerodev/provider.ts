@@ -56,8 +56,8 @@ export type ZeroDevProviderConfig = {
 };
 
 export enum Operation {
-  Call,
-  DelegateCall,
+  Call = 0,
+  DelegateCall = 1,
 }
 
 type UserOpDataOperationTypes<T> = T extends UserOperationCallData
@@ -213,6 +213,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
           )}`
         );
       }
+
+      this.account.approvePlugin();
 
       request.signature = await this.account.validator.getSignature(request);
       try {

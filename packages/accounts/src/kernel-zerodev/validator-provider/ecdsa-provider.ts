@@ -10,7 +10,10 @@ import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 
-export class ECDSAProvider extends ValidatorProvider<ECDSAValidatorParams> {
+export class ECDSAProvider extends ValidatorProvider<
+  ECDSAValidator,
+  ECDSAValidatorParams
+> {
   constructor(params: ExtendedValidatorProviderParams<ECDSAValidatorParams>) {
     const chain =
       typeof params.opts?.providerConfig?.chain === "number"

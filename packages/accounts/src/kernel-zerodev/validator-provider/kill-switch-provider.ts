@@ -11,7 +11,10 @@ import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { KILL_SWITCH_VALIDATOR_ADDRESS } from "../constants.js";
 
-export class KillSwitchProvider extends ValidatorProvider<KillSwitchValidatorParams> {
+export class KillSwitchProvider extends ValidatorProvider<
+  KillSwitchValidator,
+  KillSwitchValidatorParams
+> {
   constructor(
     params: ExtendedValidatorProviderParams<KillSwitchValidatorParams>
   ) {

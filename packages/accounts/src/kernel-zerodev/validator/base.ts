@@ -43,10 +43,17 @@ export interface KernelBaseValidatorParams {
   validUntil?: number;
   validAfter?: number;
   executor?: Address;
-  selector?: string;
+  selector?: Hex;
   rpcUrl?: string;
   bundlerProvider?: PaymasterAndBundlerProviders;
 }
+
+export type ValidatorPluginData = Required<
+  Pick<
+    KernelBaseValidatorParams,
+    "executor" | "selector" | "validAfter" | "validUntil"
+  >
+>;
 
 //Kernel wallet implementation separates out validation and execution phase. It allows you to have
 // custom wrapper logic for the validation phase in addition to signature of choice.
@@ -60,7 +67,7 @@ export abstract class KernelBaseValidator {
   protected validUntil: number;
   protected validAfter: number;
   protected executor?: Address;
-  protected selector?: string;
+  protected selector?: Hex;
   protected rpcUrl?: string;
   protected bundlerProvider?: PaymasterAndBundlerProviders;
   publicClient?: PublicClient<Transport, Chain>;
@@ -98,12 +105,28 @@ export abstract class KernelBaseValidator {
 
   abstract signer(): Promise<SmartAccountSigner>;
 
-  abstract getDummyUserOpSignature(): Promise<Hex>;
+  abstract getDummyUserOpSignature(callData?: Hex): Promise<Hex>;
 
   abstract isPluginEnabled(
     kernelAccountAddress: Address,
     selector: Hex
   ): Promise<boolean>;
+
+  shouldDelegateViaFallback(): boolean {
+    return true;
+  }
+
+  getPluginValidatorData(): ValidatorPluginData {
+    if (!this.selector || !this.executor) {
+      throw Error("Plugin Validator data params uninitialised");
+    }
+    return {
+      selector: this.selector,
+      executor: this.executor,
+      validAfter: this.validAfter,
+      validUntil: this.validUntil,
+    };
+  }
 
   async getDynamicDummySignature(
     kernelAccountAddress: Address,
@@ -122,7 +145,7 @@ export abstract class KernelBaseValidator {
       const staticDummySig = concatHex([
         "0x000000000000000000000000",
         this.getAddress(),
-        "0x53dd285022D1512635823952d109dB39467a457E",
+        this.executor!,
       ]);
 
       return concatHex([
@@ -132,10 +155,13 @@ export abstract class KernelBaseValidator {
         enableData,
         pad(toHex(enableSigLength), { size: 32 }),
         dummyECDSASig,
-        await this.getDummyUserOpSignature(),
+        await this.getDummyUserOpSignature(calldata),
       ]);
     }
-    return concatHex([validatorMode, await this.getDummyUserOpSignature()]);
+    return concatHex([
+      validatorMode,
+      await this.getDummyUserOpSignature(calldata),
+    ]);
   }
 
   setEnableSignature(enableSignature: Hex) {

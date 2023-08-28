@@ -9,13 +9,13 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers
+yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk
 ```
 
 via `npm`
 
 ```bash
-npm i -s @zerodev/sdk @alchemy/aa-core @alchemy/aa-ethers
+npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
 ```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
@@ -255,7 +255,6 @@ const selector = getFunctionSelector("toggleKillSwitch()");
 // 4. Initialize KillSwitch Validator Provider
 const blockerKillSwitchProvider = await KillSwitchProvider.init({
   projectId, // zeroDev projectId
-  owner,
   guardian, // Guardian signer
   delaySeconds: 1000, // Delay in seconds
   opts: {
@@ -297,7 +296,6 @@ await blockerKillSwitchProvider.waitForUserOperationTransaction(
 // 7. Get KillSwitch validator provider instance with SUDO mode
 const sudoModeKillSwitchProvider = await KillSwitchProvider.init({
   projectId, // zeroDev projectId
-  owner,
   guardian,
   delaySeconds: 0,
   opts: {
@@ -351,7 +349,6 @@ const selector = getFunctionSelector(
 // 4. Initialize ERC165SessionKey Validator Provider
 const erc165SessionKeyProvider = await ERC165SessionKeyProvider.init({
   projectId, // ZeroDev projectId
-  owner,
   sessionKey, // Session Key signer
   sessionKeyData: {
     selector, // Function selector in the executor contract to execute
@@ -395,6 +392,131 @@ const { hash } = await erc165SessionKeyProvider.sendUserOperation({
     args: ["TOKEN_ADDRESS", "TOKEN_ID", "RECIPIENT_ADDRESS"],
   }),
 });
+```
+
+### Session Key Validator
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Initialize SessionKey Validator Provider
+const sessionKey = LocalAccountSigner.privateKeyToAccountSigner(<SESSION_PRIVATE_KEY>);
+const accountAddress = await ecdsaProvider.getAccount().getAddress();
+const sig = getFunctionSelector(
+    "transfer(address, uint256)"
+  )
+const permissions = [
+    {
+        target: <ERC20Address>, // address of the target contract
+        valueLimit: 0, // max value the session key can use in tx
+        sig, // The function selector of the function that can be called on the target contract
+        operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL
+        rules: [ // Parameter rules
+        {
+            condition: ParamCondition.LESS_THAN_OR_EQUAL, // The condition to check
+            offset: 32, // The offset where the param is in the calldata
+            param: pad(toHex(10000), { size: 32 }), // The value to check in condition
+        },
+        {
+            condition: ParamCondition.EQUAL,
+            offset: 0,
+            param: pad(<SPECIFIC_ADDRESS>, { size: 32 }),
+        },
+        ],
+    }
+]
+
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      defaultProvider: ecdsaProvider, // Pass the ECDSAProvider as default provider
+      sessionKey, // Session Key Signer
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      }
+});
+
+// 3. Send the transaction
+const { hash } = await sessionKeyProvider.sendUserOperation({
+          target: ERC20Address,
+          data: encodeFunctionData({
+                    abi: TEST_ERC20Abi,
+                    functionName: "transfer",
+                    args: ["RECIPIENT_ADDRESS", "AMOUNT_TO_TRANSFER"],
+                }),
+});
+```
+
+#### Creating Session Key on the server and using it on the client side
+
+```ts
+// 1. Initilize the session key provider
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      defaultProvider: ecdsaProvider,
+      sessionKey, // Session Key Signer
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      }
+});
+
+// 2. Serialize the session key params with the private key and send it to the client
+const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams(<SESSION_PRIVATE_KEY>);
+
+// On client side
+// 3. Deserialize the session key params
+const sessionKeyParams = SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams);
+
+// 4 Initialize the SessionKey Provider from the session key params
+const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
+      projectId, //ZeroDevProject
+      sessionKeyParams
+    });
+```
+
+#### Creating Session Key on the client and approving on the server
+
+```ts
+// On the server
+// 1. Create an EmptyAccountSigner from the session key address sent from the client and pass to the provider
+const sessionKey = new EmptyAccountSigner(<SESSION_KEY_ADDRESS>);
+
+const sessionKeyProvider = await SessionKeyProvider.init({
+      projectId, //ZeroDevProject
+      defaultProvider: ecdsaProvider,
+      sessionKey,
+      sessionKeyData: {
+        validAfter: 0,
+        validUntil: 0,
+        permissions,
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+      }
+});
+
+// 2. Serialize the session key params and send it to the client
+const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams();
+
+// On client side
+// 3. Deserialize the session key params and pass the session private key to the object
+const sessionKeyParams = {
+    ...SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams)
+    sessionPrivateKey
+}
+
+// 4. Initialize the SessionKey Provider from the session key params
+const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
+      projectId, //ZeroDevProject
+      sessionKeyParams
+    });
 ```
 
 ## Components

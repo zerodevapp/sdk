@@ -11,7 +11,10 @@ import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { ERC165_SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
 
-export class ERC165SessionKeyProvider extends ValidatorProvider<ERC165SessionKeyValidatorParams> {
+export class ERC165SessionKeyProvider extends ValidatorProvider<
+  ERC165SessionKeyValidator,
+  ERC165SessionKeyValidatorParams
+> {
   constructor(
     params: ExtendedValidatorProviderParams<ERC165SessionKeyValidatorParams>
   ) {
