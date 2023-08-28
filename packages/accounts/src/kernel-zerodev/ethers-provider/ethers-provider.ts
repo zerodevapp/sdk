@@ -12,7 +12,10 @@ import {
 import { ZeroDevAccountSigner } from "./account-signer.js";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import type { SupportedValidators } from "../validator/types.js";
-import type { ValidatorProviderParamsMap, ValidatorProviderTypeMap } from "../validator-provider/types.js";
+import type {
+  ValidatorProviderParamsMap,
+  ValidatorProviderTypeMap,
+} from "../validator-provider/types.js";
 import { ValidatorProviders } from "../validator-provider/index.js";
 import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
 
@@ -89,7 +92,11 @@ export class ZeroDevEthersProvider<
   connectToAccount(
     fn: (rpcClient: PublicErc4337Client) => BaseSmartContractAccount
   ): ZeroDevAccountSigner<V> {
-    defineReadOnly(this, "accountProvider", this.accountProvider.connect(fn) as ValidatorProviderTypeMap[V]);
+    defineReadOnly(
+      this,
+      "accountProvider",
+      this.accountProvider.connect(fn) as ValidatorProviderTypeMap[V]
+    );
     return this.getAccountSigner();
   }
 
