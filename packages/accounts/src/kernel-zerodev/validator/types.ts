@@ -14,7 +14,6 @@ import type {
 import type {
   SessionKeyValidator,
   SessionKeyValidatorParams,
-  ParamCondition,
   ParamRules,
   Permission,
   SessionKeyData,
@@ -47,10 +46,4 @@ export type ValidatorMap = {
   ) => ValidatorTypeMap[V];
 };
 
-export type {
-  ParamCondition,
-  ParamRules,
-  Permission,
-  SessionKeyData,
-  SessionKeyParams,
-};
+export type { ParamRules, Permission, SessionKeyData, SessionKeyParams };

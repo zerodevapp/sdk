@@ -12,6 +12,7 @@ export {
 export * from "./kernel-zerodev/validator/index.js";
 export type * from "./kernel-zerodev/validator/types.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
+export { ParamCondition } from "./kernel-zerodev/validator/session-key-validator.js";
 
 // Validator Provider exports
 export { ValidatorProvider } from "./kernel-zerodev/validator-provider/base.js";
@@ -27,7 +28,7 @@ export * from "./kernel-zerodev/validator-provider/index.js";
 export type * from "./kernel-zerodev/paymaster/types.js";
 export { KernelSmartContractAccount } from "./kernel-zerodev/account.js";
 export type { KernelSmartAccountParams } from "./kernel-zerodev/account.js";
-export { ZeroDevProvider } from "./kernel-zerodev/provider.js";
+export { ZeroDevProvider, Operation } from "./kernel-zerodev/provider.js";
 
 // Utils exports
 export * from "./kernel-zerodev/utils.js";
