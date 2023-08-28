@@ -119,15 +119,6 @@ export const signTypedData = async (
   );
 };
 
-export const getCredentials = async (projectId: string, apiUrl = API_URL) => {
-  const response = await axios.get(`${apiUrl}/projects/${projectId}/wallets`);
-  const credentials = response.data;
-  return credentials.map((credential: string) => ({
-    id: base64URLStringToBuffer(credential),
-    type: "public-key",
-  }));
-};
-
 // https://github.com/MasterKale/SimpleWebAuthn/blob/master/packages/browser/src/helpers/base64URLStringToBuffer.ts#L8
 export function base64URLStringToBuffer(base64URLString: string): ArrayBuffer {
   // Convert from Base64URL to Base64

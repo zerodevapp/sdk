@@ -4,7 +4,6 @@ import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
   base64UrlEncode,
   generateRandomBuffer,
-  getCredentials,
   signMessage,
   signTypedData,
 } from "./utils.js";
@@ -27,7 +26,7 @@ export async function getPasskeyOwner({
             //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
-            allowCredentials: await getCredentials(projectId),
+            // allowCredentials: await getCredentials(projectId),
           },
         })
       );
