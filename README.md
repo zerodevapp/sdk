@@ -324,6 +324,7 @@ await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
 );
 ```
 
+<!--
 ### ERC165 Session Key Validator
 
 ```ts
@@ -393,6 +394,8 @@ const { hash } = await erc165SessionKeyProvider.sendUserOperation({
   }),
 });
 ```
+
+-->
 
 ### Session Key Validator
 
