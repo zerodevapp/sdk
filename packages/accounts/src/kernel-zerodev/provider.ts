@@ -183,24 +183,28 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     let hash: string = "";
     let i = 0;
     const nonce = await this.account.getNonce();
-    const uoStruct = await asyncPipe(
-      this.dummyPaymasterDataMiddleware,
-      this.feeDataGetter,
-      this.paymasterDataMiddleware,
-      this.gasEstimator,
-      this.customMiddleware ?? noOpMiddleware,
-      async (struct) => ({ ...struct, ...overrides })
-    )({
-      initCode,
-      sender: this.getAddress(),
-      nonce,
-      callData,
-      signature: await this.account
-        .getValidator()
-        .getDynamicDummySignature(await this.getAddress(), callData as Hex),
-    } as UserOperationStruct);
+    let uoStruct: UserOperationStruct;
     let request: UserOperationStruct;
+    let maxFeePerGas, maxPriorityFeePerGas;
     do {
+      uoStruct = await asyncPipe(
+        this.dummyPaymasterDataMiddleware,
+        this.feeDataGetter,
+        this.paymasterDataMiddleware,
+        this.gasEstimator,
+        this.customMiddleware ?? noOpMiddleware,
+        async (struct) => ({ ...struct, ...overrides })
+      )({
+        initCode,
+        sender: this.getAddress(),
+        nonce,
+        callData,
+        signature: await this.account
+          .getValidator()
+          .getDynamicDummySignature(await this.getAddress(), callData as Hex),
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+      } as UserOperationStruct);
       request = deepHexlify(await resolveProperties(uoStruct));
 
       if (!isValidRequest(request)) {
@@ -224,16 +228,14 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         );
       } catch (error: any) {
         if (this.isReplacementOpError(error) && i++ < this.sendTxMaxRetries) {
-          uoStruct.maxFeePerGas = (BigInt(request.maxFeePerGas) * 113n) / 100n;
-          uoStruct.maxPriorityFeePerGas =
+          maxFeePerGas = (BigInt(request.maxFeePerGas) * 113n) / 100n;
+          maxPriorityFeePerGas =
             (BigInt(request.maxPriorityFeePerGas) * 113n) / 100n;
 
           console.log(
             `After ${
               this.sendTxRetryIntervalMs / 60000
-            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${
-              uoStruct.maxFeePerGas
-            }, maxPriorityFeePerGas: ${uoStruct.maxPriorityFeePerGas}`
+            } minutes, resending tx with Increased Gas fees: maxFeePerGas: ${maxFeePerGas}, maxPriorityFeePerGas: ${maxPriorityFeePerGas}`
           );
           await new Promise((resolve) =>
             setTimeout(resolve, this.sendTxRetryIntervalMs)

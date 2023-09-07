@@ -25,7 +25,8 @@ export const zeroDevPaymasterAndDataMiddleware = <
 >["0"] => {
   return {
     dummyPaymasterDataMiddleware: async (struct) => {
-      struct.paymasterAndData = "0x";
+      struct.paymasterAndData =
+        "0xe93eca6595fe94091dc1af46aac2a8b5d79907700000000000000000000000000000000000000000000000000000000064ee5cd9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
       return struct;
     },
     paymasterDataMiddleware: async (struct) => {

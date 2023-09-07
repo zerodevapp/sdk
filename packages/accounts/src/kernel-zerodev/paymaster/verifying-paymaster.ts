@@ -16,13 +16,15 @@ export class VerifyingPaymaster extends Paymaster {
   }
   async getPaymasterResponse(
     struct: UserOperationStruct,
-    paymasterProvider?: PaymasterAndBundlerProviders
+    paymasterProvider?: PaymasterAndBundlerProviders,
+    shouldOverrideFee?: boolean
   ): Promise<UserOperationStruct> {
     try {
       const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
       const paymasterResp = await this.signUserOp({
         userOp: hexifiedUserOp,
         paymasterProvider,
+        shouldOverrideFee
       });
       if (paymasterResp) {
         return {
