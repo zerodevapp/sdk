@@ -24,7 +24,7 @@ export class VerifyingPaymaster extends Paymaster {
       const paymasterResp = await this.signUserOp({
         userOp: hexifiedUserOp,
         paymasterProvider,
-        shouldOverrideFee
+        shouldOverrideFee,
       });
       if (paymasterResp) {
         return {

@@ -194,7 +194,7 @@ export class TokenPaymaster extends Paymaster {
           erc20UserOp,
           erc20CallData: erc20UserOp.callData,
           paymasterProvider,
-          shouldOverrideFee
+          shouldOverrideFee,
         });
         if (paymasterResp) {
           return {
