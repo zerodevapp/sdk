@@ -9,7 +9,7 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodevapp/sdk
+yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
 ```
 
 via `npm`
@@ -324,6 +324,7 @@ await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
 );
 ```
 
+<!--
 ### ERC165 Session Key Validator
 
 ```ts
@@ -393,6 +394,8 @@ const { hash } = await erc165SessionKeyProvider.sendUserOperation({
   }),
 });
 ```
+
+-->
 
 ### Session Key Validator
 
