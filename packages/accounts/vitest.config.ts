@@ -5,7 +5,11 @@ export default defineProject({
     singleThread: true,
     globals: true,
     setupFiles: ["../../.vitest/setupTests.ts"],
-    exclude: [...configDefaults.exclude, "**/e2e-tests/**/*.test.ts", "**/e2e-tests/**/*.spec.ts"],
+    exclude: [
+      ...configDefaults.exclude,
+      "**/e2e-tests/**/*.test.ts",
+      "**/e2e-tests/**/*.spec.ts",
+    ],
     name: "accounts",
   },
 });

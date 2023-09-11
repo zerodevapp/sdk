@@ -50,7 +50,6 @@ jobs:
           TEAM_ID: ${{ secrets.TEAM_ID }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: yarn test:e2e
-
 #       # Lerna publish will, compute the new version, update files, run precommit hooks, tag, publish, and push change log
 #       - name: Publish using Lerna
 #         if: inputs.publish

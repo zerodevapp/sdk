@@ -18,7 +18,7 @@ export abstract class Paymaster {
     struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders,
     shouldOverrideFee?: boolean
-  ): Promise<UserOperationStruct>;
+  ): Promise<UserOperationStruct | undefined>;
   protected async signUserOp({
     userOp,
     callData,

@@ -44,16 +44,10 @@
     "test:run": "vitest run"
   },
   "devDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.23",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.23",
     "@turnkey/ethers": "^0.16.5",
     "typescript": "^5.0.4",
     "typescript-template": "*",
     "vitest": "^0.31.0"
-  },
-  "peerDependencies": {
-    "@alchemy/aa-core": "^0.1.0-alpha.23",
-    "@alchemy/aa-ethers": "^0.1.0-alpha.23"
   },
   "publishConfig": {
     "access": "public",
@@ -71,6 +65,8 @@
   "dependencies": {
     "axios": "^1.4.0",
     "merkletreejs": "^0.3.10",
-    "viem": "^1.5.3"
+    "viem": "^1.5.3",
+    "@alchemy/aa-core": "0.1.0-alpha.23",
+    "@alchemy/aa-ethers": "0.1.0-alpha.23"
   }
 }

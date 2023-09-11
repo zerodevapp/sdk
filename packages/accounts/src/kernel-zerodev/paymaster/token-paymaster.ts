@@ -159,7 +159,7 @@ export class TokenPaymaster extends Paymaster {
     struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders,
     shouldOverrideFee?: boolean
-  ): Promise<UserOperationStruct> {
+  ): Promise<UserOperationStruct | undefined> {
     try {
       const mainCall = await this.decodeMainCallFromCallData(
         struct.sender,
@@ -197,15 +197,12 @@ export class TokenPaymaster extends Paymaster {
           shouldOverrideFee,
         });
         if (paymasterResp) {
-          return {
-            ...struct,
-            ...paymasterResp,
-          };
+          return paymasterResp;
         }
       }
     } catch (error) {
-      return struct;
+      console.log(error);
     }
-    return struct;
+    return;
   }
 }
