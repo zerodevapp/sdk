@@ -41,8 +41,7 @@
     "build:types": "tsc --project tsconfig.build.json --module esnext --declarationDir ./dist/types --emitDeclarationOnly --declaration --declarationMap",
     "clean": "rm -rf ./dist",
     "test": "vitest",
-    "test:run": "vitest run",
-    "test:e2e": "cd e2e-tests && yarn test"
+    "test:run": "vitest run"
   },
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.23",
