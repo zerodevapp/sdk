@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      #   with:
-      #     token: ${{ secrets.ALCHEMY_BOT_PAT }}
+        with:
+          submodules: true
 
       # - name: Set Github User Details
       #   run: |
@@ -36,9 +36,6 @@ jobs:
         with:
           node-version: "18.13"
           cache: "yarn"
-        
-      - name: Pull submodules recursively
-        run: git submodule update --init --recursive
 
       - name: Install dependencies
         run: yarn
