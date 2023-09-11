@@ -9,13 +9,13 @@ Follow the instructions below to install the packages.
 via `yarn`
 
 ```bash
-yarn add @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
+yarn add @zerodev/sdk
 ```
 
 via `npm`
 
 ```bash
-npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
+npm i -s @zerodev/sdk
 ```
 
 ## Example Usage to Interact with [Kernel Accounts](https://github.com/zerodevapp/kernel/blob/main/src/Kernel.sol)
@@ -24,11 +24,11 @@ npm i -s @alchemy/aa-core @alchemy/aa-ethers @zerodev/sdk
 
 ```ts
 import { ECDSAValidator } from "@zerodev/sdk";
-import { PrivateKeySigner } from "@alchemy/aa-core";
+import { LocalAccountSigner } from "@alchemy/aa-core";
 
 // 1. define the EOA owner of the Smart Account
 // This is just one exapmle of how to interact with EOAs, feel free to use any other interface
-const owner = PrivateKeySigner.privateKeyToAccountSigner(PRIVATE_KEY);
+const owner = LocalAccountSigner.privateKeyToAccountSigner(PRIVATE_KEY);
 
 // 2. Create a ZeroDev Provider
 let ecdsaProvider = await ECDSAProvider.init({
@@ -321,6 +321,19 @@ let result = await sudoModeKillSwitchProvider.sendUserOperation({
 
 await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
   result.hash as Hex
+);
+```
+
+#### Force Unblock
+
+```ts
+let result = await sudoModeKillSwitchProvider.sendUserOperation({
+  target: accountAddress,
+  data: selector,
+});
+
+await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
+  result.hash as Hash
 );
 ```
 

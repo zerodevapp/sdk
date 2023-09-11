@@ -48,15 +48,21 @@ export const zeroDevPaymasterAndDataMiddleware = <
       );
       if (
         paymasterConfig.onlySendSponsoredTransaction &&
-        (!paymasterResp || paymasterResp.paymasterAndData === "0x")
+        (!paymasterResp ||
+          !paymasterResp.paymasterAndData ||
+          paymasterResp.paymasterAndData === "0x")
       ) {
         throw new Error("Transaction is not sponsored");
       }
       if (
-        paymasterResp === undefined ||
+        !paymasterResp ||
+        !paymasterResp.paymasterAndData ||
         paymasterResp.paymasterAndData === "0x"
       ) {
-        return struct;
+        return {
+          ...struct,
+          paymasterAndData: "0x",
+        };
       }
       return {
         ...struct,

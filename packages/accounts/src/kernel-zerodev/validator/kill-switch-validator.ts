@@ -116,6 +116,9 @@ export class KillSwitchValidator extends KernelBaseValidator {
   }
 
   async getDummyUserOpSignature(): Promise<Hex> {
+    if (this.mode === ValidatorMode.sudo) {
+      return DUMMY_ECDSA_SIG;
+    }
     return concatHex([pad("0xffffffffffff", { size: 6 }), DUMMY_ECDSA_SIG]);
   }
 
@@ -140,6 +143,11 @@ export class KillSwitchValidator extends KernelBaseValidator {
       this.entryPointAddress,
       BigInt(this.chain.id)
     ) as Hex;
+
+    if (this.mode === ValidatorMode.sudo) {
+      const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
+      return await this.guardian.signMessage(formattedMessage);
+    }
 
     const extendedHash = keccak256(
       concat([pad(toHex(pausedUntil), { size: 6 }), hash])

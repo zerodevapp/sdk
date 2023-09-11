@@ -18,7 +18,7 @@ export class VerifyingPaymaster extends Paymaster {
     struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders,
     shouldOverrideFee?: boolean
-  ): Promise<UserOperationStruct> {
+  ): Promise<UserOperationStruct | undefined> {
     try {
       const hexifiedUserOp = deepHexlify(await resolveProperties(struct));
       const paymasterResp = await this.signUserOp({
@@ -27,14 +27,11 @@ export class VerifyingPaymaster extends Paymaster {
         shouldOverrideFee,
       });
       if (paymasterResp) {
-        return {
-          ...struct,
-          ...paymasterResp,
-        };
+        return paymasterResp;
       }
     } catch (error) {
-      return struct;
+      console.log(error);
     }
-    return struct;
+    return;
   }
 }

@@ -3,9 +3,7 @@ import {
   http,
   type Hex,
   getFunctionSelector,
-  encodeFunctionData,
   type Hash,
-  zeroAddress,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { config } from "./kernel-account.test.js";
@@ -13,13 +11,9 @@ import {
   ECDSAProvider,
   KillSwitchProvider,
 } from "../validator-provider/index.js";
-import {
-  KILL_SWITCH_ACTION,
-  KILL_SWITCH_VALIDATOR_ADDRESS,
-} from "../constants.js";
+import { KILL_SWITCH_ACTION } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { ValidatorMode } from "../validator/base.js";
-import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 
 // [TODO] - Organize the test code properly
@@ -74,7 +68,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
     blockerKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
       guardian: secondOwner,
-      delaySeconds: 10,
+      delaySeconds: 20,
       opts: {
         accountConfig: {
           accountAddress,
@@ -167,51 +161,18 @@ describe("Kernel Kill Switch Provider Test", async () => {
   );
 
   it(
-    "should wait for the delay",
+    "should force unblock",
     async () => {
-      new Promise((resolve) => setTimeout(resolve, 10000));
-    },
-    { timeout: 1000000 }
-  );
-
-  it(
-    "should send UserOp after pauseUntil has passed",
-    async () => {
-      const result = await ecdsaProvider.sendUserOperation({
-        target: await owner.getAddress(),
-        data: "0x",
-      });
-      console.log(result);
-      const tx = await ecdsaProvider.waitForUserOperationTransaction(
-        result.hash as Hash
-      );
-      console.log(tx);
-    },
-    { timeout: 1000000 }
-  );
-
-  // Test for unblocking
-  it(
-    "should make ecdsa default validator",
-    async () => {
-      const setDefValdata = encodeFunctionData({
-        abi: KernelAccountAbi,
-        functionName: "setDefaultValidator",
-        args: [
-          await ecdsaProvider.getValidator().validatorAddress,
-          await owner.getAddress(),
-        ],
-      });
       let result = await sudoModeKillSwitchProvider.sendUserOperation({
         target: accountAddress,
-        data: setDefValdata,
+        data: selector,
       });
       console.log(result);
-      let tx = await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
-        result.hash as Hex
-      );
-      console.log("tx", tx);
-
+      const tx =
+        await sudoModeKillSwitchProvider.waitForUserOperationTransaction(
+          result.hash as Hash
+        );
+      console.log(tx);
       const defaultValidator = await client.readContract({
         address: accountAddress,
         abi: KernelAccountAbi,
@@ -221,28 +182,6 @@ describe("Kernel Kill Switch Provider Test", async () => {
       expect(defaultValidator).to.equal(
         ecdsaProvider.getValidator().validatorAddress
       );
-    },
-    { timeout: 1000000 }
-  );
-
-  // Test for unblocking
-  it(
-    "should set default mode to 0x00000000",
-    async () => {
-      const setDefModeData = encodeFunctionData({
-        abi: KernelAccountAbi,
-        functionName: "disableMode",
-        args: ["0x00000000"],
-      });
-      const result = await ecdsaProvider.sendUserOperation({
-        target: accountAddress,
-        data: setDefModeData,
-      });
-      console.log(result);
-      const tx = await ecdsaProvider.waitForUserOperationTransaction(
-        result.hash as Hex
-      );
-      console.log(tx);
       const disabledMode = await client.readContract({
         address: accountAddress,
         abi: KernelAccountAbi,
@@ -254,42 +193,36 @@ describe("Kernel Kill Switch Provider Test", async () => {
     { timeout: 1000000 }
   );
 
-  // Test for unblocking
   it(
-    "should disable KillSwitchValidator",
+    "should send UserOp after pauseUntil has passed",
     async () => {
-      const disableData = encodeFunctionData({
-        abi: KillSwitchValidatorAbi,
-        functionName: "disable",
-        args: ["0x"],
-      });
-      const result = await ecdsaProvider.sendUserOperation({
-        target: KILL_SWITCH_VALIDATOR_ADDRESS,
-        data: disableData,
+      let result, tx;
+      try {
+        result = await blockerKillSwitchProvider.sendUserOperation({
+          target: accountAddress,
+          data: selector,
+        });
+        console.log(result);
+        tx = await blockerKillSwitchProvider.waitForUserOperationTransaction(
+          result.hash as Hex
+        );
+        console.log("tx", tx);
+      } catch (e) {
+        console.log(e);
+      }
+
+      // Wait for the delay
+      new Promise((resolve) => setTimeout(resolve, 20000));
+
+      result = await ecdsaProvider.sendUserOperation({
+        target: await owner.getAddress(),
+        data: "0x",
       });
       console.log(result);
-      const tx = await ecdsaProvider.waitForUserOperationTransaction(
-        result.hash as Hex
+      tx = await ecdsaProvider.waitForUserOperationTransaction(
+        result.hash as Hash
       );
       console.log(tx);
-      const killSwitchData = await client.readContract({
-        address: KILL_SWITCH_VALIDATOR_ADDRESS,
-        abi: KillSwitchValidatorAbi,
-        functionName: "killSwitchValidatorStorage",
-        args: [accountAddress],
-      });
-      console.log("killSwitchData", killSwitchData, [
-        zeroAddress,
-        zeroAddress,
-        0,
-        "0x00000000",
-      ]);
-      expect(killSwitchData).to.eql([
-        zeroAddress,
-        zeroAddress,
-        0,
-        "0x00000000",
-      ]);
     },
     { timeout: 1000000 }
   );
