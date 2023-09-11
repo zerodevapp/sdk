@@ -42,7 +42,7 @@
     "clean": "rm -rf ./dist",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:run-e2e": "vitest run --config vitest.config.e2e.ts"
+    "test:e2e": "cd e2e-tests && yarn test"
   },
   "devDependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.23",
