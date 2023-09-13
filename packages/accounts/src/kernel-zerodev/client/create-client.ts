@@ -44,6 +44,8 @@ export const createZeroDevPublicErc4337Client = ({
     },
     name: "Connected bundler network",
     key: "connected-bundler-network",
+    retryCount: 0,
+    timeout: 35000,
   });
   const publicTransport = http(CHAIN_ID_TO_NODE[chain.id]);
   let client = createPublicErc4337FromClient(
