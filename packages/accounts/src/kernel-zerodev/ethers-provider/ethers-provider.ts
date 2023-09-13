@@ -26,11 +26,19 @@ export class ZeroDevEthersProvider<
   constructor(validatorType: V, params: ValidatorProviderParamsMap[V]) {
     super();
     let bundlerProvider = params.bundlerProvider;
-    const shouldUsePaymaster = params.usePaymaster === undefined || params.usePaymaster;
-    if (params.opts?.paymasterConfig && params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" && shouldUsePaymaster) {
-        bundlerProvider = "STACKUP";
+    const shouldUsePaymaster =
+      params.usePaymaster === undefined || params.usePaymaster;
+    if (
+      params.opts?.paymasterConfig &&
+      params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" &&
+      shouldUsePaymaster
+    ) {
+      bundlerProvider = "STACKUP";
     }
-    let accountProvider = new ValidatorProviders[validatorType]({...params, bundlerProvider});
+    let accountProvider = new ValidatorProviders[validatorType]({
+      ...params,
+      bundlerProvider,
+    });
     if (shouldUsePaymaster) {
       let paymasterConfig = params.opts?.paymasterConfig ?? {
         policy: "VERIFYING_PAYMASTER",
@@ -38,8 +46,7 @@ export class ZeroDevEthersProvider<
       paymasterConfig = {
         ...paymasterConfig,
         paymasterProvider:
-          params.opts?.paymasterConfig?.paymasterProvider ??
-          bundlerProvider,
+          params.opts?.paymasterConfig?.paymasterProvider ?? bundlerProvider,
       };
       accountProvider = withZeroDevPaymasterAndData(
         accountProvider,

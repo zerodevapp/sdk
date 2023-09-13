@@ -38,7 +38,9 @@ export class TokenPaymaster extends Paymaster {
   ) {
     super(provider);
   }
-  async getPaymasterAddress(paymasterProvider?: PaymasterAndBundlerProviders): Promise<Hex | undefined> {
+  async getPaymasterAddress(
+    paymasterProvider?: PaymasterAndBundlerProviders
+  ): Promise<Hex | undefined> {
     const chainId = await getChainId(this.provider.getProjectId());
 
     try {
@@ -47,7 +49,7 @@ export class TokenPaymaster extends Paymaster {
         {
           chainId,
           entryPointAddress: ENTRYPOINT_ADDRESS,
-          paymasterProvider
+          paymasterProvider,
         },
         { headers: { "Content-Type": "application/json" } }
       );

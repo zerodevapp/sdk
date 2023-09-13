@@ -58,9 +58,14 @@ export abstract class ValidatorProvider<
     validator: KernelBaseValidator
   ) {
     let bundlerProvider = params.bundlerProvider;
-    const shouldUsePaymaster = params.usePaymaster === undefined || params.usePaymaster;
-    if (params.opts?.paymasterConfig && params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" && shouldUsePaymaster) {
-        bundlerProvider = "STACKUP";
+    const shouldUsePaymaster =
+      params.usePaymaster === undefined || params.usePaymaster;
+    if (
+      params.opts?.paymasterConfig &&
+      params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" &&
+      shouldUsePaymaster
+    ) {
+      bundlerProvider = "STACKUP";
     }
     super({
       ...params.opts?.providerConfig,
@@ -88,8 +93,7 @@ export abstract class ValidatorProvider<
       paymasterConfig = {
         ...paymasterConfig,
         paymasterProvider:
-          params.opts?.paymasterConfig?.paymasterProvider ??
-          bundlerProvider,
+          params.opts?.paymasterConfig?.paymasterProvider ?? bundlerProvider,
       };
       withZeroDevPaymasterAndData(this, paymasterConfig);
     }
