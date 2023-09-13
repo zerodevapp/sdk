@@ -57,12 +57,22 @@ export abstract class ValidatorProvider<
     params: ExtendedValidatorProviderParams<P>,
     validator: KernelBaseValidator
   ) {
+    let bundlerProvider = params.bundlerProvider;
+    const shouldUsePaymaster =
+      params.usePaymaster === undefined || params.usePaymaster;
+    if (
+      params.opts?.paymasterConfig &&
+      params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" &&
+      shouldUsePaymaster
+    ) {
+      bundlerProvider = "STACKUP";
+    }
     super({
       ...params.opts?.providerConfig,
       chain: params.opts?.providerConfig?.chain ?? polygonMumbai,
       rpcUrl: params.opts?.providerConfig?.rpcUrl,
       projectId: params.projectId,
-      bundlerProvider: params.bundlerProvider,
+      bundlerProvider,
     });
     this.connect(
       () =>
@@ -71,20 +81,19 @@ export abstract class ValidatorProvider<
           validator,
           defaultValidator: params.defaultProvider?.getValidator(),
           rpcClient: this.rpcClient,
-          bundlerProvider: params.bundlerProvider,
+          bundlerProvider,
           index: params.defaultProvider?.getAccount().getIndex(),
           ...params.opts?.accountConfig,
         })
     );
-    if (params.usePaymaster === undefined || params.usePaymaster) {
+    if (shouldUsePaymaster) {
       let paymasterConfig = params.opts?.paymasterConfig ?? {
         policy: "VERIFYING_PAYMASTER",
       };
       paymasterConfig = {
         ...paymasterConfig,
         paymasterProvider:
-          params.opts?.paymasterConfig?.paymasterProvider ??
-          params.bundlerProvider,
+          params.opts?.paymasterConfig?.paymasterProvider ?? bundlerProvider,
       };
       withZeroDevPaymasterAndData(this, paymasterConfig);
     }

@@ -24,7 +24,6 @@ import {
   ECDSA_VALIDATOR_ADDRESS,
   ENTRYPOINT_ADDRESS,
 } from "../constants.js";
-import type { PaymasterAndBundlerProviders } from "../paymaster/types.js";
 import { polygonMumbai } from "viem/chains";
 
 export enum ValidatorMode {
@@ -45,7 +44,6 @@ export interface KernelBaseValidatorParams {
   executor?: Address;
   selector?: Hex;
   rpcUrl?: string;
-  bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
 export type ValidatorPluginData = Required<
@@ -69,7 +67,6 @@ export abstract class KernelBaseValidator {
   protected executor?: Address;
   protected selector?: Hex;
   protected rpcUrl?: string;
-  protected bundlerProvider?: PaymasterAndBundlerProviders;
   publicClient?: PublicClient<Transport, Chain>;
 
   constructor(params: KernelBaseValidatorParams) {
@@ -84,7 +81,6 @@ export abstract class KernelBaseValidator {
     this.selector = params.selector;
     this.chain = params.chain;
     this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
-    this.bundlerProvider = params.bundlerProvider;
     this.publicClient = createPublicClient({
       transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
       chain: this.chain ?? polygonMumbai,
