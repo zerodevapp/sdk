@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
+      
 
       - name: Setup Node.js
         uses: actions/setup-node@v1
@@ -41,6 +44,14 @@ jobs:
 
       - name: Build
         run: yarn build
+      
+      - name: E2E tests
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: yarn test:e2e
 
       # - name: Unit Test
       #   run: yarn test
