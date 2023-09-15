@@ -323,6 +323,9 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       case "eth_sendTransaction":
         const [tx] = params as [RpcTransactionRequest];
         return this.sendTransaction(tx);
+      case "eth_signTypedData_v4":
+        //@ts-expect-error
+        return this.signTypedData(JSON.parse(params[1]))
       case "personal_sign":
         if (!this.account) {
           throw new Error("account not connected!");

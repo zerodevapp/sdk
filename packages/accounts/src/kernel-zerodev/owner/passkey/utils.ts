@@ -1,10 +1,8 @@
 import { browserInit, TurnkeyApi } from "@turnkey/http";
 import axios from "axios";
 import { API_URL } from "../../constants.js";
-import type { Hex, Signature } from "./types.js";
-import { ethers } from "ethers";
 import type { SignTypedDataParams } from "@alchemy/aa-core";
-import { hashTypedData } from "viem";
+import { hashTypedData, signatureToHex, hashMessage } from "viem";
 
 browserInit({
   baseUrl: "https://api.turnkey.com",
@@ -29,32 +27,15 @@ export const base64UrlEncode = (challenge: ArrayBuffer): string => {
     .replace(/=/g, "");
 };
 
-// VIEM
-// export function signatureToHex({ r, s, v }: Signature): Hex {
-//     return `0x${new secp256k1.Signature(
-//       hexToBigInt(r),
-//       hexToBigInt(s),
-//     ).toCompactHex()}${toHex(v).slice(2)}`
-// }
-
-//ETHERS
-export function signatureToHex({ r, s, v }: Signature): Hex {
-  return ethers.utils.joinSignature({
-    r: `0x${r}`,
-    s: `0x${s}`,
-    //@ts-expect-error
-    v: parseInt(v) + 27,
-  }) as Hex;
-}
-
-export const signMessage = async (
-  msg: string | Uint8Array,
+export const signMessageImplementation = async (
+  msg: string,
   id: string,
   walletId: string,
   projectId: string,
   credentialId: string,
   apiUrl = API_URL
 ) => {
+  console.log("SIGN MESSAGE IMPLEMENTATION")
   const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {
@@ -62,7 +43,7 @@ export const signMessage = async (
         organizationId: id,
         parameters: {
           privateKeyId: walletId,
-          payload: ethers.utils.hashMessage(msg),
+          payload: msg,
           encoding: "PAYLOAD_ENCODING_HEXADECIMAL",
           hashFunction: "HASH_FUNCTION_NO_OP",
         },
@@ -91,13 +72,35 @@ export const signMessage = async (
     let result = activity?.result?.signRawPayloadResult;
 
     if (result) {
-      const assembled = signatureToHex(result);
-      if (assembled) {
-        return assembled;
+      const signatureHex = signatureToHex({
+        r: `0x${result.r}`,
+        s: `0x${result.s}`,
+        v: result.v === "00" ? 27n : 28n,
+      });
+      if (signatureHex) {
+        return signatureHex;
       }
     }
   }
   return "0x";
+};
+
+export const signMessage = async (
+  msg: string | Uint8Array,
+  id: string,
+  walletId: string,
+  projectId: string,
+  credentialId: string,
+  apiUrl = API_URL
+) => {
+  return await signMessageImplementation(
+    hashMessage(typeof msg === 'string' ? msg : {raw: msg}),
+    id,
+    walletId,
+    projectId,
+    credentialId,
+    apiUrl
+  );
 };
 
 export const signTypedData = async (
@@ -109,7 +112,7 @@ export const signTypedData = async (
   apiUrl = API_URL
 ) => {
   const hashToSign = hashTypedData(params);
-  return await signMessage(
+  return await signMessageImplementation(
     hashToSign,
     id,
     walletId,
