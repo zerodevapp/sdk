@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BACKEND_URL } from "../constants.js";
+import { BACKEND_URL, BACKEND_URL_R } from "../constants.js";
 
 export const getChainId = async (
   projectId: string,
@@ -21,5 +21,37 @@ export const getChainId = async (
   } catch (error) {
     console.log(error);
     return undefined;
+  }
+};
+
+export const getRecoveryData = async (recoveryId: string) => {
+  try {
+    const { data } = await axios.get(
+      `${BACKEND_URL_R}/v1/recovery/${recoveryId}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return data;
+  } catch (error) {
+    console.log(error);
+    return undefined;
+  }
+};
+
+export const setSignatures = async (recoveryId: string, signatures: string) => {
+  try {
+    const { data } = await axios.patch(
+      `${BACKEND_URL_R}/v1/recovery/${recoveryId}`,
+      {
+        signatures,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return data;
+  } catch (error) {
+    console.log(error);
   }
 };

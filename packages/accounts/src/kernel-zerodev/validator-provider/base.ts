@@ -74,6 +74,7 @@ export abstract class ValidatorProvider<
       projectId: params.projectId,
       bundlerProvider,
     });
+    this.defaultProvider = params.defaultProvider;
     this.connect(
       () =>
         new KernelSmartContractAccount({
@@ -117,7 +118,7 @@ export abstract class ValidatorProvider<
     return await this.account.validator.encodeEnable(enableData);
   };
 
-  getEncodedDisableData = async (disableData: Hex): Promise<Hex> => {
+  getEncodedDisableData = async (disableData: Hex = "0x"): Promise<Hex> => {
     if (!isKernelAccount(this.account) || !this.account.validator) {
       throw new Error(
         "ValidatorProvider: account with validator is not set, did you call all connects first?"
@@ -143,7 +144,7 @@ export abstract class ValidatorProvider<
   };
 
   sendDisableUserOperation = async (
-    disableData: Hex
+    disableData: Hex = "0x"
   ): Promise<SendUserOperationResult> => {
     const encodedDisableData = await this.getEncodedDisableData(disableData);
     if (!isKernelAccount(this.account) || !this.account.validator) {
@@ -151,8 +152,11 @@ export abstract class ValidatorProvider<
         "ValidatorProvider: account with validator is not set, did you call all connects first?"
       );
     }
+    if(!this.defaultProvider) {
+        throw Error("Default Validator provider unintialized");
+    }
 
-    return await this.sendUserOperation({
+    return await this.defaultProvider.sendUserOperation({
       target: this.account.validator.validatorAddress,
       data: encodedDisableData,
     });

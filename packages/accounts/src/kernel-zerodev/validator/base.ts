@@ -124,6 +124,10 @@ export abstract class KernelBaseValidator {
     };
   }
 
+  getNonceKey(): bigint {
+    return 0n;
+  }
+
   async getDynamicDummySignature(
     kernelAccountAddress: Address,
     calldata: Hex
@@ -170,6 +174,13 @@ export abstract class KernelBaseValidator {
 
   getAddress(): Hex {
     return this.validatorAddress;
+  }
+
+  getPublicClient(): PublicClient<Transport, Chain> {
+    if (!this.publicClient) {
+      throw new Error("Validator uninitialized: PublicClient missing");
+    }
+    return this.publicClient;
   }
 
   async approveExecutor(

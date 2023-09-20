@@ -10,6 +10,7 @@ export const ENTRYPOINT_ADDRESS: Hex =
   "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
 export const BACKEND_URL = "https://backend-vikp.onrender.com";
+export const BACKEND_URL_R = "http://localhost:4000";
 export const API_URL = "https://prod-api.zerodev.app";
 export const ECDSA_VALIDATOR_ADDRESS =
   "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390";
@@ -26,6 +27,8 @@ export const ERC165_SESSION_KEY_VALIDATOR_ADDRESS =
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1";
 export const SESSION_KEY_VALIDATOR_ADDRESS =
   "0x1C1D5b70aD6e0c04366aab100261A6Bcc251EA3f";
+export const RECOVERY_VALIDATOR_ADDRESS = "0x4fd47D861c349bD49DC61341a922cb72F9dF7E8d";
+export const RECOVERY_ACTION = "0x2f65dB8039fe5CAEE0a8680D2879deB800F31Ae1";
 export const oneAddress = "0x0000000000000000000000000000000000000001";
 
 export const gasTokenChainAddresses: IGasTokenAddresses = {

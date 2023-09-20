@@ -7,6 +7,7 @@ import type { ExtendedValidatorProviderParams } from "./base.js";
 import type { ECDSAProvider } from "./ecdsa-provider.js";
 import type { ERC165SessionKeyProvider } from "./erc165-session-key-provider.js";
 import type { KillSwitchProvider } from "./kill-switch-provider.js";
+import type { RecoveryProvider, RecoveryProviderParams } from "./recovery-provider.js";
 import type {
   SessionKeyProvider,
   PrefillSessionData,
@@ -18,6 +19,7 @@ export type ValidatorProviderTypeMap = {
   KILL_SWITCH: KillSwitchProvider;
   ERC165_SESSION_KEY: ERC165SessionKeyProvider;
   SESSION_KEY: SessionKeyProvider;
+  RECOVERY: RecoveryProvider;
 };
 
 export type ValidatorProviderParamsMap = {
@@ -25,6 +27,7 @@ export type ValidatorProviderParamsMap = {
   KILL_SWITCH: ExtendedValidatorProviderParams<KillSwitchValidatorParams>;
   ERC165_SESSION_KEY: ExtendedValidatorProviderParams<ERC165SessionKeyValidatorParams>;
   SESSION_KEY: ExtendedValidatorProviderParams<SessionKeyValidatorParams>;
+  RECOVERY: RecoveryProviderParams;
 };
 
 export type ValidatorProviderMap = {
