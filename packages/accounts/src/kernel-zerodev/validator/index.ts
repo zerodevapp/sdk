@@ -10,7 +10,7 @@ export const Validators: ValidatorMap = {
   KILL_SWITCH: KillSwitchValidator,
   ERC165_SESSION_KEY: ERC165SessionKeyValidator,
   SESSION_KEY: SessionKeyValidator,
-  RECOVERY: RecoveryValidator
+  RECOVERY: RecoveryValidator,
 };
 
 export {
@@ -18,5 +18,5 @@ export {
   KillSwitchValidator,
   ERC165SessionKeyValidator,
   SessionKeyValidator,
-  RecoveryValidator
+  RecoveryValidator,
 };

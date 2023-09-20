@@ -35,7 +35,7 @@ export const signMessageImplementation = async (
   credentialId: string,
   apiUrl = API_URL
 ) => {
-  console.log("SIGN MESSAGE IMPLEMENTATION")
+  console.log("SIGN MESSAGE IMPLEMENTATION");
   const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {
@@ -94,7 +94,7 @@ export const signMessage = async (
   apiUrl = API_URL
 ) => {
   return await signMessageImplementation(
-    hashMessage(typeof msg === 'string' ? msg : {raw: msg}),
+    hashMessage(typeof msg === "string" ? msg : { raw: msg }),
     id,
     walletId,
     projectId,

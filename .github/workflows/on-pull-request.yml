@@ -28,7 +28,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      
 
       - name: Setup Node.js
         uses: actions/setup-node@v1
@@ -44,7 +43,7 @@ jobs:
 
       - name: Build
         run: yarn build
-      
+
       - name: E2E tests
         env:
           API_URL: ${{ secrets.API_URL }}

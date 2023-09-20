@@ -148,7 +148,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     }
     return await Promise.resolve(this.accountSigner);
   }
-  
+
   async getEnableData(): Promise<Hex> {
     if (
       this.guardians === undefined ||

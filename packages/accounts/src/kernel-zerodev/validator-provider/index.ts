@@ -10,7 +10,7 @@ export const ValidatorProviders: ValidatorProviderMap = {
   KILL_SWITCH: KillSwitchProvider,
   ERC165_SESSION_KEY: ERC165SessionKeyProvider,
   SESSION_KEY: SessionKeyProvider,
-  RECOVERY: RecoveryProvider
+  RECOVERY: RecoveryProvider,
 };
 
 export {
@@ -18,5 +18,5 @@ export {
   KillSwitchProvider,
   ERC165SessionKeyProvider,
   SessionKeyProvider,
-  RecoveryProvider
+  RecoveryProvider,
 };

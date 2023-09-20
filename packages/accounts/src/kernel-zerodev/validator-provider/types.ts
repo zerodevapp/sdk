@@ -7,7 +7,10 @@ import type { ExtendedValidatorProviderParams } from "./base.js";
 import type { ECDSAProvider } from "./ecdsa-provider.js";
 import type { ERC165SessionKeyProvider } from "./erc165-session-key-provider.js";
 import type { KillSwitchProvider } from "./kill-switch-provider.js";
-import type { RecoveryProvider, RecoveryProviderParams } from "./recovery-provider.js";
+import type {
+  RecoveryProvider,
+  RecoveryProviderParams,
+} from "./recovery-provider.js";
 import type {
   SessionKeyProvider,
   PrefillSessionData,

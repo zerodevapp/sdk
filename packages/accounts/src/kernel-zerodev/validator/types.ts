@@ -11,7 +11,10 @@ import type {
   KillSwitchValidator,
   KillSwitchValidatorParams,
 } from "./kill-switch-validator.js";
-import type { RecoveryValidator, RecoveryValidatorParams } from "./recovery-validator.js";
+import type {
+  RecoveryValidator,
+  RecoveryValidatorParams,
+} from "./recovery-validator.js";
 import type {
   SessionKeyValidator,
   SessionKeyValidatorParams,
@@ -50,6 +53,6 @@ export type ValidatorMap = {
   ) => ValidatorTypeMap[V];
 };
 
-export type EthereumProvider = { request(...args: any): Promise<any> }
+export type EthereumProvider = { request(...args: any): Promise<any> };
 
 export type { ParamRules, Permission, SessionKeyData, SessionKeyParams };

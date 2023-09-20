@@ -290,7 +290,7 @@ export class KernelSmartContractAccount<
       return 0n;
     }
     if (!this.validator) {
-        throw Error("Validator unintialized");
+      throw Error("Validator unintialized");
     }
     const address = await this.getAddress();
     const key = this.validator.getNonceKey();

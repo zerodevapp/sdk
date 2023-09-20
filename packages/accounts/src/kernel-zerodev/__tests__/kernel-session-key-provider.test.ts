@@ -491,7 +491,7 @@ describe("Kernel SessionKey Provider Test", async () => {
   it(
     "should serialize and deserialize valueLimit correctly",
     async () => {
-      const bigInt = 123456789123456789123456789123456789n
+      const bigInt = 123456789123456789123456789123456789n;
       await createProvider(
         randomOwner,
         zeroAddress,
@@ -520,7 +520,9 @@ describe("Kernel SessionKey Provider Test", async () => {
         sessionPrivateKey: dummyPrivateKey as Hex,
       };
 
-      expect(sessionKeyParams.sessionKeyData.permissions![0].valueLimit === bigInt)
+      expect(
+        sessionKeyParams.sessionKeyData.permissions![0].valueLimit === bigInt
+      );
     },
     { timeout: 1000000 }
   );

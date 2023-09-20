@@ -152,8 +152,8 @@ export abstract class ValidatorProvider<
         "ValidatorProvider: account with validator is not set, did you call all connects first?"
       );
     }
-    if(!this.defaultProvider) {
-        throw Error("Default Validator provider unintialized");
+    if (!this.defaultProvider) {
+      throw Error("Default Validator provider unintialized");
     }
 
     return await this.defaultProvider.sendUserOperation({
