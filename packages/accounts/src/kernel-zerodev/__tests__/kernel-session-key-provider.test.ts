@@ -188,7 +188,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         [
           {
             target: Test_ERC20Address,
-            valueLimit: 0,
+            valueLimit: 0n,
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
@@ -206,7 +206,7 @@ describe("Kernel SessionKey Provider Test", async () => {
           },
           {
             target: Test_ERC20Address,
-            valueLimit: 1,
+            valueLimit: 1n,
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
@@ -255,7 +255,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         [
           {
             target: Test_ERC20Address,
-            valueLimit: 0,
+            valueLimit: 0n,
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
@@ -389,7 +389,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         [
           {
             target: Test_ERC20Address,
-            valueLimit: 0,
+            valueLimit: 0n,
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
@@ -447,7 +447,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         [
           {
             target: Test_ERC20Address,
-            valueLimit: 0,
+            valueLimit: 0n,
             sig: erc20TransferSelector,
             operation: Operation.Call,
             rules: [
@@ -485,6 +485,42 @@ describe("Kernel SessionKey Provider Test", async () => {
       await expect(result).rejects.toThrowError(
         "AA23 reverted: SessionKeyValidator: paymaster not set"
       );
+    },
+    { timeout: 1000000 }
+  );
+  it(
+    "should serialize and deserialize valueLimit correctly",
+    async () => {
+      const bigInt = 123456789123456789123456789123456789n
+      await createProvider(
+        randomOwner,
+        zeroAddress,
+        executeSelector,
+        0n,
+        [
+          {
+            target: Test_ERC20Address,
+            valueLimit: bigInt,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [],
+          },
+        ],
+        oneAddress,
+        false
+      );
+
+      const serializedSessionKeyParams =
+        await sessionKeyProvider.serializeSessionKeyParams();
+
+      const sessionKeyParams = {
+        ...SessionKeyProvider.deserializeSessionKeyParams(
+          serializedSessionKeyParams
+        ),
+        sessionPrivateKey: dummyPrivateKey as Hex,
+      };
+
+      expect(sessionKeyParams.sessionKeyData.permissions![0].valueLimit === bigInt)
     },
     { timeout: 1000000 }
   );

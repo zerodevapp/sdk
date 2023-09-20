@@ -35,6 +35,13 @@ import type { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
 import { fixSignedData } from "../utils.js";
 
+// We need to be able to serialize bigint to transmit session key over
+// the network.
+// Using this trick: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006086291
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+}
+
 export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
   sessionKey: SmartAccountSigner;
   sessionKeyData: SessionKeyData;
@@ -67,7 +74,7 @@ export interface ParamRules {
 
 export interface Permission {
   target: Address;
-  valueLimit: number;
+  valueLimit: bigint;
   sig: Hex;
   rules: ParamRules[];
   operation: Operation;
@@ -164,7 +171,15 @@ export class SessionKeyValidator extends KernelBaseValidator {
       if (!valueLimitPermissions.length) return undefined;
 
       const sortedPermissions = valueLimitPermissions.sort(
-        (a, b) => b.valueLimit - a.valueLimit
+        (a, b) => {
+          if (b.valueLimit > a.valueLimit) {
+            return 1
+          } else if (b.valueLimit < a.valueLimit) {
+            return -1
+          } else {
+            return 0
+          }
+        }
       );
 
       return this.findPermissionByRule(sortedPermissions, args[2]);
@@ -251,12 +266,12 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
     return permissionPacked && permissionPacked.length !== 0
       ? new MerkleTree(permissionPacked, keccak256, {
-          sortPairs: true,
-          hashLeaves: true,
-        })
+        sortPairs: true,
+        hashLeaves: true,
+      })
       : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
-          hashLeaves: false,
-        });
+        hashLeaves: false,
+      });
   }
 
   encodePermissionData(permission: Permission, merkleProof?: string[]): Hex {
@@ -379,7 +394,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     ]);
     return (
       execDetail.validator.toLowerCase() ===
-        this.validatorAddress.toLowerCase() &&
+      this.validatorAddress.toLowerCase() &&
       enableData[4] &&
       enableDataHex.toLowerCase() === (await this.getEnableData()).toLowerCase()
     );
@@ -394,8 +409,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
+        this.sessionKeyData.permissions.length !== 0 &&
+        matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
@@ -403,8 +418,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
+        this.sessionKeyData.permissions.length !== 0 &&
+        matchingPermission
         ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     return concatHex([
@@ -460,8 +475,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
+        this.sessionKeyData.permissions.length !== 0 &&
+        matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
@@ -469,8 +484,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
+        this.sessionKeyData.permissions.length !== 0 &&
+        matchingPermission
         ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     const signature = concat([
