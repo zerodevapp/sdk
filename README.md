@@ -23,7 +23,7 @@ npm i -s @zerodev/sdk
 ### Basic Usage
 
 ```ts
-import { ECDSAValidator } from "@zerodev/sdk";
+import { ECDSAProvider } from "@zerodev/sdk";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 
 // 1. define the EOA owner of the Smart Account
