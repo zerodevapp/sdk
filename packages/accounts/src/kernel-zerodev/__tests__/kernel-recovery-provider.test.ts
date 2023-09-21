@@ -378,7 +378,26 @@ describe("Kernel Recovery Provider Test", async () => {
     it(
       "should initiate the recovery",
       async () => {
-        await createProvider(recoveryId);
+        const recoveryData = {
+          guardians: {
+            // Guardian addresses with their weights
+            [guardianAddress]: 1,
+            [guardian2Address]: 1,
+            [guardian3Address]: 1,
+          },
+          threshold: 3,
+          delaySeconds: 0,
+        };
+
+        const recoveryProvider = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          defaultProvider: ecdsaProvider,
+          opts: {
+            validatorConfig: {
+              ...recoveryData,
+            },
+          },
+        });
         recoveryId = await recoveryProvider.initiateRecovery(newOwnerAddress);
         console.log(recoveryId);
       },
@@ -388,7 +407,11 @@ describe("Kernel Recovery Provider Test", async () => {
     it(
       "should enable the recovery",
       async () => {
-        await createProvider(recoveryId);
+        const recoveryProvider = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          defaultProvider: ecdsaProvider,
+          recoveryId,
+        });
         let result, tx;
         try {
           result = await recoveryProvider.enableRecovery();
@@ -426,7 +449,7 @@ describe("Kernel Recovery Provider Test", async () => {
           validator: RECOVERY_VALIDATOR_ADDRESS,
         });
         expect(enabledRecoveryData).to.eql([
-          recoveryData.totalWeight,
+          3,
           recoveryData.threshold,
           recoveryData.delaySeconds,
           Object.keys(recoveryData.guardians).slice(-1)[0],
@@ -441,7 +464,16 @@ describe("Kernel Recovery Provider Test", async () => {
     it(
       "should approve recovery",
       async () => {
-        await createProvider(recoveryId, guardian, guardianAccount);
+        const recoveryProvider = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          recoveryId,
+          opts: {
+            validatorConfig: {
+              accountSigner: guardian,
+              guardianAccountOrProvider: guardianAccount,
+            },
+          },
+        });
         let result;
         const callDataAndNonceHash =
           await recoveryProvider.encodeCalldataAndNonce(newOwnerAddress);
@@ -473,21 +505,29 @@ describe("Kernel Recovery Provider Test", async () => {
     it(
       "should approve recovery with sig",
       async () => {
-        const recoveryProvider1 = await createProvider(
+        const recoveryProvider1 = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
           recoveryId,
-          guardian2,
-          guardianAccount
-        );
+          opts: {
+            validatorConfig: {
+              accountSigner: guardian2,
+            },
+          },
+        });
 
         const callDataAndNonceHash =
           await recoveryProvider1.encodeCalldataAndNonce(newOwnerAddress);
         console.log("callDataAndNonceHash", callDataAndNonceHash);
         await recoveryProvider1.signRecovery();
-        const recoveryProvider2 = await createProvider(
+        const recoveryProvider2 = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
           recoveryId,
-          guardian3,
-          guardianAccount
-        );
+          opts: {
+            validatorConfig: {
+              accountSigner: guardian3,
+            },
+          },
+        });
         await recoveryProvider2.signRecovery();
         recoveryProvider = recoveryProvider2;
       },
@@ -497,6 +537,15 @@ describe("Kernel Recovery Provider Test", async () => {
     it(
       "should submit the recovery",
       async () => {
+        const recoveryProvider = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          recoveryId,
+          opts: {
+            validatorConfig: {
+              guardianAccountOrProvider: guardianAccount,
+            },
+          },
+        });
         let result, tx;
         result = recoveryProvider.submitRecovery();
         await expect(result).resolves.not.toThrowError();

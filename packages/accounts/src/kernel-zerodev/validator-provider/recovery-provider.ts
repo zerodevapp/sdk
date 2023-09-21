@@ -4,6 +4,7 @@ import {
 } from "./base.js";
 import {
   RecoveryValidator,
+  type RecoveryConfig,
   type RecoveryValidatorParams,
 } from "../validator/recovery-validator.js";
 import {
@@ -27,6 +28,7 @@ import {
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import axios from "axios";
+import { base64ToBytes, bytesToBase64 } from "../utils.js";
 
 export interface RecoveryProviderParams
   extends ExtendedValidatorProviderParams<RecoveryValidatorParams> {
@@ -75,14 +77,21 @@ export class RecoveryProvider extends ValidatorProvider<
       throw new Error("ChainId not found");
     }
     const chain = getChain(chainId);
-    let accountAddress, enableData, signatures;
+    let accountAddress,
+      enableData,
+      signatures,
+      serializedRecoveryConfig,
+      recoveryConfig;
     if (params.recoveryId) {
       ({
         scwAddress: accountAddress,
         enableData,
+        recoveryConfig: serializedRecoveryConfig,
         signatures,
       } = await getRecoveryData(params.recoveryId));
-      console.log(accountAddress, enableData);
+      recoveryConfig = RecoveryProvider.deserializeRecoveryConfig(
+        serializedRecoveryConfig
+      );
     }
     const instance = new RecoveryProvider({
       enableData,
@@ -99,6 +108,7 @@ export class RecoveryProvider extends ValidatorProvider<
         },
         validatorConfig: {
           signatures,
+          ...recoveryConfig,
           ...params.opts?.validatorConfig,
         },
       },
@@ -151,6 +161,7 @@ export class RecoveryProvider extends ValidatorProvider<
 
   async initiateRecovery(enableData: Hex): Promise<string> {
     try {
+      const serializedConfig = this.serializeRecoveryConfig();
       const {
         data: { recoveryId },
       } = await axios.post(
@@ -158,6 +169,7 @@ export class RecoveryProvider extends ValidatorProvider<
         {
           enableData,
           scwAddress: await this.getAddress(),
+          recoveryConfig: serializedConfig,
         },
         {
           headers: { "Content-Type": "application/json" },
@@ -170,6 +182,22 @@ export class RecoveryProvider extends ValidatorProvider<
       console.log(error);
       throw Error("Unable to generate the recoveryId");
     }
+  }
+
+  serializeRecoveryConfig(): string {
+    let recoveryConfig = this.getValidator().getRecoveryConfig();
+    const jsonString = JSON.stringify(recoveryConfig);
+    const uint8Array = new TextEncoder().encode(jsonString);
+    const base64String = bytesToBase64(uint8Array);
+    return base64String;
+  }
+
+  public static deserializeRecoveryConfig(
+    recoveryConfig: string
+  ): RecoveryConfig {
+    const uint8Array = base64ToBytes(recoveryConfig);
+    const jsonString = new TextDecoder().decode(uint8Array);
+    return JSON.parse(jsonString) as RecoveryConfig;
   }
 
   async approveRecovery(enableData?: Hex): Promise<TransactionReceipt> {

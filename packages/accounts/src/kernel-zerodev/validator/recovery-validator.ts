@@ -54,6 +54,10 @@ export interface RecoveryValidatorParams extends KernelBaseValidatorParams {
   signatures?: Hex;
 }
 
+export type RecoveryConfig = Required<
+  Pick<RecoveryValidatorParams, "guardians" | "threshold" | "delaySeconds">
+>;
+
 export function isLocalAccount(account: any): account is LocalAccount<string> {
   return account && account.signTransaction !== undefined;
 }
@@ -140,6 +144,21 @@ export class RecoveryValidator extends KernelBaseValidator {
 
   getRecoverySignatures(): Hex | undefined {
     return this.signatures;
+  }
+
+  getRecoveryConfig(): RecoveryConfig {
+    if (
+      this.guardians === undefined ||
+      !this.threshold ||
+      Object.entries(this.guardians).length !== this.threshold
+    ) {
+      throw Error("Recovery config unintialised");
+    }
+    return {
+      guardians: this.guardians,
+      threshold: this.threshold,
+      delaySeconds: this.delaySeconds,
+    };
   }
 
   async signer(): Promise<SmartAccountSigner> {
