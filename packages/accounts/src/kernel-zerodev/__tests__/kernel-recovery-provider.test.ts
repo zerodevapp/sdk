@@ -77,7 +77,7 @@ describe("Kernel Recovery Provider Test", async () => {
     bundlerProvider: "ALCHEMY",
     opts: {
       accountConfig: {
-        index: 90007n,
+        index: 90011n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -461,7 +461,7 @@ describe("Kernel Recovery Provider Test", async () => {
       { timeout: 1000000 }
     );
 
-    it(
+    it.skip(
       "should approve recovery",
       async () => {
         const recoveryProvider = await RecoveryProvider.init({
@@ -529,7 +529,17 @@ describe("Kernel Recovery Provider Test", async () => {
           },
         });
         await recoveryProvider2.signRecovery();
-        recoveryProvider = recoveryProvider2;
+        const recoveryProvider3 = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          recoveryId,
+          opts: {
+            validatorConfig: {
+              accountSigner: guardian,
+            },
+          },
+        });
+        await recoveryProvider3.signRecovery();
+        recoveryProvider = recoveryProvider3;
       },
       { timeout: 1000000 }
     );

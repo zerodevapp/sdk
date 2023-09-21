@@ -640,7 +640,7 @@ const recoveryProvider = await RecoveryProvider.init({
 });
 
 // 3. Cancel the recovery
-const result = await recoveryProvider.cancelRecovery(newOwnerAddress);
+const result = await recoveryProvider.cancelRecovery();
 await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
 ```
 

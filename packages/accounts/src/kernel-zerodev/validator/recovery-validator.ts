@@ -134,9 +134,9 @@ export class RecoveryValidator extends KernelBaseValidator {
     return instance;
   }
 
-  //   getNonceKey(): bigint {
-  //     return BigInt(this.validatorAddress);
-  //   }
+  getNonceKey(): bigint {
+    return BigInt(this.validatorAddress);
+  }
 
   setRecoverySignatures(signatures: Hex) {
     this.signatures = signatures;
@@ -255,28 +255,32 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (!this.publicClient) {
       throw new Error("Validator uninitialized: PublicClient missing");
     }
-    const kernel = getContract({
-      abi: KernelAccountAbi,
-      address: kernelAccountAddress,
-      publicClient: this.publicClient,
-    });
-    const execDetail = await kernel.read.getExecution([selector]);
-    const enableData = await this.publicClient.readContract({
-      abi: WeightedValidatorAbi,
-      address: this.validatorAddress,
-      functionName: "weightedStorage",
-      args: [kernelAccountAddress],
-    });
+    try {
+      const kernel = getContract({
+        abi: KernelAccountAbi,
+        address: kernelAccountAddress,
+        publicClient: this.publicClient,
+      });
+      const execDetail = await kernel.read.getExecution([selector]);
+      const enableData = await this.publicClient.readContract({
+        abi: WeightedValidatorAbi,
+        address: this.validatorAddress,
+        functionName: "weightedStorage",
+        args: [kernelAccountAddress],
+      });
 
-    return (
-      execDetail.validator.toLowerCase() ===
-        this.validatorAddress.toLowerCase() &&
-      enableData[0] ===
-        Object.values(this.guardians).reduce((a, c) => a + c, 0) &&
-      enableData[1] === this.threshold &&
-      enableData[2] === this.delaySeconds &&
-      this.isGuardiansEnabled(kernelAccountAddress)
-    );
+      return (
+        execDetail.validator.toLowerCase() ===
+          this.validatorAddress.toLowerCase() &&
+        enableData[0] ===
+          Object.values(this.guardians).reduce((a, c) => a + c, 0) &&
+        enableData[1] === this.threshold &&
+        enableData[2] === this.delaySeconds &&
+        this.isGuardiansEnabled(kernelAccountAddress)
+      );
+    } catch (error) {
+      return false;
+    }
   }
 
   async isGuardiansEnabled(kernelAccountAddress: Address): Promise<boolean> {
@@ -307,11 +311,12 @@ export class RecoveryValidator extends KernelBaseValidator {
   async getDummyUserOpSignature(): Promise<Hex> {
     let dummySignature: Hex = "0x";
     if (this.signatures) {
-      const totalSigs = this.signatures.substring(2).length / 65;
+      const totalSigs = this.signatures.substring(2).length / 130;
       for (let i = 0; i < totalSigs; i++) {
         dummySignature = concatHex([dummySignature, DUMMY_ECDSA_SIG]);
       }
-      return dummySignature;
+      // Hack - Fix this to not send original signatures
+      return this.signatures;
     }
     return DUMMY_ECDSA_SIG;
   }

@@ -14,7 +14,7 @@ import {
 } from "@alchemy/aa-core";
 import { getChainId, getRecoveryData, setSignatures } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
-import { BACKEND_URL_R, RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
+import { BACKEND_URL, RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
 import {
   encodeAbiParameters,
   encodeFunctionData,
@@ -165,7 +165,7 @@ export class RecoveryProvider extends ValidatorProvider<
       const {
         data: { recoveryId },
       } = await axios.post(
-        `${BACKEND_URL_R}/v1/recovery`,
+        `${BACKEND_URL}/v1/recovery`,
         {
           enableData,
           scwAddress: await this.getAddress(),

@@ -10,7 +10,6 @@ export const ENTRYPOINT_ADDRESS: Hex =
   "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
 export const BACKEND_URL = "https://backend-vikp.onrender.com";
-export const BACKEND_URL_R = "http://localhost:4000";
 export const API_URL = "https://prod-api.zerodev.app";
 export const ECDSA_VALIDATOR_ADDRESS =
   "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390";

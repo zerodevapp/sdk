@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BACKEND_URL, BACKEND_URL_R } from "../constants.js";
+import { BACKEND_URL } from "../constants.js";
 
 export const getChainId = async (
   projectId: string,
@@ -27,7 +27,7 @@ export const getChainId = async (
 export const getRecoveryData = async (recoveryId: string) => {
   try {
     const { data } = await axios.get(
-      `${BACKEND_URL_R}/v1/recovery/${recoveryId}`,
+      `${BACKEND_URL}/v1/recovery/${recoveryId}`,
       {
         headers: { "Content-Type": "application/json" },
       }
@@ -42,7 +42,7 @@ export const getRecoveryData = async (recoveryId: string) => {
 export const setSignatures = async (recoveryId: string, signatures: string) => {
   try {
     const { data } = await axios.patch(
-      `${BACKEND_URL_R}/v1/recovery/${recoveryId}`,
+      `${BACKEND_URL}/v1/recovery/${recoveryId}`,
       {
         signatures,
       },
