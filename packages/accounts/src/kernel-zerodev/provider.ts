@@ -325,7 +325,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         return this.sendTransaction(tx);
       case "eth_signTypedData_v4":
         //@ts-expect-error
-        return this.signTypedData(JSON.parse(params[1]))
+        return this.signTypedData(JSON.parse(params[1]));
       case "personal_sign":
         if (!this.account) {
           throw new Error("account not connected!");

@@ -40,7 +40,7 @@ import { fixSignedData } from "../utils.js";
 // Using this trick: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006086291
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
-}
+};
 
 export interface SessionKeyValidatorParams extends KernelBaseValidatorParams {
   sessionKey: SmartAccountSigner;
@@ -170,17 +170,15 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
       if (!valueLimitPermissions.length) return undefined;
 
-      const sortedPermissions = valueLimitPermissions.sort(
-        (a, b) => {
-          if (b.valueLimit > a.valueLimit) {
-            return 1
-          } else if (b.valueLimit < a.valueLimit) {
-            return -1
-          } else {
-            return 0
-          }
+      const sortedPermissions = valueLimitPermissions.sort((a, b) => {
+        if (b.valueLimit > a.valueLimit) {
+          return 1;
+        } else if (b.valueLimit < a.valueLimit) {
+          return -1;
+        } else {
+          return 0;
         }
-      );
+      });
 
       return this.findPermissionByRule(sortedPermissions, args[2]);
     } catch (error) {
@@ -266,12 +264,12 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
     return permissionPacked && permissionPacked.length !== 0
       ? new MerkleTree(permissionPacked, keccak256, {
-        sortPairs: true,
-        hashLeaves: true,
-      })
+          sortPairs: true,
+          hashLeaves: true,
+        })
       : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
-        hashLeaves: false,
-      });
+          hashLeaves: false,
+        });
   }
 
   encodePermissionData(permission: Permission, merkleProof?: string[]): Hex {
@@ -394,7 +392,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     ]);
     return (
       execDetail.validator.toLowerCase() ===
-      this.validatorAddress.toLowerCase() &&
+        this.validatorAddress.toLowerCase() &&
       enableData[4] &&
       enableDataHex.toLowerCase() === (await this.getEnableData()).toLowerCase()
     );
@@ -409,8 +407,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-        this.sessionKeyData.permissions.length !== 0 &&
-        matchingPermission
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
@@ -418,8 +416,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-        this.sessionKeyData.permissions.length !== 0 &&
-        matchingPermission
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
         ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     return concatHex([
@@ -475,8 +473,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     }
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
-        this.sessionKeyData.permissions.length !== 0 &&
-        matchingPermission
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
     const merkleProof = this.merkleTree.getHexProof(
@@ -484,8 +482,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const encodedData =
       this.sessionKeyData.permissions &&
-        this.sessionKeyData.permissions.length !== 0 &&
-        matchingPermission
+      this.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
         ? this.encodePermissionData(matchingPermission, merkleProof)
         : "0x";
     const signature = concat([

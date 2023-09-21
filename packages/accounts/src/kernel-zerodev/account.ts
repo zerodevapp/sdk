@@ -201,6 +201,27 @@ export class KernelSmartContractAccount<
     return this.encodeExecuteAction(target, value, data, 1);
   }
 
+  async encodeSetExection() {
+    if (!this.validator) {
+      throw new Error("Validator not connected");
+    }
+    const { executor, selector, validAfter, validUntil } =
+      await this.validator.getPluginValidatorData();
+    const enableData = await this.validator.getEnableData();
+    return encodeFunctionData({
+      abi: KernelAccountAbi,
+      functionName: "setExecution",
+      args: [
+        selector,
+        executor,
+        this.validator.validatorAddress,
+        validUntil,
+        validAfter,
+        enableData,
+      ],
+    });
+  }
+
   async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
     try {
       if (!this.validator) {
@@ -262,6 +283,18 @@ export class KernelSmartContractAccount<
   }
   protected async getAccountInitCode(): Promise<Hex> {
     return concatHex([this.factoryAddress, await this.getFactoryInitCode()]);
+  }
+
+  async getNonce(): Promise<bigint> {
+    if (!(await this.isAccountDeployed())) {
+      return 0n;
+    }
+    if (!this.validator) {
+      throw Error("Validator unintialized");
+    }
+    const address = await this.getAddress();
+    const key = this.validator.getNonceKey();
+    return this.entryPoint.read.getNonce([address, key]);
   }
 
   protected async getFactoryInitCode(): Promise<Hex> {

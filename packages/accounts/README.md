@@ -535,6 +535,115 @@ const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
     });
 ```
 
+### Recovery Key Validator
+
+#### Initiate the recovery and retrieve the recoveryId
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Initialize the Recovery Provider
+const recoveryData = {
+  guardians: {  // Guardian addresses with their weights
+    [guardianAddress]: 1,
+    [guardian2Address]: 1,
+    [guardian3Address]: 1,
+  },
+  threshold: 3,
+  delaySeconds: 0,
+};
+
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  defaultProvider: ecdsaProvider,
+  opts: {
+    validatorConfig: {
+      ...recoveryData,
+    },
+  },
+});
+
+// 3. Enable the recovery plugin
+const result = await recoveryProvider.enableRecovery();
+await recoveryProvider.waitForUserOperationTransaction(
+  result.hash as Hex
+);
+
+// 3. Initiate the recovery
+const recoveryId = await recoveryProvider.initiateRecovery(<NewOwnerAddress>);
+```
+
+#### Share recoveryId with the guardians to sign recoveryHash
+
+```ts
+// 1. Intialize the Recovery Provider for guardian
+const guardian =
+  LocalAccountSigner.privateKeyToAccountSigner(<PrivateKey>);
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  recoveryId,
+  opts: {
+    validatorConfig: {
+      accountSigner: guardian,
+    },
+  },
+});
+
+// 2. Sign the recovery hash
+await recoveryProvider.signRecovery();
+```
+
+#### Submit the recovery request
+
+| Anybody can submit the recovery request if they have the recoveryId
+
+```ts
+// 1. Initialize the recovery provider
+const account = privateKeyToAccount(<PrivateKey>);
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  recoveryId,
+  opts: {
+    validatorConfig: {
+      guardianAccountOrProvider: account,
+    },
+  },
+});
+
+// 2. Submit the recovery request
+const result = await recoveryProvider.submitRecovery();
+await recoveryProvider.waitForUserOperationTransaction(
+  result.hash as Hex
+);
+```
+
+#### Cancel the recovery request
+
+| Owner of the account can canel the recovery request
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Initialize the Recovery Provider
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  defaultProvider: ecdsaProvider,
+  recoveryId,
+});
+
+// 3. Cancel the recovery
+const result = await recoveryProvider.cancelRecovery();
+await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
+```
+
 ## Components
 
 ### Core Components
