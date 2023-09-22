@@ -77,7 +77,7 @@ describe("Kernel Recovery Provider Test", async () => {
     bundlerProvider: "ALCHEMY",
     opts: {
       accountConfig: {
-        index: 90011n,
+        index: 90012n,
       },
       paymasterConfig: {
         policy: "VERIFYING_PAYMASTER",
@@ -118,11 +118,11 @@ describe("Kernel Recovery Provider Test", async () => {
     guardian3Address = await guardian3.getAddress();
     recoveryData = {
       guardians: {
-        [guardianAddress]: 1,
-        [guardian2Address]: 1,
-        [guardian3Address]: 1,
+        [guardianAddress]: 50,
+        [guardian2Address]: 50,
+        [guardian3Address]: 50,
       },
-      threshold: 3,
+      threshold: 150,
       delaySeconds: 0,
       totalWeight: 0,
     };
@@ -224,7 +224,7 @@ describe("Kernel Recovery Provider Test", async () => {
       });
       console.log(proposalStatus);
       expect(proposalStatus[0]).to.equal(0);
-      expect(proposalStatus[2]).to.equal(1);
+      expect(proposalStatus[2]).to.equal(50);
       const voteStatus = await client.readContract({
         address: RECOVERY_VALIDATOR_ADDRESS,
         abi: WeightedValidatorAbi,
@@ -274,7 +274,7 @@ describe("Kernel Recovery Provider Test", async () => {
       });
       console.log(proposalStatus);
       expect(proposalStatus[0]).to.equal(1);
-      expect(proposalStatus[2]).to.equal(3);
+      expect(proposalStatus[2]).to.equal(150);
       const voteStatus = await client.readContract({
         address: RECOVERY_VALIDATOR_ADDRESS,
         abi: WeightedValidatorAbi,
@@ -381,11 +381,11 @@ describe("Kernel Recovery Provider Test", async () => {
         const recoveryData = {
           guardians: {
             // Guardian addresses with their weights
-            [guardianAddress]: 1,
-            [guardian2Address]: 1,
-            [guardian3Address]: 1,
+            [guardianAddress]: 50,
+            [guardian2Address]: 50,
+            [guardian3Address]: 50,
           },
-          threshold: 3,
+          threshold: 150,
           delaySeconds: 0,
         };
 
@@ -449,7 +449,7 @@ describe("Kernel Recovery Provider Test", async () => {
           validator: RECOVERY_VALIDATOR_ADDRESS,
         });
         expect(enabledRecoveryData).to.eql([
-          3,
+          150,
           recoveryData.threshold,
           recoveryData.delaySeconds,
           Object.keys(recoveryData.guardians).slice(-1)[0],
@@ -489,7 +489,7 @@ describe("Kernel Recovery Provider Test", async () => {
         });
         console.log(proposalStatus);
         expect(proposalStatus[0]).to.equal(0);
-        expect(proposalStatus[2]).to.equal(1);
+        expect(proposalStatus[2]).to.equal(50);
         const voteStatus = await client.readContract({
           address: RECOVERY_VALIDATOR_ADDRESS,
           abi: WeightedValidatorAbi,

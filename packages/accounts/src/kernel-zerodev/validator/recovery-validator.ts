@@ -150,7 +150,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.entries(this.guardians).length !== this.threshold
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) !== this.threshold
     ) {
       throw Error("Recovery config unintialised");
     }
@@ -172,7 +172,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.entries(this.guardians).length !== this.threshold
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) !== this.threshold
     ) {
       throw Error("Recovery config unintialised");
     }
@@ -248,7 +248,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.entries(this.guardians).length !== this.threshold
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) !== this.threshold
     ) {
       throw Error("Recovery config unintialised");
     }
@@ -287,7 +287,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.entries(this.guardians).length !== this.threshold
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) !== this.threshold
     ) {
       throw Error("Recovery config unintialised");
     }
