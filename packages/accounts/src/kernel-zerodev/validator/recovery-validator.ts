@@ -150,10 +150,10 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.values(this.guardians).reduce((a, c) => a + c, 0) !==
-        this.threshold
+      Object.values(this.guardians).some((v) => v === 0) ||
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) < this.threshold
     ) {
-      throw Error("Recovery config unintialised");
+      throw Error("Recovery config uninitialised or unexpected");
     }
     return {
       guardians: this.guardians,
@@ -173,10 +173,10 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.values(this.guardians).reduce((a, c) => a + c, 0) !==
-        this.threshold
+      Object.values(this.guardians).some((v) => v === 0) ||
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) < this.threshold
     ) {
-      throw Error("Recovery config unintialised");
+      throw Error("Recovery config uninitialised or unexpected");
     }
     return encodeAbiParameters(
       parseAbiParameters(
@@ -250,10 +250,10 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.values(this.guardians).reduce((a, c) => a + c, 0) !==
-        this.threshold
+      Object.values(this.guardians).some((v) => v === 0) ||
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) < this.threshold
     ) {
-      throw Error("Recovery config unintialised");
+      throw Error("Recovery config uninitialised or unexpected");
     }
     if (!this.publicClient) {
       throw new Error("Validator uninitialized: PublicClient missing");
@@ -290,10 +290,10 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (
       this.guardians === undefined ||
       !this.threshold ||
-      Object.values(this.guardians).reduce((a, c) => a + c, 0) !==
-        this.threshold
+      Object.values(this.guardians).some((v) => v === 0) ||
+      Object.values(this.guardians).reduce((a, c) => a + c, 0) < this.threshold
     ) {
-      throw Error("Recovery config unintialised");
+      throw Error("Recovery config uninitialised or unexpected");
     }
     const weightedValidator = getContract({
       abi: WeightedValidatorAbi,
