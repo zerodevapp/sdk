@@ -222,7 +222,7 @@ export class KernelSmartContractAccount<
     });
   }
 
-  async signWithEip6492(msg: string | Uint8Array): Promise<Hex> {
+  async signMessageWith6492(msg: string | Uint8Array): Promise<Hex> {
     try {
       if (!this.validator) {
         throw new Error("Validator not connected");

@@ -23,6 +23,7 @@ import {
 import { ZeroDevEthersProvider } from "./ethers-provider.js";
 import type { SupportedValidators } from "../validator/types.js";
 import type { KernelSmartContractAccount } from "../account.js";
+import type { Hex } from "viem";
 
 const hexlifyOptional = (value: any): `0x${string}` | undefined => {
   if (value == null) {
@@ -108,6 +109,15 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
     }
 
     return this.signTypedData(params);
+  }
+
+  async signMessageWith6492(_msg: string | Uint8Array): Promise<Hex> {
+    if (!this.account) {
+        throw new Error(
+          "connect the signer to a provider that has a connected account"
+        );
+      }
+    return this.account.signMessageWith6492(_msg);
   }
 
   withPaymasterMiddleware = (overrides: {
