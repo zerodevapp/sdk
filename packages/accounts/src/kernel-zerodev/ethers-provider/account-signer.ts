@@ -113,10 +113,10 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
 
   async signMessageWith6492(_msg: string | Uint8Array): Promise<Hex> {
     if (!this.account) {
-        throw new Error(
-          "connect the signer to a provider that has a connected account"
-        );
-      }
+      throw new Error(
+        "connect the signer to a provider that has a connected account"
+      );
+    }
     return this.account.signMessageWith6492(_msg);
   }
 
