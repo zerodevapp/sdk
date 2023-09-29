@@ -101,7 +101,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     };
     this.merkleTree = this.getMerkleTree();
     if (this.shouldDelegateViaFallback()) {
-        throw Error("Session key permissions not set");
+      throw Error("Session key permissions not set");
     }
     this.selector =
       params.selector ??
