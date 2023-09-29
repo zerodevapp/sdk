@@ -100,6 +100,9 @@ export class SessionKeyValidator extends KernelBaseValidator {
       paymaster: params.sessionKeyData.paymaster ?? zeroAddress,
     };
     this.merkleTree = this.getMerkleTree();
+    if (this.shouldDelegateViaFallback()) {
+        throw Error("Session key permissions not set");
+    }
     this.selector =
       params.selector ??
       getFunctionSelector("execute(address, uint256, bytes, uint8)");

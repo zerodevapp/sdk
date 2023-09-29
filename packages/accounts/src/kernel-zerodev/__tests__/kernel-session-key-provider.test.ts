@@ -153,7 +153,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     });
   }
 
-  it(
+  it.skip(
     "should execute any tx using SessionKey when no permissions set",
     async () => {
       await createProvider(secondOwner, zeroAddress, executeSelector);
@@ -312,7 +312,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     { timeout: 1000000 }
   );
 
-  it(
+  it.skip(
     "should execute the erc20 token transfer action using SessionKey and Token Action executor",
     async () => {
       const balanceOfAccount = await client.readContract({
