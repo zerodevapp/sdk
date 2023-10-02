@@ -5,37 +5,39 @@ import {
   abortController,
   base64UrlEncode,
   generateRandomBuffer,
-  getCredentials,
   signMessage,
   signTypedData,
 } from "./utils.js";
 import { API_URL } from "../../constants.js";
 
-export async function getPasskeyOwner({
+export async function getAutocompletePasskeyOwner({
   projectId,
-  name,
   apiUrl = API_URL,
-  withCredentials = false
 }: {
   projectId: string;
   name?: string;
   apiUrl?: string;
-  withCredentials?: boolean;
 }): Promise<SmartAccountSigner | undefined> {
+  //@ts-ignore
+  if (!PublicKeyCredential.isConditionalMediationAvailable ||
+    //@ts-ignore
+        !PublicKeyCredential.isConditionalMediationAvailable()) {
+      return;
+    }
+
   //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
-      abortController.controller.abort()
-      abortController.controller = new AbortController()
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
+          mediation: 'conditional',
           publicKey: {
             //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
-            allowCredentials: withCredentials ? await getCredentials(projectId, name) : undefined,
           },
+          signal: abortController.controller.signal
         })
       );
       const response = await axios.post(

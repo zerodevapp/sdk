@@ -8,6 +8,10 @@ browserInit({
   baseUrl: "https://api.turnkey.com",
 });
 
+export const abortController = {
+  controller: new AbortController(),
+}
+
 export const publicKey = "public-key";
 
 export const es256 = -7;
@@ -120,6 +124,16 @@ export const signTypedData = async (
     credentialId,
     apiUrl
   );
+};
+
+export const getCredentials = async (projectId: string, name?: string, apiUrl = API_URL) => {
+  const url = `${apiUrl}/projects/${projectId}/wallets` + (name ? `/${name}` : '')
+  const response = await axios.get(url);
+  const credentials = response.data;
+  return credentials.map((credential: string) => ({
+    id: base64URLStringToBuffer(credential),
+    type: "public-key",
+  }));
 };
 
 // https://github.com/MasterKale/SimpleWebAuthn/blob/master/packages/browser/src/helpers/base64URLStringToBuffer.ts#L8

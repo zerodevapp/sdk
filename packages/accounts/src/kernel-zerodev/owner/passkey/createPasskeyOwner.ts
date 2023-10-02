@@ -2,31 +2,45 @@ import { getWebAuthnAttestation } from "@turnkey/http";
 import axios from "axios";
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
+  abortController,
   base64UrlEncode,
   es256,
   generateRandomBuffer,
+  getCredentials,
   publicKey,
   signMessage,
   signTypedData,
 } from "./utils.js";
 import { API_URL } from "../../constants.js";
+import { UsernameIsAlreadyUsed } from "./exceptions.js";
 
 export async function createPasskeyOwner({
   name,
   projectId,
+  withCredentials = false,
   fallback,
   apiUrl = API_URL,
 }: {
   name: string;
   projectId: string;
+  withCredentials?: boolean;
   fallback?: () => Promise<SmartAccountSigner | undefined>;
   apiUrl?: string;
 }): Promise<SmartAccountSigner | undefined> {
   //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
-    const authenticatorUserId = generateRandomBuffer();
+    let credentials = undefined
+    if (withCredentials) {
+      credentials = await getCredentials(projectId, name)
+    }
+    if (credentials.length >= 64) {
+      throw new UsernameIsAlreadyUsed()
+    }
+
     try {
+      abortController.controller.abort()
+      abortController.controller = new AbortController()
       const attestation = await getWebAuthnAttestation({
         publicKey: {
           rp: {
@@ -39,7 +53,7 @@ export async function createPasskeyOwner({
             residentKey: "required", // or 'preferred', 'discouraged'
             userVerification: "required",
           },
-          // excludeCredentials: await getCredentials(projectId),
+          excludeCredentials: credentials,
           extensions: { credProps: true },
           challenge,
           pubKeyCredParams: [
@@ -49,7 +63,7 @@ export async function createPasskeyOwner({
             },
           ],
           user: {
-            id: authenticatorUserId,
+            id: Uint8Array.from(name, (c) => c.charCodeAt(0)),
             name,
             displayName: name,
           },
