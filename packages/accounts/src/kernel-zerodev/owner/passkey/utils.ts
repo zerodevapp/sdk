@@ -12,6 +12,11 @@ export const abortController = {
   controller: new AbortController(),
 }
 
+export function abortWebauthn() {
+  abortController.controller.abort('ZeroDev: Reset previous Webauthn request')
+  abortController.controller = new AbortController()
+}
+
 export const publicKey = "public-key";
 
 export const es256 = -7;
@@ -39,7 +44,7 @@ export const signMessageImplementation = async (
   credentialId: string,
   apiUrl = API_URL
 ) => {
-  console.log("SIGN MESSAGE IMPLEMENTATION");
+  abortWebauthn()
   const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {

@@ -3,6 +3,7 @@ import axios from "axios";
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
   abortController,
+  abortWebauthn,
   base64UrlEncode,
   generateRandomBuffer,
   signMessage,
@@ -29,6 +30,7 @@ export async function getAutocompletePasskeyOwner({
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
+      abortWebauthn()
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
           mediation: 'conditional',
@@ -48,6 +50,7 @@ export async function getAutocompletePasskeyOwner({
         }
       );
       const { id, walletId, address } = await response.data;
+      console.log('owner', id, walletId, address)
       const owner: SmartAccountSigner = {
         getAddress: async () => address,
         signMessage: (msg) =>

@@ -2,7 +2,7 @@ import { getWebAuthnAssertion } from "@turnkey/http/dist/webauthn";
 import axios from "axios";
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
-  abortController,
+  abortWebauthn,
   base64UrlEncode,
   generateRandomBuffer,
   getCredentials,
@@ -26,8 +26,7 @@ export async function getPasskeyOwner({
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
-      abortController.controller.abort()
-      abortController.controller = new AbortController()
+      abortWebauthn()
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
           publicKey: {

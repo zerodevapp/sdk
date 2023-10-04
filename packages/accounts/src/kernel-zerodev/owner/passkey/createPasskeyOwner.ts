@@ -2,7 +2,7 @@ import { getWebAuthnAttestation } from "@turnkey/http";
 import axios from "axios";
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
-  abortController,
+  abortWebauthn,
   base64UrlEncode,
   es256,
   generateRandomBuffer,
@@ -34,13 +34,12 @@ export async function createPasskeyOwner({
     if (withCredentials) {
       credentials = await getCredentials(projectId, name)
     }
-    if (credentials.length >= 64) {
+    if (credentials && credentials?.length >= 64) {
       throw new UsernameIsAlreadyUsed()
     }
 
     try {
-      abortController.controller.abort()
-      abortController.controller = new AbortController()
+      abortWebauthn()
       const attestation = await getWebAuthnAttestation({
         publicKey: {
           rp: {
