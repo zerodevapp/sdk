@@ -30,16 +30,16 @@ export async function createPasskeyOwner({
   //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
-    let credentials = undefined
+    let credentials = undefined;
     if (withCredentials) {
-      credentials = await getCredentials(projectId, name)
+      credentials = await getCredentials(projectId, name);
     }
     if (credentials && credentials?.length >= 64) {
-      throw new UsernameIsAlreadyUsed()
+      throw new UsernameIsAlreadyUsed();
     }
 
     try {
-      abortWebauthn()
+      abortWebauthn();
       const attestation = await getWebAuthnAttestation({
         publicKey: {
           rp: {

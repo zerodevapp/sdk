@@ -15,7 +15,7 @@ export async function getPasskeyOwner({
   projectId,
   name,
   apiUrl = API_URL,
-  withCredentials = false
+  withCredentials = false,
 }: {
   projectId: string;
   name?: string;
@@ -26,14 +26,16 @@ export async function getPasskeyOwner({
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
-      abortWebauthn()
+      abortWebauthn();
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
           publicKey: {
             //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
-            allowCredentials: withCredentials ? await getCredentials(projectId, name) : undefined,
+            allowCredentials: withCredentials
+              ? await getCredentials(projectId, name)
+              : undefined,
           },
         })
       );

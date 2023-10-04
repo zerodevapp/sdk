@@ -331,13 +331,13 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
           throw new Error("account not connected!");
         }
         const [data, address] = params!;
-        if (address !== (await this.getAddress())) {
+        if (address.toLowerCase() !== (await this.getAddress()).toLowerCase()) {
           throw new Error(
             "cannot sign for address that is not the current account"
           );
         }
         // @ts-ignore
-        return this.account.signWithEip6492(data);
+        return this.account.signMessageWith6492(data);
       default:
         // @ts-ignore
         return this.rpcClient.request(args);

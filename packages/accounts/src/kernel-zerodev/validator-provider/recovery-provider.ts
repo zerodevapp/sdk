@@ -12,9 +12,14 @@ import {
   type Address,
   type SendUserOperationResult,
 } from "@alchemy/aa-core";
-import { getChainId, getRecoveryData, setSignatures } from "../api/index.js";
+import {
+  getChainId,
+  getRecoveryData,
+  postRecoveryData,
+  setSignatures,
+} from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
-import { BACKEND_URL, RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
+import { CHAIN_ID_TO_NODE, RECOVERY_VALIDATOR_ADDRESS } from "../constants.js";
 import {
   encodeAbiParameters,
   encodeFunctionData,
@@ -23,11 +28,11 @@ import {
   keccak256,
   publicActions,
   type TransactionReceipt,
-  concatHex,
+  createPublicClient,
+  http,
 } from "viem";
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import axios from "axios";
 import { base64ToBytes, bytesToBase64 } from "../utils.js";
 
 export interface RecoveryProviderParams
@@ -50,6 +55,7 @@ export class RecoveryProvider extends ValidatorProvider<
     const validator = new RecoveryValidator({
       projectId: params.projectId,
       chain,
+      recoveryId: params.recoveryId,
       validatorAddress:
         params.opts?.validatorConfig?.validatorAddress ??
         RECOVERY_VALIDATOR_ADDRESS,
@@ -91,6 +97,20 @@ export class RecoveryProvider extends ValidatorProvider<
       } = await getRecoveryData(params.recoveryId));
       recoveryConfig = RecoveryProvider.deserializeRecoveryConfig(
         serializedRecoveryConfig
+      );
+    } else if (
+      params.opts?.accountConfig?.accountAddress &&
+      (!params.opts?.validatorConfig?.guardians ||
+        !Object.entries(params.opts?.validatorConfig?.guardians).length ||
+        params.opts.validatorConfig.threshold === undefined)
+    ) {
+      const publicClient = createPublicClient({
+        transport: http(CHAIN_ID_TO_NODE[chain?.id ?? polygonMumbai.id]),
+        chain: chain ?? polygonMumbai,
+      });
+      recoveryConfig = await RecoveryValidator.fetchRecoveryConfigFromContract(
+        params.opts?.accountConfig?.accountAddress,
+        publicClient
       );
     }
     const instance = new RecoveryProvider({
@@ -160,28 +180,18 @@ export class RecoveryProvider extends ValidatorProvider<
   }
 
   async initiateRecovery(enableData: Hex): Promise<string> {
-    try {
-      const serializedConfig = this.serializeRecoveryConfig();
-      const {
-        data: { recoveryId },
-      } = await axios.post(
-        `${BACKEND_URL}/v1/recovery`,
-        {
-          enableData,
-          scwAddress: await this.getAddress(),
-          recoveryConfig: serializedConfig,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      console.log(recoveryId);
-      this.enableData = enableData;
-      return recoveryId;
-    } catch (error) {
-      console.log(error);
+    const serializedConfig = this.serializeRecoveryConfig();
+    const recoveryId = await postRecoveryData(
+      enableData,
+      await this.getAddress(),
+      serializedConfig
+    );
+    console.log(recoveryId);
+    this.enableData = enableData;
+    if (!recoveryId) {
       throw Error("Unable to generate the recoveryId");
     }
+    return recoveryId;
   }
 
   serializeRecoveryConfig(): string {
@@ -246,20 +256,11 @@ export class RecoveryProvider extends ValidatorProvider<
       const sig = await this.getValidator().signRecoveryHash(
         callDataAndNonceHash
       );
-      let sigs = this.getValidator().getRecoverySignatures();
-      if (sigs) {
-        sigs =
-          sigs.toLowerCase().indexOf(sig.toLowerCase()) === -1
-            ? concatHex([sigs, sig])
-            : sigs;
-      } else {
-        sigs = sig;
-      }
-      this.getValidator().setRecoverySignatures(sigs);
-      const { result } = await setSignatures(this.recoveryId, sigs);
+      const { result, data } = await setSignatures(this.recoveryId, sig);
       if (result !== "success") {
         throw Error("Failed to save the signatures");
       }
+      this.getValidator().setRecoverySignatures(data.signatures);
     } catch (error) {
       console.log(error);
     }
@@ -273,7 +274,8 @@ export class RecoveryProvider extends ValidatorProvider<
     if (!fetchedEnableData) {
       throw Error("Unable to fetch enable data for Recovery");
     }
-    const signatures = sigs ?? this.getValidator().getRecoverySignatures();
+    const signatures =
+      sigs ?? (await this.getValidator().getRecoverySignatures());
     if (!signatures) {
       throw Error("Signatures are not set");
     }

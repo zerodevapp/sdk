@@ -1,5 +1,6 @@
 import axios from "axios";
 import { BACKEND_URL } from "../constants.js";
+import type { Hex } from "viem";
 
 export const getChainId = async (
   projectId: string,
@@ -33,6 +34,32 @@ export const getRecoveryData = async (recoveryId: string) => {
       }
     );
     return data;
+  } catch (error) {
+    console.log(error);
+    return undefined;
+  }
+};
+
+export const postRecoveryData = async (
+  enableData: Hex,
+  scwAddress: Hex,
+  recoveryConfig: string
+): Promise<string | undefined> => {
+  try {
+    const {
+      data: { recoveryId },
+    } = await axios.post(
+      `${BACKEND_URL}/v1/recovery`,
+      {
+        enableData,
+        scwAddress,
+        recoveryConfig,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return recoveryId;
   } catch (error) {
     console.log(error);
     return undefined;

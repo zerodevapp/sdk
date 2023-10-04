@@ -123,7 +123,7 @@ describe("Kernel Account Tests", () => {
   });
 
   it(
-    "signWithEip6492 should correctly sign the message",
+    "signMessageWith6492 should correctly sign the message",
     async () => {
       const messageToBeSigned: Hex =
         "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b";

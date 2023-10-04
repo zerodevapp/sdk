@@ -19,6 +19,7 @@ import {
   type SmartAccountSigner,
 } from "@alchemy/aa-core";
 import {
+  CHAIN_ID_TO_NODE,
   ECDSA_VALIDATOR_ADDRESS,
   RECOVERY_ACTION,
   RECOVERY_VALIDATOR_ADDRESS,
@@ -58,7 +59,8 @@ describe("Kernel Recovery Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    // transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   let accountAddress: Hex = "0x";
   const selector = getFunctionSelector("doRecovery(address, bytes)");
@@ -88,7 +90,7 @@ describe("Kernel Recovery Provider Test", async () => {
   async function createProvider(
     recoveryId?: string,
     accountSigner?: SmartAccountSigner,
-    guardianAccountOrProvider?: LocalAccount<string>
+    localAccountOrProvider?: LocalAccount<string>
   ): Promise<RecoveryProvider> {
     recoveryProvider = await RecoveryProvider.init({
       projectId: config.projectIdWithGasSponsorship,
@@ -100,7 +102,7 @@ describe("Kernel Recovery Provider Test", async () => {
           threshold: recoveryData.threshold,
           delaySeconds: recoveryData.delaySeconds,
           accountSigner,
-          guardianAccountOrProvider,
+          localAccountOrProvider,
           selector,
           executor: RECOVERY_ACTION,
           validAfter: 0,
@@ -376,7 +378,7 @@ describe("Kernel Recovery Provider Test", async () => {
 
   describe("Test Recovery with recoveryId", async () => {
     it(
-      "should initiate the recovery",
+      "should enable the recovery",
       async () => {
         const recoveryData = {
           guardians: {
@@ -388,7 +390,6 @@ describe("Kernel Recovery Provider Test", async () => {
           threshold: 150,
           delaySeconds: 0,
         };
-
         const recoveryProvider = await RecoveryProvider.init({
           projectId: config.projectIdWithGasSponsorship,
           defaultProvider: ecdsaProvider,
@@ -397,20 +398,6 @@ describe("Kernel Recovery Provider Test", async () => {
               ...recoveryData,
             },
           },
-        });
-        recoveryId = await recoveryProvider.initiateRecovery(newOwnerAddress);
-        console.log(recoveryId);
-      },
-      { timeout: 1000000 }
-    );
-
-    it(
-      "should enable the recovery",
-      async () => {
-        const recoveryProvider = await RecoveryProvider.init({
-          projectId: config.projectIdWithGasSponsorship,
-          defaultProvider: ecdsaProvider,
-          recoveryId,
         });
         let result, tx;
         try {
@@ -461,6 +448,23 @@ describe("Kernel Recovery Provider Test", async () => {
       { timeout: 1000000 }
     );
 
+    it(
+      "should initiate the recovery",
+      async () => {
+        const recoveryProvider = await RecoveryProvider.init({
+          projectId: config.projectIdWithGasSponsorship,
+          opts: {
+            accountConfig: {
+              accountAddress,
+            },
+          },
+        });
+        recoveryId = await recoveryProvider.initiateRecovery(newOwnerAddress);
+        console.log(recoveryId);
+      },
+      { timeout: 1000000 }
+    );
+
     it.skip(
       "should approve recovery",
       async () => {
@@ -470,7 +474,7 @@ describe("Kernel Recovery Provider Test", async () => {
           opts: {
             validatorConfig: {
               accountSigner: guardian,
-              guardianAccountOrProvider: guardianAccount,
+              localAccountOrProvider: guardianAccount,
             },
           },
         });
@@ -514,11 +518,6 @@ describe("Kernel Recovery Provider Test", async () => {
             },
           },
         });
-
-        const callDataAndNonceHash =
-          await recoveryProvider1.encodeCalldataAndNonce(newOwnerAddress);
-        console.log("callDataAndNonceHash", callDataAndNonceHash);
-        await recoveryProvider1.signRecovery();
         const recoveryProvider2 = await RecoveryProvider.init({
           projectId: config.projectIdWithGasSponsorship,
           recoveryId,
@@ -528,7 +527,6 @@ describe("Kernel Recovery Provider Test", async () => {
             },
           },
         });
-        await recoveryProvider2.signRecovery();
         const recoveryProvider3 = await RecoveryProvider.init({
           projectId: config.projectIdWithGasSponsorship,
           recoveryId,
@@ -538,6 +536,12 @@ describe("Kernel Recovery Provider Test", async () => {
             },
           },
         });
+
+        const callDataAndNonceHash =
+          await recoveryProvider1.encodeCalldataAndNonce(newOwnerAddress);
+        console.log("callDataAndNonceHash", callDataAndNonceHash);
+        await recoveryProvider1.signRecovery();
+        await recoveryProvider2.signRecovery();
         await recoveryProvider3.signRecovery();
         recoveryProvider = recoveryProvider3;
       },
@@ -552,7 +556,7 @@ describe("Kernel Recovery Provider Test", async () => {
           recoveryId,
           opts: {
             validatorConfig: {
-              guardianAccountOrProvider: guardianAccount,
+              localAccountOrProvider: guardianAccount,
             },
           },
         });
