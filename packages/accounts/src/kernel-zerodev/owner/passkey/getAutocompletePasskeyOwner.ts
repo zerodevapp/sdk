@@ -19,8 +19,8 @@ export async function getAutocompletePasskeyOwner({
   name?: string;
   apiUrl?: string;
 }): Promise<SmartAccountSigner | undefined> {
-  //@ts-ignore
   if (
+    //@ts-ignore
     !PublicKeyCredential?.isConditionalMediationAvailable ||
     //@ts-ignore
     !PublicKeyCredential?.isConditionalMediationAvailable()
