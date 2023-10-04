@@ -20,26 +20,28 @@ export async function getAutocompletePasskeyOwner({
   apiUrl?: string;
 }): Promise<SmartAccountSigner | undefined> {
   //@ts-ignore
-  if (!PublicKeyCredential?.isConditionalMediationAvailable ||
+  if (
+    !PublicKeyCredential?.isConditionalMediationAvailable ||
     //@ts-ignore
-        !PublicKeyCredential?.isConditionalMediationAvailable()) {
-      return;
-    }
+    !PublicKeyCredential?.isConditionalMediationAvailable()
+  ) {
+    return;
+  }
 
   //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
-      abortWebauthn()
+      abortWebauthn();
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
-          mediation: 'conditional',
+          mediation: "conditional",
           publicKey: {
             //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
           },
-          signal: abortController.controller.signal
+          signal: abortController.controller.signal,
         })
       );
       const response = await axios.post(
@@ -50,7 +52,7 @@ export async function getAutocompletePasskeyOwner({
         }
       );
       const { id, walletId, address } = await response.data;
-      console.log('owner', id, walletId, address)
+      console.log("owner", id, walletId, address);
       const owner: SmartAccountSigner = {
         getAddress: async () => address,
         signMessage: (msg) =>

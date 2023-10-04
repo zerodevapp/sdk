@@ -537,7 +537,7 @@ const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
 
 ### Recovery Key Validator
 
-#### Initiate the recovery and retrieve the recoveryId
+#### Enable the recovery plugin
 
 ```ts
 // 1. Get the default ecdsa validator provider
@@ -548,7 +548,8 @@ const ecdsaProvider = await ECDSAProvider.init({
 
 // 2. Initialize the Recovery Provider
 const recoveryData = {
-  guardians: {  // Guardian addresses with their weights
+  guardians: {
+    // Guardian addresses with their weights
     [guardianAddress]: 1,
     [guardian2Address]: 1,
     [guardian3Address]: 1,
@@ -569,11 +570,23 @@ const recoveryProvider = await RecoveryProvider.init({
 
 // 3. Enable the recovery plugin
 const result = await recoveryProvider.enableRecovery();
-await recoveryProvider.waitForUserOperationTransaction(
-  result.hash as Hex
-);
+await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
+```
 
-// 3. Initiate the recovery
+#### Initiate the recovery and retrieve the recoveryId
+
+```ts
+// 1. Initialize the Recovery Provider
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  opts: {
+    accountConfig: {
+        accountAddress
+    }
+  }
+});
+
+// 2. Initiate the recovery
 const recoveryId = await recoveryProvider.initiateRecovery(<NewOwnerAddress>);
 ```
 
@@ -607,11 +620,6 @@ const account = privateKeyToAccount(<PrivateKey>);
 const recoveryProvider = await RecoveryProvider.init({
   projectId,
   recoveryId,
-  opts: {
-    validatorConfig: {
-      guardianAccountOrProvider: account,
-    },
-  },
 });
 
 // 2. Submit the recovery request
@@ -623,7 +631,7 @@ await recoveryProvider.waitForUserOperationTransaction(
 
 #### Cancel the recovery request
 
-| Owner of the account can canel the recovery request
+| Owner of the account can cancel the recovery request
 
 ```ts
 // 1. Get the default ecdsa validator provider
@@ -641,6 +649,28 @@ const recoveryProvider = await RecoveryProvider.init({
 
 // 3. Cancel the recovery
 const result = await recoveryProvider.cancelRecovery();
+await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
+```
+
+#### Disable the recovery plugin
+
+| To re-enable Recovery plugin with new recovery data (e.g. guardians, weights, threshold, delaySeconds), the existing enabled recovery plugin needs to be disabled first.
+
+```ts
+// 1. Get the default ecdsa validator provider
+const ecdsaProvider = await ECDSAProvider.init({
+  projectId, // zeroDev projectId
+  owner,
+});
+
+// 2. Initialize the Recovery Provider
+const recoveryProvider = await RecoveryProvider.init({
+  projectId,
+  defaultProvider: ecdsaProvider,
+});
+
+// 3. Delete the recovery data
+const result = await recoveryProvider.deleteRecoveryData();
 await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
 ```
 

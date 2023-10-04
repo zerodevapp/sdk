@@ -27,13 +27,15 @@ import {
   type Account,
   publicActions,
   getFunctionSelector,
+  type PublicClient,
 } from "viem";
 import { WeightedValidatorAbi } from "../abis/WeightedValidatorAbi.js";
-import { getChainId } from "../api/index.js";
+import { getChainId, getRecoveryData } from "../api/index.js";
 import {
   CHAIN_ID_TO_NODE,
   DUMMY_ECDSA_SIG,
   RECOVERY_ACTION,
+  RECOVERY_VALIDATOR_ADDRESS,
 } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { fixSignedData } from "../utils.js";
@@ -49,9 +51,10 @@ export interface RecoveryValidatorParams extends KernelBaseValidatorParams {
   threshold?: number;
   delaySeconds?: number;
   accountSigner?: SmartAccountSigner;
-  guardianAccountOrProvider?: LocalAccount<string> | EthereumProvider;
+  localAccountOrProvider?: LocalAccount<string> | EthereumProvider;
   walletClient?: WalletClient<Transport, Chain>;
   signatures?: Hex;
+  recoveryId?: string;
 }
 
 export type RecoveryConfig = Required<
@@ -83,12 +86,13 @@ export class RecoveryValidator extends KernelBaseValidator {
   protected threshold?: number;
   protected delaySeconds: number;
   protected accountSigner?: SmartAccountSigner;
-  protected guardianAccountOrProvider?: LocalAccount<string> | EthereumProvider;
+  protected localAccountOrProvider?: LocalAccount<string> | EthereumProvider;
   protected signatures?: Hex;
+  protected recoveryId?: string;
   walletClient?: WalletClient<
     Transport,
     Chain,
-    WalletClientAccountType<typeof this.guardianAccountOrProvider>
+    WalletClientAccountType<typeof this.localAccountOrProvider>
   >;
 
   constructor(params: RecoveryValidatorParams) {
@@ -98,27 +102,28 @@ export class RecoveryValidator extends KernelBaseValidator {
     this.delaySeconds = params.delaySeconds ?? 0;
     this.accountSigner = params.accountSigner;
     this.mode = params.mode ?? ValidatorMode.plugin;
-    this.guardianAccountOrProvider = params.guardianAccountOrProvider;
+    this.localAccountOrProvider = params.localAccountOrProvider;
     this.signatures = params.signatures;
     this.validAfter = params.validAfter ?? 0;
     this.validUntil = params.validUntil ?? 0;
     this.executor = params.executor ?? RECOVERY_ACTION;
     this.selector = params.selector ?? recoverySelector;
-    if (isLocalAccount(params.guardianAccountOrProvider)) {
+    this.recoveryId = params.recoveryId;
+    if (isLocalAccount(params.localAccountOrProvider)) {
       this.walletClient = createWalletClient({
-        account: params.guardianAccountOrProvider,
+        account: params.localAccountOrProvider,
         chain: this.chain ?? polygonMumbai,
         transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
       }).extend(publicActions);
-    } else if (isEthereumProvider(params.guardianAccountOrProvider)) {
+    } else if (isEthereumProvider(params.localAccountOrProvider)) {
       this.walletClient = createWalletClient({
         chain: this.chain ?? polygonMumbai,
-        transport: custom(params.guardianAccountOrProvider),
+        transport: custom(params.localAccountOrProvider),
       }).extend(publicActions);
     } else if (params.walletClient) {
       this.walletClient = params.walletClient.extend(publicActions);
-    } else if (params.guardianAccountOrProvider) {
-      throw Error("Incorrect guardianAccountOrProvider type");
+    } else if (params.localAccountOrProvider) {
+      throw Error("Incorrect localAccountOrProvider type");
     }
   }
 
@@ -142,7 +147,11 @@ export class RecoveryValidator extends KernelBaseValidator {
     this.signatures = signatures;
   }
 
-  getRecoverySignatures(): Hex | undefined {
+  async getRecoverySignatures(): Promise<Hex | undefined> {
+    if (this.recoveryId) {
+      const { signatures } = await getRecoveryData(this.recoveryId);
+      this.setRecoverySignatures(signatures);
+    }
     return this.signatures;
   }
 
@@ -241,6 +250,44 @@ export class RecoveryValidator extends KernelBaseValidator {
       functionName: "doRecovery",
       args: [defaultValidatorAddress, enableData],
     });
+  }
+
+  static async fetchRecoveryConfigFromContract(
+    kernelAccountAddress: Address,
+    publicClient: PublicClient<Transport, Chain>
+  ): Promise<RecoveryConfig> {
+    try {
+      const [, threshold, delaySeconds, firstGuardian] =
+        await publicClient.readContract({
+          abi: WeightedValidatorAbi,
+          address: RECOVERY_VALIDATOR_ADDRESS,
+          functionName: "weightedStorage",
+          args: [kernelAccountAddress],
+        });
+
+      const guardians: WeightedGuardians = {};
+
+      let nextGuardian = firstGuardian;
+      while (
+        nextGuardian.toLowerCase() !== kernelAccountAddress.toLowerCase()
+      ) {
+        const guardianStorage = await publicClient.readContract({
+          abi: WeightedValidatorAbi,
+          address: RECOVERY_VALIDATOR_ADDRESS,
+          functionName: "guardian",
+          args: [nextGuardian, kernelAccountAddress],
+        });
+        guardians[nextGuardian] = guardianStorage[0];
+        nextGuardian = guardianStorage[1];
+      }
+      return {
+        threshold,
+        delaySeconds,
+        guardians,
+      };
+    } catch (error) {
+      throw Error("Failed to fetch config from contract");
+    }
   }
 
   async isPluginEnabled(

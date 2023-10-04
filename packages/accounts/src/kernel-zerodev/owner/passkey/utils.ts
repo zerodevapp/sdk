@@ -10,11 +10,11 @@ browserInit({
 
 export const abortController = {
   controller: new AbortController(),
-}
+};
 
 export function abortWebauthn() {
-  abortController.controller.abort('ZeroDev: Reset previous Webauthn request')
-  abortController.controller = new AbortController()
+  abortController.controller.abort("ZeroDev: Reset previous Webauthn request");
+  abortController.controller = new AbortController();
 }
 
 export const publicKey = "public-key";
@@ -44,7 +44,7 @@ export const signMessageImplementation = async (
   credentialId: string,
   apiUrl = API_URL
 ) => {
-  abortWebauthn()
+  abortWebauthn();
   const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {
@@ -131,8 +131,13 @@ export const signTypedData = async (
   );
 };
 
-export const getCredentials = async (projectId: string, name?: string, apiUrl = API_URL) => {
-  const url = `${apiUrl}/projects/${projectId}/wallets` + (name ? `/${name}` : '')
+export const getCredentials = async (
+  projectId: string,
+  name?: string,
+  apiUrl = API_URL
+) => {
+  const url =
+    `${apiUrl}/projects/${projectId}/wallets` + (name ? `/${name}` : "");
   const response = await axios.get(url);
   const credentials = response.data;
   return credentials.map((credential: string) => ({
