@@ -34,8 +34,5 @@ jobs:
 
       - name: E2E tests
         env:
-          API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: yarn test:e2e
