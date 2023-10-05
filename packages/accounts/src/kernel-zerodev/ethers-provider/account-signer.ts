@@ -120,6 +120,15 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
     return this.account.signMessageWith6492(_msg);
   }
 
+  async signTypedDataWith6492(params: SignTypedDataParams): Promise<Hex> {
+    if (!this.account) {
+      throw new Error(
+        "connect the signer to a provider that has a connected account"
+      );
+    }
+    return this.account.signTypedDataWith6492(params);
+  }
+
   withPaymasterMiddleware = (overrides: {
     dummyPaymasterDataMiddleware?: PaymasterAndDataMiddleware;
     paymasterDataMiddleware?: PaymasterAndDataMiddleware;

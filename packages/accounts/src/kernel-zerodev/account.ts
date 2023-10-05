@@ -1,7 +1,6 @@
 import type { Address } from "abitype";
 import {
   concatHex,
-  encodeAbiParameters,
   encodeFunctionData,
   type FallbackTransport,
   hashMessage,
@@ -9,7 +8,6 @@ import {
   toBytes,
   type Transport,
 } from "viem";
-import { parseAbiParameters } from "abitype";
 import { KernelBaseValidator } from "./validator/base.js";
 import { KernelAccountAbi } from "./abis/KernelAccountAbi.js";
 import { KernelFactoryAbi } from "./abis/KernelFactoryAbi.js";
@@ -21,6 +19,7 @@ import {
   defineReadOnly,
   getChain,
   type SignTypedDataParams,
+  wrapWith6492,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -228,19 +227,41 @@ export class KernelSmartContractAccount<
         throw new Error("Validator not connected");
       }
       const formattedMessage = typeof msg === "string" ? toBytes(msg) : msg;
-      let sig = await this.validator.signMessage(
+      let signature = await this.validator.signMessage(
         toBytes(hashMessage({ raw: formattedMessage }))
       );
       // If the account is undeployed, use ERC-6492
       if (!(await this.isAccountDeployed())) {
-        sig = (encodeAbiParameters(
-          parseAbiParameters("address, bytes, bytes"),
-          [this.factoryAddress, await this.getFactoryInitCode(), sig]
-        ) +
-          "6492649264926492649264926492649264926492649264926492649264926492") as Hex; // magic suffix
+        signature = wrapWith6492({
+          factoryAddress: this.factoryAddress,
+          initCode: await this.getFactoryInitCode(),
+          signature,
+        });
       }
 
-      return sig;
+      return signature;
+    } catch (err: any) {
+      console.error("Got Error - ", err.message);
+      throw new Error("Message Signing with EIP6492 failed");
+    }
+  }
+
+  async signTypedDataWith6492(params: SignTypedDataParams): Promise<Hex> {
+    try {
+      if (!this.validator) {
+        throw new Error("Validator not connected");
+      }
+      let signature = await this.validator.signTypedData(params);
+      // If the account is undeployed, use ERC-6492
+      if (!(await this.isAccountDeployed())) {
+        signature = wrapWith6492({
+          factoryAddress: this.factoryAddress,
+          initCode: await this.getFactoryInitCode(),
+          signature,
+        });
+      }
+
+      return signature;
     } catch (err: any) {
       console.error("Got Error - ", err.message);
       throw new Error("Message Signing with EIP6492 failed");

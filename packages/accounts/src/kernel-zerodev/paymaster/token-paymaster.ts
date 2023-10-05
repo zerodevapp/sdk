@@ -5,7 +5,13 @@ import {
   type UserOperationStruct,
 } from "@alchemy/aa-core";
 import axios from "axios";
-import { type Hex, toHex, decodeFunctionData, encodeFunctionData } from "viem";
+import {
+  type Hex,
+  toHex,
+  decodeFunctionData,
+  encodeFunctionData,
+  isAddress,
+} from "viem";
 import { ERC20Abi } from "../abis/ERC20Abi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MultiSendAbi } from "../abis/MultiSendAbi.js";
@@ -180,7 +186,11 @@ export class TokenPaymaster extends Paymaster {
         chainId
       );
       let paymasterAddress = await this.getPaymasterAddress(paymasterProvider);
-      if (gasTokenAddress !== undefined && paymasterAddress !== undefined) {
+      if (
+        gasTokenAddress !== undefined &&
+        paymasterAddress !== undefined &&
+        isAddress(paymasterAddress)
+      ) {
         const erc20UserOp = await this.getERC20UserOp(
           struct,
           mainCall,

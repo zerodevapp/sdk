@@ -1,9 +1,8 @@
-ZeroDev SDK
-==================
+# ZeroDev SDK
 
 [![CI Tests](https://github.com/zerodevapp/sdk/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/zerodevapp/sdk/actions/workflows/main.yml)
 
------
+---
 
 SDK for [ZeroDev](https://docs.zerodev.app/), based on [Kernel](https://github.com/zerodevapp/kernel).
 
