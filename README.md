@@ -473,6 +473,26 @@ const { hash } = await sessionKeyProvider.sendUserOperation({
 });
 ```
 
+> **_NOTE:_** If you are using ERC20 Token Paymaster along with Session Key then make sure to also whitelist the Multisend contract address and function selector in the permissions alongwith with end contract permission as below.
+
+```ts
+import { constants, MultiSendAbi } from "@zerodev/sdk";
+
+// Permission object to pass in the `sessionKeyData.permissions` array
+const permissions = [
+  ...,
+  {
+    target: constants.MULTISEND_ADDR,
+    valueLimit: 0n,
+    sig: getFunctionSelector(
+      getAbiItem({ abi: MultiSendAbi, name: "multiSend" })
+    ),
+    operation: Operation.DelegateCall,
+    rules: [],
+  }
+]
+```
+
 #### Creating Session Key on the server and using it on the client side
 
 ```ts

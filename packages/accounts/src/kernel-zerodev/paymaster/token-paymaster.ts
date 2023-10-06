@@ -158,6 +158,13 @@ export class TokenPaymaster extends Paymaster {
           to: await this.provider.getAddress(),
           data: erc20CallData,
         }),
+        signature: await this.provider
+          .getAccount()
+          .getValidator()
+          .getDynamicDummySignature(
+            (await struct.sender) as Hex,
+            erc20CallData
+          ),
       };
     } catch (error) {
       return;
@@ -198,7 +205,7 @@ export class TokenPaymaster extends Paymaster {
           paymasterAddress
         );
         if (!erc20UserOp) {
-          return struct;
+          return;
         }
         const paymasterResp = await this.signUserOp({
           userOp: struct,

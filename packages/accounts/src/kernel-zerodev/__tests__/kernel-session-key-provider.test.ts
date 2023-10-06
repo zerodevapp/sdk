@@ -8,12 +8,18 @@ import {
   pad,
   zeroAddress,
   type Hash,
+  getAbiItem,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
-import { TOKEN_ACTION, oneAddress } from "../constants.js";
+import {
+  CHAIN_ID_TO_NODE,
+  MULTISEND_ADDR,
+  TOKEN_ACTION,
+  oneAddress,
+} from "../constants.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
 import {
   LocalAccountSigner,
@@ -29,6 +35,7 @@ import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js";
 import { EmptyAccountSigner } from "../signer/empty-account.js";
+import { MultiSendAbi } from "../abis/MultiSendAbi.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel SessionKey Provider Test", async () => {
@@ -44,7 +51,7 @@ describe("Kernel SessionKey Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   const erc20TransferSelector = getFunctionSelector(
     "transfer(address, uint256)"
@@ -78,7 +85,8 @@ describe("Kernel SessionKey Provider Test", async () => {
     amount?: bigint,
     permissions?: Permission[],
     paymaster?: Address,
-    usePaymaster = true
+    usePaymaster = true,
+    useTokenPaymaster = false
   ) {
     if (amount) {
       const mintData = encodeFunctionData({
@@ -114,9 +122,14 @@ describe("Kernel SessionKey Provider Test", async () => {
             txRetryIntervalMs: 2000,
           },
         },
-        paymasterConfig: {
-          policy: "VERIFYING_PAYMASTER",
-        },
+        paymasterConfig: useTokenPaymaster
+          ? {
+              policy: "TOKEN_PAYMASTER",
+              gasToken: "TEST_ERC20",
+            }
+          : {
+              policy: "VERIFYING_PAYMASTER",
+            },
         validatorConfig: {
           executor,
           selector,
@@ -146,9 +159,14 @@ describe("Kernel SessionKey Provider Test", async () => {
             txRetryIntervalMs: 2000,
           },
         },
-        paymasterConfig: {
-          policy: "VERIFYING_PAYMASTER",
-        },
+        paymasterConfig: useTokenPaymaster
+          ? {
+              policy: "TOKEN_PAYMASTER",
+              gasToken: "TEST_ERC20",
+            }
+          : {
+              policy: "VERIFYING_PAYMASTER",
+            },
       },
     });
   }
@@ -272,6 +290,82 @@ describe("Kernel SessionKey Provider Test", async () => {
             ],
           },
         ]
+      );
+
+      let result, tx;
+      const balanceOfBefore = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfBefore", balanceOfBefore);
+      const amountToTransfer = 10000n;
+      try {
+        result = await sessionKeyProvider.sendUserOperation({
+          target: Test_ERC20Address,
+          data: encodeFunctionData({
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), amountToTransfer],
+          }),
+        });
+        console.log(result);
+        tx = await sessionKeyProvider.waitForUserOperationTransaction(
+          result.hash as Hex
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      console.log(tx);
+      const balanceOfAfter = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfAfter", balanceOfAfter);
+      expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
+    },
+    { timeout: 1000000 }
+  );
+
+  it(
+    "should execute the erc20 token transfer action using SessionKey with ERC20 Token Paymaster",
+    async () => {
+      const balanceOfAccount = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [accountAddress],
+      });
+      const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          {
+            target: Test_ERC20Address,
+            valueLimit: 0n,
+            sig: erc20TransferSelector,
+            operation: Operation.Call,
+            rules: [],
+          },
+          {
+            target: MULTISEND_ADDR,
+            valueLimit: 0n,
+            sig: getFunctionSelector(
+              getAbiItem({ abi: MultiSendAbi, name: "multiSend" })
+            ),
+            operation: Operation.DelegateCall,
+            rules: [],
+          },
+        ],
+        zeroAddress,
+        true,
+        true
       );
 
       let result, tx;
