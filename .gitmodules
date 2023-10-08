@@ -10,6 +10,6 @@
 [submodule "examples/contracts/DAAppNFT/lib/solmate"]
 	path = examples/contracts/DAAppNFT/lib/solmate
 	url = https://github.com/transmissions11/solmate
-[submodule "packages/accounts/e2e-tests"]
-	path = packages/accounts/e2e-tests
+[submodule "e2e-tests"]
+	path = e2e-tests
 	url = git@github.com:zerodevapp/e2e-tests.git

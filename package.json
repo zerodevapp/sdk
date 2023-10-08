@@ -4,7 +4,6 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "packages/accounts/e2e-tests",
     "templates/*",
     "examples/*"
   ],
@@ -13,7 +12,6 @@
     "build:examples": "lerna run build",
     "clean": "lerna run clean",
     "test": "lerna run test:run",
-    "test:e2e": "lerna run test:e2e --concurrency=1",
     "lint:write": "eslint . --fix && prettier --write --ignore-unknown .",
     "lint:check": "eslint . && prettier --check .",
     "prepare": "husky install",

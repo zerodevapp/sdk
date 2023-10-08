@@ -27,13 +27,19 @@ jobs:
           node-version: "18.13"
           cache: "yarn"
 
-      - name: Install dependencies
+      - name: Install SDK dependencies
         run: yarn
 
-      - name: Build
+      - name: Build SDK
         run: yarn build
 
+      - name: Link SDK
+        run: yarn link --cwd packages/accounts
+      
+      - name: Install E2E tests
+        run: yarn link @zerodev/sdk --cwd e2e-tests && yarn --cwd e2e-tests
+      
       - name: E2E tests
         env:
           API_KEY: ${{ secrets.API_KEY }}
-        run: yarn test:e2e
+        run: yarn test:e2e --cwd e2e-tests
