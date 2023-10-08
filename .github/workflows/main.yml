@@ -7,8 +7,8 @@ on:
       - main
     paths:
       - "packages/accounts/src/**"
-      - "packages/accounts/e2e-tests"
       - "packages/accounts/package.json"
+      - "e2e-tests"
 
 # # If we ever migrate this to not be manual, we HAVE to check that the commit
 # # it is running against DOES NOT contain [skip-ci] in the commit message
