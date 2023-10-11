@@ -1,9 +1,11 @@
-import type { SmartAccountSigner } from "@alchemy/aa-core";
+import type {SignTypedDataParams, SmartAccountSigner} from "@alchemy/aa-core";
 import { API_URL } from "../constants.js";
 import axios from "axios";
-import type { Hex } from "viem";
-import type { SignTypedDataParams } from "@alchemy/aa-core";
+import {TurnkeyClient} from "@turnkey/http";
 
+/**
+ * Returns a signer for a custodial wallet via TurnKey
+ */
 export async function getCustodialOwner(
   identifier: string,
   {
@@ -12,14 +14,17 @@ export async function getCustodialOwner(
     publicKey,
     keyId,
     apiUrl = API_URL,
+    turnKeyClient,
   }: {
     privateKey?: string;
     publicKey?: string;
     keyId?: string;
     custodialFilePath?: string;
     apiUrl?: string;
+    turnKeyClient?: TurnkeyClient;
   }
 ): Promise<SmartAccountSigner | undefined> {
+  // Extract data from the custodial file path if provided
   if (custodialFilePath) {
     let fsModule;
     try {
@@ -30,45 +35,74 @@ export async function getCustodialOwner(
     }
     const data = fsModule.readFileSync(custodialFilePath, "utf8");
     const values = data.split("\n");
+    // Override the values, if they are provided, to the one from the custodial file
     [privateKey, publicKey, keyId] = values;
   }
-  let TurnkeySigner;
-  try {
-    TurnkeySigner =
-      require.resolve("@turnkey/ethers") &&
-      require("@turnkey/ethers").TurnkeySigner;
-  } catch (error) {
-    console.log(
-      "@turnkey/ethers module not available. Skipping FS operation..."
-    );
-    return;
-  }
+
+  // Ensure we have the required values
   if (!privateKey || !publicKey || !keyId) {
     throw new Error(
-      "Must provide custodialFilePath or privateKey, publicKey, and keyId."
+        "Must provide custodialFilePath or privateKey, publicKey, and keyId."
     );
   }
 
-  const response = await axios.post(`${apiUrl}/wallets/${identifier}`, {
+  // Get our turnkey client (build it if needed)
+  if (!turnKeyClient) {
+    // Try to fetch turnkey client & api key stamper
+    let TurnkeyClient;
+    let ApiKeyStamper;
+    // TODO: Would be cleaner with something like radash and a tryit function?
+    try {
+        TurnkeyClient = require.resolve("@turnkey/http") && require("@turnkey/http").TurnkeyClient;
+        ApiKeyStamper = require.resolve("@turnkey/api-key-stamper") && require("@turnkey/api-key-stamper").ApiKeyStamper;
+    } catch (error) {
+        console.log("@turnkey/http or @turnkey/api-key-stamper module not available. Skipping FS operation...");
+        return;
+    }
+
+    // Build the turnkey client
+    turnKeyClient = new TurnkeyClient(
+        {
+          baseUrl: "https://api.turnkey.com",
+        },
+        new ApiKeyStamper({
+          apiPublicKey: publicKey,
+          apiPrivateKey: privateKey,
+        })
+    );
+  }
+
+  // Get the wallet identifier from the API
+  const response = await axios.post<any, {data: {walletId: string}}>(`${apiUrl}/wallets/${identifier}`, {
     keyId,
   });
 
-  const turnkeySigner = new TurnkeySigner({
-    apiPublicKey: publicKey,
-    apiPrivateKey: privateKey,
-    baseUrl: "https://api.turnkey.com",
+  // Build the turnkey viem account
+  let createAccount;
+  try {
+    createAccount = require.resolve("@turnkey/viem") && require("@turnkey/viem").createAccount;
+  } catch (error) {
+    console.log("@turnkey/viem module not available. Skipping FS operation...");
+    return;
+  }
+  const turnkeySigner = await createAccount({
+    client: turnKeyClient,
     organizationId: keyId,
     privateKeyId: response.data.walletId,
   });
+
+  // Return an alchemy AA signer from the turnkey signer
   return {
-    getAddress: async () => (await turnkeySigner.getAddress()) as `0x${string}`,
-    signMessage: async (msg: Uint8Array | string) =>
-      (await turnkeySigner.signMessage(msg)) as `0x${string}`,
-    signTypedData: async (params: SignTypedDataParams) =>
-      (await turnkeySigner.signTypedData(
-        params.domain,
-        params.types,
-        params.message
-      )) as Hex,
+    getAddress: async () => turnkeySigner.address,
+    signMessage: async (msg: Uint8Array | string) => {
+      if (typeof msg === "string") {
+        // If the msg is a string, sign it directly
+        return turnkeySigner.signMessage({ message: msg });
+      } else {
+        // Otherwise, sign the raw data
+        return turnkeySigner.signMessage({ message: { raw: msg } });
+      }
+    },
+    signTypedData: async (params: SignTypedDataParams) => turnkeySigner.signTypedData(params),
   };
 }
