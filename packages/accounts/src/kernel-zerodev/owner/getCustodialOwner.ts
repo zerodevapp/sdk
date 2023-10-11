@@ -4,6 +4,25 @@ import axios from "axios";
 import {TurnkeyClient} from "@turnkey/http";
 
 /**
+ * Params to get a custodial owner
+ * Priv / pub key combo or custodial file path should be in different types
+ */
+type GetCustodialOwnerParams = {
+  // ZeroDev api url
+  apiUrl?: string;
+  // Turnkey client (if the client want to reuse it
+  turnKeyClient?: TurnkeyClient;
+
+  // Direct access to priv / pub key
+  privateKey?: string;
+  publicKey?: string;
+  keyId?: string;
+
+  // Or read them from the custodial file path
+  custodialFilePath?: string;
+}
+
+/**
  * Returns a signer for a custodial wallet via TurnKey
  */
 export async function getCustodialOwner(
@@ -15,14 +34,7 @@ export async function getCustodialOwner(
     keyId,
     apiUrl = API_URL,
     turnKeyClient,
-  }: {
-    privateKey?: string;
-    publicKey?: string;
-    keyId?: string;
-    custodialFilePath?: string;
-    apiUrl?: string;
-    turnKeyClient?: TurnkeyClient;
-  }
+  }: GetCustodialOwnerParams
 ): Promise<SmartAccountSigner | undefined> {
   // Extract data from the custodial file path if provided
   if (custodialFilePath) {
