@@ -25,7 +25,7 @@ import {
 } from "@alchemy/aa-core";
 import {
   ParamCondition,
-  generatePermissionDataFromArgs,
+  getPermissionFromABI,
   type Permission,
 } from "../validator/session-key-validator.js";
 import { Operation } from "../provider.js";
@@ -199,7 +199,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             valueLimit: 0n,
             abi: TEST_ERC20Abi,
@@ -241,7 +241,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
@@ -308,12 +308,12 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
           }),
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: MULTISEND_ADDR,
             abi: MultiSendAbi,
             functionName: "multiSend",
@@ -438,7 +438,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
@@ -488,7 +488,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
@@ -533,7 +533,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         0n,
         [
-          generatePermissionDataFromArgs({
+          getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",

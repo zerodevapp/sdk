@@ -129,7 +129,7 @@ export function getAbiItem<
     );
 }
 
-export function generatePermissionDataFromArgs<
+export function getPermissionFromABI<
   TAbi extends Abi | readonly unknown[],
   TFunctionName extends string | undefined = string
 >({

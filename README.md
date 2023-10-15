@@ -430,7 +430,7 @@ const sig = getFunctionSelector(
     "transfer(address, uint256)"
   )
 const permissions = [
-  generatePermissionDataFromArgs({
+  getPermissionFromABI({
             target: <ERC20Address>, // address of the target contract,
             valueLimit: 0n,  // max value the session key can use in tx -- (Default: 0)
             operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL (Default: Operation.Call)
@@ -475,7 +475,7 @@ import { constants, MultiSendAbi } from "@zerodev/sdk";
 // Permission object to pass in the `sessionKeyData.permissions` array
 const permissions = [
   ...,
-  generatePermissionDataFromArgs({
+  getPermissionFromABI({
     target: MULTISEND_ADDR,
     abi: MultiSendAbi,
     functionName: "multiSend",
