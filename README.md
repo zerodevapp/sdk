@@ -430,24 +430,26 @@ const sig = getFunctionSelector(
     "transfer(address, uint256)"
   )
 const permissions = [
-    {
-        target: <ERC20Address>, // address of the target contract
-        valueLimit: 0, // max value the session key can use in tx
-        sig, // The function selector of the function that can be called on the target contract
-        operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL
-        rules: [ // Parameter rules
-        {
-            condition: ParamCondition.LESS_THAN_OR_EQUAL, // The condition to check
-            offset: 32, // The offset where the param is in the calldata
-            param: pad(toHex(10000), { size: 32 }), // The value to check in condition
-        },
-        {
-            condition: ParamCondition.EQUAL,
-            offset: 0,
-            param: pad(<SPECIFIC_ADDRESS>, { size: 32 }),
-        },
-        ],
-    }
+  getPermissionFromABI({
+            target: <ERC20Address>, // address of the target contract,
+            valueLimit: 0n,  // max value the session key can use in tx -- (Default: 0)
+            operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL (Default: Operation.Call)
+            abi: TEST_ERC20Abi, // Abi of the target contract
+            functionName: "transfer", // The function that can be called on the target contract
+            args: [<SPECIFIC_ADDRESS>, 10000n],  // The value to check in condition
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
+            ],  // The condition to check
+            
+            // To allows specific params to not have any condition pass `null` in the param position in the `args` and `conditions` like below:
+
+            // args: [<SPECIFIC_ADDRESS>, null],  // The value to check in condition
+            // conditions: [
+            //   ParamCondition.EQUAL,
+            //   null
+            // ],  // The condition to check
+          })
 ]
 
 const sessionKeyProvider = await SessionKeyProvider.init({
@@ -455,10 +457,10 @@ const sessionKeyProvider = await SessionKeyProvider.init({
       defaultProvider: ecdsaProvider, // Pass the ECDSAProvider as default provider
       sessionKey, // Session Key Signer
       sessionKeyData: {
-        validAfter: 0,
-        validUntil: 0,
+        validAfter: 0, // (Default: 0)
+        validUntil: 0, // (Default: 0)
         permissions,
-        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address  // (Default: zeroAddress)
       }
 });
 
@@ -481,15 +483,12 @@ import { constants, MultiSendAbi } from "@zerodev/sdk";
 // Permission object to pass in the `sessionKeyData.permissions` array
 const permissions = [
   ...,
-  {
-    target: constants.MULTISEND_ADDR,
-    valueLimit: 0n,
-    sig: getFunctionSelector(
-      getAbiItem({ abi: MultiSendAbi, name: "multiSend" })
-    ),
-    operation: Operation.DelegateCall,
-    rules: [],
-  }
+  getPermissionFromABI({
+    target: MULTISEND_ADDR,
+    abi: MultiSendAbi,
+    functionName: "multiSend",
+    operation: Operation.DelegateCall
+  }),
 ]
 ```
 

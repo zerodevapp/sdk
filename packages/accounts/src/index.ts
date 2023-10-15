@@ -12,7 +12,11 @@ export {
 export * from "./kernel-zerodev/validator/index.js";
 export type * from "./kernel-zerodev/validator/types.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
-export { ParamCondition } from "./kernel-zerodev/validator/session-key-validator.js";
+export {
+  ParamCondition,
+  getAbiItem,
+  getPermissionFromABI,
+} from "./kernel-zerodev/validator/session-key-validator.js";
 
 // Validator Provider exports
 export { ValidatorProvider } from "./kernel-zerodev/validator-provider/base.js";
