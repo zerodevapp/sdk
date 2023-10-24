@@ -441,7 +441,7 @@ const permissions = [
               ParamCondition.EQUAL,
               ParamCondition.LESS_THAN_OR_EQUAL,
             ],  // The condition to check
-            
+
             // To allows specific params to not have any condition pass `null` in the param position in the `args` and `conditions` like below:
 
             // args: [<SPECIFIC_ADDRESS>, null],  // The value to check in condition
@@ -528,7 +528,7 @@ const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
 
 ### Recovery Key Validator
 
-[Please check out the recovery docs here.](https://docs.zerodev.app/use-wallets/recovery) 
+[Please check out the recovery docs here.](https://docs.zerodev.app/use-wallets/recovery)
 
 ## Components
 
