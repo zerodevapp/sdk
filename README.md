@@ -524,43 +524,11 @@ const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
 
 #### Creating Session Key on the client and approving on the server
 
-```ts
-// On the server
-// 1. Create an EmptyAccountSigner from the session key address sent from the client and pass to the provider
-const sessionKey = new EmptyAccountSigner(<SESSION_KEY_ADDRESS>);
-
-const sessionKeyProvider = await SessionKeyProvider.init({
-      projectId, //ZeroDevProject
-      defaultProvider: ecdsaProvider,
-      sessionKey,
-      sessionKeyData: {
-        validAfter: 0,
-        validUntil: 0,
-        permissions,
-        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
-      }
-});
-
-// 2. Serialize the session key params and send it to the client
-const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams();
-
-// On client side
-// 3. Deserialize the session key params and pass the session private key to the object
-const sessionKeyParams = {
-    ...SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams)
-    sessionPrivateKey
-}
-
-// 4. Initialize the SessionKey Provider from the session key params
-const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
-      projectId, //ZeroDevProject
-      sessionKeyParams
-    });
-```
+[Please check out the session key docs here.](https://docs.zerodev.app/use-wallets/use-session-keys)
 
 ### Recovery Key Validator
 
-[Please check out the recovery docs here](https://docs.zerodev.app/use-wallets/recovery) 
+[Please check out the recovery docs here.](https://docs.zerodev.app/use-wallets/recovery) 
 
 ## Components
 
