@@ -12,7 +12,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: "16.20"
+          node-version: "18.13"
           cache: "yarn"
 
       - name: Install dependencies
@@ -25,32 +25,32 @@ jobs:
     name: Lint and Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
-      - name: Setup Node.js
+      - name: Setup Node.js 18.x
         uses: actions/setup-node@v1
         with:
-          node-version: "16.20"
+          node-version: "18.13"
           cache: "yarn"
 
-      - name: Install dependencies
+      - name: Install SDK dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Lint
+      - name: Lint SDK
         run: yarn lint:check
 
-      - name: Build
+      - name: Build SDK
         run: yarn build
+
+      - name: Link SDK
+        run: yarn --cwd packages/accounts link
+
+      - name: Install E2E tests
+        run: yarn --cwd e2e-tests link @zerodev/sdk && yarn --cwd e2e-tests
 
       - name: E2E tests
         env:
-          API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        run: yarn test:e2e
-
-      # - name: Unit Test
-      #   run: yarn test
+        run: yarn --cwd e2e-tests test:e2e
