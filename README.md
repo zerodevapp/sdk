@@ -430,24 +430,26 @@ const sig = getFunctionSelector(
     "transfer(address, uint256)"
   )
 const permissions = [
-    {
-        target: <ERC20Address>, // address of the target contract
-        valueLimit: 0, // max value the session key can use in tx
-        sig, // The function selector of the function that can be called on the target contract
-        operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL
-        rules: [ // Parameter rules
-        {
-            condition: ParamCondition.LESS_THAN_OR_EQUAL, // The condition to check
-            offset: 32, // The offset where the param is in the calldata
-            param: pad(toHex(10000), { size: 32 }), // The value to check in condition
-        },
-        {
-            condition: ParamCondition.EQUAL,
-            offset: 0,
-            param: pad(<SPECIFIC_ADDRESS>, { size: 32 }),
-        },
-        ],
-    }
+  getPermissionFromABI({
+            target: <ERC20Address>, // address of the target contract,
+            valueLimit: 0n,  // max value the session key can use in tx -- (Default: 0)
+            operation: Operation.Call, // The kind of call session key can make CALL/DELEGATECALL (Default: Operation.Call)
+            abi: TEST_ERC20Abi, // Abi of the target contract
+            functionName: "transfer", // The function that can be called on the target contract
+            args: [<SPECIFIC_ADDRESS>, 10000n],  // The value to check in condition
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
+            ],  // The condition to check
+
+            // To allows specific params to not have any condition pass `null` in the param position in the `args` and `conditions` like below:
+
+            // args: [<SPECIFIC_ADDRESS>, null],  // The value to check in condition
+            // conditions: [
+            //   ParamCondition.EQUAL,
+            //   null
+            // ],  // The condition to check
+          })
 ]
 
 const sessionKeyProvider = await SessionKeyProvider.init({
@@ -455,10 +457,10 @@ const sessionKeyProvider = await SessionKeyProvider.init({
       defaultProvider: ecdsaProvider, // Pass the ECDSAProvider as default provider
       sessionKey, // Session Key Signer
       sessionKeyData: {
-        validAfter: 0,
-        validUntil: 0,
+        validAfter: 0, // (Default: 0)
+        validUntil: 0, // (Default: 0)
         permissions,
-        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
+        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address  // (Default: zeroAddress)
       }
 });
 
@@ -481,15 +483,12 @@ import { constants, MultiSendAbi } from "@zerodev/sdk";
 // Permission object to pass in the `sessionKeyData.permissions` array
 const permissions = [
   ...,
-  {
-    target: constants.MULTISEND_ADDR,
-    valueLimit: 0n,
-    sig: getFunctionSelector(
-      getAbiItem({ abi: MultiSendAbi, name: "multiSend" })
-    ),
-    operation: Operation.DelegateCall,
-    rules: [],
-  }
+  getPermissionFromABI({
+    target: MULTISEND_ADDR,
+    abi: MultiSendAbi,
+    functionName: "multiSend",
+    operation: Operation.DelegateCall
+  }),
 ]
 ```
 
@@ -525,178 +524,11 @@ const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
 
 #### Creating Session Key on the client and approving on the server
 
-```ts
-// On the server
-// 1. Create an EmptyAccountSigner from the session key address sent from the client and pass to the provider
-const sessionKey = new EmptyAccountSigner(<SESSION_KEY_ADDRESS>);
-
-const sessionKeyProvider = await SessionKeyProvider.init({
-      projectId, //ZeroDevProject
-      defaultProvider: ecdsaProvider,
-      sessionKey,
-      sessionKeyData: {
-        validAfter: 0,
-        validUntil: 0,
-        permissions,
-        paymaster, // Paymaster Address : zeroAddress means accept userOp without paymaster, oneAddress means reject userOp without paymaster, other address means accept userOp with paymaster with the address
-      }
-});
-
-// 2. Serialize the session key params and send it to the client
-const serializedSessionKeyParams = await sessionKeyProvider.serializeSessionKeyParams();
-
-// On client side
-// 3. Deserialize the session key params and pass the session private key to the object
-const sessionKeyParams = {
-    ...SessionKeyProvider.deserializeSessionKeyParams(serializedSessionKeyParams)
-    sessionPrivateKey
-}
-
-// 4. Initialize the SessionKey Provider from the session key params
-const sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
-      projectId, //ZeroDevProject
-      sessionKeyParams
-    });
-```
+[Please check out the session key docs here.](https://docs.zerodev.app/use-wallets/use-session-keys)
 
 ### Recovery Key Validator
 
-#### Enable the recovery plugin
-
-```ts
-// 1. Get the default ecdsa validator provider
-const ecdsaProvider = await ECDSAProvider.init({
-  projectId, // zeroDev projectId
-  owner,
-});
-
-// 2. Initialize the Recovery Provider
-const recoveryData = {
-  guardians: {
-    // Guardian addresses with their weights
-    [guardianAddress]: 1,
-    [guardian2Address]: 1,
-    [guardian3Address]: 1,
-  },
-  threshold: 3,
-  delaySeconds: 0,
-};
-
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  defaultProvider: ecdsaProvider,
-  opts: {
-    validatorConfig: {
-      ...recoveryData,
-    },
-  },
-});
-
-// 3. Enable the recovery plugin
-const result = await recoveryProvider.enableRecovery();
-await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
-```
-
-#### Initiate the recovery and retrieve the recoveryId
-
-```ts
-// 1. Initialize the Recovery Provider
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  opts: {
-    accountConfig: {
-        accountAddress
-    }
-  }
-});
-
-// 2. Initiate the recovery
-const recoveryId = await recoveryProvider.initiateRecovery(<NewOwnerAddress>);
-```
-
-#### Share recoveryId with the guardians to sign recoveryHash
-
-```ts
-// 1. Intialize the Recovery Provider for guardian
-const guardian =
-  LocalAccountSigner.privateKeyToAccountSigner(<PrivateKey>);
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  recoveryId,
-  opts: {
-    validatorConfig: {
-      accountSigner: guardian,
-    },
-  },
-});
-
-// 2. Sign the recovery hash
-await recoveryProvider.signRecovery();
-```
-
-#### Submit the recovery request
-
-| Anybody can submit the recovery request if they have the recoveryId
-
-```ts
-// 1. Initialize the recovery provider
-const account = privateKeyToAccount(<PrivateKey>);
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  recoveryId,
-});
-
-// 2. Submit the recovery request
-const result = await recoveryProvider.submitRecovery();
-await recoveryProvider.waitForUserOperationTransaction(
-  result.hash as Hex
-);
-```
-
-#### Cancel the recovery request
-
-| Owner of the account can cancel the recovery request
-
-```ts
-// 1. Get the default ecdsa validator provider
-const ecdsaProvider = await ECDSAProvider.init({
-  projectId, // zeroDev projectId
-  owner,
-});
-
-// 2. Initialize the Recovery Provider
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  defaultProvider: ecdsaProvider,
-  recoveryId,
-});
-
-// 3. Cancel the recovery
-const result = await recoveryProvider.cancelRecovery();
-await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
-```
-
-#### Disable the recovery plugin
-
-| To re-enable Recovery plugin with new recovery data (e.g. guardians, weights, threshold, delaySeconds), the existing enabled recovery plugin needs to be disabled first.
-
-```ts
-// 1. Get the default ecdsa validator provider
-const ecdsaProvider = await ECDSAProvider.init({
-  projectId, // zeroDev projectId
-  owner,
-});
-
-// 2. Initialize the Recovery Provider
-const recoveryProvider = await RecoveryProvider.init({
-  projectId,
-  defaultProvider: ecdsaProvider,
-});
-
-// 3. Delete the recovery data
-const result = await recoveryProvider.deleteRecoveryData();
-await recoveryProvider.waitForUserOperationTransaction(result.hash as Hex);
-```
+[Please check out the recovery docs here.](https://docs.zerodev.app/use-wallets/recovery)
 
 ## Components
 

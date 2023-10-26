@@ -6,6 +6,7 @@ import {
   type UserOperationRequest,
   getChain,
   type SignTypedDataParams,
+  type Abi,
 } from "@alchemy/aa-core";
 import {
   KernelBaseValidator,
@@ -26,14 +27,18 @@ import {
   decodeFunctionData,
   isHex,
   getFunctionSelector,
+  type GetAbiItemParameters,
 } from "viem";
+import { formatAbiItem } from "viem/utils";
 import { SessionKeyValidatorAbi } from "../abis/SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
-import type { Operation } from "../provider.js";
+import { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
 import { fixSignedData } from "../utils.js";
+import type { GetAbiItemReturnType } from "viem/dist/types/utils/abi/getAbiItem.js";
+import type { GeneratePermissionFromArgsParameters } from "./types.js";
 
 // We need to be able to serialize bigint to transmit session key over
 // the network.
@@ -72,19 +77,106 @@ export interface ParamRules {
   param: Hex;
 }
 
-export interface Permission {
+export type Permission = {
   target: Address;
-  valueLimit: bigint;
   sig: Hex;
   rules: ParamRules[];
-  operation: Operation;
-}
+  valueLimit?: bigint;
+  operation?: Operation;
+};
 
 export interface SessionKeyData {
   validUntil: number;
   validAfter: number;
   paymaster?: Address;
   permissions?: Permission[];
+}
+
+export function getAbiItem<
+  TAbi extends Abi | readonly unknown[],
+  TItemName extends string
+>({
+  abi,
+  args = [],
+  name,
+}: GetAbiItemParameters<TAbi, TItemName>): GetAbiItemReturnType<
+  TAbi,
+  TItemName
+> {
+  const abiItems = (abi as Abi).filter((x) => "name" in x && x.name === name);
+  if (abiItems.length === 0) return undefined as any;
+  if (abiItems.length === 1) return abiItems[0] as any;
+  const abiItemsParamFiltered = [];
+  for (const abiItem of abiItems) {
+    if (!("inputs" in abiItem)) continue;
+    if (!args || args.length === 0) {
+      if (!abiItem.inputs || abiItem.inputs.length === 0) return abiItem as any;
+      continue;
+    }
+    if (!abiItem.inputs) continue;
+    if (abiItem.inputs.length === 0) continue;
+    if (abiItem.inputs.length !== args.length) continue;
+    abiItemsParamFiltered.push(abiItem);
+  }
+  if (abiItemsParamFiltered.length === 0) return abiItems[0] as any;
+  else if (abiItemsParamFiltered.length === 1)
+    return abiItemsParamFiltered[0] as any;
+  else
+    throw Error(
+      `Couldn't parse funtion signature using params, set appropriate one from below:\n${abiItemsParamFiltered
+        .map((item) => formatAbiItem(item))
+        .reduce((a, c) => `${a}\n${c}`)}`
+    );
+}
+
+export function getPermissionFromABI<
+  TAbi extends Abi | readonly unknown[],
+  TFunctionName extends string | undefined = string
+>({
+  abi,
+  target,
+  args,
+  conditions,
+  functionName,
+  operation,
+  valueLimit,
+}: GeneratePermissionFromArgsParameters<TAbi, TFunctionName>): Permission {
+  const abiItem = getAbiItem({
+    abi,
+    args,
+    name: functionName,
+  } as GetAbiItemParameters);
+  if (abiItem.type !== "function") {
+    throw Error(`${functionName} not found in abi`);
+  }
+  const functionSelector = getFunctionSelector(abiItem);
+  let paramRules: ParamRules[] = [];
+  if (
+    args &&
+    Array.isArray(args) &&
+    conditions &&
+    Array.isArray(conditions) &&
+    args.length === conditions.length
+  ) {
+    paramRules = args
+      .map<ParamRules>(
+        (arg, i) =>
+          arg &&
+          conditions && {
+            param: pad(isHex(arg) ? arg : toHex(arg), { size: 32 }),
+            offset: i * 32,
+            condition: conditions[i],
+          }
+      )
+      .filter((rule) => rule);
+  }
+  return {
+    sig: functionSelector,
+    rules: paramRules,
+    target,
+    operation: operation ?? Operation.Call,
+    valueLimit: valueLimit ?? 0n,
+  };
 }
 
 export class SessionKeyValidator extends KernelBaseValidator {
@@ -97,8 +189,17 @@ export class SessionKeyValidator extends KernelBaseValidator {
     this.sessionKey = params.sessionKey;
     this.sessionKeyData = {
       ...params.sessionKeyData,
+      validAfter: params.sessionKeyData.validAfter ?? 0,
+      validUntil: params.sessionKeyData.validUntil ?? 0,
       paymaster: params.sessionKeyData.paymaster ?? zeroAddress,
     };
+    this.sessionKeyData.permissions = this.sessionKeyData.permissions?.map(
+      (perm) => ({
+        ...perm,
+        operation: perm.operation ?? Operation.Call,
+        valueLimit: perm.valueLimit ?? 0n,
+      })
+    );
     this.merkleTree = this.getMerkleTree();
     if (this.shouldDelegateViaFallback()) {
       throw Error("Session key permissions not set");
@@ -168,15 +269,15 @@ export class SessionKeyValidator extends KernelBaseValidator {
       );
 
       const valueLimitPermissions = signaturePermissions.filter(
-        (permission) => permission.valueLimit >= args[1]
+        (permission) => (permission.valueLimit ?? 0n) >= args[1]
       );
 
       if (!valueLimitPermissions.length) return undefined;
 
       const sortedPermissions = valueLimitPermissions.sort((a, b) => {
-        if (b.valueLimit > a.valueLimit) {
+        if ((b.valueLimit ?? 0n) > (a.valueLimit ?? 0n)) {
           return 1;
-        } else if (b.valueLimit < a.valueLimit) {
+        } else if ((b.valueLimit ?? 0n) < (a.valueLimit ?? 0n)) {
           return -1;
         } else {
           return 0;
@@ -194,7 +295,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     operation: Operation
   ): Permission[] {
     return permissions.filter(
-      (permission) => permission.operation === operation
+      (permission) =>
+        permission.operation === operation || Operation.Call === operation
     );
   }
 

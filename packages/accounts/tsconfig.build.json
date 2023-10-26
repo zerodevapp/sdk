@@ -3,6 +3,11 @@
   "exclude": ["node_modules", "**/*/__tests__", "vitest.config.ts"],
   "include": ["src"],
   "compilerOptions": {
-    "sourceMap": true
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "ES2020",
+    "outDir": "./dist/esm",
+    "removeComments": true
   }
 }

@@ -4,11 +4,8 @@ import {
   type Hex,
   getFunctionSelector,
   encodeFunctionData,
-  toHex,
-  pad,
   zeroAddress,
   type Hash,
-  getAbiItem,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
@@ -28,6 +25,7 @@ import {
 } from "@alchemy/aa-core";
 import {
   ParamCondition,
+  getPermissionFromABI,
   type Permission,
 } from "../validator/session-key-validator.js";
 import { Operation } from "../provider.js";
@@ -53,9 +51,6 @@ describe("Kernel SessionKey Provider Test", async () => {
     chain: polygonMumbai,
     transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
-  const erc20TransferSelector = getFunctionSelector(
-    "transfer(address, uint256)"
-  );
   const transfer20ActionSelector = getFunctionSelector(
     "transfer20Action(address, uint256, address)"
   );
@@ -204,42 +199,17 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
             valueLimit: 0n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [
-              {
-                condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                offset: 32,
-                param: pad(toHex(10000), { size: 32 }),
-              },
-              {
-                condition: ParamCondition.EQUAL,
-                offset: 0,
-                param: pad(await secondOwner.getAddress(), { size: 32 }),
-              },
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), 10000n],
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
             ],
-          },
-          {
-            target: Test_ERC20Address,
-            valueLimit: 1n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [
-              {
-                condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                offset: 32,
-                param: pad(toHex(10000), { size: 32 }),
-              },
-              {
-                condition: ParamCondition.EQUAL,
-                offset: 0,
-                param: pad(await owner.getAddress(), { size: 32 }),
-              },
-            ],
-          },
+          }),
         ]
       );
       await sessionKeyProvider.sendUserOperation({
@@ -271,24 +241,16 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
-            valueLimit: 0n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [
-              //   {
-              //     condition: ParamCondition.LESS_THAN_OR_EQUAL,
-              //     offset: 32,
-              //     param: pad(toHex(10000), { size: 32 }),
-              //   },
-              //   {
-              //     condition: ParamCondition.EQUAL,
-              //     offset: 0,
-              //     param: pad(await secondOwner.getAddress(), { size: 32 }),
-              //   },
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), 10000n],
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
             ],
-          },
+          }),
         ]
       );
 
@@ -346,22 +308,17 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
-            valueLimit: 0n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [],
-          },
-          {
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+          }),
+          getPermissionFromABI({
             target: MULTISEND_ADDR,
-            valueLimit: 0n,
-            sig: getFunctionSelector(
-              getAbiItem({ abi: MultiSendAbi, name: "multiSend" })
-            ),
+            abi: MultiSendAbi,
+            functionName: "multiSend",
             operation: Operation.DelegateCall,
-            rules: [],
-          },
+          }),
         ],
         zeroAddress,
         true,
@@ -481,24 +438,16 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
-            valueLimit: 0n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [
-              {
-                condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                offset: 32,
-                param: pad(toHex(10000), { size: 32 }),
-              },
-              {
-                condition: ParamCondition.EQUAL,
-                offset: 0,
-                param: pad(await secondOwner.getAddress(), { size: 32 }),
-              },
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), 10000n],
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
             ],
-          },
+          }),
         ]
       );
 
@@ -539,24 +488,16 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         amountToMint,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
-            valueLimit: 0n,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [
-              {
-                condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                offset: 32,
-                param: pad(toHex(10000), { size: 32 }),
-              },
-              {
-                condition: ParamCondition.EQUAL,
-                offset: 0,
-                param: pad(await randomOwner.getAddress(), { size: 32 }),
-              },
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await randomOwner.getAddress(), 10000n],
+            conditions: [
+              ParamCondition.EQUAL,
+              ParamCondition.LESS_THAN_OR_EQUAL,
             ],
-          },
+          }),
         ],
         oneAddress,
         false
@@ -592,13 +533,12 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeSelector,
         0n,
         [
-          {
+          getPermissionFromABI({
             target: Test_ERC20Address,
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
             valueLimit: bigInt,
-            sig: erc20TransferSelector,
-            operation: Operation.Call,
-            rules: [],
-          },
+          }),
         ],
         oneAddress,
         false

@@ -150,4 +150,4 @@ export const ERC20Abi = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+] as const;
