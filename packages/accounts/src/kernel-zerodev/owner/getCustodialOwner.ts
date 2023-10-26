@@ -1,7 +1,7 @@
-import type {SignTypedDataParams, SmartAccountSigner} from "@alchemy/aa-core";
+import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import { API_URL } from "../constants.js";
 import axios from "axios";
-import {TurnkeyClient} from "@turnkey/http";
+import { TurnkeyClient } from "@turnkey/http";
 
 /**
  * Params to get a custodial owner
@@ -20,7 +20,7 @@ type GetCustodialOwnerParams = {
 
   // Or read them from the custodial file path
   custodialFilePath?: string;
-}
+};
 
 /**
  * Returns a signer for a custodial wallet via TurnKey
@@ -54,7 +54,7 @@ export async function getCustodialOwner(
   // Ensure we have the required values
   if (!privateKey || !publicKey || !keyId) {
     throw new Error(
-        "Must provide custodialFilePath or privateKey, publicKey, and keyId."
+      "Must provide custodialFilePath or privateKey, publicKey, and keyId."
     );
   }
 
@@ -65,34 +65,45 @@ export async function getCustodialOwner(
     let ApiKeyStamper;
     // TODO: Would be cleaner with something like radash and a tryit function?
     try {
-        TurnkeyClient = require.resolve("@turnkey/http") && require("@turnkey/http").TurnkeyClient;
-        ApiKeyStamper = require.resolve("@turnkey/api-key-stamper") && require("@turnkey/api-key-stamper").ApiKeyStamper;
+      TurnkeyClient =
+        require.resolve("@turnkey/http") &&
+        require("@turnkey/http").TurnkeyClient;
+      ApiKeyStamper =
+        require.resolve("@turnkey/api-key-stamper") &&
+        require("@turnkey/api-key-stamper").ApiKeyStamper;
     } catch (error) {
-        console.log("@turnkey/http or @turnkey/api-key-stamper module not available. Skipping FS operation...");
-        return;
+      console.log(
+        "@turnkey/http or @turnkey/api-key-stamper module not available. Skipping FS operation..."
+      );
+      return;
     }
 
     // Build the turnkey client
     turnKeyClient = new TurnkeyClient(
-        {
-          baseUrl: "https://api.turnkey.com",
-        },
-        new ApiKeyStamper({
-          apiPublicKey: publicKey,
-          apiPrivateKey: privateKey,
-        })
+      {
+        baseUrl: "https://api.turnkey.com",
+      },
+      new ApiKeyStamper({
+        apiPublicKey: publicKey,
+        apiPrivateKey: privateKey,
+      })
     );
   }
 
   // Get the wallet identifier from the API
-  const response = await axios.post<any, {data: {walletId: string}}>(`${apiUrl}/wallets/${identifier}`, {
-    keyId,
-  });
+  const response = await axios.post<any, { data: { walletId: string } }>(
+    `${apiUrl}/wallets/${identifier}`,
+    {
+      keyId,
+    }
+  );
 
   // Build the turnkey viem account
   let createAccount;
   try {
-    createAccount = require.resolve("@turnkey/viem") && require("@turnkey/viem").createAccount;
+    createAccount =
+      require.resolve("@turnkey/viem") &&
+      require("@turnkey/viem").createAccount;
   } catch (error) {
     console.log("@turnkey/viem module not available. Skipping FS operation...");
     return;
@@ -115,6 +126,7 @@ export async function getCustodialOwner(
         return turnkeySigner.signMessage({ message: { raw: msg } });
       }
     },
-    signTypedData: async (params: SignTypedDataParams) => turnkeySigner.signTypedData(params),
+    signTypedData: async (params: SignTypedDataParams) =>
+      turnkeySigner.signTypedData(params),
   };
 }

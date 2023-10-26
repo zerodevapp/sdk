@@ -35,11 +35,11 @@ jobs:
         run: yarn build
 
       - name: Link SDK
-        run: yarn --cwd packages/accounts link 
-      
+        run: yarn --cwd packages/accounts link
+
       - name: Install E2E tests
         run: yarn --cwd e2e-tests link @zerodev/sdk && yarn --cwd e2e-tests
-      
+
       - name: E2E tests
         env:
           API_KEY: ${{ secrets.API_KEY }}
