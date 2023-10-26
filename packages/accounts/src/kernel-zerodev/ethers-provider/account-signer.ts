@@ -56,7 +56,7 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
       );
   }
 
-  getAddress(): Promise<string> {
+  getAddress(): Promise<Hex> {
     if (!this.account) {
       throw new Error(
         "connect the signer to a provider that has a connected account"

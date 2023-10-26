@@ -190,8 +190,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       uoStruct = await asyncPipe(
         this.dummyPaymasterDataMiddleware,
         this.feeDataGetter,
-        this.paymasterDataMiddleware,
         this.gasEstimator,
+        this.paymasterDataMiddleware,
         this.customMiddleware ?? noOpMiddleware,
         async (struct) => ({ ...struct, ...overrides })
       )({
@@ -298,8 +298,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   dummyPaymasterDataMiddleware: AccountMiddlewareFn = async (
     struct: UserOperationStruct
   ): Promise<UserOperationStruct> => {
-    struct.paymasterAndData =
-      "0xfe7dbcab8aaee4eb67943c1e6be95b1d065985c6000000000000000000000000000000000000000000000000000001869aa31cf400000000000000000000000000000000000000000000000000000000000000007dfe2190f34af27b265bae608717cdc9368b471fc0c097ab7b4088f255b4961e57b039e7e571b15221081c5dce7bcb93459b27a3ab65d2f8a889f4a40b4022801b";
+    struct.paymasterAndData = "0x";
     return struct;
   };
 

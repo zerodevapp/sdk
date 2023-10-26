@@ -78,6 +78,25 @@ export const KernelAccountAbi = [
     anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "Received",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
         indexed: true,
         internalType: "address",
         name: "newImplementation",
@@ -179,11 +198,41 @@ export const KernelAccountAbi = [
       },
       {
         internalType: "enum Operation",
-        name: "operation",
+        name: "",
         type: "uint8",
       },
     ],
     name: "execute",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "address",
+            name: "to",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "value",
+            type: "uint256",
+          },
+          {
+            internalType: "bytes",
+            name: "data",
+            type: "bytes",
+          },
+        ],
+        internalType: "struct Call[]",
+        name: "calls",
+        type: "tuple[]",
+      },
+    ],
+    name: "executeBatch",
     outputs: [],
     stateMutability: "payable",
     type: "function",
@@ -503,12 +552,12 @@ export const KernelAccountAbi = [
         type: "address",
       },
       {
-        internalType: "uint48",
+        internalType: "ValidUntil",
         name: "_validUntil",
         type: "uint48",
       },
       {
-        internalType: "uint48",
+        internalType: "ValidAfter",
         name: "_validAfter",
         type: "uint48",
       },
@@ -597,7 +646,7 @@ export const KernelAccountAbi = [
           },
         ],
         internalType: "struct UserOperation",
-        name: "userOp",
+        name: "_userOp",
         type: "tuple",
       },
       {

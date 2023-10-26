@@ -3,6 +3,7 @@ import {
   type BytesLike,
   type UserOperationCallData,
   type UserOperationStruct,
+  type BatchUserOperationCallData,
 } from "@alchemy/aa-core";
 import axios from "axios";
 import {
@@ -14,12 +15,11 @@ import {
 } from "viem";
 import { ERC20Abi } from "../abis/ERC20Abi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { MultiSendAbi } from "../abis/MultiSendAbi.js";
 import {
   PAYMASTER_URL,
   ENTRYPOINT_ADDRESS,
-  MULTISEND_ADDR,
   ERC20_APPROVAL_AMOUNT,
+  MULTISEND_ADDR,
 } from "../constants.js";
 import {
   AccountNotConnected,
@@ -36,7 +36,13 @@ import {
   type PaymasterConfig,
 } from "./types.js";
 import { getChainId } from "../api/index.js";
+import { MultiSendAbi } from "../abis/MultiSendAbi.js";
 
+export function isBatchUserOperationCallData(
+  data: any
+): data is BatchUserOperationCallData {
+  return data && Array.isArray(data);
+}
 export class TokenPaymaster extends Paymaster {
   constructor(
     provider: ZeroDevProvider,
@@ -68,7 +74,12 @@ export class TokenPaymaster extends Paymaster {
   async decodeMainCallFromCallData(
     kernelAddress: PromiseOrValue<string>,
     callData: PromiseOrValue<BytesLike>
-  ): Promise<UserOperationCallDataWithDelegate | undefined> {
+  ): Promise<
+    | UserOperationCallData
+    | BatchUserOperationCallData
+    | UserOperationCallDataWithDelegate
+    | undefined
+  > {
     let data: Hex = "0x";
     if (callData instanceof Promise) {
       const _data = await callData;
@@ -113,6 +124,13 @@ export class TokenPaymaster extends Paymaster {
           };
         }
         return mainCall;
+      } else if (functionName === "executeBatch") {
+        const [txs] = args;
+        return txs.map((tx) => ({
+          target: tx.to,
+          value: tx.value ?? 0n,
+          data: tx.data,
+        }));
       }
     } catch (error) {
       return {
@@ -127,9 +145,11 @@ export class TokenPaymaster extends Paymaster {
     return;
   }
 
-  async getERC20UserOp(
+  async getERC20UserOp<
+    T extends UserOperationCallData | BatchUserOperationCallData
+  >(
     struct: UserOperationStruct,
-    mainCall: UserOperationCallDataWithDelegate,
+    mainCall: T,
     gasTokenAddress: Hex,
     paymasterAddress: Hex
   ): Promise<UserOperationStruct | undefined> {
@@ -146,10 +166,17 @@ export class TokenPaymaster extends Paymaster {
       if (!this.provider.account) {
         throw AccountNotConnected;
       }
-      const erc20CallData = await this.provider.account.encodeBatchExecute([
-        approveData,
-        mainCall,
-      ]);
+
+      let calls: BatchUserOperationCallData;
+
+      if (isBatchUserOperationCallData(mainCall)) {
+        calls = [approveData, ...mainCall];
+      } else {
+        calls = [approveData, mainCall];
+      }
+      const erc20CallData = await this.provider.account.encodeBatchExecute(
+        calls
+      );
       return {
         ...struct,
         callData: erc20CallData,
@@ -176,52 +203,46 @@ export class TokenPaymaster extends Paymaster {
     paymasterProvider?: PaymasterAndBundlerProviders,
     shouldOverrideFee?: boolean
   ): Promise<UserOperationStruct | undefined> {
-    try {
-      const mainCall = await this.decodeMainCallFromCallData(
-        struct.sender,
-        struct.callData
+    const mainCall = await this.decodeMainCallFromCallData(
+      struct.sender,
+      struct.callData
+    );
+    if (!mainCall) {
+      throw IncorrectCallDataForTokenPaymaster;
+    }
+    const chainId = await getChainId(this.provider.getProjectId());
+    if (!chainId) {
+      throw new Error("ChainId not found");
+    }
+    const gasTokenAddress = getGasTokenAddress(
+      this.paymasterConfig.gasToken,
+      chainId
+    );
+    let paymasterAddress = await this.getPaymasterAddress(paymasterProvider);
+    if (
+      gasTokenAddress !== undefined &&
+      paymasterAddress !== undefined &&
+      isAddress(paymasterAddress)
+    ) {
+      const erc20UserOp = await this.getERC20UserOp(
+        struct,
+        mainCall,
+        gasTokenAddress,
+        paymasterAddress
       );
-      if (!mainCall) {
-        throw IncorrectCallDataForTokenPaymaster;
+      if (!erc20UserOp) {
+        return;
       }
-      const chainId = await getChainId(this.provider.getProjectId());
-      if (!chainId) {
-        throw new Error("ChainId not found");
-      }
-      const gasTokenAddress = getGasTokenAddress(
-        this.paymasterConfig.gasToken,
-        chainId
-      );
-      let paymasterAddress = await this.getPaymasterAddress(paymasterProvider);
-      if (
-        gasTokenAddress !== undefined &&
-        paymasterAddress !== undefined &&
-        isAddress(paymasterAddress)
-      ) {
-        const erc20UserOp = await this.getERC20UserOp(
-          struct,
-          mainCall,
-          gasTokenAddress,
-          paymasterAddress
-        );
-        if (!erc20UserOp) {
-          return;
-        }
-        const paymasterResp = await this.signUserOp({
-          userOp: struct,
-          callData: struct.callData,
-          gasTokenAddress,
-          erc20UserOp,
-          erc20CallData: erc20UserOp.callData,
-          paymasterProvider,
-          shouldOverrideFee,
-        });
-        if (paymasterResp) {
-          return paymasterResp;
-        }
-      }
-    } catch (error) {
-      console.log(error);
+      const paymasterResp = await this.signUserOp({
+        userOp: struct,
+        callData: struct.callData,
+        gasTokenAddress,
+        erc20UserOp,
+        erc20CallData: erc20UserOp.callData,
+        paymasterProvider,
+        shouldOverrideFee,
+      });
+      return paymasterResp;
     }
     return;
   }

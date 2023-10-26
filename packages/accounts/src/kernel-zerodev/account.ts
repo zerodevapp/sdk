@@ -180,16 +180,28 @@ export class KernelSmartContractAccount<
   async encodeBatchExecute(
     _txs: BatchUserOperationCallData
   ): Promise<`0x${string}`> {
-    const multiSendCalldata = encodeFunctionData({
-      abi: MultiSendAbi,
-      functionName: "multiSend",
-      args: [encodeMultiSend(_txs)],
-    });
-    return await this.encodeExecuteDelegate(
-      MULTISEND_ADDR,
-      BigInt(0),
-      multiSendCalldata
-    );
+    const kernelImplAddr = await this.getKernelImplementationAddess();
+    const initCode = await this.getInitCode();
+    // [TODO] - Remove this check once the kernel implementation is updated
+    // Also, remove the check for the hardcoded kernel implementation address
+    const shouldUseMultiSend =
+      kernelImplAddr?.toLowerCase() !== KERNEL_IMPL_ADDRESS.toLowerCase() &&
+      kernelImplAddr?.toLowerCase() !==
+        "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C".toLowerCase() &&
+      initCode === "0x";
+    if (shouldUseMultiSend) {
+      const multiSendCalldata = encodeFunctionData({
+        abi: MultiSendAbi,
+        functionName: "multiSend",
+        args: [encodeMultiSend(_txs)],
+      });
+      return await this.encodeExecuteDelegate(
+        MULTISEND_ADDR,
+        BigInt(0),
+        multiSendCalldata
+      );
+    }
+    return await this.encodeExecuteBatchAction(_txs);
   }
 
   async encodeExecuteDelegate(
@@ -219,6 +231,26 @@ export class KernelSmartContractAccount<
         enableData,
       ],
     });
+  }
+
+  async encodeUgradeTo() {
+    return encodeFunctionData({
+      abi: KernelAccountAbi,
+      functionName: "upgradeTo",
+      args: [KERNEL_IMPL_ADDRESS],
+    });
+  }
+
+  async getKernelImplementationAddess(): Promise<Hex | undefined> {
+    try {
+      const strgAddr = await this.rpcProvider.getStorageAt({
+        address: await this.getAddress(),
+        slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+      });
+      return strgAddr ? (("0x" + strgAddr.slice(26)) as Hex) : strgAddr;
+    } catch (error) {
+      return;
+    }
   }
 
   async signMessageWith6492(msg: string | Uint8Array): Promise<Hex> {
@@ -302,6 +334,21 @@ export class KernelSmartContractAccount<
       args: [target, value, data, code],
     });
   }
+
+  protected encodeExecuteBatchAction(_txs: BatchUserOperationCallData): Hex {
+    return encodeFunctionData({
+      abi: KernelAccountAbi,
+      functionName: "executeBatch",
+      args: [
+        _txs.map((tx) => ({
+          to: tx.target,
+          value: tx.value ?? 0n,
+          data: tx.data,
+        })),
+      ],
+    });
+  }
+
   protected async getAccountInitCode(): Promise<Hex> {
     return concatHex([this.factoryAddress, await this.getFactoryInitCode()]);
   }

@@ -11,7 +11,7 @@ import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { config } from "./kernel-account.test.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
-import { TOKEN_ACTION } from "../constants.js";
+import { CHAIN_ID_TO_NODE, TOKEN_ACTION } from "../constants.js";
 import { ValidatorMode } from "../validator/base.js";
 import { Test_ERC721Abi } from "../abis/Test_ERC721Abi.js";
 import { ERC165SessionKeyProvider } from "../validator-provider/erc165-session-key-provider.js";
@@ -34,12 +34,12 @@ describe("Kernel ERC165SessionKey Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   const walletClient = createWalletClient({
     account: privateKeyToAccount(config.privateKey),
     chain: polygonMumbai,
-    transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   const selector = getFunctionSelector(
     "transferERC721Action(address, uint256, address)"

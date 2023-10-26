@@ -5,6 +5,7 @@ import { config } from "./kernel-account.test.js";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 import { generatePrivateKey } from "viem/accounts";
 import { ECDSAProvider } from "../validator-provider/index.js";
+import { CHAIN_ID_TO_NODE } from "../constants.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel Validator Provider Test", async () => {
@@ -15,7 +16,7 @@ describe("Kernel Validator Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    transport: http("https://rpc.ankr.com/polygon_mumbai"),
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
 
   let accountAddress: Hex = "0x";

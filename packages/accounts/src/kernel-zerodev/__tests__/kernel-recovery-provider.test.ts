@@ -59,7 +59,6 @@ describe("Kernel Recovery Provider Test", async () => {
 
   const client = createPublicClient({
     chain: polygonMumbai,
-    // transport: http("https://rpc.ankr.com/polygon_mumbai"),
     transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   let accountAddress: Hex = "0x";

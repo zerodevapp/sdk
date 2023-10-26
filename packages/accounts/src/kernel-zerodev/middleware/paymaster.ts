@@ -2,6 +2,7 @@ import { type ConnectedSmartAccountProvider } from "@alchemy/aa-core";
 import type { ZeroDevProvider } from "../provider.js";
 import { Paymasters } from "../paymaster/index.js";
 import type { PaymasterConfig, PaymasterPolicy } from "../paymaster/types.js";
+import { AxiosError } from "axios";
 
 export const withZeroDevPaymasterAndData = <Provider extends ZeroDevProvider>(
   provider: Provider,
@@ -30,22 +31,24 @@ export const zeroDevPaymasterAndDataMiddleware = <
       return struct;
     },
     paymasterDataMiddleware: async (struct) => {
-      const preVerificationGas = BigInt("100000");
-      const verificationGasLimit = BigInt("1000000");
-      const callGasLimit = BigInt("55000");
       const paymaster = new Paymasters[paymasterConfig.policy](
         provider,
         paymasterConfig
       );
-      const paymasterResp = await paymaster.getPaymasterResponse(
-        {
-          ...struct,
-          preVerificationGas,
-          verificationGasLimit,
-          callGasLimit,
-        },
-        paymasterConfig.paymasterProvider
-      );
+      let paymasterResp;
+      try {
+        paymasterResp = await paymaster.getPaymasterResponse(
+          struct,
+          paymasterConfig.paymasterProvider
+        );
+      } catch (error: any) {
+        console.error(error);
+        if (paymasterConfig.onlySendSponsoredTransaction) {
+          if (error instanceof AxiosError)
+            throw Error(error.response?.data.message);
+          else throw error;
+        }
+      }
       if (
         paymasterConfig.onlySendSponsoredTransaction &&
         (!paymasterResp ||
