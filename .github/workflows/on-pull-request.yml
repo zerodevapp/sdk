@@ -16,7 +16,7 @@ jobs:
           cache: "yarn"
 
       - name: Install commitlint
-        run: npm install -g @commitlint/{config-conventional,cli}
+        run: yarn global add @commitlint/config-conventional @commitlint/cli
 
       - name: Use commitlint to check PR title
         run: echo "${{ github.event.pull_request.title }}" | yarn commitlint
