@@ -22,7 +22,6 @@ export async function getPasskeyOwner({
   apiUrl?: string;
   withCredentials?: boolean;
 }): Promise<SmartAccountSigner | undefined> {
-  //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
@@ -30,7 +29,6 @@ export async function getPasskeyOwner({
       const assertion = JSON.parse(
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
           publicKey: {
-            //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
             allowCredentials: withCredentials

@@ -28,7 +28,6 @@ export async function getAutocompletePasskeyOwner({
     return;
   }
 
-  //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     try {
@@ -37,7 +36,6 @@ export async function getAutocompletePasskeyOwner({
         await getWebAuthnAssertion(base64UrlEncode(challenge), {
           mediation: "conditional",
           publicKey: {
-            //@ts-expect-error
             rpId: window.location.hostname,
             userVerification: "required",
           },
