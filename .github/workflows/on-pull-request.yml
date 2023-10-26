@@ -15,8 +15,8 @@ jobs:
           node-version: "18.13"
           cache: "yarn"
 
-      - name: Install commitlint
-        run: yarn global add @commitlint/config-conventional @commitlint/cli
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Use commitlint to check PR title
         run: echo "${{ github.event.pull_request.title }}" | yarn commitlint
