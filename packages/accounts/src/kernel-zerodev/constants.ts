@@ -5,7 +5,8 @@ import { polygon } from "viem/chains";
 export const DEFAULT_SEND_TX_MAX_RETRIES = 3;
 export const DEFAULT_SEND_TX_RETRY_INTERVAL_MS = 60000; // 1 minutes
 export const BUNDLER_URL = "https://v0-6-meta-bundler.onrender.com";
-export const PAYMASTER_URL = "https://v0-6-paymaster.onrender.com";
+export const PAYMASTER_URL =
+  "https://meta-aa-provider.onrender.com/api/v1/paymaster";
 export const ENTRYPOINT_ADDRESS: Hex =
   "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const MULTISEND_ADDR: Hex = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c";
@@ -15,7 +16,7 @@ export const ECDSA_VALIDATOR_ADDRESS =
   "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390";
 export const KERNEL_FACTORY_ADDRESS =
   "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3";
-export const KERNEL_IMPL_ADDRESS = "0xf048AD83CB2dfd6037A43902a2A5Be04e53cd2Eb";
+export const KERNEL_IMPL_ADDRESS = "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5";
 export const KILL_SWITCH_VALIDATOR_ADDRESS =
   "0x7393A7dA58CCfFb78f52adb09705BE6E20F704BC";
 export const KILL_SWITCH_ACTION = "0x3f38e479304c7F18F988269a1bDa7d646bd48243";

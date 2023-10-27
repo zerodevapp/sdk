@@ -1,6 +1,7 @@
 name: Run checks on Pull Requests
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   enforce_title:
@@ -25,18 +26,21 @@ jobs:
     name: Lint and Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
-      - name: Setup Node.js
+      - name: Setup Node.js 18.x
         uses: actions/setup-node@v1
         with:
           node-version: "18.13"
           cache: "yarn"
 
-      - name: Install dependencies
+      - name: Install SDK dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Lint SDK
+        run: yarn lint:check
 
       - name: Build SDK
         run: yarn build
@@ -49,11 +53,5 @@ jobs:
 
       - name: E2E tests
         env:
-          API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: yarn --cwd e2e-tests test:e2e
-
-      # - name: Unit Test
-      #   run: yarn test

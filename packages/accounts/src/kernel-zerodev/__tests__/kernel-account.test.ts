@@ -4,12 +4,15 @@ import {
   parseAbiParameters,
   encodeFunctionData,
   type Hash,
+  createPublicClient,
+  http,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
 import { LocalAccountSigner } from "@alchemy/aa-core";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
+import { CHAIN_ID_TO_NODE } from "../constants.js";
 
 export const config = {
   privateKey: (process.env.PRIVATE_KEY as Hex) ?? generatePrivateKey(),
@@ -36,6 +39,10 @@ describe("Kernel Account Tests", () => {
     "0x022430a80f723d8789f0d4fb346bdd013b546e4b96fcacf8aceca2b1a65a19dc";
   const mockOwner =
     LocalAccountSigner.privateKeyToAccountSigner(dummyPrivateKey);
+  const client = createPublicClient({
+    chain: polygonMumbai,
+    transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
+  });
 
   it(
     "getAddress returns valid counterfactual address",
@@ -132,7 +139,7 @@ describe("Kernel Account Tests", () => {
       const ownerSignedMessage =
         "0xdad9efc9364e94756f6b16380b7d60c24a14526946ddaa52ef181e7ad065eaa146c9125b7ee62258caad708f57344cfc80d74bd69c0c1e95d75e7c7645c71e401b";
       const factoryCode =
-        "0x296601cd000000000000000000000000f048ad83cb2dfd6037a43902a2a5be04e53cd2eb0000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000084d1f57894000000000000000000000000d9ab5096a832b9ce79914329daee236f8eea039000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000014abcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc00000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        "0x296601cd0000000000000000000000000da6a956b9488ed4dd761e59f52fdc6c8068e6b50000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000084d1f57894000000000000000000000000d9ab5096a832b9ce79914329daee236f8eea039000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000014abcfC3DB1e0f5023F5a4f40c03D149f316E6A5cc00000000000000000000000000000000000000000000000000000000000000000000000000000000";
       const signature =
         encodeAbiParameters(parseAbiParameters("address, bytes, bytes"), [
           config.accountFactoryAddress,
@@ -172,37 +179,41 @@ describe("Kernel Account Tests", () => {
     { timeout: 100000 }
   );
 
-  it("signMessage should correctly sign the message", async () => {
-    const messageToBeSigned: Hex =
-      "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b";
+  it(
+    "signMessage should correctly sign the message",
+    async () => {
+      const messageToBeSigned: Hex =
+        "0xa70d0af2ebb03a44dcd0714a8724f622e3ab876d0aa312f0ee04823285d6fb1b";
 
-    let ecdsaProvider = await ECDSAProvider.init({
-      projectId: config.projectId,
-      owner: mockOwner,
-    });
+      let ecdsaProvider = await ECDSAProvider.init({
+        projectId: config.projectId,
+        owner: mockOwner,
+      });
 
-    const signer = ecdsaProvider.getAccount();
+      const signer = ecdsaProvider.getAccount();
 
-    expect(await signer.signMessage(messageToBeSigned)).toBe(
-      "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
-    );
+      expect(await signer.signMessage(messageToBeSigned)).toBe(
+        "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
+      );
 
-    ecdsaProvider = await ECDSAProvider.init({
-      projectId: config.projectId,
-      owner: mockOwner,
-      opts: {
-        accountConfig: {
-          index: 1000n,
+      ecdsaProvider = await ECDSAProvider.init({
+        projectId: config.projectId,
+        owner: mockOwner,
+        opts: {
+          accountConfig: {
+            index: 1000n,
+          },
         },
-      },
-    });
+      });
 
-    const signer2 = ecdsaProvider.getAccount();
+      const signer2 = ecdsaProvider.getAccount();
 
-    expect(await signer2.signMessage(messageToBeSigned)).toBe(
-      "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
-    );
-  });
+      expect(await signer2.signMessage(messageToBeSigned)).toBe(
+        "0x002e1c0f007a5d2723b28da3165ee45c6fc49bf1fdf3cfeaef66de31dd90248647781142beadcb8524bd5a9be0da455881bfa003e3334fffd2ee6d648a78e06d1c"
+      );
+    },
+    { timeout: 100000 }
+  );
 
   // NOTE - this test case will fail if the gas fee is sponsored
   it(
@@ -289,9 +300,20 @@ describe("Kernel Account Tests", () => {
       //to fix bug in old versions
       await ecdsaProvider.getAccount().getInitCode();
 
+      const mintData = encodeFunctionData({
+        abi: TEST_ERC20Abi,
+        args: [await ecdsaProvider.getAddress(), 700000000000000000n],
+        functionName: "mint",
+      });
+      const balanceBefore = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
       const result = ecdsaProvider.sendUserOperation({
-        target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
-        data: "0x",
+        target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        data: mintData,
         value: 0n,
       });
       await expect(result).resolves.not.toThrowError();
@@ -300,6 +322,13 @@ describe("Kernel Account Tests", () => {
           await result
         ).hash as Hash
       );
+      const balanceAfter = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
+      expect(balanceAfter).to.eq(balanceBefore + 700000000000000000n);
     },
     { timeout: 100000 }
   );
@@ -325,9 +354,13 @@ describe("Kernel Account Tests", () => {
           },
         },
       });
-      //to fix bug in old versions
-      await ecdsaProvider.getAccount().getInitCode();
 
+      const balanceBefore = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
       const mintData = encodeFunctionData({
         abi: TEST_ERC20Abi,
         args: [await ecdsaProvider.getAddress(), 700000000000000000n],
@@ -345,6 +378,15 @@ describe("Kernel Account Tests", () => {
         (
           await result
         ).hash as Hash
+      );
+      const balanceAfter = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
+      expect(balanceAfter.toString(16)).to.not.eq(
+        (balanceBefore + 700000000000000000n).toString(16)
       );
     },
     { timeout: 100000 }
@@ -385,6 +427,12 @@ describe("Kernel Account Tests", () => {
         args: [await owner.getAddress(), 133700000000n],
         functionName: "transfer",
       });
+      const balanceBefore = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
       const result = ecdsaProvider.sendUserOperation([
         {
           target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
@@ -398,6 +446,15 @@ describe("Kernel Account Tests", () => {
         },
       ]);
       await expect(result).resolves.not.toThrowError();
+      const balanceAfter = await client.readContract({
+        address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await ecdsaProvider.getAddress()],
+      });
+      expect(Number(balanceAfter.toString())).to.lt(
+        Number((balanceBefore + 700000000000000000n - 133700000000n).toString())
+      );
     },
     { timeout: 100000 }
   );
