@@ -27,7 +27,6 @@ export async function createPasskeyOwner({
   fallback?: () => Promise<SmartAccountSigner | undefined>;
   apiUrl?: string;
 }): Promise<SmartAccountSigner | undefined> {
-  //@ts-expect-error
   if (typeof window !== "undefined") {
     const challenge = generateRandomBuffer();
     let credentials = undefined;
@@ -43,9 +42,7 @@ export async function createPasskeyOwner({
       const attestation = await getWebAuthnAttestation({
         publicKey: {
           rp: {
-            //@ts-expect-error
             id: window.location.hostname,
-            //@ts-expect-error
             name: window.location.hostname,
           },
           authenticatorSelection: {
@@ -100,7 +97,6 @@ export async function createPasskeyOwner({
       };
       return owner;
     } catch (e) {
-      //@ts-expect-error
       if (e instanceof DOMException && e.name === "InvalidStateError") {
         if (fallback) return await fallback();
       }

@@ -23,7 +23,6 @@ export const es256 = -7;
 
 export const generateRandomBuffer = (): ArrayBuffer => {
   const arr = new Uint8Array(32);
-  //@ts-expect-error
   crypto.getRandomValues(arr);
   return arr.buffer;
 };
