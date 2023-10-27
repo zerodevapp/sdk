@@ -45,17 +45,21 @@ export async function getCustodialOwner(
   }
 
   // Ensure we have the required values
-  if (!keyId || ((!privateKey || !publicKey) && !turnKeyClient)) {
-    throw new Error(
-      "Must provide custodialFilePath or privateKey, publicKey, and keyId, or a keyId and a turnkeyClient."
-    );
+  if (!keyId) {
+    throw new Error("You must provide custodialFilePath or a keyId.");
   }
 
   // Get our turnkey client (build it if needed)
-  const ensuredTurnkeyClient =
-    turnKeyClient ?? (await getDefaultTurnkeyClient({ privateKey, publicKey }));
-  if (!ensuredTurnkeyClient) {
-    throw new Error("No turnkey client available");
+  let ensuredTurnkeyClient = turnKeyClient;
+  if (!ensuredTurnkeyClient && privateKey && publicKey) {
+    ensuredTurnkeyClient = await getDefaultTurnkeyClient({
+      privateKey,
+      publicKey,
+    });
+  } else {
+    throw new Error(
+      "No turnkey client available, if you don't provide one you should provide private and public key or a custodial file path"
+    );
   }
 
   // Get the wallet identifier from the API
@@ -95,8 +99,10 @@ const loadSignDataFromCustodialFile = memo(
   async (custodialFilePath: string) => {
     const [, fsModule] = await tryit(() => import("fs"))();
     if (!fsModule) {
-      console.log("FS module not available. Skipping FS operation...");
-      return;
+      console.error("FS module not available");
+      throw new Error(
+        "FS module not available, you must provide each keys or install this module"
+      );
     }
     const data = fsModule.readFileSync(custodialFilePath, "utf8");
     return data.split("\n");
@@ -126,10 +132,12 @@ const getDefaultTurnkeyClient = memo(
       () => import("@turnkey/api-key-stamper")
     )();
     if (!turnkeyHttp || !turnkeyApiKeyStamper) {
-      console.log(
-        "@turnkey/http or @turnkey/api-key-stamper module not available. Skipping FS operation..."
+      console.error(
+        "@turnkey/http or @turnkey/api-key-stamper module not available."
       );
-      return;
+      throw new Error(
+        "Turnkey http or api-key-stamper modules not available, you must provide a turnkey client or install this modules"
+      );
     }
 
     // Build the turnkey client
@@ -209,10 +217,10 @@ const getTurnkeySigner = memo(
     // Get the turnkey viem account
     const [, turnkeyViem] = await tryit(() => import("@turnkey/viem"))();
     if (!turnkeyViem) {
-      console.log(
-        "@turnkey/viem module not available. Skipping FS operation..."
+      console.error("@turnkey/viem module not available");
+      throw new Error(
+        "Turnkey viem module not available, can't create a turnkey signer for the custodial owner"
       );
-      return;
     }
     return turnkeyViem.createAccount({
       client: turnkeyClient,
