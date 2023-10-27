@@ -31,6 +31,9 @@ export const zeroDevPaymasterAndDataMiddleware = <
       return struct;
     },
     paymasterDataMiddleware: async (struct) => {
+      const preVerificationGas = BigInt("100000");
+      const verificationGasLimit = BigInt("1000000");
+      const callGasLimit = BigInt("55000");
       const paymaster = new Paymasters[paymasterConfig.policy](
         provider,
         paymasterConfig
@@ -38,7 +41,12 @@ export const zeroDevPaymasterAndDataMiddleware = <
       let paymasterResp;
       try {
         paymasterResp = await paymaster.getPaymasterResponse(
-          struct,
+          {
+            ...struct,
+            preVerificationGas,
+            verificationGasLimit,
+            callGasLimit,
+          },
           paymasterConfig.paymasterProvider
         );
       } catch (error: any) {

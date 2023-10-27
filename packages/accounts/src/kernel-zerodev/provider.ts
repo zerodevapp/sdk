@@ -190,8 +190,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       uoStruct = await asyncPipe(
         this.dummyPaymasterDataMiddleware,
         this.feeDataGetter,
-        this.gasEstimator,
         this.paymasterDataMiddleware,
+        this.gasEstimator,
         this.customMiddleware ?? noOpMiddleware,
         async (struct) => ({ ...struct, ...overrides })
       )({
