@@ -1,6 +1,7 @@
 name: Run checks on Pull Requests
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   enforce_title:
