@@ -83,8 +83,7 @@ export const withZeroDevGasEstimator = (
     request.preVerificationGas =
       (BigInt(preVerificationGas) * 12n) / 10n ?? request.preVerificationGas;
     request.verificationGasLimit =
-      (BigInt(verificationGasLimit) * 12n) / 10n ??
-      request.verificationGasLimit;
+      BigInt(verificationGasLimit) ?? request.verificationGasLimit;
     request.callGasLimit =
       (BigInt(callGasLimit) * 12n) / 10n ?? request.callGasLimit;
 
