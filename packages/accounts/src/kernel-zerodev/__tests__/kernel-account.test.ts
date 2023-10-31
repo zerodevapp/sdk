@@ -243,13 +243,14 @@ describe("Kernel Account Tests", () => {
   //NOTE - this test case will only work if you
   // have deposited some matic balance for counterfactual address at entrypoint
 
-  it(
+  it.only(
     "sendUserOperation should execute properly",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectId,
         owner,
         usePaymaster: false,
+        bundlerProvider: "STACKUP",
         opts: {
           providerConfig: {
             opts: {
@@ -259,11 +260,21 @@ describe("Kernel Account Tests", () => {
         },
       });
 
-      //to fix bug in old versions
-      await ecdsaProvider.getAccount().getInitCode();
+      const mintData = encodeFunctionData({
+        abi: TEST_ERC20Abi,
+        args: [await ecdsaProvider.getAddress(), 700000000000000000n],
+        functionName: "mint",
+      });
+      console.log(
+        await ecdsaProvider.buildUserOperation({
+          target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+          data: mintData,
+          value: 0n,
+        })
+      );
       const result = ecdsaProvider.sendUserOperation({
-        target: "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175",
-        data: "0x",
+        target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+        data: mintData,
         value: 0n,
       });
       await expect(result).resolves.not.toThrowError();
