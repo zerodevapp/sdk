@@ -243,7 +243,7 @@ describe("Kernel Account Tests", () => {
   //NOTE - this test case will only work if you
   // have deposited some matic balance for counterfactual address at entrypoint
 
-  it.only(
+  it(
     "sendUserOperation should execute properly",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({

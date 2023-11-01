@@ -30,7 +30,7 @@ import type {
   Permission,
   SessionKeyData,
   SessionKeyParams,
-  ParamCondition,
+  ParamOperator,
 } from "./session-key-validator.js";
 import type { Abi, InferFunctionName, Narrow } from "viem";
 
@@ -75,14 +75,24 @@ export type AbiParametersToPrimitiveTypes<
   [K in keyof TAbiParameters]: AbiParameterToPrimitiveType<
     TAbiParameters[K],
     TAbiParameterKind
-  > | null;
+  >;
 }>;
 
 export type AbiParametersToConditons<
   TAbiParameters extends readonly AbiParameter[]
 > = Pretty<{
-  [K in keyof TAbiParameters]: ParamCondition | null;
+  [K in keyof TAbiParameters]: ParamOperator;
 }>;
+
+export type CombinedArgs<
+  TAbiParameters extends readonly AbiParameter[],
+  TAbiParameterKind extends AbiParameterKind = AbiParameterKind
+> = {
+  [K in keyof TAbiParameters]: {
+    operator: ParamOperator;
+    value: AbiParameterToPrimitiveType<TAbiParameters[K], TAbiParameterKind>;
+  } | null;
+};
 
 export type GetFunctionArgs<
   TAbi extends Abi | readonly unknown[],
@@ -90,21 +100,18 @@ export type GetFunctionArgs<
   TAbiFunction extends AbiFunction = TAbi extends Abi
     ? ExtractAbiFunction<TAbi, TFunctionName>
     : AbiFunction,
-  TArgs = AbiParametersToPrimitiveTypes<TAbiFunction["inputs"]>,
-  TConditions = AbiParametersToConditons<TAbiFunction["inputs"]>,
+  TArgs = CombinedArgs<TAbiFunction["inputs"]>,
   FailedToParseArgs =
     | ([TArgs] extends [never] ? true : false)
     | (readonly unknown[] extends TArgs ? true : false)
 > = true extends FailedToParseArgs
   ? {
       args?: readonly unknown[];
-      conditions?: readonly unknown[];
     }
   : TArgs extends readonly []
-  ? { args?: never; conditions?: never }
+  ? { args?: never }
   : {
       args?: TArgs;
-      conditions?: TConditions;
     };
 
 export type GeneratePermissionFromArgsParameters<
