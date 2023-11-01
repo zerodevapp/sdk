@@ -13,7 +13,8 @@ export * from "./kernel-zerodev/validator/index.js";
 export type * from "./kernel-zerodev/validator/types.js";
 export type { KernelBaseValidatorParams } from "./kernel-zerodev/validator/base.js";
 export {
-  ParamCondition,
+  ParamOperator,
+  ParamOperator as ParamCondition,
   getAbiItem,
   getPermissionFromABI,
 } from "./kernel-zerodev/validator/session-key-validator.js";
@@ -27,6 +28,7 @@ export type {
 } from "./kernel-zerodev/validator-provider/base.js";
 export type * from "./kernel-zerodev/validator-provider/types.js";
 export * from "./kernel-zerodev/validator-provider/index.js";
+export { ECDSAProvider as SimpleProvider } from "./kernel-zerodev/validator-provider/index.js";
 
 // Core exports
 export type * from "./kernel-zerodev/paymaster/types.js";

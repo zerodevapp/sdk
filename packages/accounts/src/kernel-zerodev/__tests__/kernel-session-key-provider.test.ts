@@ -6,6 +6,8 @@ import {
   encodeFunctionData,
   zeroAddress,
   type Hash,
+  parseEther,
+  pad,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
@@ -24,7 +26,7 @@ import {
   type SmartAccountSigner,
 } from "@alchemy/aa-core";
 import {
-  ParamCondition,
+  ParamOperator,
   getPermissionFromABI,
   type Permission,
 } from "../validator/session-key-validator.js";
@@ -204,10 +206,12 @@ describe("Kernel SessionKey Provider Test", async () => {
             valueLimit: 0n,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [await secondOwner.getAddress(), 10000n],
-            conditions: [
-              ParamCondition.EQUAL,
-              ParamCondition.LESS_THAN_OR_EQUAL,
+            args: [
+              {
+                operator: ParamOperator.EQUAL,
+                value: await secondOwner.getAddress(),
+              },
+              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
             ],
           }),
         ]
@@ -245,10 +249,12 @@ describe("Kernel SessionKey Provider Test", async () => {
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [await secondOwner.getAddress(), 10000n],
-            conditions: [
-              ParamCondition.EQUAL,
-              ParamCondition.LESS_THAN_OR_EQUAL,
+            args: [
+              {
+                operator: ParamOperator.EQUAL,
+                value: await secondOwner.getAddress(),
+              },
+              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
             ],
           }),
         ]
@@ -285,6 +291,52 @@ describe("Kernel SessionKey Provider Test", async () => {
         abi: TEST_ERC20Abi,
         functionName: "balanceOf",
         args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfAfter", balanceOfAfter);
+      expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
+    },
+    { timeout: 1000000 }
+  );
+
+  it(
+    "should execute the native token transfer action using SessionKey",
+    async () => {
+      const amountToMint = 0n;
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          {
+            target: await owner.getAddress(),
+            valueLimit: parseEther("0.0001"),
+          },
+        ]
+      );
+
+      let result, tx;
+      const balanceOfBefore = await client.getBalance({
+        address: await owner.getAddress(),
+      });
+      console.log("balanceOfBefore", balanceOfBefore);
+      const amountToTransfer = parseEther("0.00000001");
+      try {
+        result = await sessionKeyProvider.sendUserOperation({
+          target: await owner.getAddress(),
+          data: pad("0x", { size: 4 }),
+          value: amountToTransfer,
+        });
+        console.log(result);
+        tx = await sessionKeyProvider.waitForUserOperationTransaction(
+          result.hash as Hex
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      console.log(tx);
+      const balanceOfAfter = await client.getBalance({
+        address: await owner.getAddress(),
       });
       console.log("balanceOfAfter", balanceOfAfter);
       expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
@@ -442,10 +494,12 @@ describe("Kernel SessionKey Provider Test", async () => {
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [await secondOwner.getAddress(), 10000n],
-            conditions: [
-              ParamCondition.EQUAL,
-              ParamCondition.LESS_THAN_OR_EQUAL,
+            args: [
+              {
+                operator: ParamOperator.EQUAL,
+                value: await secondOwner.getAddress(),
+              },
+              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
             ],
           }),
         ]
@@ -492,10 +546,12 @@ describe("Kernel SessionKey Provider Test", async () => {
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [await randomOwner.getAddress(), 10000n],
-            conditions: [
-              ParamCondition.EQUAL,
-              ParamCondition.LESS_THAN_OR_EQUAL,
+            args: [
+              {
+                operator: ParamOperator.EQUAL,
+                value: await randomOwner.getAddress(),
+              },
+              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
             ],
           }),
         ],
