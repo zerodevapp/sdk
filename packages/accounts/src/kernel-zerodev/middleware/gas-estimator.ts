@@ -123,7 +123,12 @@ export const getPreVerificationGas = async (
 
 export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
   const [fee, block] = await Promise.all([
-    provider.rpcClient.getMaxPriorityFeePerGas(),
+    provider.bundlerProvider === "ALCHEMY"
+      ? (provider.rpcClient.request({
+          // @ts-expect-error
+          method: "rundler_maxPriorityFeePerGas",
+        }) as Promise<Hex>)
+      : provider.rpcClient.getMaxPriorityFeePerGas(),
     provider.rpcClient.getBlock({ blockTag: "latest" }),
   ]);
 

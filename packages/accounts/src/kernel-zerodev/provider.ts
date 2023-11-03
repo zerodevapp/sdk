@@ -70,6 +70,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   protected projectId: string;
   protected sendTxMaxRetries: number;
   protected sendTxRetryIntervalMs: number;
+  readonly bundlerProvider?: PaymasterAndBundlerProviders;
 
   constructor({
     projectId,
@@ -97,6 +98,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
+    this.bundlerProvider = bundlerProvider;
     this.projectId = projectId;
     this.sendTxMaxRetries =
       opts?.sendTxMaxRetries ?? DEFAULT_SEND_TX_MAX_RETRIES;
