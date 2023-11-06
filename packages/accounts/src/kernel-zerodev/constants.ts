@@ -102,6 +102,6 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
   10200: "https://nd-810-853-201.p2pify.com/e828b09f0d43591de96c297b3f36fffd",
   59144: `https://linea-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   59140: `https://linea-goerli.infura.io/v3/${INFURA_API_KEY}`,
-  204: 'opBnb', // TODO: get rpc url
-  5611: 'opBnb-testnet', // TODO: get rpc url
+  204: 'https://opbnb-mainnet.nodereal.io/v1/dd289ac0e1c941f5a62bfa801d9d3240',
+  // 5611: 'opBnb-testnet',
 };
