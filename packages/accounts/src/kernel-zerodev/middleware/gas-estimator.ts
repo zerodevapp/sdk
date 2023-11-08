@@ -83,8 +83,7 @@ export const withZeroDevGasEstimator = (
     request.preVerificationGas =
       (BigInt(preVerificationGas) * 12n) / 10n ?? request.preVerificationGas;
     request.verificationGasLimit =
-      (BigInt(verificationGasLimit) * 12n) / 10n ??
-      request.verificationGasLimit;
+      BigInt(verificationGasLimit) ?? request.verificationGasLimit;
     request.callGasLimit =
       (BigInt(callGasLimit) * 12n) / 10n ?? request.callGasLimit;
 
@@ -124,7 +123,12 @@ export const getPreVerificationGas = async (
 
 export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
   const [fee, block] = await Promise.all([
-    provider.rpcClient.getMaxPriorityFeePerGas(),
+    provider.bundlerProvider === "ALCHEMY"
+      ? (provider.rpcClient.request({
+          // @ts-expect-error
+          method: "rundler_maxPriorityFeePerGas",
+        }) as Promise<Hex>)
+      : provider.rpcClient.getMaxPriorityFeePerGas(),
     provider.rpcClient.getBlock({ blockTag: "latest" }),
   ]);
 

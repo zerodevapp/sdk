@@ -16,6 +16,7 @@ import {
   type Transport,
   createPublicClient,
   http,
+  zeroAddress,
 } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
@@ -23,6 +24,7 @@ import {
   CHAIN_ID_TO_NODE,
   ECDSA_VALIDATOR_ADDRESS,
   ENTRYPOINT_ADDRESS,
+  KERNEL_IMPL_ADDRESS,
 } from "../constants.js";
 import { polygonMumbai } from "viem/chains";
 
@@ -194,12 +196,29 @@ export abstract class KernelBaseValidator {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
+    let kernelImplAddr;
+    try {
+      const strgAddr = await this.getPublicClient().getStorageAt({
+        address: kernel,
+        slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+      });
+      kernelImplAddr = strgAddr
+        ? (("0x" + strgAddr.slice(26)) as Hex)
+        : strgAddr;
+    } catch (error) {}
     const sender = kernel;
     const signer = await this.signer();
     const ownerSig = await signer.signTypedData({
       domain: {
         name: "Kernel",
-        version: "0.2.1",
+        version:
+          kernelImplAddr?.toLowerCase() === KERNEL_IMPL_ADDRESS.toLowerCase() ||
+          kernelImplAddr?.toLowerCase() ===
+            "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C".toLowerCase() ||
+          kernelImplAddr === undefined ||
+          kernelImplAddr === zeroAddress
+            ? "0.2.2"
+            : "0.2.1",
         chainId: this.chain.id,
         verifyingContract: sender,
       },

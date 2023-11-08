@@ -70,6 +70,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   protected projectId: string;
   protected sendTxMaxRetries: number;
   protected sendTxRetryIntervalMs: number;
+  readonly bundlerProvider?: PaymasterAndBundlerProviders;
 
   constructor({
     projectId,
@@ -97,6 +98,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
+    this.bundlerProvider = bundlerProvider;
     this.projectId = projectId;
     this.sendTxMaxRetries =
       opts?.sendTxMaxRetries ?? DEFAULT_SEND_TX_MAX_RETRIES;
@@ -135,6 +137,80 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     );
 
     return await this.waitForUserOperationTransaction(hash as Hash);
+  };
+
+  buildUserOperation = async <
+    T extends UserOperationCallData | BatchUserOperationCallData
+  >(
+    data: T,
+    overrides?: UserOperationOverrides,
+    operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
+  ): Promise<UserOperationStruct> => {
+    if (!isKernelAccount(this.account)) {
+      throw new Error("account not connected!");
+    }
+    if (!this.account.validator) {
+      throw new Error("validator not connected!");
+    }
+
+    let callData: BytesLike = "0x";
+
+    if (Array.isArray(data)) {
+      if (operation === Operation.Call) {
+        callData = await this.account.encodeBatchExecute(data);
+      } else {
+        throw InvalidOperation;
+      }
+    } else if (isKernelAccount(this.account)) {
+      if (operation === Operation.DelegateCall) {
+        callData = await this.account.encodeExecuteDelegate(
+          data.target,
+          data.value ?? 0n,
+          data.data
+        );
+      } else if (operation === Operation.Call) {
+        callData = await this.account.encodeExecute(
+          data.target,
+          data.value ?? 0n,
+          data.data
+        );
+      } else {
+        throw InvalidOperation;
+      }
+    } else {
+      throw InvalidOperation;
+    }
+
+    const initCode = await this.account.getInitCode();
+    const nonce = await this.account.getNonce();
+    return await this._runMiddlewareStack(
+      {
+        initCode,
+        sender: this.getAddress(),
+        nonce,
+        callData,
+        signature: await this.account
+          .getValidator()
+          .getDynamicDummySignature(await this.getAddress(), callData as Hex),
+      } as UserOperationStruct,
+      overrides
+    );
+  };
+
+  private _runMiddlewareStack = async (
+    uo: UserOperationStruct,
+    overrides?: UserOperationOverrides
+  ): Promise<UserOperationStruct> => {
+    const result = await asyncPipe(
+      this.dummyPaymasterDataMiddleware,
+      this.feeDataGetter,
+      this.paymasterDataMiddleware,
+      this.gasEstimator,
+      this.customMiddleware ?? noOpMiddleware,
+      async (struct) => ({ ...struct, ...overrides })
+    )(uo);
+
+    return deepHexlify(await resolveProperties<UserOperationStruct>(result));
   };
 
   sendUserOperation = async <
@@ -218,7 +294,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         );
       }
 
-      this.account.approvePlugin();
+      await this.account.approvePlugin();
 
       request.signature = await this.account.validator.getSignature(request);
       try {

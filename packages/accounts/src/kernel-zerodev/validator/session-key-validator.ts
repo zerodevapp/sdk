@@ -38,7 +38,11 @@ import { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
 import { fixSignedData } from "../utils.js";
 import type { GetAbiItemReturnType } from "viem/dist/types/utils/abi/getAbiItem.js";
-import type { GeneratePermissionFromArgsParameters } from "./types.js";
+import { type AbiFunction } from "abitype";
+import type {
+  CombinedArgs,
+  GeneratePermissionFromArgsParameters,
+} from "./types.js";
 
 // We need to be able to serialize bigint to transmit session key over
 // the network.
@@ -62,7 +66,7 @@ export type SessionKeyParams = Pick<
     accountAddress?: Address;
   };
 
-export enum ParamCondition {
+export enum ParamOperator {
   EQUAL = 0,
   GREATER_THAN = 1,
   LESS_THAN = 2,
@@ -73,14 +77,14 @@ export enum ParamCondition {
 
 export interface ParamRules {
   offset: number;
-  condition: ParamCondition;
+  condition: ParamOperator;
   param: Hex;
 }
 
 export type Permission = {
   target: Address;
-  sig: Hex;
-  rules: ParamRules[];
+  rules?: ParamRules[];
+  sig?: Hex;
   valueLimit?: bigint;
   operation?: Operation;
 };
@@ -136,7 +140,6 @@ export function getPermissionFromABI<
   abi,
   target,
   args,
-  conditions,
   functionName,
   operation,
   valueLimit,
@@ -151,24 +154,22 @@ export function getPermissionFromABI<
   }
   const functionSelector = getFunctionSelector(abiItem);
   let paramRules: ParamRules[] = [];
-  if (
-    args &&
-    Array.isArray(args) &&
-    conditions &&
-    Array.isArray(conditions) &&
-    args.length === conditions.length
-  ) {
-    paramRules = args
-      .map<ParamRules>(
+  if (args && Array.isArray(args)) {
+    paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)
+      .map(
         (arg, i) =>
-          arg &&
-          conditions && {
-            param: pad(isHex(arg) ? arg : toHex(arg), { size: 32 }),
+          arg && {
+            param: pad(
+              isHex(arg.value)
+                ? arg.value
+                : toHex(arg.value as Parameters<typeof toHex>[0]),
+              { size: 32 }
+            ),
             offset: i * 32,
-            condition: conditions[i],
+            condition: arg.operator,
           }
       )
-      .filter((rule) => rule);
+      .filter((rule) => rule) as ParamRules[];
   }
   return {
     sig: functionSelector,
@@ -198,6 +199,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
         ...perm,
         operation: perm.operation ?? Operation.Call,
         valueLimit: perm.valueLimit ?? 0n,
+        sig: perm.sig ?? pad("0x", { size: 4 }),
+        rules: perm.rules ?? [],
       })
     );
     this.merkleTree = this.getMerkleTree();
@@ -305,7 +308,8 @@ export class SessionKeyValidator extends KernelBaseValidator {
     signature: string
   ): Permission[] {
     return permissions.filter(
-      (permission) => permission.sig.toLowerCase() === signature
+      (permission) =>
+        (permission.sig ?? pad("0x", { size: 4 })).toLowerCase() === signature
     );
   }
 
@@ -314,7 +318,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     data: string
   ): Permission | undefined {
     return permissions.find((permission) => {
-      for (const rule of permission.rules) {
+      for (const rule of permission.rules ?? []) {
         const dataParam: Hex = this.getFormattedHex(
           "0x" + data.slice(10 + rule.offset * 2, 10 + rule.offset * 2 + 64)
         );
@@ -337,20 +341,20 @@ export class SessionKeyValidator extends KernelBaseValidator {
   private evaluateRuleCondition(
     dataParam: Hex,
     ruleParam: Hex,
-    condition: ParamCondition
+    condition: ParamOperator
   ): boolean {
     switch (condition) {
-      case ParamCondition.EQUAL:
+      case ParamOperator.EQUAL:
         return dataParam === ruleParam;
-      case ParamCondition.GREATER_THAN:
+      case ParamOperator.GREATER_THAN:
         return dataParam > ruleParam;
-      case ParamCondition.LESS_THAN:
+      case ParamOperator.LESS_THAN:
         return dataParam < ruleParam;
-      case ParamCondition.GREATER_THAN_OR_EQUAL:
+      case ParamOperator.GREATER_THAN_OR_EQUAL:
         return dataParam >= ruleParam;
-      case ParamCondition.LESS_THAN_OR_EQUAL:
+      case ParamOperator.LESS_THAN_OR_EQUAL:
         return dataParam <= ruleParam;
-      case ParamCondition.NOT_EQUAL:
+      case ParamOperator.NOT_EQUAL:
         return dataParam !== ruleParam;
       default:
         return false;

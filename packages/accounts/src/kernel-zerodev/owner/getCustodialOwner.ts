@@ -1,7 +1,6 @@
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import { API_URL } from "../constants.js";
 import axios from "axios";
-import { TurnkeyClient } from "@turnkey/http";
 import { memo, tryit } from "radash";
 
 /**
@@ -12,7 +11,7 @@ type GetCustodialOwnerParams = Readonly<{
   // ZeroDev api url
   apiUrl?: string;
   // Turnkey client (if the client want to reuse it
-  turnKeyClient?: TurnkeyClient;
+  turnKeyClient?: unknown;
 
   // Direct access to priv / pub key
   privateKey?: string;
