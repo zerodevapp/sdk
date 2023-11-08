@@ -211,7 +211,7 @@ const getTurnkeySigner = memo(
   }: {
     keyId: string;
     privateKeyId: string;
-    turnkeyClient: TurnkeyClient;
+    turnkeyClient: unknown;
   }) => {
     // Get the turnkey viem account
     const [, turnkeyViem] = await tryit(() => import("@turnkey/viem"))();
@@ -222,7 +222,7 @@ const getTurnkeySigner = memo(
       );
     }
     return turnkeyViem.createAccount({
-      client: turnkeyClient,
+      client: turnkeyClient as any,
       organizationId: keyId,
       privateKeyId,
     });
@@ -237,7 +237,7 @@ const getTurnkeySigner = memo(
     }: {
       keyId: string;
       privateKeyId: string;
-      turnkeyClient: TurnkeyClient;
+      turnkeyClient: unknown;
     }) => `${keyId}-${privateKeyId}`,
   }
 );
