@@ -1,6 +1,6 @@
 import { Wallet } from "@ethersproject/wallet";
 import { ZeroDevEthersProvider } from "../ethers-provider/ethers-provider.js";
-import { config } from "./kernel-account.test.js";
+import { config } from "./config/index.js";
 import { convertEthersSignerToAccountSigner } from "../utils.js";
 import { type TypedDataDomain, recoverTypedDataAddress, type Hex } from "viem";
 
