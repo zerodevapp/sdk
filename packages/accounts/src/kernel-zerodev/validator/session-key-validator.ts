@@ -127,7 +127,7 @@ export function getAbiItem<
     return abiItemsParamFiltered[0] as any;
   else
     throw Error(
-      `Couldn't parse funtion signature using params, set appropriate one from below:\n${abiItemsParamFiltered
+      `Couldn't parse function signature using params, set appropriate one from below:\n${abiItemsParamFiltered
         .map((item) => formatAbiItem(item))
         .reduce((a, c) => `${a}\n${c}`)}`
     );

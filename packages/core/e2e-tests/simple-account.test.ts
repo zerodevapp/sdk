@@ -32,7 +32,7 @@ describe("Simple Account Tests", () => {
       })
   );
 
-  it("should succesfully get counterfactual address", async () => {
+  it("should successfully get counterfactual address", async () => {
     expect(await signer.getAddress()).toMatchInlineSnapshot(
       `"0xb856DBD4fA1A79a46D426f537455e7d3E79ab7c4"`
     );
