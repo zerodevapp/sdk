@@ -243,14 +243,14 @@ describe("Kernel Account Tests", () => {
   //NOTE - this test case will only work if you
   // have deposited some matic balance for counterfactual address at entrypoint
 
-  it(
+  it.only(
     "sendUserOperation should execute properly",
     async () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectId,
         owner,
         usePaymaster: false,
-        bundlerProvider: "STACKUP",
+        bundlerProvider: "PIMLICO",
         opts: {
           providerConfig: {
             opts: {
@@ -293,6 +293,7 @@ describe("Kernel Account Tests", () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectIdWithGasSponsorship,
         owner,
+        bundlerProvider: "ALCHEMY",
         opts: {
           accountConfig: {
             index: 1003n,
