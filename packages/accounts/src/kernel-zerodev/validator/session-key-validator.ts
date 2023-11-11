@@ -43,6 +43,7 @@ import type {
   CombinedArgs,
   GeneratePermissionFromArgsParameters,
 } from "./types.js";
+import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
 // We need to be able to serialize bigint to transmit session key over
 // the network.
@@ -192,7 +193,7 @@ export function getPermissionFromABI<
 export class SessionKeyValidator extends KernelBaseValidator {
   protected sessionKey: SmartAccountSigner;
   sessionKeyData: SessionKeyData;
-  merkleTree: MerkleTree;
+  merkleTree: StandardMerkleTree<Permission[] | Hex[]>;
 
   constructor(params: SessionKeyValidatorParams) {
     super(params);
@@ -241,7 +242,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
   }
 
   shouldDelegateViaFallback(): boolean {
-    return this.merkleTree.getHexRoot() === pad("0x00", { size: 32 });
+    return this.merkleTree.root === pad("0x00", { size: 32 });
   }
 
   findMatchingPermissions(
@@ -394,13 +395,14 @@ export class SessionKeyValidator extends KernelBaseValidator {
     }
   }
 
-  getMerkleTree(): MerkleTree {
-    const permissionPacked = this.sessionKeyData.permissions?.map(
-      (permission) => this.encodePermissionData(permission)
-    );
+  getMerkleTree(): StandardMerkleTree<Permission[] | Hex[]> {
+    // const permissionPacked = this.sessionKeyData.permissions?.map(
+    //   (permission) => this.encodePermissionData(permission)
+    // );
 
     // Having one leaf returns empty array in getProof(). To hack it we push the leaf twice
     // issue - https://github.com/merkletreejs/merkletreejs/issues/58
+<<<<<<< Updated upstream
     if (permissionPacked?.length === 1) permissionPacked.push("0x");
 
     return permissionPacked && permissionPacked.length !== 0
@@ -413,6 +415,94 @@ export class SessionKeyValidator extends KernelBaseValidator {
           hashLeaves: false,
           complete: true,
         });
+=======
+    // if (permissionPacked?.length === 1) permissionPacked.push("0x");
+
+    //  permissionPacked && permissionPacked.length !== 0
+    //   ? new MerkleTree(permissionPacked, keccak256, {
+    //       sortPairs: true,
+    //       hashLeaves: true,
+    //       complete: true,
+    //     })
+    //   : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
+    //       hashLeaves: false,
+    //       complete: true,
+    //     });
+
+    if (
+      this.sessionKeyData.permissions &&
+      this.sessionKeyData.permissions.length
+    ) {
+      return StandardMerkleTree.of(
+        [this.sessionKeyData.permissions],
+        [
+          "tuple(uint32 index, address target, bytes4 sig, uint256 valueLimit, tuple(uint256 offset, uint8 condition, bytes32 param)[] rules, tuple(uint48 interval, uint48 runs, uint48 validAfter) executionRule) permission",
+        ]
+        //   {
+        //     components: [
+        //       {
+        //         name: "index",
+        //         type: "uint32",
+        //       },
+        //       {
+        //         name: "target",
+        //         type: "address",
+        //       },
+        //       {
+        //         name: "sig",
+        //         type: "bytes4",
+        //       },
+        //       {
+        //         name: "valueLimit",
+        //         type: "uint256",
+        //       },
+        //       {
+        //         components: [
+        //           {
+        //             name: "offset",
+        //             type: "uint256",
+        //           },
+        //           {
+        //             internalType: "enum ParamCondition",
+        //             name: "condition",
+        //             type: "uint8",
+        //           },
+        //           {
+        //             name: "param",
+        //             type: "bytes32",
+        //           },
+        //         ],
+        //         name: "rules",
+        //         type: "tuple[]",
+        //       },
+        //       {
+        //         components: [
+        //           {
+        //             name: "interval",
+        //             type: "uint48",
+        //           },
+        //           {
+        //             name: "runs",
+        //             type: "uint48",
+        //           },
+        //           {
+        //             internalType: "ValidAfter",
+        //             name: "validAfter",
+        //             type: "uint48",
+        //           },
+        //         ],
+        //         name: "executionRule",
+        //         type: "tuple",
+        //       },
+        //     ],
+        //     name: "permission",
+        //     type: "tuple",
+        //   }
+      );
+    } else {
+      return StandardMerkleTree.of([[pad("0x00", { size: 32 })]], ["bytes32"]);
+    }
+>>>>>>> Stashed changes
   }
 
   encodePermissionData(
@@ -561,7 +651,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
       (await this.getSessionNonces(kernelAccountAddress)).lastNonce + 1n;
     return concat([
       await this.sessionKey.getAddress(),
-      pad(this.merkleTree.getHexRoot() as Hex, { size: 32 }),
+      pad(this.merkleTree.root as Hex, { size: 32 }),
       pad(toHex(this.sessionKeyData.validAfter), { size: 6 }),
       pad(toHex(this.sessionKeyData.validUntil), { size: 6 }),
       this.sessionKeyData.paymaster!,
@@ -613,6 +703,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
         "SessionKeyValidator: No matching permission found for the userOp"
       );
     }
+<<<<<<< Updated upstream
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
       this.sessionKeyData.permissions.length !== 0 &&
@@ -645,6 +736,52 @@ export class SessionKeyValidator extends KernelBaseValidator {
         keccak256(encodedPermissionData)
       );
       console.log("merkleProof", merkleProof)
+=======
+    // const encodedPermissionData =
+    //   this.sessionKeyData.permissions &&
+    //   this.sessionKeyData.permissions.length !== 0 &&
+    //   matchingPermission
+    //     ? this.encodePermissionData(matchingPermission)
+    //     : "0x";
+    let indexes: number[] = [],
+      merkleProof: string[] = [],
+      proofFlags: boolean[] = [],
+      leaves: (Permission[] | Hex[])[];
+    if (Array.isArray(matchingPermission)) {
+      indexes = matchingPermission.map((permission) => permission.index!);
+      console.log(this.merkleTree.entries());
+      for (const [i, v] of this.merkleTree.entries()) {
+        console.log("Value:", v);
+        console.log("i:", i);
+      }
+      ({ proof: merkleProof, proofFlags } =
+        this.merkleTree.getMultiProof(indexes));
+      ({
+        proof: merkleProof,
+        proofFlags,
+        leaves,
+      } = this.merkleTree.getMultiProof(indexes));
+      const proved = this.merkleTree.verifyMultiProof({
+        proofFlags,
+        proof: merkleProof,
+        leaves,
+      });
+      console.log("proved", proved);
+      console.log("root", this.merkleTree.root);
+        console.log("merkleProof", merkleProof);
+        console.log("leaves", leaves)
+      //   console.log("matchingPermission", matchingPermission);
+      //   console.log("encodedPerms", encodedPerms);
+      //   console.log("encodedPerms compare", encodedPerms.sort(Buffer.compare));
+      //   console.log("getLeaves", this.merkleTree.getLeaves());
+      //   proofFlags = this.merkleTree.getProofFlags(encodedPerms, merkleProof);
+        console.log("proofFlags", proofFlags);
+      //   const proved = this.merkleTree.verifyMultiProofWithFlags(this.merkleTree.getRoot(), encodedPerms, merkleProof, proofFlags)
+      //   console.log("proved", proved);
+    } else {
+      merkleProof = this.merkleTree.getProof([matchingPermission!]);
+      console.log("merkleProof", merkleProof);
+>>>>>>> Stashed changes
     }
     const encodedData =
       this.sessionKeyData.permissions &&
@@ -708,6 +845,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
         "SessionKeyValidator: No matching permission found for the userOp"
       );
     }
+<<<<<<< Updated upstream
     const encodedPermissionData =
       this.sessionKeyData.permissions &&
       this.sessionKeyData.permissions.length !== 0 &&
@@ -732,6 +870,35 @@ export class SessionKeyValidator extends KernelBaseValidator {
       merkleProof = this.merkleTree.getHexProof(
         keccak256(encodedPermissionData)
       );
+=======
+    // const encodedPermissionData =
+    //   this.sessionKeyData.permissions &&
+    //   this.sessionKeyData.permissions.length !== 0 &&
+    //   matchingPermission
+    //     ? this.encodePermissionData(matchingPermission)
+    //     : "0x";
+    let indexes: number[] = [],
+      merkleProof: string[] = [],
+      proofFlags: boolean[] = [],
+      leaves: (Permission[] | Hex[])[];
+    if (Array.isArray(matchingPermission)) {
+      indexes = matchingPermission.map((permission) => permission.index!);
+      ({
+        proof: merkleProof,
+        proofFlags,
+        leaves,
+      } = this.merkleTree.getMultiProof(indexes));
+      const proved = this.merkleTree.verifyMultiProof({
+        proofFlags,
+        proof: merkleProof,
+        leaves,
+      });
+      console.log("proved", proved);
+    } else {
+      merkleProof = this.merkleTree.getProof([matchingPermission!]);
+      const proved = this.merkleTree.verify([matchingPermission!], merkleProof);
+      console.log("proved", proved);
+>>>>>>> Stashed changes
     }
     const encodedData =
       this.sessionKeyData.permissions &&
