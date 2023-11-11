@@ -93,7 +93,7 @@ export abstract class KernelBaseValidator {
 
   abstract encodeDisable(enableData: Hex): Hex;
 
-  abstract getEnableData(): Promise<Hex>;
+  abstract getEnableData(kernelAccountAddress?: Address): Promise<Hex>;
 
   abstract signMessage(message: Uint8Array | string | Hex): Promise<Hex>;
 
@@ -141,7 +141,7 @@ export abstract class KernelBaseValidator {
       calldata
     );
     if (validatorMode === ValidatorMode.enable) {
-      const enableData = await this.getEnableData();
+      const enableData = await this.getEnableData(kernelAccountAddress);
       const enableDataLength = enableData.length / 2 - 1;
       const enableSigLength = 65;
       const staticDummySig = concatHex([
@@ -241,7 +241,7 @@ export abstract class KernelBaseValidator {
           { size: 32 }
         ),
         executor: executor as Address,
-        enableData: await validator.getEnableData(),
+        enableData: await validator.getEnableData(kernel),
       },
       primaryType: "ValidatorApproved",
     });
@@ -297,7 +297,7 @@ export abstract class KernelBaseValidator {
     if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
       return concatHex([this.mode, await this.signUserOp(userOp)]);
     } else {
-      const enableData = await this.getEnableData();
+      const enableData = await this.getEnableData(userOp.sender);
       const enableDataLength = enableData.length / 2 - 1;
       const enableSignature = this.getEnableSignature();
       if (!enableSignature) {

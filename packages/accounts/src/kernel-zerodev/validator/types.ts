@@ -120,7 +120,7 @@ export type GeneratePermissionFromArgsParameters<
   _FunctionName = TAbi extends Abi
     ? InferFunctionName<TAbi, TFunctionName>
     : never
-> = Pick<Permission, "operation" | "target" | "valueLimit"> & {
+> = Pick<Permission, "target" | "valueLimit"> & {
   functionName?: _FunctionName;
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
