@@ -29,6 +29,7 @@ function isMethodInErc4337RpcSchema(
       "eth_supportedEntryPoints",
       "eth_maxPriorityFeePerGas",
       "rundler_maxPriorityFeePerGas",
+      "pimlico_getUserOperationGasPrice",
     ] as const
   ).includes(variable as MethodsOfErc4337RpcSchema);
 }

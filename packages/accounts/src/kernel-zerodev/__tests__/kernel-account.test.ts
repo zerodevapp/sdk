@@ -293,6 +293,7 @@ describe("Kernel Account Tests", () => {
       let ecdsaProvider = await ECDSAProvider.init({
         projectId: config.projectIdWithGasSponsorship,
         owner,
+        bundlerProvider: "ALCHEMY",
         opts: {
           accountConfig: {
             index: 1003n,
