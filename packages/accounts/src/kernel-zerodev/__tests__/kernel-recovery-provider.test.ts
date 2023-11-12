@@ -7,7 +7,7 @@ import {
   type LocalAccount,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
-import { config } from "./kernel-account.test.js";
+import { config } from "./config/index.js";
 import {
   ECDSAProvider,
   RecoveryProvider,
