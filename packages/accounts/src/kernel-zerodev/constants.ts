@@ -100,4 +100,8 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
     "https://icy-long-mountain.base-goerli.quiknode.pro/5b80d93e97cc9412a63c10a30841869abbef9596/",
   100: "https://thrilling-fluent-film.xdai.quiknode.pro/305955cffb9868cdd95b5e3dc9775f20678ad9ac/",
   10200: "https://nd-810-853-201.p2pify.com/e828b09f0d43591de96c297b3f36fffd",
+  59144: `https://linea-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  59140: `https://linea-goerli.infura.io/v3/${INFURA_API_KEY}`,
+  204: "https://opbnb.rpc.thirdweb.com/eed98c1f30120c0508f17c1f01d3102b",
+  // 5611: 'opBnb-testnet',
 };
