@@ -1,8 +1,6 @@
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
-import {
-  type Hex,
-} from "viem";
+import { type Hex } from "viem";
 
 export const config = {
   privateKey: (process.env.PRIVATE_KEY as Hex) ?? generatePrivateKey(),

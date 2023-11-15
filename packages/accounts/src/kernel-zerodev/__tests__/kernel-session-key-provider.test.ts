@@ -8,17 +8,13 @@ import {
   type Hash,
   parseEther,
   pad,
+  getAbiItem,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey } from "viem/accounts";
 import { config } from "./config/index.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
-import {
-  CHAIN_ID_TO_NODE,
-  MULTISEND_ADDR,
-  TOKEN_ACTION,
-  oneAddress,
-} from "../constants.js";
+import { CHAIN_ID_TO_NODE, TOKEN_ACTION, oneAddress } from "../constants.js";
 import { SessionKeyProvider } from "../validator-provider/session-key-provider.js";
 import {
   LocalAccountSigner,
@@ -35,7 +31,6 @@ import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js";
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js";
 import { EmptyAccountSigner } from "../signer/empty-account.js";
-import { MultiSendAbi } from "../abis/MultiSendAbi.js";
 
 // [TODO] - Organize the test code properly
 describe("Kernel SessionKey Provider Test", async () => {
@@ -57,10 +52,16 @@ describe("Kernel SessionKey Provider Test", async () => {
     "transfer20Action(address, uint256, address)"
   );
   const executeSelector = getFunctionSelector(
-    "execute(address, uint256, bytes, uint8)"
+    getAbiItem({
+      abi: KernelAccountAbi,
+      name: "execute",
+    })
   );
   const executeBatchSelector = getFunctionSelector(
-    "executeBatch(tuple(address, uint256, bytes)[])"
+    getAbiItem({
+      abi: KernelAccountAbi,
+      name: "executeBatch",
+    })
   );
   let sessionKeyProvider: SessionKeyProvider;
   let ecdsaProvider: ECDSAProvider = await ECDSAProvider.init({
@@ -149,7 +150,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     sessionKeyProvider = await SessionKeyProvider.fromSessionKeyParams({
       projectId: config.projectIdWithGasSponsorship,
       sessionKeyParams,
-      bundlerProvider: "ALCHEMY",
+      bundlerProvider: "STACKUP",
       usePaymaster,
       opts: {
         providerConfig: {
@@ -170,17 +171,46 @@ describe("Kernel SessionKey Provider Test", async () => {
     });
   }
 
-  it.skip(
+  it(
     "should execute any tx using SessionKey when no permissions set",
     async () => {
-      await createProvider(secondOwner, zeroAddress, executeSelector);
+      const balanceOfAccount = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [accountAddress],
+      });
+      const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint
+      );
 
+      const balanceOfBefore = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfBefore", balanceOfBefore);
+      const amountToTransfer = 10000n;
       let result = sessionKeyProvider.sendUserOperation({
         target: accountAddress,
         data: encodeFunctionData({
           abi: KernelAccountAbi,
           functionName: "execute",
-          args: [await owner.getAddress(), 0n, "0x", Operation.Call],
+          args: [
+            Test_ERC20Address,
+            0n,
+            encodeFunctionData({
+              abi: TEST_ERC20Abi,
+              functionName: "transfer",
+              args: [await secondOwner.getAddress(), amountToTransfer],
+            }),
+            Operation.Call,
+          ],
         }),
       });
       await expect(result).resolves.not.toThrowError();
@@ -189,44 +219,14 @@ describe("Kernel SessionKey Provider Test", async () => {
           await result
         ).hash as Hash
       );
-    },
-    { timeout: 1000000 }
-  );
-
-  it.skip(
-    "should test findMatchingPermission",
-    async () => {
-      const amountToMint = 0n;
-      await createProvider(
-        secondOwner,
-        zeroAddress,
-        executeSelector,
-        amountToMint,
-        [
-          getPermissionFromABI({
-            target: Test_ERC20Address,
-            valueLimit: 0n,
-            abi: TEST_ERC20Abi,
-            functionName: "transfer",
-            args: [
-              {
-                operator: ParamOperator.EQUAL,
-                value: await secondOwner.getAddress(),
-              },
-              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
-            ],
-          }),
-        ]
-      );
-      await sessionKeyProvider.sendUserOperation({
-        target: Test_ERC20Address,
-        data: encodeFunctionData({
-          abi: TEST_ERC20Abi,
-          functionName: "transfer",
-          args: [await secondOwner.getAddress(), 100n],
-        }),
-        value: 0n,
+      const balanceOfAfter = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
       });
+      console.log("balanceOfAfter", balanceOfAfter);
+      expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
     },
     { timeout: 1000000 }
   );
@@ -300,7 +300,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     { timeout: 1000000 }
   );
 
-  it.only(
+  it(
     "should execute batch the erc20 token transfer action using SessionKey",
     async () => {
       const balanceOfAccount = await client.readContract({
@@ -316,6 +316,11 @@ describe("Kernel SessionKey Provider Test", async () => {
         executeBatchSelector,
         amountToMint,
         [
+          getPermissionFromABI({
+            target: Test_ERC20Address,
+            abi: TEST_ERC20Abi,
+            functionName: "increaseAllowance",
+          }),
           getPermissionFromABI({
             target: Test_ERC20Address,
             abi: TEST_ERC20Abi,
@@ -341,14 +346,24 @@ describe("Kernel SessionKey Provider Test", async () => {
       console.log("balanceOfBefore", balanceOfBefore);
       const amountToTransfer = 10000n;
       try {
-        result = await sessionKeyProvider.sendUserOperation([{
-          target: Test_ERC20Address,
-          data: encodeFunctionData({
-            abi: TEST_ERC20Abi,
-            functionName: "transfer",
-            args: [await secondOwner.getAddress(), amountToTransfer],
-          }),
-        }]);
+        result = await sessionKeyProvider.sendUserOperation([
+          {
+            target: Test_ERC20Address,
+            data: encodeFunctionData({
+              abi: TEST_ERC20Abi,
+              functionName: "increaseAllowance",
+              args: [await secondOwner.getAddress(), amountToTransfer],
+            }),
+          },
+          {
+            target: Test_ERC20Address,
+            data: encodeFunctionData({
+              abi: TEST_ERC20Abi,
+              functionName: "transfer",
+              args: [await secondOwner.getAddress(), amountToTransfer],
+            }),
+          },
+        ]);
         console.log(result);
         tx = await sessionKeyProvider.waitForUserOperationTransaction(
           result.hash as Hex
@@ -428,7 +443,7 @@ describe("Kernel SessionKey Provider Test", async () => {
       await createProvider(
         secondOwner,
         zeroAddress,
-        executeSelector,
+        executeBatchSelector,
         amountToMint,
         [
           getPermissionFromABI({
@@ -437,9 +452,9 @@ describe("Kernel SessionKey Provider Test", async () => {
             functionName: "transfer",
           }),
           getPermissionFromABI({
-            target: MULTISEND_ADDR,
-            abi: MultiSendAbi,
-            functionName: "multiSend",
+            target: Test_ERC20Address,
+            abi: TEST_ERC20Abi,
+            functionName: "approve",
           }),
         ],
         zeroAddress,
@@ -485,7 +500,7 @@ describe("Kernel SessionKey Provider Test", async () => {
     { timeout: 1000000 }
   );
 
-  it.skip(
+  it(
     "should execute the erc20 token transfer action using SessionKey and Token Action executor",
     async () => {
       const balanceOfAccount = await client.readContract({

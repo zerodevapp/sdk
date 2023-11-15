@@ -20,7 +20,6 @@ import {
   concat,
   pad,
   toHex,
-  keccak256,
   encodeAbiParameters,
   concatHex,
   zeroAddress,
@@ -28,13 +27,13 @@ import {
   isHex,
   getFunctionSelector,
   type GetAbiItemParameters,
+  keccak256,
 } from "viem";
 import { formatAbiItem } from "viem/utils";
 import { SessionKeyValidatorAbi } from "../abis/SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
-import { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
 import { fixSignedData } from "../utils.js";
 import type { GetAbiItemReturnType } from "viem/dist/types/utils/abi/getAbiItem.js";
@@ -218,9 +217,6 @@ export class SessionKeyValidator extends KernelBaseValidator {
       })
     );
     this.merkleTree = this.getMerkleTree();
-    if (this.shouldDelegateViaFallback()) {
-      throw Error("Session key permissions not set");
-    }
     this.selector =
       params.selector ??
       getFunctionSelector("execute(address, uint256, bytes, uint8)");
@@ -401,13 +397,14 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
     // Having one leaf returns empty array in getProof(). To hack it we push the leaf twice
     // issue - https://github.com/merkletreejs/merkletreejs/issues/58
-    if (permissionPacked?.length === 1) permissionPacked.push("0x");
+    if (permissionPacked && permissionPacked.length === 1)
+      permissionPacked.push(permissionPacked[0]);
 
     return permissionPacked && permissionPacked.length !== 0
       ? new MerkleTree(permissionPacked, keccak256, {
-          sortPairs: true,
           hashLeaves: true,
           complete: true,
+          sort: true,
         })
       : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
           hashLeaves: false,
@@ -417,9 +414,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
   encodePermissionData(
     permission: Permission | Permission[],
-    merkleProof?: string[],
-    flags?: boolean[],
-    indexes?: number[]
+    merkleProof?: string[] | string[][]
   ): Hex {
     let permissionParam = {
       components: [
@@ -488,27 +483,13 @@ export class SessionKeyValidator extends KernelBaseValidator {
         permissionParam,
         {
           name: "merkleProof",
-          type: "bytes32[]",
+          type: Array.isArray(merkleProof[0]) ? "bytes32[][]" : "bytes32[]",
         },
       ];
       values = [permission, merkleProof];
     } else {
       params = [permissionParam];
       values = [permission];
-    }
-    if (flags && indexes && flags.length && indexes.length) {
-      params = [
-        ...params,
-        {
-          name: "flags",
-          type: "bool[]",
-        },
-        {
-          name: "indexes",
-          type: "uint256[]",
-        },
-      ];
-      values = [...values, flags, indexes];
     }
     return encodeAbiParameters(params, values);
   }
@@ -590,7 +571,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     });
     const enableDataHex = concatHex([
       await this.sessionKey.getAddress(),
-      pad(enableData[0], { size: 4 }),
+      pad(enableData[0], { size: 32 }),
       pad(toHex(enableData[1]), { size: 6 }),
       pad(toHex(enableData[2]), { size: 6 }),
       enableData[3],
@@ -607,6 +588,14 @@ export class SessionKeyValidator extends KernelBaseValidator {
   }
 
   async getDummyUserOpSignature(callData: Hex): Promise<Hex> {
+    return concatHex([
+      await this.sessionKey.getAddress(),
+      DUMMY_ECDSA_SIG,
+      this.getEncodedPermissionProofData(callData),
+    ]);
+  }
+
+  private getEncodedPermissionProofData(callData: Hex): Hex {
     const matchingPermission = this.findMatchingPermissions(callData);
     if (!matchingPermission && !this.shouldDelegateViaFallback()) {
       throw Error(
@@ -619,49 +608,24 @@ export class SessionKeyValidator extends KernelBaseValidator {
       matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
-    let indexes: number[] = [],
-      merkleProof: string[] = [],
-      proofFlags: boolean[] = [];
+    let merkleProof: string[] | string[][] = [];
     if (Array.isArray(matchingPermission)) {
       let encodedPerms = matchingPermission.map((permission) =>
-        MerkleTree.bufferify(keccak256(this.encodePermissionData(permission)))
+        keccak256(this.encodePermissionData(permission))
       );
-      indexes = matchingPermission.map((permission) => permission.index!);
-      merkleProof = this.merkleTree.getHexMultiProof(
-        this.merkleTree.getLayersFlat(),
-        indexes
+      merkleProof = encodedPerms.map((perm) =>
+        this.merkleTree.getHexProof(perm)
       );
-      console.log("merkleProof", merkleProof);
-      console.log("matchingPermission", matchingPermission);
-      console.log("encodedPerms", encodedPerms);
-      console.log("encodedPerms compare", encodedPerms.sort(Buffer.compare));
-      console.log("getLeaves", this.merkleTree.getLeaves());
-      proofFlags = this.merkleTree.getProofFlags(encodedPerms, merkleProof);
-      console.log("proofFlags", proofFlags);
-      //   const proved = this.merkleTree.verifyMultiProofWithFlags(this.merkleTree.getRoot(), encodedPerms, merkleProof, proofFlags)
-      //   console.log("proved", proved);
-    } else {
+    } else if (matchingPermission) {
       merkleProof = this.merkleTree.getHexProof(
         keccak256(encodedPermissionData)
       );
-      console.log("merkleProof", merkleProof)
     }
-    const encodedData =
-      this.sessionKeyData.permissions &&
+    return this.sessionKeyData.permissions &&
       this.sessionKeyData.permissions.length !== 0 &&
       matchingPermission
-        ? this.encodePermissionData(
-            matchingPermission,
-            merkleProof,
-            proofFlags,
-            indexes
-          )
-        : "0x";
-    return concatHex([
-      await this.sessionKey.getAddress(),
-      DUMMY_ECDSA_SIG,
-      encodedData,
-    ]);
+      ? this.encodePermissionData(matchingPermission, merkleProof)
+      : "0x";
   }
 
   encodeEnable(sessionKeyEnableData: Hex): Hex {
@@ -702,52 +666,10 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
 
-    const matchingPermission = this.findMatchingPermissions(userOp.callData);
-    if (!matchingPermission && !this.shouldDelegateViaFallback()) {
-      throw Error(
-        "SessionKeyValidator: No matching permission found for the userOp"
-      );
-    }
-    const encodedPermissionData =
-      this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
-        ? this.encodePermissionData(matchingPermission)
-        : "0x";
-    let indexes: number[] = [],
-      merkleProof: string[] = [],
-      proofFlags: boolean[] = [];
-    if (Array.isArray(matchingPermission)) {
-      let encodedPerms = matchingPermission.map((permission) =>
-        MerkleTree.bufferify(keccak256(this.encodePermissionData(permission)))
-      );
-      indexes = matchingPermission.map((permission) => permission.index!);
-      merkleProof = this.merkleTree.getHexMultiProof(
-        this.merkleTree.getLayersFlat(),
-        indexes
-      );
-
-      proofFlags = this.merkleTree.getProofFlags(encodedPerms, merkleProof);
-    } else {
-      merkleProof = this.merkleTree.getHexProof(
-        keccak256(encodedPermissionData)
-      );
-    }
-    const encodedData =
-      this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
-        ? this.encodePermissionData(
-            matchingPermission,
-            merkleProof,
-            proofFlags,
-            indexes
-          )
-        : "0x";
     const signature = concat([
       await this.sessionKey.getAddress(),
       await this.sessionKey.signMessage(formattedMessage),
-      encodedData,
+      this.getEncodedPermissionProofData(userOp.callData),
     ]);
     return signature;
   }
