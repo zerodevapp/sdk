@@ -75,6 +75,19 @@ export abstract class ValidatorProvider<
       bundlerProvider,
     });
     this.defaultProvider = params.defaultProvider;
+    if (
+      (typeof params.opts?.providerConfig?.chain === "number" &&
+        typeof params.defaultProvider?.chain === "number" &&
+        params.opts?.providerConfig?.chain !== params.defaultProvider?.chain) ||
+      (typeof params.opts?.providerConfig?.chain === "object" &&
+        typeof params.defaultProvider?.chain === "object" &&
+        params.opts?.providerConfig?.chain.id !==
+          params.defaultProvider?.chain.id)
+    ) {
+      throw new Error(
+        "chainId mismatch between default provider and current provider - check projectIds"
+      );
+    }
     this.connect(
       () =>
         new KernelSmartContractAccount({
