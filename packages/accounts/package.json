@@ -65,10 +65,11 @@
   "homepage": "https://github.com/zerodevapp/sdk/blob/main/README.md#readme",
   "gitHead": "19ba05a77e4f7a0e04f44f34eaecf675fe2c12f2",
   "dependencies": {
+    "@alchemy/aa-core": "0.1.0-alpha.23",
+    "@alchemy/aa-ethers": "0.1.0-alpha.23",
+    "@openzeppelin/merkle-tree": "^1.0.5",
     "axios": "^1.4.0",
     "merkletreejs": "^0.3.10",
-    "viem": "^1.5.3",
-    "@alchemy/aa-core": "0.1.0-alpha.23",
-    "@alchemy/aa-ethers": "0.1.0-alpha.23"
+    "viem": "^1.5.3"
   }
 }
