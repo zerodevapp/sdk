@@ -6,6 +6,7 @@ import {
   type Hex,
   type HttpTransport,
   type RpcTransactionRequest,
+  getAbiItem,
 } from "viem";
 import {
   deepHexlify,
@@ -22,6 +23,7 @@ import {
   SmartAccountProvider,
   type AccountMiddlewareFn,
   type UserOperationOverrides,
+  EntryPointAbi,
 } from "@alchemy/aa-core";
 import {
   BUNDLER_URL,
@@ -71,6 +73,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   protected sendTxMaxRetries: number;
   protected sendTxRetryIntervalMs: number;
   readonly bundlerProvider?: PaymasterAndBundlerProviders;
+  private _txMaxRetries: number;
+  private _txRetryIntervalMs: number;
 
   constructor({
     projectId,
@@ -91,13 +95,15 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
     super(rpcClient, entryPointAddress, _chain, account, {
       ...opts,
-      txMaxRetries: opts?.txMaxRetries ?? 10,
+      txMaxRetries: opts?.txMaxRetries ?? 20,
       txRetryIntervalMs: opts?.txRetryIntervalMs ?? 10000,
       minPriorityFeePerBid:
         opts?.minPriorityFeePerBid ??
         minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
+    this._txMaxRetries = opts?.txMaxRetries ?? 20;
+    this._txRetryIntervalMs = opts?.txRetryIntervalMs ?? 5000;
     this.bundlerProvider = bundlerProvider;
     this.projectId = projectId;
     this.sendTxMaxRetries =
@@ -363,6 +369,26 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     }
     return errorIn;
   }
+
+  waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
+    let blockNumber = await this.rpcClient.getBlockNumber();
+    for (let i = 0; i < this._txMaxRetries; i++) {
+      const logs = await this.rpcClient.getLogs({
+        address: ENTRYPOINT_ADDRESS,
+        event: getAbiItem({ abi: EntryPointAbi, name: "UserOperationEvent" }),
+        args: { userOpHash: hash },
+        fromBlock: blockNumber - 100n,
+      });
+      if (logs.length) {
+        return logs[0].transactionHash;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, this._txRetryIntervalMs)
+      );
+    }
+
+    throw new Error("Failed to find transaction for User Operation");
+  };
 
   getAccount: () => KernelSmartContractAccount = () => {
     if (!isKernelAccount(this.account)) {
