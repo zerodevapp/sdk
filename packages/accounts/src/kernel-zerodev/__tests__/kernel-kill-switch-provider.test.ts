@@ -41,7 +41,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
       owner,
       opts: {
         accountConfig: {
-          index: 70002n,
+          index: 70004n,
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
@@ -51,33 +51,14 @@ describe("Kernel Kill Switch Provider Test", async () => {
     accountAddress = await ecdsaProvider.getAccount().getAddress();
     console.log("accountAddress", accountAddress);
 
-    // Needed to deploy the wallet
-    // ------------------------
-    if (!(await ecdsaProvider.getAccount().isAccountDeployed())) {
-      const depResult = await ecdsaProvider.sendUserOperation({
-        target: await owner.getAddress(),
-        data: "0x",
-      });
-      console.log("depResult", depResult);
-      await ecdsaProvider.waitForUserOperationTransaction(
-        depResult.hash as Hex
-      );
-    }
-    // ------------------------
-
     blockerKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
       guardian: secondOwner,
-      delaySeconds: 20,
+      defaultProvider: ecdsaProvider,
+      delaySeconds: 5,
       opts: {
         accountConfig: {
           accountAddress,
-        },
-        providerConfig: {
-          opts: {
-            txMaxRetries: 10,
-            txRetryIntervalMs: 2000,
-          },
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
@@ -110,12 +91,6 @@ describe("Kernel Kill Switch Provider Test", async () => {
       opts: {
         accountConfig: {
           accountAddress,
-        },
-        providerConfig: {
-          opts: {
-            txMaxRetries: 10,
-            txRetryIntervalMs: 2000,
-          },
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
@@ -212,7 +187,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
       }
 
       // Wait for the delay
-      new Promise((resolve) => setTimeout(resolve, 20000));
+      new Promise((resolve) => setTimeout(resolve, 5000));
 
       result = await ecdsaProvider.sendUserOperation({
         target: await owner.getAddress(),
