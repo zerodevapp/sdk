@@ -403,8 +403,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return permissionPacked && permissionPacked.length !== 0
       ? new MerkleTree(permissionPacked, keccak256, {
           hashLeaves: true,
-          complete: true,
-          sort: true,
+          sortPairs: true,
         })
       : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
           hashLeaves: false,
