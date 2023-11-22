@@ -9,6 +9,7 @@ import {
 } from "@alchemy/aa-core";
 import { ENTRYPOINT_ADDRESS } from "../constants.js";
 import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas.js";
+import { type PaymasterAndBundlerProviders } from "../paymaster/types.js";
 
 export const withZeroDevGasEstimator = (
   provider: ZeroDevProvider
@@ -121,16 +122,29 @@ export const getPreVerificationGas = async (
   return calcPreVerificationGas(p);
 };
 
+export const GAS_PRICE_RPC_METHODS_BY_BUNDLER: {
+  [K in PaymasterAndBundlerProviders]: string;
+} = {
+  STACKUP: "eth_maxPriorityFeePerGas",
+  ALCHEMY: "rundler_maxPriorityFeePerGas",
+  PIMLICO: "pimlico_getUserOperationGasPrice",
+};
+
 export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
-  const [fee, block] = await Promise.all([
-    provider.bundlerProvider === "ALCHEMY"
-      ? (provider.rpcClient.request({
-          // @ts-expect-error
-          method: "rundler_maxPriorityFeePerGas",
-        }) as Promise<Hex>)
-      : provider.rpcClient.getMaxPriorityFeePerGas(),
+  let [fee, block] = await Promise.all([
+    provider.rpcClient.request({
+      method:
+        // @ts-expect-error
+        GAS_PRICE_RPC_METHODS_BY_BUNDLER[provider.bundlerProvider] ??
+        "eth_maxPriorityFeePerGas",
+      params: [],
+    }) as any,
     provider.rpcClient.getBlock({ blockTag: "latest" }),
   ]);
+
+  if (provider.bundlerProvider === "PIMLICO") {
+    fee = fee.standard.maxPriorityFeePerGas;
+  }
 
   const tip = BigInt(fee);
   const buffer = (tip / 100n) * 13n;

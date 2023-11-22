@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/sdk",
-  "version": "4.2.1",
+  "version": "4.3.2",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "ZeroDev",
   "license": "MIT",
@@ -67,6 +67,7 @@
   "dependencies": {
     "@alchemy/aa-core": "0.1.0-alpha.23",
     "@alchemy/aa-ethers": "0.1.0-alpha.23",
+    "@openzeppelin/merkle-tree": "^1.0.5",
     "axios": "^1.4.0",
     "merkletreejs": "^0.3.10",
     "radash": "^11.0.0",

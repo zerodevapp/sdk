@@ -20,7 +20,6 @@ import {
   concat,
   pad,
   toHex,
-  keccak256,
   encodeAbiParameters,
   concatHex,
   zeroAddress,
@@ -28,13 +27,13 @@ import {
   isHex,
   getFunctionSelector,
   type GetAbiItemParameters,
+  keccak256,
 } from "viem";
 import { formatAbiItem } from "viem/utils";
 import { SessionKeyValidatorAbi } from "../abis/SessionKeyValidatorAbi.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
-import { Operation } from "../provider.js";
 import { getChainId } from "../api/index.js";
 import { fixSignedData } from "../utils.js";
 import type { GetAbiItemReturnType } from "viem/dist/types/utils/abi/getAbiItem.js";
@@ -75,6 +74,16 @@ export enum ParamOperator {
   NOT_EQUAL = 5,
 }
 
+export type SessionNonces = {
+  lastNonce: bigint;
+  invalidNonce: bigint;
+};
+
+export type ExecutionRule = {
+  validAfter: number; // 48 bits
+  interval: number; // 48 bits
+  runs: number; // 48 bits
+};
 export interface ParamRules {
   offset: number;
   condition: ParamOperator;
@@ -83,10 +92,11 @@ export interface ParamRules {
 
 export type Permission = {
   target: Address;
+  index?: number;
   rules?: ParamRules[];
   sig?: Hex;
   valueLimit?: bigint;
-  operation?: Operation;
+  executionRule?: ExecutionRule;
 };
 
 export interface SessionKeyData {
@@ -141,7 +151,6 @@ export function getPermissionFromABI<
   target,
   args,
   functionName,
-  operation,
   valueLimit,
 }: GeneratePermissionFromArgsParameters<TAbi, TFunctionName>): Permission {
   const abiItem = getAbiItem({
@@ -175,7 +184,6 @@ export function getPermissionFromABI<
     sig: functionSelector,
     rules: paramRules,
     target,
-    operation: operation ?? Operation.Call,
     valueLimit: valueLimit ?? 0n,
   };
 }
@@ -195,18 +203,20 @@ export class SessionKeyValidator extends KernelBaseValidator {
       paymaster: params.sessionKeyData.paymaster ?? zeroAddress,
     };
     this.sessionKeyData.permissions = this.sessionKeyData.permissions?.map(
-      (perm) => ({
+      (perm, index) => ({
         ...perm,
-        operation: perm.operation ?? Operation.Call,
         valueLimit: perm.valueLimit ?? 0n,
         sig: perm.sig ?? pad("0x", { size: 4 }),
         rules: perm.rules ?? [],
+        index,
+        executionRule: perm.executionRule ?? {
+          validAfter: 0,
+          interval: 0,
+          runs: 0,
+        },
       })
     );
     this.merkleTree = this.getMerkleTree();
-    if (this.shouldDelegateViaFallback()) {
-      throw Error("Session key permissions not set");
-    }
     this.selector =
       params.selector ??
       getFunctionSelector("execute(address, uint256, bytes, uint8)");
@@ -230,19 +240,54 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return this.merkleTree.getHexRoot() === pad("0x00", { size: 32 });
   }
 
-  findMatchingPermission(callData: Hex): Permission | undefined {
+  findMatchingPermissions(
+    callData: Hex
+  ): Permission | Permission[] | undefined {
     try {
       const { functionName, args } = decodeFunctionData({
         abi: KernelAccountAbi,
         data: callData,
       });
 
-      if (functionName !== "execute") return undefined;
+      if (functionName !== "execute" && functionName !== "executeBatch")
+        return undefined;
+      if (functionName === "execute") {
+        const [to, value, data] = args;
+        return this.filterPermissions([to], [data], [value])?.[0];
+      } else if (functionName === "executeBatch") {
+        let targets: Hex[] = [],
+          values: bigint[] = [],
+          dataArray: Hex[] = [];
+        args[0].forEach((arg) => {
+          targets.push(arg.to);
+          values.push(arg.value);
+          dataArray.push(arg.data);
+        });
+        return this.filterPermissions(targets, dataArray, values);
+      } else {
+        throw Error("Invalid function");
+      }
+    } catch (error) {
+      return undefined;
+    }
+  }
 
+  private filterPermissions(
+    targets: Address[],
+    dataArray: Hex[],
+    values: bigint[]
+  ): Permission[] | undefined {
+    if (
+      targets.length !== dataArray.length ||
+      targets.length !== values.length
+    ) {
+      throw Error("Invalid arguments");
+    }
+    const filteredPermissions = targets.map((target, index) => {
       const permissionsList = this.sessionKeyData.permissions;
       if (!permissionsList || !permissionsList.length) return undefined;
 
-      const targetToMatch = args[0].toLowerCase();
+      const targetToMatch = target.toLowerCase();
 
       // Filter permissions by target
       let targetPermissions = permissionsList.filter(
@@ -259,20 +304,13 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
       if (!targetPermissions.length) return undefined;
 
-      const operationPermissions = this.filterByOperation(
-        targetPermissions,
-        args[3]
-      );
-
-      if (!operationPermissions.length) return undefined;
-
       const signaturePermissions = this.filterBySignature(
-        operationPermissions,
-        args[2].slice(0, 10).toLowerCase()
+        targetPermissions,
+        dataArray[index].slice(0, 10).toLowerCase()
       );
 
       const valueLimitPermissions = signaturePermissions.filter(
-        (permission) => (permission.valueLimit ?? 0n) >= args[1]
+        (permission) => (permission.valueLimit ?? 0n) >= values[index]
       );
 
       if (!valueLimitPermissions.length) return undefined;
@@ -287,20 +325,11 @@ export class SessionKeyValidator extends KernelBaseValidator {
         }
       });
 
-      return this.findPermissionByRule(sortedPermissions, args[2]);
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-  private filterByOperation(
-    permissions: Permission[],
-    operation: Operation
-  ): Permission[] {
-    return permissions.filter(
-      (permission) =>
-        permission.operation === operation || Operation.Call === operation
-    );
+      return this.findPermissionByRule(sortedPermissions, dataArray[index]);
+    });
+    return filteredPermissions.every((permission) => permission !== undefined)
+      ? (filteredPermissions as Permission[])
+      : undefined;
   }
 
   private filterBySignature(
@@ -368,33 +397,41 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
     // Having one leaf returns empty array in getProof(). To hack it we push the leaf twice
     // issue - https://github.com/merkletreejs/merkletreejs/issues/58
-    if (permissionPacked?.length === 1)
+    if (permissionPacked && permissionPacked.length === 1)
       permissionPacked.push(permissionPacked[0]);
 
     return permissionPacked && permissionPacked.length !== 0
       ? new MerkleTree(permissionPacked, keccak256, {
-          sortPairs: true,
           hashLeaves: true,
+          sortPairs: true,
         })
       : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
           hashLeaves: false,
+          complete: true,
         });
   }
 
-  encodePermissionData(permission: Permission, merkleProof?: string[]): Hex {
+  encodePermissionData(
+    permission: Permission | Permission[],
+    merkleProof?: string[] | string[][]
+  ): Hex {
     let permissionParam = {
       components: [
+        {
+          name: "index",
+          type: "uint32",
+        },
         {
           name: "target",
           type: "address",
         },
         {
-          name: "valueLimit",
-          type: "uint256",
-        },
-        {
           name: "sig",
           type: "bytes4",
+        },
+        {
+          name: "valueLimit",
+          type: "uint256",
         },
         {
           components: [
@@ -416,13 +453,27 @@ export class SessionKeyValidator extends KernelBaseValidator {
           type: "tuple[]",
         },
         {
-          internalType: "enum Operation",
-          name: "operation",
-          type: "uint8",
+          components: [
+            {
+              name: "interval",
+              type: "uint48",
+            },
+            {
+              name: "runs",
+              type: "uint48",
+            },
+            {
+              internalType: "ValidAfter",
+              name: "validAfter",
+              type: "uint48",
+            },
+          ],
+          name: "executionRule",
+          type: "tuple",
         },
       ],
       name: "permission",
-      type: "tuple",
+      type: Array.isArray(permission) ? "tuple[]" : "tuple",
     };
     let params;
     let values;
@@ -431,7 +482,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
         permissionParam,
         {
           name: "merkleProof",
-          type: "bytes32[]",
+          type: Array.isArray(merkleProof[0]) ? "bytes32[][]" : "bytes32[]",
         },
       ];
       values = [permission, merkleProof];
@@ -460,16 +511,41 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return await Promise.resolve(this.sessionKey);
   }
 
-  async getEnableData(): Promise<Hex> {
+  async getSessionNonces(
+    kernelAccountAddress: Address
+  ): Promise<SessionNonces> {
+    if (!this.publicClient) {
+      throw new Error("Validator uninitialized: PublicClient missing");
+    }
+    const nonce = await this.publicClient.readContract({
+      abi: SessionKeyValidatorAbi,
+      address: this.validatorAddress,
+      functionName: "nonces",
+      args: [kernelAccountAddress],
+    });
+    return { lastNonce: nonce[0], invalidNonce: nonce[1] };
+  }
+
+  async getEnableData(
+    kernelAccountAddress?: Address,
+    enabledLastNonce?: bigint
+  ): Promise<Hex> {
     if (!this.merkleTree) {
       throw Error("SessionKeyValidator: MerkleTree not generated");
     }
+    if (!kernelAccountAddress) {
+      throw Error("SessionKeyValidator: Kernel account address not provided");
+    }
+    const lastNonce =
+      enabledLastNonce ??
+      (await this.getSessionNonces(kernelAccountAddress)).lastNonce + 1n;
     return concat([
       await this.sessionKey.getAddress(),
       pad(this.merkleTree.getHexRoot() as Hex, { size: 32 }),
       pad(toHex(this.sessionKeyData.validAfter), { size: 6 }),
       pad(toHex(this.sessionKeyData.validUntil), { size: 6 }),
       this.sessionKeyData.paymaster!,
+      pad(toHex(lastNonce), { size: 32 }),
     ]);
   }
 
@@ -494,21 +570,32 @@ export class SessionKeyValidator extends KernelBaseValidator {
     });
     const enableDataHex = concatHex([
       await this.sessionKey.getAddress(),
-      pad(enableData[0], { size: 4 }),
+      pad(enableData[0], { size: 32 }),
       pad(toHex(enableData[1]), { size: 6 }),
       pad(toHex(enableData[2]), { size: 6 }),
       enableData[3],
+      pad(toHex(enableData[4]), { size: 32 }),
     ]);
     return (
       execDetail.validator.toLowerCase() ===
         this.validatorAddress.toLowerCase() &&
-      enableData[4] &&
-      enableDataHex.toLowerCase() === (await this.getEnableData()).toLowerCase()
+      enableDataHex.toLowerCase() ===
+        (
+          await this.getEnableData(kernelAccountAddress, enableData[4])
+        ).toLowerCase()
     );
   }
 
   async getDummyUserOpSignature(callData: Hex): Promise<Hex> {
-    const matchingPermission = this.findMatchingPermission(callData);
+    return concatHex([
+      await this.sessionKey.getAddress(),
+      DUMMY_ECDSA_SIG,
+      this.getEncodedPermissionProofData(callData),
+    ]);
+  }
+
+  private getEncodedPermissionProofData(callData: Hex): Hex {
+    const matchingPermission = this.findMatchingPermissions(callData);
     if (!matchingPermission && !this.shouldDelegateViaFallback()) {
       throw Error(
         "SessionKeyValidator: No matching permission found for the userOp"
@@ -520,20 +607,24 @@ export class SessionKeyValidator extends KernelBaseValidator {
       matchingPermission
         ? this.encodePermissionData(matchingPermission)
         : "0x";
-    const merkleProof = this.merkleTree.getHexProof(
-      keccak256(encodedPermissionData)
-    );
-    const encodedData =
-      this.sessionKeyData.permissions &&
+    let merkleProof: string[] | string[][] = [];
+    if (Array.isArray(matchingPermission)) {
+      let encodedPerms = matchingPermission.map((permission) =>
+        keccak256(this.encodePermissionData(permission))
+      );
+      merkleProof = encodedPerms.map((perm) =>
+        this.merkleTree.getHexProof(perm)
+      );
+    } else if (matchingPermission) {
+      merkleProof = this.merkleTree.getHexProof(
+        keccak256(encodedPermissionData)
+      );
+    }
+    return this.sessionKeyData.permissions &&
       this.sessionKeyData.permissions.length !== 0 &&
       matchingPermission
-        ? this.encodePermissionData(matchingPermission, merkleProof)
-        : "0x";
-    return concatHex([
-      await this.sessionKey.getAddress(),
-      DUMMY_ECDSA_SIG,
-      encodedData,
-    ]);
+      ? this.encodePermissionData(matchingPermission, merkleProof)
+      : "0x";
   }
 
   encodeEnable(sessionKeyEnableData: Hex): Hex {
@@ -574,31 +665,10 @@ export class SessionKeyValidator extends KernelBaseValidator {
     );
     const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
 
-    const matchingPermission = this.findMatchingPermission(userOp.callData);
-    if (!matchingPermission && !this.shouldDelegateViaFallback()) {
-      throw Error(
-        "SessionKeyValidator: No matching permission found for the userOp"
-      );
-    }
-    const encodedPermissionData =
-      this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
-        ? this.encodePermissionData(matchingPermission)
-        : "0x";
-    const merkleProof = this.merkleTree.getHexProof(
-      keccak256(encodedPermissionData)
-    );
-    const encodedData =
-      this.sessionKeyData.permissions &&
-      this.sessionKeyData.permissions.length !== 0 &&
-      matchingPermission
-        ? this.encodePermissionData(matchingPermission, merkleProof)
-        : "0x";
     const signature = concat([
       await this.sessionKey.getAddress(),
       await this.sessionKey.signMessage(formattedMessage),
-      encodedData,
+      this.getEncodedPermissionProofData(userOp.callData),
     ]);
     return signature;
   }

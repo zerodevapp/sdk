@@ -9,7 +9,7 @@ import {
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { config } from "./kernel-account.test.js";
+import { config } from "./config/index.js";
 import { ECDSAProvider } from "../validator-provider/index.js";
 import { CHAIN_ID_TO_NODE, TOKEN_ACTION } from "../constants.js";
 import { ValidatorMode } from "../validator/base.js";

@@ -1,5 +1,10 @@
 export const SessionKeyValidatorAbi = [
   {
+    inputs: [],
+    name: "NotImplemented",
+    type: "error",
+  },
+  {
     inputs: [
       {
         internalType: "bytes",
@@ -23,6 +28,72 @@ export const SessionKeyValidatorAbi = [
     name: "enable",
     outputs: [],
     stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes32",
+        name: "permissionKey",
+        type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "kernel",
+        type: "address",
+      },
+    ],
+    name: "executionStatus",
+    outputs: [
+      {
+        internalType: "ValidAfter",
+        name: "validAfter",
+        type: "uint48",
+      },
+      {
+        internalType: "uint48",
+        name: "runs",
+        type: "uint48",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint128",
+        name: "nonce",
+        type: "uint128",
+      },
+    ],
+    name: "invalidateNonce",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "kernel",
+        type: "address",
+      },
+    ],
+    name: "nonces",
+    outputs: [
+      {
+        internalType: "uint128",
+        name: "lastNonce",
+        type: "uint128",
+      },
+      {
+        internalType: "uint128",
+        name: "invalidNonce",
+        type: "uint128",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -61,9 +132,9 @@ export const SessionKeyValidatorAbi = [
         type: "address",
       },
       {
-        internalType: "bool",
-        name: "enabled",
-        type: "bool",
+        internalType: "uint256",
+        name: "nonce",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -183,7 +254,7 @@ export const SessionKeyValidatorAbi = [
       },
       {
         internalType: "bytes32",
-        name: "userOpHash",
+        name: "",
         type: "bytes32",
       },
       {
