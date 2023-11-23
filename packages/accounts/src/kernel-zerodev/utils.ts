@@ -9,6 +9,8 @@ import {
   hexToSignature,
   signatureToHex,
 } from "viem";
+import * as chains from "viem/chains";
+import * as customChains from "./utils/custom-chains.js";
 import type {
   SignTypedDataParams,
   SmartAccountSigner,
@@ -131,4 +133,23 @@ export const fixSignedData = (sig: Hex): Hex => {
   if (v === 0n || v === 1n) v += 27n;
   const joined = signatureToHex({ r, s, v });
   return joined;
+};
+
+// Modified from @alchemy/aa-core
+/**
+ * Utility method for converting a chainId to a {@link chains.Chain} object
+ *
+ * @param chainId
+ * @returns a {@link chains.Chain} object for the given chainId
+ * @throws if the chainId is not found
+ */
+export const getChain = (chainId: number): chains.Chain => {
+  for (const chain of Object.values(chains).concat(
+    Object.values(customChains)
+  )) {
+    if (chain.id === chainId) {
+      return chain;
+    }
+  }
+  throw new Error("could not find chain");
 };

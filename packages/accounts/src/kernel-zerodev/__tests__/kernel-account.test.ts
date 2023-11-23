@@ -236,13 +236,6 @@ describe("Kernel Account Tests", () => {
         owner,
         usePaymaster: false,
         bundlerProvider: "STACKUP",
-        opts: {
-          providerConfig: {
-            opts: {
-              txMaxRetries: 10,
-            },
-          },
-        },
       });
 
       const mintData = encodeFunctionData({
@@ -250,13 +243,6 @@ describe("Kernel Account Tests", () => {
         args: [await ecdsaProvider.getAddress(), 700000000000000000n],
         functionName: "mint",
       });
-      console.log(
-        await ecdsaProvider.buildUserOperation({
-          target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
-          data: mintData,
-          value: 0n,
-        })
-      );
       const result = ecdsaProvider.sendUserOperation({
         target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
         data: mintData,

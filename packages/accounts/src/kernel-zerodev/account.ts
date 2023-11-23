@@ -17,7 +17,6 @@ import {
   type BatchUserOperationCallData,
   type UserOperationRequest,
   defineReadOnly,
-  getChain,
   type SignTypedDataParams,
   wrapWith6492,
 } from "@alchemy/aa-core";
@@ -28,7 +27,7 @@ import {
   KERNEL_IMPL_ADDRESS,
   MULTISEND_ADDR,
 } from "./constants.js";
-import { encodeMultiSend } from "./utils.js";
+import { encodeMultiSend, getChain } from "./utils.js";
 import { MultiSendAbi } from "./abis/MultiSendAbi.js";
 import { polygonMumbai } from "viem/chains";
 import { getChainId } from "./api/index.js";

@@ -1,5 +1,4 @@
 import {
-  getChain,
   getUserOperationHash,
   type Address,
   type Hex,
@@ -13,7 +12,7 @@ import { ECDSAValidatorAbi } from "../abis/ESCDAValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { fixSignedData } from "../utils.js";
+import { fixSignedData, getChain } from "../utils.js";
 
 export interface ECDSAValidatorParams extends KernelBaseValidatorParams {
   owner: SmartAccountSigner;

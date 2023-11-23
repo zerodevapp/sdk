@@ -6,10 +6,10 @@ import {
   ERC165SessionKeyValidator,
   type ERC165SessionKeyValidatorParams,
 } from "../validator/erc165-session-key-validator.js";
-import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { ERC165_SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
+import { getChain } from "../utils.js";
 
 export class ERC165SessionKeyProvider extends ValidatorProvider<
   ERC165SessionKeyValidator,

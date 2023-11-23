@@ -59,7 +59,8 @@ export abstract class ValidatorProvider<
   ) {
     let bundlerProvider = params.bundlerProvider;
     const shouldUsePaymaster =
-      params.usePaymaster === undefined || params.usePaymaster;
+      (params.usePaymaster === undefined || params.usePaymaster) &&
+      bundlerProvider !== "GELATO";
     if (
       params.opts?.paymasterConfig &&
       params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" &&

@@ -6,9 +6,9 @@ import {
   ECDSAValidator,
   type ECDSAValidatorParams,
 } from "../validator/ecdsa-validator.js";
-import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
+import { getChain } from "../utils.js";
 
 export class ECDSAProvider extends ValidatorProvider<
   ECDSAValidator,

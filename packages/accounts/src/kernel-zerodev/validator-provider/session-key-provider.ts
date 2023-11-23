@@ -9,7 +9,6 @@ import {
   type SessionKeyValidatorParams,
 } from "../validator/session-key-validator.js";
 import {
-  getChain,
   LocalAccountSigner,
   type Hex,
   type SmartAccountSigner,
@@ -17,7 +16,7 @@ import {
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
-import { base64ToBytes, bytesToBase64 } from "../utils.js";
+import { base64ToBytes, bytesToBase64, getChain } from "../utils.js";
 import type { RequiredProps, WithRequired } from "../types.js";
 import type { KernelBaseValidatorParams } from "../validator/base.js";
 
