@@ -47,10 +47,10 @@ export const signMessageImplementation = async (
   const signedRequest = await TurnkeyApi.signSignRawPayload(
     {
       body: {
-        type: "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2",
+        type: "ACTIVITY_TYPE_SIGN_RAW_PAYLOAD",
         organizationId: id,
         parameters: {
-          signWith: walletId,
+          privateKeyId: walletId,
           payload: msg,
           encoding: "PAYLOAD_ENCODING_HEXADECIMAL",
           hashFunction: "HASH_FUNCTION_NO_OP",
