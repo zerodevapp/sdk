@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@turnkey/api-key-stamper": "^0.1.1",
-    "@turnkey/http": "^2.1.0",
+    "@turnkey/http": "^1.2.0",
     "@turnkey/viem": "^0.2.4",
     "typescript": "^5.0.4",
     "typescript-template": "*",
@@ -70,7 +70,6 @@
     "@openzeppelin/merkle-tree": "^1.0.5",
     "axios": "^1.4.0",
     "merkletreejs": "^0.3.10",
-    "radash": "^11.0.0",
     "viem": "^1.5.3"
   }
 }
