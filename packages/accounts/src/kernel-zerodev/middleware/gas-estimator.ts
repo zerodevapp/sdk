@@ -16,9 +16,13 @@ export const withZeroDevGasEstimator = (
 ): ZeroDevProvider => {
   provider.withFeeDataGetter(async (struct) => {
     let overrides = await resolveProperties({
-      maxFeePerGas: struct.maxFeePerGas ?? 0n,
-      maxPriorityFeePerGas: struct.maxPriorityFeePerGas ?? 0n,
+      maxFeePerGas: struct.maxFeePerGas,
+      maxPriorityFeePerGas: struct.maxPriorityFeePerGas,
     });
+
+    if (provider.bundlerProvider === "GELATO") {
+      return { maxFeePerGas: 0n, maxPriorityFeePerGas: 0n };
+    }
 
     let maxFeePerGas, maxPriorityFeePerGas;
 
@@ -40,11 +44,12 @@ export const withZeroDevGasEstimator = (
         : 0n;
     }
 
-    if (
-      maxFeePerGas < BigInt(overrides.maxFeePerGas) ||
-      maxPriorityFeePerGas < BigInt(overrides.maxPriorityFeePerGas)
-    ) {
-      return overrides;
+    if (overrides.maxFeePerGas || overrides.maxPriorityFeePerGas) {
+      return {
+        maxFeePerGas: overrides.maxFeePerGas ?? maxFeePerGas,
+        maxPriorityFeePerGas:
+          overrides.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+      };
     }
     return { maxFeePerGas, maxPriorityFeePerGas };
   });
@@ -128,6 +133,7 @@ export const GAS_PRICE_RPC_METHODS_BY_BUNDLER: {
   STACKUP: "eth_maxPriorityFeePerGas",
   ALCHEMY: "rundler_maxPriorityFeePerGas",
   PIMLICO: "pimlico_getUserOperationGasPrice",
+  GELATO: "eth_maxPriorityFeePerGas",
 };
 
 export const eip1559GasPrice = async (provider: ZeroDevProvider) => {

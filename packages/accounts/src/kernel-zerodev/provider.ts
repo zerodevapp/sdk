@@ -12,7 +12,6 @@ import {
   deepHexlify,
   resolveProperties,
   type SmartAccountProviderOpts,
-  getChain,
   type UserOperationCallData,
   type BatchUserOperationCallData,
   type SendUserOperationResult,
@@ -43,6 +42,7 @@ import type {
   PaymasterConfig,
   PaymasterPolicy,
 } from "./paymaster/types.js";
+import { getChain } from "./utils.js";
 
 export type ZeroDevProviderConfig = {
   projectId: string;
@@ -373,14 +373,27 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
     let blockNumber = await this.rpcClient.getBlockNumber();
     for (let i = 0; i < this._txMaxRetries; i++) {
-      const logs = await this.rpcClient.getLogs({
-        address: ENTRYPOINT_ADDRESS,
-        event: getAbiItem({ abi: EntryPointAbi, name: "UserOperationEvent" }),
-        args: { userOpHash: hash },
-        fromBlock: blockNumber - 100n,
-      });
-      if (logs.length) {
-        return logs[0].transactionHash;
+      if (this.bundlerProvider === "GELATO") {
+        const receipt = await this.getUserOperationReceipt(
+          hash as `0x${string}`
+        )
+          // TODO: should maybe log the error?
+          .catch(() => null);
+        if (receipt) {
+          return this.getTransaction(receipt.receipt.transactionHash).then(
+            (x) => x.hash
+          );
+        }
+      } else {
+        const logs = await this.rpcClient.getLogs({
+          address: ENTRYPOINT_ADDRESS,
+          event: getAbiItem({ abi: EntryPointAbi, name: "UserOperationEvent" }),
+          args: { userOpHash: hash },
+          fromBlock: blockNumber - 100n,
+        });
+        if (logs.length) {
+          return logs[0].transactionHash;
+        }
       }
       await new Promise((resolve) =>
         setTimeout(resolve, this._txRetryIntervalMs)

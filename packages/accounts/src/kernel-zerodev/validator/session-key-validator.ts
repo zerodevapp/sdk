@@ -4,7 +4,6 @@ import {
   type Hex,
   type SmartAccountSigner,
   type UserOperationRequest,
-  getChain,
   type SignTypedDataParams,
   type Abi,
 } from "@alchemy/aa-core";
@@ -35,7 +34,7 @@ import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import { MerkleTree } from "merkletreejs";
 import { getChainId } from "../api/index.js";
-import { fixSignedData } from "../utils.js";
+import { fixSignedData, getChain } from "../utils.js";
 import type { GetAbiItemReturnType } from "viem/dist/types/utils/abi/getAbiItem.js";
 import { type AbiFunction } from "abitype";
 import type {

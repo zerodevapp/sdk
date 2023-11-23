@@ -7,11 +7,7 @@ import {
   type RecoveryConfig,
   type RecoveryValidatorParams,
 } from "../validator/recovery-validator.js";
-import {
-  getChain,
-  type Address,
-  type SendUserOperationResult,
-} from "@alchemy/aa-core";
+import { type Address, type SendUserOperationResult } from "@alchemy/aa-core";
 import {
   getChainId,
   getRecoveryData,
@@ -33,7 +29,7 @@ import {
 } from "viem";
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { base64ToBytes, bytesToBase64 } from "../utils.js";
+import { base64ToBytes, bytesToBase64, getChain } from "../utils.js";
 
 export interface RecoveryProviderParams
   extends ExtendedValidatorProviderParams<RecoveryValidatorParams> {

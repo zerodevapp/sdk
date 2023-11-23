@@ -1,6 +1,5 @@
 import { getChainId } from "../api/index.js";
 import {
-  getChain,
   BaseSmartContractAccount,
   defineReadOnly,
   type AccountMiddlewareFn,
@@ -18,6 +17,7 @@ import type {
 } from "../validator-provider/types.js";
 import { ValidatorProviders } from "../validator-provider/index.js";
 import { withZeroDevPaymasterAndData } from "../middleware/paymaster.js";
+import { getChain } from "../utils.js";
 
 export class ZeroDevEthersProvider<
   V extends SupportedValidators
@@ -27,7 +27,8 @@ export class ZeroDevEthersProvider<
     super();
     let bundlerProvider = params.bundlerProvider;
     const shouldUsePaymaster =
-      params.usePaymaster === undefined || params.usePaymaster;
+      (params.usePaymaster === undefined || params.usePaymaster) &&
+      bundlerProvider !== "GELATO";
     if (
       params.opts?.paymasterConfig &&
       params.opts?.paymasterConfig.policy === "TOKEN_PAYMASTER" &&

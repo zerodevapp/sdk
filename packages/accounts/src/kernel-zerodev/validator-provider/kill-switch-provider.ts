@@ -6,10 +6,10 @@ import {
   KillSwitchValidator,
   type KillSwitchValidatorParams,
 } from "../validator/kill-switch-validator.js";
-import { getChain } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
 import { KILL_SWITCH_VALIDATOR_ADDRESS } from "../constants.js";
+import { getChain } from "../utils.js";
 
 export class KillSwitchProvider extends ValidatorProvider<
   KillSwitchValidator,

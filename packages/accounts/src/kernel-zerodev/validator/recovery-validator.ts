@@ -1,5 +1,4 @@
 import {
-  getChain,
   type Address,
   type Hex,
   type SmartAccountSigner,
@@ -38,7 +37,7 @@ import {
   RECOVERY_VALIDATOR_ADDRESS,
 } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { fixSignedData } from "../utils.js";
+import { fixSignedData, getChain } from "../utils.js";
 import type { EthereumProvider } from "./types.js";
 import { polygonMumbai } from "viem/chains";
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";

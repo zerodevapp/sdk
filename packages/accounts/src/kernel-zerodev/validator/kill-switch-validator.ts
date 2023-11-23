@@ -1,5 +1,4 @@
 import {
-  getChain,
   getUserOperationHash,
   type Address,
   type Hex,
@@ -26,7 +25,7 @@ import { KillSwitchValidatorAbi } from "../abis/KillSwitchValidatorAbi.js";
 import { getChainId } from "../api/index.js";
 import { DUMMY_ECDSA_SIG } from "../constants.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
-import { fixSignedData } from "../utils.js";
+import { fixSignedData, getChain } from "../utils.js";
 
 export interface KillSwitchValidatorParams extends KernelBaseValidatorParams {
   guardian: SmartAccountSigner;
