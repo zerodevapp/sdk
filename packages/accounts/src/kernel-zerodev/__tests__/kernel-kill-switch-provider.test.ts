@@ -57,9 +57,6 @@ describe("Kernel Kill Switch Provider Test", async () => {
       defaultProvider: ecdsaProvider,
       delaySeconds: 5,
       opts: {
-        accountConfig: {
-          accountAddress,
-        },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
         },
@@ -71,27 +68,12 @@ describe("Kernel Kill Switch Provider Test", async () => {
       },
     });
 
-    const enableSig = await ecdsaProvider
-      .getValidator()
-      .approveExecutor(
-        accountAddress,
-        selector,
-        KILL_SWITCH_ACTION,
-        0,
-        0,
-        blockerKillSwitchProvider.getAccount().getValidator()
-      );
-
-    blockerKillSwitchProvider.getValidator().setEnableSignature(enableSig);
-
     sudoModeKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
       guardian: secondOwner,
+      defaultProvider: ecdsaProvider,
       delaySeconds: 0,
       opts: {
-        accountConfig: {
-          accountAddress,
-        },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
         },
@@ -182,6 +164,15 @@ describe("Kernel Kill Switch Provider Test", async () => {
           result.hash as Hex
         );
         console.log("tx", tx);
+        const defaultValidator = await client.readContract({
+          address: accountAddress,
+          abi: KernelAccountAbi,
+          functionName: "getDefaultValidator",
+        });
+        console.log("defaultValidator", defaultValidator);
+        expect(defaultValidator).to.equal(
+          blockerKillSwitchProvider.getValidator().validatorAddress
+        );
       } catch (e) {
         console.log(e);
       }
