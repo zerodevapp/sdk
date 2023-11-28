@@ -41,7 +41,7 @@ describe("Kernel Kill Switch Provider Test", async () => {
       owner,
       opts: {
         accountConfig: {
-          index: 70004n,
+          index: 170004n,
         },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
@@ -51,12 +51,25 @@ describe("Kernel Kill Switch Provider Test", async () => {
     accountAddress = await ecdsaProvider.getAccount().getAddress();
     console.log("accountAddress", accountAddress);
 
+    const uO = await ecdsaProvider.sendUserOperation({
+      target: await owner.getAddress(),
+      data: "0x",
+    });
+    console.log("dep uo:", uO);
+    const tx = await ecdsaProvider.waitForUserOperationTransaction(
+      uO.hash as Hash
+    );
+    console.log("deo tx:", tx);
+
     blockerKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
       guardian: secondOwner,
-      defaultProvider: ecdsaProvider,
+      //   defaultProvider: ecdsaProvider,
       delaySeconds: 5,
       opts: {
+        accountConfig: {
+          accountAddress,
+        },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
         },
@@ -68,12 +81,28 @@ describe("Kernel Kill Switch Provider Test", async () => {
       },
     });
 
+    const enableSig = await ecdsaProvider
+      .getValidator()
+      .approveExecutor(
+        accountAddress,
+        selector,
+        KILL_SWITCH_ACTION,
+        0,
+        0,
+        blockerKillSwitchProvider.getAccount().getValidator()
+      );
+
+    blockerKillSwitchProvider.getValidator().setEnableSignature(enableSig);
+
     sudoModeKillSwitchProvider = await KillSwitchProvider.init({
       projectId: config.projectIdWithGasSponsorship,
       guardian: secondOwner,
-      defaultProvider: ecdsaProvider,
+      //   defaultProvider: ecdsaProvider,
       delaySeconds: 0,
       opts: {
+        accountConfig: {
+          accountAddress,
+        },
         paymasterConfig: {
           policy: "VERIFYING_PAYMASTER",
         },
