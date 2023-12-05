@@ -6,6 +6,7 @@ import {
   encodeFunctionData,
   getContract,
   createWalletClient,
+  getAbiItem,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -42,7 +43,7 @@ describe("Kernel ERC165SessionKey Provider Test", async () => {
     transport: http(CHAIN_ID_TO_NODE[polygonMumbai.id]),
   });
   const selector = getFunctionSelector(
-    "transferERC721Action(address, uint256, address)"
+    getAbiItem({ abi: TokenActionsAbi, name: "transferERC721Action" })
   );
   let erc165SessionKeyProvider: ERC165SessionKeyProvider;
   let ecdsaProvider: ECDSAProvider = await ECDSAProvider.init({
