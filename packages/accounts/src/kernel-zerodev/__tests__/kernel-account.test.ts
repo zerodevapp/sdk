@@ -220,7 +220,7 @@ describe("Kernel Account Tests", () => {
         data: "0x",
       });
 
-      await expect(result).rejects;
+      await expect(result).rejects.toThrowError();
     },
     { timeout: 100000 }
   );
