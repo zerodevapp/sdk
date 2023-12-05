@@ -4,7 +4,8 @@ import { polygon } from "viem/chains";
 
 export const DEFAULT_SEND_TX_MAX_RETRIES = 3;
 export const DEFAULT_SEND_TX_RETRY_INTERVAL_MS = 60000; // 1 minutes
-export const BUNDLER_URL = "https://meta-aa-provider.onrender.com/api/v1/bundler";
+export const BUNDLER_URL =
+  "https://meta-aa-provider.onrender.com/api/v1/bundler";
 export const PAYMASTER_URL =
   "https://meta-aa-provider.onrender.com/api/v1/paymaster";
 export const ENTRYPOINT_ADDRESS: Hex =

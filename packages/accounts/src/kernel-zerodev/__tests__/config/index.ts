@@ -15,5 +15,5 @@ export const config = {
   // To make all the testcases pass
   projectId: "8db3f9f0-f8d0-4c69-9bc6-5c522ee25844",
   projectIdWithGasSponsorship: "c73037ef-8c0b-48be-a581-1f3d161151d3",
-  testERC20Address : "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Hex
+  testERC20Address: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Hex,
 };
