@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import dotenv from "dotenv"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import { SignTransactionNotSupportedBySmartAccount } from "@zerodev/core/accounts"
 import { Address, Hex, decodeEventLog, getContract, zeroAddress } from "viem"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"

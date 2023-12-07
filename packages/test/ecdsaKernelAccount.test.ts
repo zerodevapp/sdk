@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import {
     SignTransactionNotSupportedBySmartAccount,
     signerToEcdsaKernelSmartAccount
-} from "permissionless/accounts"
+} from "@zerodev/core/accounts"
 import { Address, Hex, decodeEventLog, getContract, zeroAddress } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { EntryPointAbi } from "./abis/EntryPoint.js"

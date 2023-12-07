@@ -3,9 +3,9 @@ import dotenv from "dotenv"
 import {
     PimlicoBundlerClient,
     PimlicoPaymasterClient
-} from "permissionless/clients/pimlico"
-import { UserOperation } from "permissionless/index.js"
-import { getUserOperationHash } from "permissionless/utils"
+} from "@zerodev/core/clients/pimlico"
+import { UserOperation } from "@zerodev/core/index.js"
+import { getUserOperationHash } from "@zerodev/core/utils"
 import { buildUserOp } from "./userOp.js"
 import {
     getEntryPoint,

@@ -1,15 +1,15 @@
-import { createBundlerClient, createSmartAccountClient } from "permissionless"
+import { createBundlerClient, createSmartAccountClient } from "@zerodev/core"
 import {
     SmartAccount,
     signerToEcdsaKernelSmartAccount,
     signerToSafeSmartAccount,
     signerToSimpleSmartAccount
-} from "permissionless/accounts"
-import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
+} from "@zerodev/core/accounts"
+import { SponsorUserOperationMiddleware } from "@zerodev/core/actions/smartAccount"
 import {
     createPimlicoBundlerClient,
     createPimlicoPaymasterClient
-} from "permissionless/clients/pimlico"
+} from "@zerodev/core/clients/pimlico"
 import {
     http,
     Address,

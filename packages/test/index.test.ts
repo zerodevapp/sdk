@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import dotenv from "dotenv"
-import { getSenderAddress, getUserOperationHash } from "permissionless"
-import { signUserOperationHashWithECDSA } from "permissionless/utils"
+import { getSenderAddress, getUserOperationHash } from "@zerodev/core"
+import { signUserOperationHashWithECDSA } from "@zerodev/core/utils"
 import { buildUserOp, getAccountInitCode } from "./userOp.js"
 import {
     getBundlerClient,

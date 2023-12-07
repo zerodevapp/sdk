@@ -3,8 +3,8 @@ import dotenv from "dotenv"
 import {
     BundlerClient,
     WaitForUserOperationReceiptTimeoutError
-} from "permissionless"
-import { getUserOperationHash } from "permissionless/utils"
+} from "@zerodev/core"
+import { getUserOperationHash } from "@zerodev/core/utils"
 import { Address } from "viem"
 import { buildUserOp } from "./userOp.js"
 import {
