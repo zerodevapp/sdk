@@ -1,0 +1,88 @@
+{
+    "name": "@zerodev/core",
+    "version": "0.0.13",
+    "author": "Pimlico",
+    "main": "./_cjs/index.js",
+    "module": "./_esm/index.js",
+    "types": "./_types/index.d.ts",
+    "typings": "./_types/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "description": "A utility library for working with ERC-4337",
+    "keywords": [
+        "ethereum",
+        "erc-4337",
+        "eip-4337",
+        "paymaster",
+        "bundler"
+    ],
+    "license": "MIT",
+    "scripts": {
+      "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
+      "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
+      "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+      "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
+      "clean": "rimraf _esm _cjs _types",
+      "changeset": "changeset",
+      "changeset:release": "bun run build && changeset publish",
+      "changeset:version": "changeset version && bun install --lockfile-only",
+      "format": "biome format . --write",
+      "lint": "biome check .",
+      "lint:fix": "bun run lint --apply"
+  },
+    "exports": {
+        ".": {
+            "types": "./_types/index.d.ts",
+            "import": "./_esm/index.js",
+            "default": "./_cjs/index.js"
+        },
+        "./accounts": {
+            "types": "./_types/accounts/index.d.ts",
+            "import": "./_esm/accounts/index.js",
+            "default": "./_cjs/accounts/index.js"
+        },
+        "./actions": {
+            "types": "./_types/actions/index.d.ts",
+            "import": "./_esm/actions/index.js",
+            "default": "./_cjs/actions/index.js"
+        },
+        "./actions/pimlico": {
+            "types": "./_types/actions/pimlico.d.ts",
+            "import": "./_esm/actions/pimlico.js",
+            "default": "./_cjs/actions/pimlico.js"
+        },
+        "./actions/stackup": {
+            "types": "./_types/actions/stackup.d.ts",
+            "import": "./_esm/actions/stackup.js",
+            "default": "./_cjs/actions/stackup.js"
+        },
+        "./actions/smartAccount": {
+            "types": "./_types/actions/smartAccount.d.ts",
+            "import": "./_esm/actions/smartAccount.js",
+            "default": "./_cjs/actions/smartAccount.js"
+        },
+        "./clients": {
+            "types": "./_types/clients/index.d.ts",
+            "import": "./_esm/clients/index.js",
+            "default": "./_cjs/clients/index.js"
+        },
+        "./clients/pimlico": {
+            "types": "./_types/clients/pimlico.d.ts",
+            "import": "./_esm/clients/pimlico.js",
+            "default": "./_cjs/clients/pimlico.js"
+        },
+        "./clients/stackup": {
+            "types": "./_types/clients/stackup.d.ts",
+            "import": "./_esm/clients/stackup.js",
+            "default": "./_cjs/clients/stackup.js"
+        },
+        "./utils": {
+            "types": "./_types/utils/index.d.ts",
+            "import": "./_esm/utils/index.js",
+            "default": "./_cjs/utils/index.js"
+        }
+    },
+    "peerDependencies": {
+        "viem": "^1.19.4"
+    }
+}
