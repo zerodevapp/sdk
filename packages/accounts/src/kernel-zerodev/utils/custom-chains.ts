@@ -53,3 +53,30 @@ export const astarZKatana = defineChain({
     },
   },
 });
+
+export const unreal = defineChain({
+  id: 18231,
+  name: "Unreal Tangible",
+  network: "unreal",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Ether",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://rpc.unreal.gelato.digital"],
+      webSocket: ["wss://ws.unreal.gelato.digital"],
+    },
+    public: {
+      http: ["https://rpc.unreal.gelato.digital"],
+      webSocket: ["wss://ws.unreal.gelato.digital"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Explorer",
+      url: "https://unreal.blockscout.com",
+    },
+  },
+})
