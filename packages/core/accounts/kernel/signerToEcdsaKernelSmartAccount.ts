@@ -70,7 +70,7 @@ const createAccountAbi = [
 /**
  * Default addresses for kernel smart account
  */
-const KERNEL_ADDRESSES: {
+export const KERNEL_ADDRESSES: {
     ECDSA_VALIDATOR: Address
     ACCOUNT_V2_2_LOGIC: Address
     FACTORY_ADDRESS: Address
