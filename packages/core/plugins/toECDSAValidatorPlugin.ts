@@ -33,7 +33,6 @@ export async function signerToEcdsaValidator<
   }: {
     signer: SmartAccountSigner;
     entryPoint: Address;
-    accountLogicAddress?: Address;
     validatorAddress?: Address;
   }
 ): Promise<KernelPlugin<"ECDSAValidator", TTransport, TChain>> {
@@ -53,7 +52,7 @@ export async function signerToEcdsaValidator<
 
   // Build the EOA Signer
   const account = toAccount({
-    address: validatorAddress,
+    address: viemSigner.address,
     async signMessage({ message }) {
       return signMessage(client, { account: viemSigner, message });
     },
@@ -67,11 +66,15 @@ export async function signerToEcdsaValidator<
 
   return {
     ...account,
+    address: validatorAddress,
     signer: viemSigner,
     client: client,
     entryPoint: entryPoint,
     source: "ECDSAValidator",
 
+    async getEnableData() {
+      return viemSigner.address;
+    },
     async getNonceKey() {
       return 0n;
     },

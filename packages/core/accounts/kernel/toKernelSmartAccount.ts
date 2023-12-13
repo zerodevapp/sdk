@@ -31,7 +31,7 @@ import { KernelPlugin } from "../../plugins/types.js";
 export type KernelEcdsaSmartAccount<
   transport extends Transport = Transport,
   chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<"kernelEcdsaSmartAccount", transport, chain>;
+> = SmartAccount<"kernelSmartAccount", transport, chain>;
 
 /**
  * The account creation ABI for a kernel smart account (from the KernelFactory)
@@ -94,13 +94,15 @@ const getAccountInitCode = async ({
   index,
   factoryAddress,
   accountLogicAddress,
-  ecdsaValidatorAddress,
+  validatorAddress,
+  enableData,
 }: {
   owner: Address;
   index: bigint;
   factoryAddress: Address;
   accountLogicAddress: Address;
-  ecdsaValidatorAddress: Address;
+  validatorAddress: Address;
+  enableData: Promise<Hex>;
 }): Promise<Hex> => {
   if (!owner) throw new Error("Owner account not found");
 
@@ -108,7 +110,7 @@ const getAccountInitCode = async ({
   const initialisationData = encodeFunctionData({
     abi: KernelInitAbi,
     functionName: "initialize",
-    args: [ecdsaValidatorAddress, owner],
+    args: [validatorAddress, await enableData],
   });
 
   // Build the account init code
@@ -125,69 +127,21 @@ const getAccountInitCode = async ({
 /**
  * Check the validity of an existing account address, or fetch the pre-deterministic account address for a kernel smart wallet
  * @param client
- * @param owner
  * @param entryPoint
- * @param ecdsaValidatorAddress
  * @param initCodeProvider
- * @param deployedAccountAddress
  */
 const getAccountAddress = async <
   TTransport extends Transport = Transport,
   TChain extends Chain | undefined = Chain | undefined
 >({
   client,
-  owner,
   entryPoint,
   initCodeProvider,
-  ecdsaValidatorAddress,
-  deployedAccountAddress,
 }: {
   client: Client<TTransport, TChain>;
-  owner: Address;
   initCodeProvider: () => Promise<Hex>;
   entryPoint: Address;
-  ecdsaValidatorAddress: Address;
-  deployedAccountAddress?: Address;
 }): Promise<Address> => {
-  // If we got an already deployed account, ensure it's well deployed, and the validator & signer are correct
-  if (deployedAccountAddress !== undefined) {
-    // Get the owner of the deployed account, ensure it's the same as the owner given in params
-    const deployedAccountOwner = await readContract(client, {
-      address: ecdsaValidatorAddress,
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          name: "ecdsaValidatorStorage",
-          outputs: [
-            {
-              internalType: "address",
-              name: "owner",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-      ],
-      functionName: "ecdsaValidatorStorage",
-      args: [deployedAccountAddress],
-    });
-
-    // Ensure the address match
-    if (!isAddressEqual(deployedAccountOwner, owner)) {
-      throw new Error("Invalid owner for the already deployed account");
-    }
-
-    // If ok, return the address
-    return deployedAccountAddress;
-  }
-
   // Find the init code for this account
   const initCode = await initCodeProvider();
 
@@ -242,19 +196,18 @@ export async function toKernelSmartAccount<
       index,
       factoryAddress,
       accountLogicAddress,
-      ecdsaValidatorAddress,
+      validatorAddress: plugin.address,
+      enableData: plugin.getEnableData(),
     });
 
   // Fetch account address and chain id
   const [accountAddress, chainId] = await Promise.all([
-    getAccountAddress<TTransport, TChain>({
-      client,
-      entryPoint,
-      owner: plugin.signer.address,
-      ecdsaValidatorAddress,
-      initCodeProvider: generateInitCode,
-      deployedAccountAddress,
-    }),
+    deployedAccountAddress ??
+      getAccountAddress<TTransport, TChain>({
+        client,
+        entryPoint,
+        initCodeProvider: generateInitCode,
+      }),
     getChainId(client),
   ]);
 
@@ -279,7 +232,7 @@ export async function toKernelSmartAccount<
     client: client,
     publicKey: accountAddress,
     entryPoint: entryPoint,
-    source: "kernelEcdsaSmartAccount",
+    source: "kernelSmartAccount",
 
     // Get the nonce of the smart account
     async getNonce() {
@@ -291,20 +244,7 @@ export async function toKernelSmartAccount<
 
     // Sign a user operation
     async signUserOperation(userOperation) {
-      const hash = getUserOperationHash({
-        userOperation: {
-          ...userOperation,
-          signature: "0x",
-        },
-        entryPoint: entryPoint,
-        chainId: chainId,
-      });
-      const signature = await signMessage(client, {
-        account: plugin.signer,
-        message: { raw: hash },
-      });
-      // Always use the sudo mode, since we will use external paymaster
-      return concatHex(["0x00000000", signature]);
+      return plugin.signUserOperation(userOperation);
     },
 
     // Encode the init code
@@ -320,7 +260,7 @@ export async function toKernelSmartAccount<
 
     // Encode the deploy call data
     async encodeDeployCallData(_) {
-      throw new Error("Simple account doesn't support account deployment");
+      throw new Error("Kernel account doesn't support account deployment");
     },
 
     // Encode a call
@@ -350,7 +290,7 @@ export async function toKernelSmartAccount<
 
     // Get simple dummy signature
     async getDummySignature() {
-      return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
+      return plugin.getDummySignature();
     },
   };
 }

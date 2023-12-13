@@ -23,4 +23,5 @@ export type KernelPlugin<
   getNonceKey: () => Promise<bigint>;
   getDummySignature(): Promise<Hex>;
   signUserOperation: (UserOperation: UserOperation) => Promise<Hex>;
+  getEnableData(): Promise<Hex>;
 };
