@@ -5,21 +5,17 @@ import {
   Address,
   Account,
   concatHex,
-  encodeFunctionData,
 } from "viem";
 import { toAccount } from "viem/accounts";
 import { signMessage, signTypedData } from "viem/actions";
-import { getChainId, getBytecode } from "viem/actions";
-import { getAccountInitCode } from "../../test/userOp";
-import { getAccountNonce, getUserOperationHash } from "../_types";
+import { getChainId } from "viem/actions";
 import {
   SmartAccountSigner,
-  KernelEcdsaSmartAccount,
   SignTransactionNotSupportedBySmartAccount,
 } from "../accounts";
-import { KernelExecuteAbi } from "../accounts/kernel/abi/KernelAccountAbi";
 import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount";
 import { KernelPlugin } from "./types";
+import { getUserOperationHash } from "../utils";
 
 export async function signerToEcdsaValidator<
   TTransport extends Transport = Transport,

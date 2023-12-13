@@ -1,5 +1,4 @@
 import {
-  type Account,
   type Address,
   type Chain,
   type Client,
@@ -7,24 +6,17 @@ import {
   type Transport,
   concatHex,
   encodeFunctionData,
-  isAddressEqual,
 } from "viem";
 import { toAccount } from "viem/accounts";
 import {
   getBytecode,
-  getChainId,
-  readContract,
   signMessage,
   signTypedData,
 } from "viem/actions";
 import { getAccountNonce } from "../../actions/public/getAccountNonce.js";
 import { getSenderAddress } from "../../actions/public/getSenderAddress.js";
-import { getUserOperationHash } from "../../utils/getUserOperationHash.js";
 import type { SmartAccount } from "../types.js";
-import {
-  SignTransactionNotSupportedBySmartAccount,
-  type SmartAccountSigner,
-} from "../types.js";
+import { SignTransactionNotSupportedBySmartAccount } from "../types.js";
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js";
 import { KernelPlugin } from "../../plugins/types.js";
 
@@ -201,14 +193,13 @@ export async function toKernelSmartAccount<
     });
 
   // Fetch account address and chain id
-  const [accountAddress, chainId] = await Promise.all([
+  const [accountAddress] = await Promise.all([
     deployedAccountAddress ??
       getAccountAddress<TTransport, TChain>({
         client,
         entryPoint,
         initCodeProvider: generateInitCode,
       }),
-    getChainId(client),
   ]);
 
   if (!accountAddress) throw new Error("Account address not found");

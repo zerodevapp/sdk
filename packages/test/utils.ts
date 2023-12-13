@@ -4,14 +4,14 @@ import {
   signerToEcdsaKernelSmartAccount,
   signerToSafeSmartAccount,
   signerToSimpleSmartAccount,
+  toKernelSmartAccount,
 } from "@zerodev/core/accounts";
-import { toKernelSmartAccount } from "@zerodev/core/accounts/kernel/toKernelSmartAccount";
 import { SponsorUserOperationMiddleware } from "@zerodev/core/actions/smartAccount";
 import {
   createPimlicoBundlerClient,
   createPimlicoPaymasterClient,
 } from "@zerodev/core/clients/pimlico";
-import { signerToEcdsaValidator } from "@zerodev/core/plugins/toECDSAValidatorPlugin";
+import { signerToEcdsaValidator } from "@zerodev/core/plugins";
 import {
   http,
   Address,
@@ -66,7 +66,7 @@ export const getSignerToSimpleSmartAccount = async () => {
   });
 };
 
-export const getSignerToECDSAKernelSmartAccount = async () => {
+export const getSignerToEcdsaKernelAccount = async () => {
   if (!process.env.TEST_PRIVATE_KEY)
     throw new Error("TEST_PRIVATE_KEY environment variable not set");
 
@@ -107,19 +107,19 @@ export const getSignerToSafeSmartAccount = async (args?: {
     setupTransactions: args?.setupTransactions,
   });
 };
-export const getSignerToEcdsaKernelAccount = async () => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
+// export const getSignerToEcdsaKernelAccount = async () => {
+//   if (!process.env.TEST_PRIVATE_KEY)
+//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
 
-  const publicClient = await getPublicClient();
-  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+//   const publicClient = await getPublicClient();
+//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
 
-  return await signerToEcdsaKernelSmartAccount(publicClient, {
-    entryPoint: getEntryPoint(),
-    signer: signer,
-    index: 100n,
-  });
-};
+//   return await signerToEcdsaKernelSmartAccount(publicClient, {
+//     entryPoint: getEntryPoint(),
+//     signer: signer,
+//     index: 100n,
+//   });
+// };
 
 export const getSmartAccountClient = async ({
   account,
