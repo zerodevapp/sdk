@@ -1,5 +1,10 @@
 export const WeightedValidatorAbi = [
   {
+    inputs: [],
+    name: "NotImplemented",
+    type: "error",
+  },
+  {
     inputs: [
       {
         internalType: "bytes32",
@@ -113,6 +118,35 @@ export const WeightedValidatorAbi = [
     inputs: [
       {
         internalType: "address",
+        name: "kernel",
+        type: "address",
+      },
+      {
+        internalType: "bytes32",
+        name: "hash",
+        type: "bytes32",
+      },
+    ],
+    name: "getApproval",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "approvals",
+        type: "uint256",
+      },
+      {
+        internalType: "bool",
+        name: "passed",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
         name: "guardian",
         type: "address",
       },
@@ -163,13 +197,36 @@ export const WeightedValidatorAbi = [
         name: "validAfter",
         type: "uint48",
       },
-      {
-        internalType: "uint24",
-        name: "weightApproved",
-        type: "uint24",
-      },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[]",
+        name: "_guardians",
+        type: "address[]",
+      },
+      {
+        internalType: "uint24[]",
+        name: "_weights",
+        type: "uint24[]",
+      },
+      {
+        internalType: "uint24",
+        name: "_threshold",
+        type: "uint24",
+      },
+      {
+        internalType: "uint48",
+        name: "_delay",
+        type: "uint48",
+      },
+    ],
+    name: "renew",
+    outputs: [],
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -193,19 +250,19 @@ export const WeightedValidatorAbi = [
         type: "bool",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
   {
     inputs: [
       {
         internalType: "bytes32",
-        name: "hash",
+        name: "",
         type: "bytes32",
       },
       {
         internalType: "bytes",
-        name: "signature",
+        name: "",
         type: "bytes",
       },
     ],
@@ -217,7 +274,7 @@ export const WeightedValidatorAbi = [
         type: "uint256",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -286,12 +343,12 @@ export const WeightedValidatorAbi = [
       },
       {
         internalType: "bytes32",
-        name: "userOpHash",
+        name: "",
         type: "bytes32",
       },
       {
         internalType: "uint256",
-        name: "missingFunds",
+        name: "",
         type: "uint256",
       },
     ],
