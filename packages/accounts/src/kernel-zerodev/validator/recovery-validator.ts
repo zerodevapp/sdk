@@ -243,6 +243,19 @@ export class RecoveryValidator extends KernelBaseValidator {
     });
   }
 
+  encodeRenew(
+    guardians: Address[],
+    weights: number[],
+    threshold: number,
+    delay: number
+  ): Hex {
+    return encodeFunctionData({
+      abi: WeightedValidatorAbi,
+      functionName: "renew",
+      args: [guardians, weights, threshold, delay],
+    });
+  }
+
   encodeRecoveryAction(enableData: Hex, defaultValidatorAddress: Address): Hex {
     return encodeFunctionData({
       abi: RecoveryActionAbi,
@@ -393,7 +406,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     return await signer.signTypedData({
       domain: {
         name: "WeightedECDSAValidator",
-        version: "1",
+        version: "0.0.1",
         chainId: this.chain.id,
         verifyingContract: this.validatorAddress,
       },
