@@ -144,7 +144,7 @@ describe("P256 Validator Test", function () {
     };
 
     const isValid = ec.verify(toBytes(userOpHash), signatureObject, keyPair);
-    expect(isValid).to.be.false;
+    expect(isValid).to.be.equal(false);
   });
 
   it(
