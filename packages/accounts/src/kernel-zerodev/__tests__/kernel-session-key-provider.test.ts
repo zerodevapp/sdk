@@ -301,6 +301,75 @@ describe("Kernel SessionKey Provider Test", async () => {
   );
 
   it(
+    "should execute the erc20 token transfer action using SessionKey with wildcard target permission",
+    async () => {
+      const balanceOfAccount = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [accountAddress],
+      });
+      const amountToMint = balanceOfAccount > 100000000n ? 0n : 100000000n;
+      await createProvider(
+        secondOwner,
+        zeroAddress,
+        executeSelector,
+        amountToMint,
+        [
+          getPermissionFromABI({
+            target: zeroAddress,
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [
+              {
+                operator: ParamOperator.EQUAL,
+                value: await secondOwner.getAddress(),
+              },
+              { operator: ParamOperator.LESS_THAN_OR_EQUAL, value: 10000n },
+            ],
+          }),
+        ]
+      );
+
+      let result, tx;
+      const balanceOfBefore = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfBefore", balanceOfBefore);
+      const amountToTransfer = 10000n;
+      try {
+        result = await sessionKeyProvider.sendUserOperation({
+          target: Test_ERC20Address,
+          data: encodeFunctionData({
+            abi: TEST_ERC20Abi,
+            functionName: "transfer",
+            args: [await secondOwner.getAddress(), amountToTransfer],
+          }),
+        });
+        console.log(result);
+        tx = await sessionKeyProvider.waitForUserOperationTransaction(
+          result.hash as Hex
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      console.log(tx);
+      const balanceOfAfter = await client.readContract({
+        address: Test_ERC20Address,
+        abi: TEST_ERC20Abi,
+        functionName: "balanceOf",
+        args: [await secondOwner.getAddress()],
+      });
+      console.log("balanceOfAfter", balanceOfAfter);
+      expect(balanceOfAfter - balanceOfBefore).to.equal(amountToTransfer);
+    },
+    { timeout: 1000000 }
+  );
+
+  it(
     "should execute batch the erc20 token transfer action using SessionKey",
     async () => {
       const balanceOfAccount = await client.readContract({
@@ -317,7 +386,7 @@ describe("Kernel SessionKey Provider Test", async () => {
         amountToMint,
         [
           getPermissionFromABI({
-            target: Test_ERC20Address,
+            target: zeroAddress,
             abi: TEST_ERC20Abi,
             functionName: "increaseAllowance",
           }),

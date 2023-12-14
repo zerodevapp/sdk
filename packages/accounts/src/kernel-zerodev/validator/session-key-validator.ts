@@ -41,6 +41,7 @@ import type {
   CombinedArgs,
   GeneratePermissionFromArgsParameters,
 } from "./types.js";
+import { Operation } from "../provider.js";
 
 // We need to be able to serialize bigint to transmit session key over
 // the network.
@@ -96,6 +97,7 @@ export type Permission = {
   sig?: Hex;
   valueLimit?: bigint;
   executionRule?: ExecutionRule;
+  operation?: Operation;
 };
 
 export interface SessionKeyData {
@@ -151,6 +153,7 @@ export function getPermissionFromABI<
   args,
   functionName,
   valueLimit,
+  operation,
 }: GeneratePermissionFromArgsParameters<TAbi, TFunctionName>): Permission {
   const abiItem = getAbiItem({
     abi,
@@ -184,6 +187,7 @@ export function getPermissionFromABI<
     rules: paramRules,
     target,
     valueLimit: valueLimit ?? 0n,
+    operation: operation ?? Operation.Call,
   };
 }
 
@@ -213,6 +217,7 @@ export class SessionKeyValidator extends KernelBaseValidator {
           interval: 0,
           runs: 0,
         },
+        operation: perm.operation ?? Operation.Call,
       })
     );
     this.merkleTree = this.getMerkleTree();
@@ -290,18 +295,20 @@ export class SessionKeyValidator extends KernelBaseValidator {
 
       // Filter permissions by target
       let targetPermissions = permissionsList.filter(
-        (permission) => permission.target.toLowerCase() === targetToMatch
+        (permission) =>
+          permission.target.toLowerCase() === targetToMatch ||
+          permission.target.toLowerCase() === zeroAddress.toLowerCase()
       );
 
-      // If no permissions match the exact target, check for generic permissions (using zero address)
-      if (!targetPermissions.length) {
-        targetPermissions = permissionsList.filter(
-          (permission) =>
-            permission.target.toLowerCase() === zeroAddress.toLowerCase()
-        );
-      }
-
       if (!targetPermissions.length) return undefined;
+
+      const operationPermissions = this.filterByOperation(
+        targetPermissions,
+        // [TODO]: Check if we need to pass operation from userOp after Kernel v2.3 in
+        Operation.Call
+      );
+
+      if (!operationPermissions.length) return undefined;
 
       const signaturePermissions = this.filterBySignature(
         targetPermissions,
@@ -329,6 +336,16 @@ export class SessionKeyValidator extends KernelBaseValidator {
     return filteredPermissions.every((permission) => permission !== undefined)
       ? (filteredPermissions as Permission[])
       : undefined;
+  }
+
+  private filterByOperation(
+    permissions: Permission[],
+    operation: Operation
+  ): Permission[] {
+    return permissions.filter(
+      (permission) =>
+        permission.operation === operation || Operation.Call === operation
+    );
   }
 
   private filterBySignature(
@@ -469,6 +486,11 @@ export class SessionKeyValidator extends KernelBaseValidator {
           ],
           name: "executionRule",
           type: "tuple",
+        },
+        {
+          internalType: "enum Operation",
+          name: "operation",
+          type: "uint8",
         },
       ],
       name: "permission",
