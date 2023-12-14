@@ -25,7 +25,7 @@ export type ValidatorProviderTypeMap = {
   ERC165_SESSION_KEY: ERC165SessionKeyProvider;
   SESSION_KEY: SessionKeyProvider;
   RECOVERY: RecoveryProvider;
-  P256: P256Provider
+  P256: P256Provider;
 };
 
 export type ValidatorProviderParamsMap = {

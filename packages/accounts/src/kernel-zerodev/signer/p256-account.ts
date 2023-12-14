@@ -1,11 +1,5 @@
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
-import {
-  hashTypedData,
-  keccak256,
-  concatHex,
-  toBytes,
-  isHex,
-} from "viem";
+import { hashTypedData, keccak256, concatHex, toBytes, isHex } from "viem";
 import { ec as EC } from "elliptic";
 
 export class P256AccountSigner implements SmartAccountSigner {

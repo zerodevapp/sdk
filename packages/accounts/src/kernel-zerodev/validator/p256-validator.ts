@@ -32,7 +32,7 @@ export class P256Validator extends KernelBaseValidator {
   constructor(params: P256ValidatorParams) {
     super(params);
     this.keyPair = params.keyPair;
-    this.p256Account = new P256AccountSigner(this.keyPair); 
+    this.p256Account = new P256AccountSigner(this.keyPair);
   }
 
   public static async init(

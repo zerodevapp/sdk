@@ -60,5 +60,4 @@ export class P256Provider extends ValidatorProvider<
     });
     return instance;
   }
-
 }
