@@ -1,12 +1,14 @@
 import type { ECDSAValidatorParams } from "../validator/ecdsa-validator.js";
 import type { ERC165SessionKeyValidatorParams } from "../validator/erc165-session-key-validator.js";
 import type { KillSwitchValidatorParams } from "../validator/kill-switch-validator.js";
+import type { P256ValidatorParams } from "../validator/p256-validator.js";
 import type { SessionKeyValidatorParams } from "../validator/session-key-validator.js";
 import type { SupportedValidators } from "../validator/types.js";
 import type { ExtendedValidatorProviderParams } from "./base.js";
 import type { ECDSAProvider } from "./ecdsa-provider.js";
 import type { ERC165SessionKeyProvider } from "./erc165-session-key-provider.js";
 import type { KillSwitchProvider } from "./kill-switch-provider.js";
+import type { P256Provider } from "./p256-provider.js";
 import type {
   RecoveryProvider,
   RecoveryProviderParams,
@@ -23,6 +25,7 @@ export type ValidatorProviderTypeMap = {
   ERC165_SESSION_KEY: ERC165SessionKeyProvider;
   SESSION_KEY: SessionKeyProvider;
   RECOVERY: RecoveryProvider;
+  P256: P256Provider
 };
 
 export type ValidatorProviderParamsMap = {
@@ -31,6 +34,7 @@ export type ValidatorProviderParamsMap = {
   ERC165_SESSION_KEY: ExtendedValidatorProviderParams<ERC165SessionKeyValidatorParams>;
   SESSION_KEY: ExtendedValidatorProviderParams<SessionKeyValidatorParams>;
   RECOVERY: RecoveryProviderParams;
+  P256: ExtendedValidatorProviderParams<P256ValidatorParams>;
 };
 
 export type ValidatorProviderMap = {

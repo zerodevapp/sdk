@@ -32,6 +32,7 @@ import type {
   SessionKeyParams,
   ParamOperator,
 } from "./session-key-validator.js";
+import type { P256Validator, P256ValidatorParams } from "./p256-validator.js";
 import type { Abi, InferFunctionName, Narrow } from "viem";
 
 export type SupportedValidators =
@@ -39,7 +40,8 @@ export type SupportedValidators =
   | "KILL_SWITCH"
   | "ERC165_SESSION_KEY"
   | "SESSION_KEY"
-  | "RECOVERY";
+  | "RECOVERY"
+  | "P256";
 
 export type ValidatorTypeMap = {
   ECDSA: ECDSAValidator;
@@ -47,6 +49,7 @@ export type ValidatorTypeMap = {
   ERC165_SESSION_KEY: ERC165SessionKeyValidator;
   SESSION_KEY: SessionKeyValidator;
   RECOVERY: RecoveryValidator;
+  P256: P256Validator;
 };
 
 export type ValidatorParamsMap = {
@@ -55,6 +58,7 @@ export type ValidatorParamsMap = {
   ERC165_SESSION_KEY: ERC165SessionKeyValidatorParams;
   SESSION_KEY: SessionKeyValidatorParams;
   RECOVERY: RecoveryValidatorParams;
+  P256: P256ValidatorParams;
 };
 
 export type ValidatorMap = {
