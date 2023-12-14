@@ -5,6 +5,7 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "sourceMap": true,
-    "outDir": "./"
+    "outDir": "./",
+    // "test": "./**/*.test.ts"
   }
 }

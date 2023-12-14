@@ -184,7 +184,7 @@ export async function toKernelSmartAccount<
   // Helper to generate the init code for the smart account
   const generateInitCode = () =>
     getAccountInitCode({
-      owner: plugin.address,
+      owner: plugin.signer.address,
       index,
       factoryAddress,
       accountLogicAddress,

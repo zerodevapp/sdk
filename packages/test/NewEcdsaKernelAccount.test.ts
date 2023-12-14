@@ -55,7 +55,6 @@ beforeAll(() => {
 describe("ECDSA kernel Account", () => {
 	test("Account address", async () => {
 		const ecdsaSmartAccount = await getSignerToEcdsaKernelAccount();
-		console.log(ecdsaSmartAccount.address);
 
 		expect(ecdsaSmartAccount.address).toBeString();
 		expect(ecdsaSmartAccount.address).toHaveLength(42);
@@ -124,7 +123,7 @@ describe("ECDSA kernel Account", () => {
 				abi: GreeterAbi,
 				bytecode: GreeterBytecode,
 			});
-		}).toThrow("Simple account doesn't support account deployment");
+		}).toThrow("Kernel account doesn't support account deployment");
 	});
 
 	test.skip("Smart account client send multiple transactions", async () => {

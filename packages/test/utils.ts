@@ -80,7 +80,6 @@ export const getSignerToEcdsaKernelAccount = async () => {
 
   return await toKernelSmartAccount(publicClient, {
     entryPoint: getEntryPoint(),
-    factoryAddress: getFactoryAddress(),
     plugin: ecdsaValidatorPlugin,
   });
 };
