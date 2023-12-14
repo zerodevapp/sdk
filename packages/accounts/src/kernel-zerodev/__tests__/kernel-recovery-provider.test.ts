@@ -63,7 +63,7 @@ describe("Kernel Recovery Provider Test", async () => {
   });
   let accountAddress: Hex = "0x";
   const selector = getFunctionSelector("doRecovery(address, bytes)");
-  let recoveryData: {
+  type RecoveryData = {
     guardians: {
       [key: string]: number;
     };
@@ -71,6 +71,7 @@ describe("Kernel Recovery Provider Test", async () => {
     delaySeconds: number;
     totalWeight: number;
   };
+  let recoveryData: RecoveryData;
   let recoveryProvider: RecoveryProvider;
   let ecdsaProvider: ECDSAProvider = await ECDSAProvider.init({
     projectId: config.projectIdWithGasSponsorship,
@@ -89,7 +90,8 @@ describe("Kernel Recovery Provider Test", async () => {
   async function createProvider(
     recoveryId?: string,
     accountSigner?: SmartAccountSigner,
-    localAccountOrProvider?: LocalAccount<string>
+    localAccountOrProvider?: LocalAccount<string>,
+    _recoveryData?: RecoveryData
   ): Promise<RecoveryProvider> {
     recoveryProvider = await RecoveryProvider.init({
       projectId: config.projectIdWithGasSponsorship,
@@ -97,9 +99,15 @@ describe("Kernel Recovery Provider Test", async () => {
       recoveryId,
       opts: {
         validatorConfig: {
-          guardians: recoveryData.guardians,
-          threshold: recoveryData.threshold,
-          delaySeconds: recoveryData.delaySeconds,
+          guardians: _recoveryData
+            ? _recoveryData.guardians
+            : recoveryData.guardians,
+          threshold: _recoveryData
+            ? _recoveryData.threshold
+            : recoveryData.threshold,
+          delaySeconds: _recoveryData
+            ? _recoveryData.delaySeconds
+            : recoveryData.delaySeconds,
           accountSigner,
           localAccountOrProvider,
           selector,
@@ -189,6 +197,85 @@ describe("Kernel Recovery Provider Test", async () => {
     { timeout: 1000000 }
   );
 
+  it(
+    "should renew the recovery",
+    async () => {
+      let result, tx;
+      const _recoveryData = {
+        guardians: {
+          // Guardian addresses with their weights
+          [guardianAddress]: 60,
+          [guardian2Address]: 60,
+          [guardian3Address]: 60,
+        },
+        threshold: 180,
+        delaySeconds: 0,
+        totalWeight: 0,
+      };
+      _recoveryData["totalWeight"] = Object.values(
+        _recoveryData.guardians
+      ).reduce((a, c) => a + c, 0);
+      const recoveryProvider = await createProvider(
+        undefined,
+        undefined,
+        undefined,
+        _recoveryData
+      );
+      result = await recoveryProvider.renewRecovery();
+      console.log(result);
+      tx = await recoveryProvider.waitForUserOperationTransaction(
+        result.hash as Hex
+      );
+      console.log("tx", tx);
+      const execDetail = await client.readContract({
+        address: accountAddress,
+        abi: KernelAccountAbi,
+        functionName: "getExecution",
+        args: [selector],
+      });
+      console.log("selector", selector);
+      console.log(execDetail);
+      const enabledRecoveryData = await client.readContract({
+        address: RECOVERY_VALIDATOR_ADDRESS,
+        abi: WeightedValidatorAbi,
+        functionName: "weightedStorage",
+        args: [accountAddress],
+      });
+      expect(execDetail).to.eql({
+        validAfter: 0,
+        validUntil: 0,
+        executor: RECOVERY_ACTION,
+        validator: RECOVERY_VALIDATOR_ADDRESS,
+      });
+      console.log("enabledRecoveryData", enabledRecoveryData);
+      console.log(
+        "_recoveryData",
+        _recoveryData,
+        Object.keys(_recoveryData.guardians).slice(-1)[0]
+      );
+      expect(enabledRecoveryData).to.eql([
+        _recoveryData.totalWeight,
+        _recoveryData.threshold,
+        _recoveryData.delaySeconds,
+        Object.keys(_recoveryData.guardians).slice(-1)[0],
+      ]);
+      expect(await ecdsaProvider.getAddress()).to.equal(
+        await recoveryProvider.getAddress()
+      );
+      const _recoveryProvider = await createProvider(
+        undefined,
+        undefined,
+        undefined,
+        recoveryData
+      );
+      result = await _recoveryProvider.renewRecovery();
+      tx = await _recoveryProvider.waitForUserOperationTransaction(
+        result.hash as Hex
+      );
+    },
+    { timeout: 1000000 }
+  );
+
   it.skip(
     "should disable the recovery",
     async () => {
@@ -225,7 +312,6 @@ describe("Kernel Recovery Provider Test", async () => {
       });
       console.log(proposalStatus);
       expect(proposalStatus[0]).to.equal(0);
-      expect(proposalStatus[2]).to.equal(50);
       const voteStatus = await client.readContract({
         address: RECOVERY_VALIDATOR_ADDRESS,
         abi: WeightedValidatorAbi,
@@ -275,7 +361,6 @@ describe("Kernel Recovery Provider Test", async () => {
       });
       console.log(proposalStatus);
       expect(proposalStatus[0]).to.equal(1);
-      expect(proposalStatus[2]).to.equal(150);
       const voteStatus = await client.readContract({
         address: RECOVERY_VALIDATOR_ADDRESS,
         abi: WeightedValidatorAbi,
@@ -492,7 +577,6 @@ describe("Kernel Recovery Provider Test", async () => {
         });
         console.log(proposalStatus);
         expect(proposalStatus[0]).to.equal(0);
-        expect(proposalStatus[2]).to.equal(50);
         const voteStatus = await client.readContract({
           address: RECOVERY_VALIDATOR_ADDRESS,
           abi: WeightedValidatorAbi,

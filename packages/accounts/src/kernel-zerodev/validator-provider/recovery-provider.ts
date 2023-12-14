@@ -26,6 +26,7 @@ import {
   type TransactionReceipt,
   createPublicClient,
   http,
+  decodeAbiParameters,
 } from "viem";
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
@@ -149,10 +150,11 @@ export class RecoveryProvider extends ValidatorProvider<
       functionName: "doRecovery",
       args: [defaultValidatorAddress, enableData],
     });
+    const sender = await this.getAddress();
     const nonce = await (await this.getAccount()).getNonce();
     const encodedCallDataAndNonce = encodeAbiParameters(
-      parseAbiParameters("bytes calldata, uint256 nonce"),
-      [callData, nonce]
+      parseAbiParameters("address sender, bytes calldata, uint256 nonce"),
+      [sender, callData, nonce]
     );
     return keccak256(encodedCallDataAndNonce);
   }
@@ -172,6 +174,29 @@ export class RecoveryProvider extends ValidatorProvider<
     return await this.defaultProvider.sendUserOperation({
       target: kernelAccountAddress,
       data: encodedSetExecData,
+    });
+  }
+
+  async renewRecovery(): Promise<SendUserOperationResult> {
+    if (!this.defaultProvider) {
+      throw Error("DefaultProvider uninitilised");
+    }
+    const enableData = await this.getValidator().getEnableData();
+    const [guardians, weights, threshold, delay] = decodeAbiParameters(
+      parseAbiParameters(
+        "address[] guardians, uint24[] weights, uint24 threshold, uint48 delay"
+      ),
+      enableData
+    );
+    const encodedRenewData = await this.getValidator().encodeRenew(
+      [...guardians],
+      [...weights],
+      threshold,
+      delay
+    );
+    return await this.defaultProvider.sendUserOperation({
+      target: this.getValidator().validatorAddress,
+      data: encodedRenewData,
     });
   }
 
