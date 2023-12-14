@@ -1,6 +1,5 @@
 import type { SignTypedDataParams, SmartAccountSigner } from "@alchemy/aa-core";
 import {
-  type Hex,
   hashTypedData,
   keccak256,
   concatHex,
