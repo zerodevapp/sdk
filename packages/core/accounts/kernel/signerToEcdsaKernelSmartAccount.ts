@@ -74,10 +74,23 @@ export const KERNEL_ADDRESSES: {
     ECDSA_VALIDATOR: Address
     ACCOUNT_V2_2_LOGIC: Address
     FACTORY_ADDRESS: Address
+    KILL_SWITCH_VALIDATOR: Address
+    KILL_SWITCH_ACTION: Address
+    ERC165_SESSION_KEY_VALIDATOR: Address
+    SESSION_KEY_VALIDATOR: Address
+    RECOVERY_VALIDATOR: Address
 } = {
     ECDSA_VALIDATOR: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390",
     ACCOUNT_V2_2_LOGIC: "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5",
-    FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3"
+    FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
+    KILL_SWITCH_VALIDATOR:
+        "0x7393A7dA58CCfFb78f52adb09705BE6E20F704BC",
+    KILL_SWITCH_ACTION: "0x3f38e479304c7F18F988269a1bDa7d646bd48243",
+    ERC165_SESSION_KEY_VALIDATOR: "0xe149290800De29D4b0BF9dB82c508255D81902E6",
+    SESSION_KEY_VALIDATOR:
+        "0xB8E3c4bEaACAd06f6092793012DA4a8cB23D6123",
+    RECOVERY_VALIDATOR:
+        "0x4fd47D861c349bD49DC61341a922cb72F9dF7E8d"
 }
 
 /**
@@ -235,11 +248,11 @@ export async function signerToEcdsaKernelSmartAccount<
     const viemSigner: Account =
         signer.type === "local"
             ? ({
-                  ...signer,
-                  signTransaction: (_, __) => {
-                      throw new SignTransactionNotSupportedBySmartAccount()
-                  }
-              } as Account)
+                ...signer,
+                signTransaction: (_, __) => {
+                    throw new SignTransactionNotSupportedBySmartAccount()
+                }
+            } as Account)
             : (signer as Account)
 
     // Helper to generate the init code for the smart account

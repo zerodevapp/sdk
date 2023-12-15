@@ -18,6 +18,8 @@ import {
     signerToEcdsaKernelSmartAccount
 } from "./kernel/signerToEcdsaKernelSmartAccount.js"
 
+import { signerToSessionKeyValidator } from "../plugins/toSessionKeyValidatorPlugin.js"
+
 import {
     type KernelEcdsaSmartAccount,
     toKernelSmartAccount,
@@ -42,5 +44,6 @@ export {
     privateKeyToSafeSmartAccount,
     type KernelEcdsaSmartAccount,
     signerToEcdsaKernelSmartAccount,
+    signerToSessionKeyValidator,
     toKernelSmartAccount
 }
