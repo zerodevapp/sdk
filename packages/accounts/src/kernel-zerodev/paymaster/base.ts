@@ -17,7 +17,8 @@ export abstract class Paymaster {
   abstract getPaymasterResponse(
     struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders,
-    shouldOverrideFee?: boolean
+    shouldOverrideFee?: boolean,
+    shouldConsume?: boolean
   ): Promise<UserOperationStruct | undefined>;
   protected async signUserOp({
     userOp,
@@ -27,6 +28,7 @@ export abstract class Paymaster {
     erc20CallData,
     paymasterProvider,
     shouldOverrideFee = false,
+    shouldConsume = true,
   }: {
     userOp: UserOperationStruct;
     callData?: PromiseOrValue<BytesLike>;
@@ -35,6 +37,7 @@ export abstract class Paymaster {
     erc20CallData?: PromiseOrValue<BytesLike>;
     paymasterProvider?: PaymasterAndBundlerProviders;
     shouldOverrideFee?: boolean;
+    shouldConsume?: boolean;
   }): Promise<any> {
     const hexifiedUserOp = deepHexlify(await resolveProperties(userOp));
     let resolvedERC20UserOp;
@@ -72,6 +75,7 @@ export abstract class Paymaster {
             : erc20CallData,
         paymasterProvider,
         shouldOverrideFee,
+        shouldConsume,
       }).filter(([_, value]) => value !== undefined)
     );
     const { data: paymasterResp } = await axios.post(

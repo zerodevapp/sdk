@@ -75,6 +75,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   readonly bundlerProvider?: PaymasterAndBundlerProviders;
   private _txMaxRetries: number;
   private _txRetryIntervalMs: number;
+  private _shouldConsume: boolean = true;
 
   constructor({
     projectId,
@@ -116,6 +117,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
   getProjectId = (): string => this.projectId;
 
+  shouldConsume = (): boolean => this._shouldConsume;
+
   sendTransaction = async (
     request: RpcTransactionRequest,
     operation: UserOpDataOperationTypes<UserOperationCallData> = Operation.Call
@@ -152,6 +155,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     overrides?: UserOperationOverrides,
     operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
   ): Promise<UserOperationStruct> => {
+    this._shouldConsume = false;
     if (!isKernelAccount(this.account)) {
       throw new Error("account not connected!");
     }
@@ -189,7 +193,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
     const initCode = await this.account.getInitCode();
     const nonce = await this.account.getNonce();
-    return await this._runMiddlewareStack(
+    const result = await this._runMiddlewareStack(
       {
         initCode,
         sender: this.getAddress(),
@@ -201,6 +205,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       } as UserOperationStruct,
       overrides
     );
+    this._shouldConsume = true;
+    return result;
   };
 
   private _runMiddlewareStack = async (
@@ -226,6 +232,10 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     overrides?: UserOperationOverrides,
     operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
   ): Promise<SendUserOperationResult> => {
+    if (!this._shouldConsume)
+      throw new Error(
+        "Cannot send user operation while building user operation"
+      );
     if (!isKernelAccount(this.account)) {
       throw new Error("account not connected!");
     }

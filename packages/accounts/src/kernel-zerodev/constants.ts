@@ -106,7 +106,8 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
   204: "https://opbnb.rpc.thirdweb.com/eed98c1f30120c0508f17c1f01d3102b",
   42069: "https://rpc.op-testnet.gelato.digital",
   1261120: "https://rpc.zkatana.gelato.digital",
-  84532: 'https://floral-old-feather.base-sepolia.quiknode.pro/4c3b4295d0c174410872b1e461a91cc33c7969a9/',
+  84532:
+    "https://floral-old-feather.base-sepolia.quiknode.pro/4c3b4295d0c174410872b1e461a91cc33c7969a9/",
   421614: `https://arbitrum-sepolia.infura.io/v3/${INFURA_API_KEY}`,
   11155420: `https://optimism-sepolia.infura.io/v3/${INFURA_API_KEY}`,
   // 5611: 'opBnb-testnet',
