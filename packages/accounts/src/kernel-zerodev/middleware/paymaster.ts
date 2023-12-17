@@ -47,7 +47,9 @@ export const zeroDevPaymasterAndDataMiddleware = <
             verificationGasLimit,
             callGasLimit,
           },
-          paymasterConfig.paymasterProvider
+          paymasterConfig.paymasterProvider,
+          false,
+          provider.shouldConsume()
         );
       } catch (error: any) {
         console.error(error);

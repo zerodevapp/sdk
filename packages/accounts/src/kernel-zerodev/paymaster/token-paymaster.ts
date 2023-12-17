@@ -201,7 +201,8 @@ export class TokenPaymaster extends Paymaster {
   async getPaymasterResponse(
     struct: UserOperationStruct,
     paymasterProvider?: PaymasterAndBundlerProviders,
-    shouldOverrideFee?: boolean
+    shouldOverrideFee?: boolean,
+    shouldConsume?: boolean
   ): Promise<UserOperationStruct | undefined> {
     const mainCall = await this.decodeMainCallFromCallData(
       struct.sender,
@@ -241,6 +242,7 @@ export class TokenPaymaster extends Paymaster {
         erc20CallData: erc20UserOp.callData,
         paymasterProvider,
         shouldOverrideFee,
+        shouldConsume,
       });
       return paymasterResp;
     }
