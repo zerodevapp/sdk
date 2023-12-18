@@ -3,6 +3,7 @@ import {
   SmartAccount,
   signerToEcdsaKernelSmartAccount,
   signerToSafeSmartAccount,
+  signerToSessionKeyValidator,
   signerToSimpleSmartAccount,
   toKernelSmartAccount,
 } from "@zerodev/core/accounts";
@@ -19,6 +20,7 @@ import {
   createPublicClient,
   createWalletClient,
   encodeFunctionData,
+  zeroAddress,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { goerli, polygonMumbai } from "viem/chains";
@@ -80,7 +82,35 @@ export const getSignerToEcdsaKernelAccount = async () => {
 
   return await toKernelSmartAccount(publicClient, {
     entryPoint: getEntryPoint(),
-    plugin: ecdsaValidatorPlugin,
+    defaultValidator: ecdsaValidatorPlugin,
+  });
+};
+
+export const getSignerToSessionKeyKernelAccount = async () => {
+  if (!process.env.TEST_PRIVATE_KEY)
+    throw new Error("TEST_PRIVATE_KEY environment variable not set");
+
+  const publicClient = await getPublicClient();
+
+  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+  const sessionKey = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+  const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
+    signer: signer,
+  });
+  const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
+    signer: signer,
+    validatorData: {
+      sessionKey, 
+      sessionKeyData: {
+        permissions: []
+      }
+    }
+  });
+
+  return await toKernelSmartAccount(publicClient, {
+    entryPoint: getEntryPoint(),
+    defaultValidator: ecdsaValidator,
+    plugin: sessionKeyPlugin
   });
 };
 

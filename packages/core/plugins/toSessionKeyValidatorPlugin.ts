@@ -19,10 +19,22 @@ import {
   hexToSignature,
   signatureToHex,
   isHex,
+  zeroAddress,
 } from "viem";
 import { toAccount } from "viem/accounts";
-import { signMessage, signTypedData } from "viem/actions";
-import { decodeFunctionResult, getAbiItem } from "viem/utils";
+import {
+  getChainId,
+  readContract,
+  signMessage,
+  signTypedData,
+} from "viem/actions";
+import {
+  concat,
+  decodeFunctionData,
+  decodeFunctionResult,
+  encodeAbiParameters,
+  getAbiItem,
+} from "viem/utils";
 import { SessionKeyValidatorAbi } from "../accounts/kernel/abi/SessionKeyValidatorAbi.js";
 // import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js";
 
@@ -37,21 +49,33 @@ import {
   type AbiParameterToPrimitiveType,
   type ExtractAbiFunction,
 } from "abitype";
-import { KernelPlugin } from "./types";
+import { KernelPlugin, ValidatorMode } from "./types";
 import {
   SmartAccountSigner,
   SignTransactionNotSupportedBySmartAccount,
 } from "../accounts";
 import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount.js";
 import { polygonMumbai } from "viem/chains";
+import { getAction } from "../utils/getAction.js";
+import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js";
 
-const encodePermissionData = (permission: Permission): Hex => {
-  let data = permission.target;
-  if (permission.index !== undefined) {
-    data += pad(toHex(permission.index), { size: 32 });
-  }
-  return "0x";
+// const encodePermissionData = (permission: Permission): Hex => {
+//   let data = permission.target;
+//   if (permission.index !== undefined) {
+//     data += pad(toHex(permission.index), { size: 32 });
+//   }
+//   return "0x";
+// };
+
+export type SessionNonces = {
+  lastNonce: bigint;
+  invalidNonce: bigint;
 };
+
+export enum Operation {
+  Call = 0,
+  DelegateCall = 1,
+}
 
 enum ParamOperator {
   EQUAL = 0,
@@ -85,15 +109,15 @@ type Permission = {
   sig?: Hex;
   valueLimit?: bigint;
   executionRule?: ExecutionRule;
+  operation?: Operation;
 };
 
 interface SessionKeyData {
-  validUntil: number;
-  validAfter: number;
+  validUntil?: number;
+  validAfter?: number;
   paymaster?: Address;
   permissions?: Permission[];
 }
-
 
 export type SessionKeyValidatorPlugin<
   TTransport extends Transport = Transport,
@@ -107,9 +131,14 @@ export type SessionKeyValidatorPlugin<
 
 export type SessionKeyValidatorData = {
   sessionKey: Account;
-  sessionKeyData: SessionKeyData;
-  validatorAddress: Address;
-  chainId: number;
+  sessionKeyData?: SessionKeyData;
+};
+
+export type ExecutorData = {
+  executor: Address;
+  selector: Hex;
+  validUntil: number;
+  validAfter: number;
 };
 
 export async function signerToSessionKeyValidator<
@@ -119,28 +148,38 @@ export async function signerToSessionKeyValidator<
   client: Client<TTransport, TChain>,
   {
     signer,
-    entryPoint,
+    entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_ADDRESS,
     validatorData,
-    validatorAddress = KERNEL_ADDRESSES.SESSION_KEY_VALIDATOR
+    validatorAddress = KERNEL_ADDRESSES.SESSION_KEY_VALIDATOR,
+    executorData,
+    mode = ValidatorMode.enable,
   }: {
     signer: SmartAccountSigner;
-    entryPoint: Address;
-    validatorAddress?: Address;
     validatorData: SessionKeyValidatorData;
+    entryPoint?: Address;
+    validatorAddress?: Address;
+    executorData?: ExecutorData;
+    mode?: ValidatorMode;
   }
 ): Promise<SessionKeyValidatorPlugin<TTransport, TChain>> {
+  const _executorData = executorData ?? {
+    executor: zeroAddress,
+    selector: getFunctionSelector("execute(address, uint256, bytes, uint8)"),
+    validAfter: 0,
+    validUntil: 0,
+  };
   const viemSigner: Account =
     signer.type === "local"
       ? ({
-        ...signer,
-        signTransaction: (_, __) => {
-          throw new SignTransactionNotSupportedBySmartAccount();
-        },
-      } as Account)
+          ...signer,
+          signTransaction: (_, __) => {
+            throw new SignTransactionNotSupportedBySmartAccount();
+          },
+        } as Account)
       : (signer as Account);
 
-  // // Fetch chain id  
-  // const [chainId] = await Promise.all([getChainId(client)]);
+  // // Fetch chain id
+  const [chainId] = await Promise.all([getChainId(client)]);
 
   // Build the EOA Signer
   const account = toAccount({
@@ -156,14 +195,266 @@ export async function signerToSessionKeyValidator<
     },
   });
 
-
   const merkleTree: MerkleTree = new MerkleTree(
-    (validatorData.sessionKeyData.permissions ?? []).map((permission) =>
-      keccak256(encodePermissionData(permission))
+    (validatorData?.sessionKeyData?.permissions ?? []).map((permission) =>
+      encodePermissionData(permission)
     ),
     keccak256,
-    { sortPairs: true }
+    { sortPairs: true, hashLeaves: true }
   );
+
+  const getEnableData = async (
+    kernelAccountAddress?: Address
+  ): Promise<Hex> => {
+    if (!kernelAccountAddress) {
+      throw new Error("Kernel account address not provided");
+    }
+    const lastNonce =
+      (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n;
+    return concat([
+      validatorAddress,
+      pad(merkleTree.getHexRoot() as Hex, { size: 32 }),
+      pad(toHex(validatorData?.sessionKeyData?.validAfter ?? 0), { size: 6 }),
+      pad(toHex(validatorData?.sessionKeyData?.validUntil ?? 0), { size: 6 }),
+      validatorData?.sessionKeyData?.paymaster ?? zeroAddress,
+      pad(toHex(lastNonce), { size: 32 }),
+    ]);
+  };
+
+  const getSessionNonces = async (
+    kernelAccountAddress: Address
+  ): Promise<SessionNonces> => {
+    const nonce = await getAction(
+      client,
+      readContract
+    )({
+      abi: SessionKeyValidatorAbi,
+      address: this.validatorAddress,
+      functionName: "nonces",
+      args: [kernelAccountAddress],
+    });
+
+    return { lastNonce: nonce[0], invalidNonce: nonce[1] };
+  };
+
+  const getValidatorSignature = async (
+    userOperation: UserOperation,
+    pluginEnableSignature?: Hex
+  ): Promise<Hex> => {
+    if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
+      return mode;
+    } else {
+      const enableData = await getEnableData(userOperation.sender);
+      const enableDataLength = enableData.length / 2 - 1;
+      const enableSignature = pluginEnableSignature;
+      if (!enableSignature) {
+        throw new Error("Enable signature not set");
+      }
+      return concat([
+        mode, // 4 bytes 0 - 4
+        pad(toHex(_executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
+        pad(toHex(_executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
+        pad(validatorAddress, { size: 20 }), // 20 bytes 16 - 36
+        pad(_executorData.executor, { size: 20 }), // 20 bytes 36 - 56
+        pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
+        enableData, // 88 - 88 + enableData.length
+        pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
+        enableSignature, // 120 + enableData.length - 120 + enableData.length + enableSignature.length
+      ]);
+    }
+  };
+
+  const findMatchingPermissions = (
+    callData: Hex
+  ): Permission | Permission[] | undefined => {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: KernelAccountAbi,
+        data: callData,
+      });
+
+      if (functionName !== "execute" && functionName !== "executeBatch")
+        return undefined;
+      if (functionName === "execute") {
+        const [to, value, data] = args;
+        return filterPermissions([to], [data], [value])?.[0];
+      } else if (functionName === "executeBatch") {
+        const targets: Hex[] = [];
+        const values: bigint[] = [];
+        const dataArray: Hex[] = [];
+        for (const arg of args[0]) {
+          targets.push(arg.to);
+          values.push(arg.value);
+          dataArray.push(arg.data);
+        }
+        return filterPermissions(targets, dataArray, values);
+      } else {
+        throw Error("Invalid function");
+      }
+    } catch (error) {
+      return undefined;
+    }
+  };
+
+  const filterPermissions = (
+    targets: Address[],
+    dataArray: Hex[],
+    values: bigint[]
+  ): Permission[] | undefined => {
+    if (
+      targets.length !== dataArray.length ||
+      targets.length !== values.length
+    ) {
+      throw Error("Invalid arguments");
+    }
+    const filteredPermissions = targets.map((target, index) => {
+      const permissionsList = validatorData?.sessionKeyData?.permissions;
+      if (!permissionsList || !permissionsList.length) return undefined;
+
+      const targetToMatch = target.toLowerCase();
+
+      // Filter permissions by target
+      const targetPermissions = permissionsList.filter(
+        (permission) =>
+          permission.target.toLowerCase() === targetToMatch ||
+          permission.target.toLowerCase() === zeroAddress.toLowerCase()
+      );
+
+      if (!targetPermissions.length) return undefined;
+
+      const operationPermissions = filterByOperation(
+        targetPermissions,
+        // [TODO]: Check if we need to pass operation from userOp after Kernel v2.3 in
+        Operation.Call
+      );
+
+      if (!operationPermissions.length) return undefined;
+
+      const signaturePermissions = filterBySignature(
+        targetPermissions,
+        dataArray[index].slice(0, 10).toLowerCase()
+      );
+
+      const valueLimitPermissions = signaturePermissions.filter(
+        (permission) => (permission.valueLimit ?? 0n) >= values[index]
+      );
+
+      if (!valueLimitPermissions.length) return undefined;
+
+      const sortedPermissions = valueLimitPermissions.sort((a, b) => {
+        if ((b.valueLimit ?? 0n) > (a.valueLimit ?? 0n)) {
+          return 1;
+        } else if ((b.valueLimit ?? 0n) < (a.valueLimit ?? 0n)) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+
+      return findPermissionByRule(sortedPermissions, dataArray[index]);
+    });
+    return filteredPermissions.every((permission) => permission !== undefined)
+      ? (filteredPermissions as Permission[])
+      : undefined;
+  };
+
+  const filterByOperation = (
+    permissions: Permission[],
+    operation: Operation
+  ): Permission[] => {
+    return permissions.filter(
+      (permission) =>
+        permission.operation === operation || Operation.Call === operation
+    );
+  };
+
+  const filterBySignature = (
+    permissions: Permission[],
+    signature: string
+  ): Permission[] => {
+    return permissions.filter(
+      (permission) =>
+        (permission.sig ?? pad("0x", { size: 4 })).toLowerCase() === signature
+    );
+  };
+
+  const findPermissionByRule = (
+    permissions: Permission[],
+    data: string
+  ): Permission | undefined => {
+    return permissions.find((permission) => {
+      for (const rule of permission.rules ?? []) {
+        const dataParam: Hex = getFormattedHex(
+          `0x${data.slice(10 + rule.offset * 2, 10 + rule.offset * 2 + 64)}`
+        );
+        const ruleParam: Hex = getFormattedHex(rule.param);
+
+        if (!evaluateRuleCondition(dataParam, ruleParam, rule.condition)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  };
+
+  const getFormattedHex = (value: string): Hex => {
+    return pad(isHex(value) ? value : toHex(value), {
+      size: 32,
+    }).toLowerCase() as Hex;
+  };
+
+  const evaluateRuleCondition = (
+    dataParam: Hex,
+    ruleParam: Hex,
+    condition: ParamOperator
+  ): boolean => {
+    switch (condition) {
+      case ParamOperator.EQUAL:
+        return dataParam === ruleParam;
+      case ParamOperator.GREATER_THAN:
+        return dataParam > ruleParam;
+      case ParamOperator.LESS_THAN:
+        return dataParam < ruleParam;
+      case ParamOperator.GREATER_THAN_OR_EQUAL:
+        return dataParam >= ruleParam;
+      case ParamOperator.LESS_THAN_OR_EQUAL:
+        return dataParam <= ruleParam;
+      case ParamOperator.NOT_EQUAL:
+        return dataParam !== ruleParam;
+      default:
+        return false;
+    }
+  };
+
+  const getEncodedPermissionProofData = (callData: Hex): Hex => {
+    const matchingPermission = findMatchingPermissions(callData);
+    // [TODO]: add shouldDelegateViaFallback() check
+    if (!matchingPermission && !false /*shouldDelegateViaFallback()*/) {
+      throw Error(
+        "SessionKeyValidator: No matching permission found for the userOp"
+      );
+    }
+    const encodedPermissionData =
+      validatorData?.sessionKeyData?.permissions &&
+      validatorData?.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+        ? encodePermissionData(matchingPermission)
+        : "0x";
+    let merkleProof: string[] | string[][] = [];
+    if (Array.isArray(matchingPermission)) {
+      const encodedPerms = matchingPermission.map((permission) =>
+        keccak256(encodePermissionData(permission))
+      );
+      merkleProof = encodedPerms.map((perm) => merkleTree.getHexProof(perm));
+    } else if (matchingPermission) {
+      merkleProof = merkleTree.getHexProof(keccak256(encodedPermissionData));
+    }
+    return validatorData?.sessionKeyData?.permissions &&
+      validatorData.sessionKeyData.permissions.length !== 0 &&
+      matchingPermission
+      ? encodePermissionData(matchingPermission, merkleProof)
+      : "0x";
+  };
 
   // const merkleRoot = merkleTree.getHexRoot();
   return {
@@ -174,29 +465,23 @@ export async function signerToSessionKeyValidator<
     entryPoint: entryPoint,
     merkleTree,
     source: "SessionKeyValidator",
-    getEnableData: async (data?: any): Promise<Hex> => {
-      return encodeFunctionData({
-        abi: SessionKeyValidatorAbi,
-        functionName: "enable",
-        args: [data],
-      });
-    },
+    getEnableData,
 
     getDisableData: async (data?: any): Promise<Hex> => {
-
       return encodeFunctionData({
         abi: SessionKeyValidatorAbi,
         functionName: "disable",
         args: [data],
       });
     },
+    getValidatorSignature,
 
-    validateSignature: async (
-      hash: Hex,
-      signature: Hex
-    ): Promise<boolean> => {
+    validateSignature: async (hash: Hex, signature: Hex): Promise<boolean> => {
       // Call the smart contract to validate the signature
-      const publicClient = await createPublicClient({ chain: polygonMumbai, transport: http(process.env.RPC_URL as string) })
+      const publicClient = await createPublicClient({
+        chain: polygonMumbai,
+        transport: http(process.env.RPC_URL as string),
+      });
       const result = await publicClient.call({
         to: validatorAddress,
         data: encodeFunctionData({
@@ -205,16 +490,17 @@ export async function signerToSessionKeyValidator<
           args: [hash, signature],
         }),
       });
-      return result.toString() !== "0x" + "01".padStart(16, "0");
+      return result.toString() !== `0x${"01".padStart(16, "0")}`;
     },
 
     signUserOperation: async (
-      userOperation: UserOperation
+      userOperation: UserOperation,
+      pluginEnableSignature?: Hex
     ): Promise<Hex> => {
       const userOpHash = getUserOperationHash({
         userOperation: { ...userOperation, signature: "0x" },
-        entryPoint: validatorData.validatorAddress,
-        chainId: validatorData.chainId,
+        entryPoint,
+        chainId: chainId,
       });
 
       const signature = await signMessage(client, {
@@ -222,36 +508,119 @@ export async function signerToSessionKeyValidator<
         message: { raw: userOpHash },
       });
       const fixedSignature = fixSignedData(signature);
-      return fixedSignature;
+      return concat([
+        await getValidatorSignature(userOperation, pluginEnableSignature),
+        validatorData.sessionKey.address,
+        fixedSignature,
+        getEncodedPermissionProofData(userOperation.callData),
+      ]);
     },
 
     getNonceKey: async () => {
       return 0n;
     },
 
-
-
-    // getNonce: async (): Promise<bigint> => {
-    //   const publicClient = await createPublicClient({ chain: polygonMumbai, transport: http(process.env.RPC_URL as string) });
-    //   const nonceData = await publicClient.call({
-    //     abi: SessionKeyValidatorAbi,
-    //     to: validatorAddress,
-    //     functionName: "nonces",
-    //     args: [validatorData.sessionKey.address], // Assuming this is the missing argument
-    //   });
-    //   return BigInt(nonceData.lastNonce);
-    // },
-
-
     async getDummySignature() {
       return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     },
+    getPluginApproveSignature: async () => {
+      throw new Error("Not implemented");
+    },
+    getExecutorData: () => {
+      if (!executorData?.selector || !executorData?.executor) {
+        throw new Error("Invalid executor data");
+      }
+      return executorData;
+    },
+  };
+}
+
+export const encodePermissionData = (
+  permission: Permission | Permission[],
+  merkleProof?: string[] | string[][]
+): Hex => {
+  const permissionParam = {
+    components: [
+      {
+        name: "index",
+        type: "uint32",
+      },
+      {
+        name: "target",
+        type: "address",
+      },
+      {
+        name: "sig",
+        type: "bytes4",
+      },
+      {
+        name: "valueLimit",
+        type: "uint256",
+      },
+      {
+        components: [
+          {
+            name: "offset",
+            type: "uint256",
+          },
+          {
+            internalType: "enum ParamCondition",
+            name: "condition",
+            type: "uint8",
+          },
+          {
+            name: "param",
+            type: "bytes32",
+          },
+        ],
+        name: "rules",
+        type: "tuple[]",
+      },
+      {
+        components: [
+          {
+            name: "interval",
+            type: "uint48",
+          },
+          {
+            name: "runs",
+            type: "uint48",
+          },
+          {
+            internalType: "ValidAfter",
+            name: "validAfter",
+            type: "uint48",
+          },
+        ],
+        name: "executionRule",
+        type: "tuple",
+      },
+      {
+        internalType: "enum Operation",
+        name: "operation",
+        type: "uint8",
+      },
+    ],
+    name: "permission",
+    type: Array.isArray(permission) ? "tuple[]" : "tuple",
+  };
+  let params;
+  let values;
+  if (merkleProof) {
+    params = [
+      permissionParam,
+      {
+        name: "merkleProof",
+        type: Array.isArray(merkleProof[0]) ? "bytes32[][]" : "bytes32[]",
+      },
+    ];
+    values = [permission, merkleProof];
+  } else {
+    params = [permissionParam];
+    values = [permission];
   }
-
+  return encodeAbiParameters(params, values);
 };
-
-
-
 
 export function getPermissionFromABI<
   TAbi extends Abi | readonly unknown[],
@@ -302,35 +671,35 @@ export type GetFunctionArgs<
   TAbi extends Abi | readonly unknown[],
   TFunctionName extends string,
   TAbiFunction extends AbiFunction = TAbi extends Abi
-  ? ExtractAbiFunction<TAbi, TFunctionName>
-  : AbiFunction,
+    ? ExtractAbiFunction<TAbi, TFunctionName>
+    : AbiFunction,
   TArgs = CombinedArgs<TAbiFunction["inputs"]>,
   FailedToParseArgs =
-  | ([TArgs] extends [never] ? true : false)
-  | (readonly unknown[] extends TArgs ? true : false)
+    | ([TArgs] extends [never] ? true : false)
+    | (readonly unknown[] extends TArgs ? true : false)
 > = true extends FailedToParseArgs
   ? {
-    args?: readonly unknown[];
-  }
+      args?: readonly unknown[];
+    }
   : TArgs extends readonly []
   ? { args?: never }
   : {
-    args?: TArgs;
-  };
+      args?: TArgs;
+    };
 
 export type GeneratePermissionFromArgsParameters<
   TAbi extends Abi | readonly unknown[],
   TFunctionName extends string | undefined = string,
   _FunctionName = TAbi extends Abi
-  ? InferFunctionName<TAbi, TFunctionName>
-  : never
+    ? InferFunctionName<TAbi, TFunctionName>
+    : never
 > = Pick<Permission, "target" | "valueLimit"> & {
   functionName?: _FunctionName;
 } & (TFunctionName extends string
-  ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
-  : _FunctionName extends string
-  ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-  : never);
+    ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
+    : _FunctionName extends string
+    ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+    : never);
 
 export type AbiParametersToPrimitiveTypes<
   TAbiParameters extends readonly AbiParameter[],
@@ -352,18 +721,18 @@ export type CombinedArgs<
   TAbiParameters extends readonly AbiParameter[],
   TAbiParameterKind extends AbiParameterKind = AbiParameterKind
 > = {
-    [K in keyof TAbiParameters]: {
-      operator: ParamOperator;
-      value: AbiParameterToPrimitiveType<TAbiParameters[K], TAbiParameterKind>;
-    } | null;
-  };
+  [K in keyof TAbiParameters]: {
+    operator: ParamOperator;
+    value: AbiParameterToPrimitiveType<TAbiParameters[K], TAbiParameterKind>;
+  } | null;
+};
 
 export const fixSignedData = (sig: Hex): Hex => {
   let signature = sig;
   if (!isHex(signature)) {
     signature = `0x${signature}`;
     if (!isHex(signature)) {
-      throw new Error("Invalid signed data " + sig);
+      throw new Error(`Invalid signed data ${sig}`);
     }
   }
 

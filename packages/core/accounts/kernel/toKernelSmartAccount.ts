@@ -8,11 +8,7 @@ import {
   encodeFunctionData,
 } from "viem";
 import { toAccount } from "viem/accounts";
-import {
-  getBytecode,
-  signMessage,
-  signTypedData,
-} from "viem/actions";
+import { getBytecode, signMessage, signTypedData } from "viem/actions";
 import { getAccountNonce } from "../../actions/public/getAccountNonce.js";
 import { getSenderAddress } from "../../actions/public/getSenderAddress.js";
 import type { SmartAccount } from "../types.js";
@@ -67,10 +63,12 @@ export const KERNEL_ADDRESSES: {
   ECDSA_VALIDATOR: Address;
   ACCOUNT_V2_2_LOGIC: Address;
   FACTORY_ADDRESS: Address;
+  ENTRYPOINT_ADDRESS: Address;
 } = {
   ECDSA_VALIDATOR: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390",
   ACCOUNT_V2_2_LOGIC: "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5",
   FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
+  ENTRYPOINT_ADDRESS: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 };
 
 /**
@@ -166,30 +164,33 @@ export async function toKernelSmartAccount<
 >(
   client: Client<TTransport, TChain>,
   {
-    plugin,
+    defaultValidator,
     entryPoint,
     index = 0n,
     factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
     accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_2_LOGIC,
     deployedAccountAddress,
+    plugin,
   }: {
-    plugin: TPlugin;
+    defaultValidator: TPlugin;
     entryPoint: Address;
     index?: bigint;
     factoryAddress?: Address;
     accountLogicAddress?: Address;
     deployedAccountAddress?: Address;
+    plugin?: KernelPlugin;
   }
 ): Promise<KernelEcdsaSmartAccount<TTransport, TChain>> {
   // Helper to generate the init code for the smart account
+  const currentValidator = plugin ?? defaultValidator;
   const generateInitCode = () =>
     getAccountInitCode({
-      owner: plugin.signer.address,
+      owner: defaultValidator.signer.address,
       index,
       factoryAddress,
       accountLogicAddress,
-      validatorAddress: plugin.address,
-      enableData: plugin.getEnableData(),
+      validatorAddress: defaultValidator.address,
+      enableData: defaultValidator.getEnableData(),
     });
 
   // Fetch account address and chain id
@@ -208,13 +209,16 @@ export async function toKernelSmartAccount<
   const account = toAccount({
     address: accountAddress,
     async signMessage({ message }) {
-      return signMessage(client, { account: plugin.signer, message });
+      return signMessage(client, { account: currentValidator.signer, message });
     },
     async signTransaction(_, __) {
       throw new SignTransactionNotSupportedBySmartAccount();
     },
     async signTypedData(typedData) {
-      return signTypedData(client, { account: plugin.signer, ...typedData });
+      return signTypedData(client, {
+        account: currentValidator.signer,
+        ...typedData,
+      });
     },
   });
 
@@ -235,7 +239,11 @@ export async function toKernelSmartAccount<
 
     // Sign a user operation
     async signUserOperation(userOperation) {
-      return plugin.signUserOperation(userOperation);
+      let pluginEnableSignature;
+      if (plugin) {
+        pluginEnableSignature = await defaultValidator.getPluginApproveSignature(accountAddress, plugin);
+      }
+      return currentValidator.signUserOperation(userOperation, pluginEnableSignature);
     },
 
     // Encode the init code
@@ -281,7 +289,7 @@ export async function toKernelSmartAccount<
 
     // Get simple dummy signature
     async getDummySignature() {
-      return plugin.getDummySignature();
+      return currentValidator.getDummySignature();
     },
   };
 }

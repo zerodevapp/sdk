@@ -8,6 +8,7 @@ import {
   Transport,
 } from "viem";
 import { type UserOperation } from "../types/userOperation";
+import { ExecutorData } from "./toSessionKeyValidatorPlugin";
 
 export type KernelPlugin<
   Name extends string = string,
@@ -19,6 +20,21 @@ export type KernelPlugin<
   entryPoint: Address;
   getNonceKey: () => Promise<bigint>;
   getDummySignature(): Promise<Hex>;
-  signUserOperation: (UserOperation: UserOperation) => Promise<Hex>;
+  signUserOperation: (
+    UserOperation: UserOperation,
+    pluginEnableSignature?: Hex
+  ) => Promise<Hex>;
+  getValidatorSignature: (userOperation: UserOperation) => Promise<Hex>;
   getEnableData(): Promise<Hex>;
+  getPluginApproveSignature(
+    accountAddress: Address,
+    plugin: KernelPlugin
+  ): Promise<Hex>;
+  getExecutorData(): ExecutorData;
 };
+
+export enum ValidatorMode {
+  sudo = "0x00000000",
+  plugin = "0x00000001",
+  enable = "0x00000002",
+}
