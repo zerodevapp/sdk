@@ -78,7 +78,7 @@ export async function signerToEcdsaValidator<
     async getNonceKey() {
       return 0n;
     },
-    getValidatorSignature: async (userOperation) => {
+    getValidatorSignature: async (_userOperation) => {
       throw new Error("Not implemented");
     },
     // Sign a user operation
@@ -109,7 +109,6 @@ export async function signerToEcdsaValidator<
       plugin: KernelPlugin
     ): Promise<Hex> {
       const sender = accountAddress;
-      const signer = viemSigner;
       const executorData = plugin.getExecutorData();
       if (!executorData.selector || !executorData.executor) {
         throw new Error("Invalid executor data");
@@ -118,7 +117,7 @@ export async function signerToEcdsaValidator<
         domain: {
           name: "Kernel",
           version: "0.2.3",
-          chainId: this.chain.id,
+          chainId,
           verifyingContract: sender,
         },
         types: {
@@ -140,7 +139,7 @@ export async function signerToEcdsaValidator<
             { size: 32 }
           ),
           executor: executorData.executor as Address,
-          enableData: await plugin.getEnableData(),
+          enableData: await plugin.getEnableData(sender),
         },
         primaryType: "ValidatorApproved",
       });

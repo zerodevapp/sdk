@@ -31,7 +31,6 @@ import {
 import {
   concat,
   decodeFunctionData,
-  decodeFunctionResult,
   encodeAbiParameters,
   getAbiItem,
 } from "viem/utils";
@@ -229,7 +228,7 @@ export async function signerToSessionKeyValidator<
       readContract
     )({
       abi: SessionKeyValidatorAbi,
-      address: this.validatorAddress,
+      address: validatorAddress,
       functionName: "nonces",
       args: [kernelAccountAddress],
     });

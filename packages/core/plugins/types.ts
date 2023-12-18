@@ -25,7 +25,7 @@ export type KernelPlugin<
     pluginEnableSignature?: Hex
   ) => Promise<Hex>;
   getValidatorSignature: (userOperation: UserOperation) => Promise<Hex>;
-  getEnableData(): Promise<Hex>;
+  getEnableData(kernelAccountAddress?: Address): Promise<Hex>;
   getPluginApproveSignature(
     accountAddress: Address,
     plugin: KernelPlugin
