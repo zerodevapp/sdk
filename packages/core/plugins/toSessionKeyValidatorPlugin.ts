@@ -526,10 +526,10 @@ export async function signerToSessionKeyValidator<
       throw new Error("Not implemented");
     },
     getExecutorData: () => {
-      if (!executorData?.selector || !executorData?.executor) {
+      if (!_executorData?.selector || !_executorData?.executor) {
         throw new Error("Invalid executor data");
       }
-      return executorData;
+      return _executorData;
     },
   };
 }
