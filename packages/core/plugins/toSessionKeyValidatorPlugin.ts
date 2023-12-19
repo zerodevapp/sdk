@@ -54,7 +54,6 @@ import {
   SignTransactionNotSupportedBySmartAccount,
 } from "../accounts";
 import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount.js";
-import { polygonMumbai } from "viem/chains";
 import { getAction } from "../utils/getAction.js";
 import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js";
 
@@ -477,17 +476,14 @@ export async function signerToSessionKeyValidator<
 
     validateSignature: async (hash: Hex, signature: Hex): Promise<boolean> => {
       // Call the smart contract to validate the signature
-      const publicClient = await createPublicClient({
-        chain: polygonMumbai,
-        transport: http(process.env.RPC_URL as string),
-      });
-      const result = await publicClient.call({
-        to: validatorAddress,
-        data: encodeFunctionData({
-          abi: SessionKeyValidatorAbi,
-          functionName: "validateSignature",
-          args: [hash, signature],
-        }),
+      const result = getAction(
+        client,
+        readContract
+      )({
+        abi: SessionKeyValidatorAbi,
+        address: validatorAddress,
+        functionName: "validateSignature",
+        args: [hash, signature],
       });
       return result.toString() !== `0x${"01".padStart(16, "0")}`;
     },
