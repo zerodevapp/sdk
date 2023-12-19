@@ -89,9 +89,7 @@ export const getSignerToEcdsaKernelAccount = async () => {
 export const getSignerToSessionKeyKernelAccount = async () => {
   if (!process.env.TEST_PRIVATE_KEY)
     throw new Error("TEST_PRIVATE_KEY environment variable not set");
-
   const publicClient = await getPublicClient();
-
   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
   const sessionKey = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
   const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
@@ -100,13 +98,14 @@ export const getSignerToSessionKeyKernelAccount = async () => {
   const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
     signer: signer,
     validatorData: {
-      sessionKey, 
+      sessionKey,
       sessionKeyData: {
-        permissions: []
+        permissions: [{
+          target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Address,
+        }]
       }
     }
   });
-
   return await toKernelSmartAccount(publicClient, {
     entryPoint: getEntryPoint(),
     defaultValidator: ecdsaValidator,
