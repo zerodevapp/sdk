@@ -161,6 +161,7 @@ export class ZeroDevAccountSigner<V extends SupportedValidators>
       from: (await this.getAddress()) as `0x${string}`,
       to: resolved.to as `0x${string}` | undefined,
       data: hexlifyOptional(resolved.data),
+      value: hexlifyOptional(resolved.value),
     });
 
     return this.provider.getTransaction(txHash);
