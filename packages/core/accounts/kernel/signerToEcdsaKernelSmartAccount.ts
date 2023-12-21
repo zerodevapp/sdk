@@ -27,10 +27,12 @@ import {
 } from "../types.js";
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js";
 
-export type KernelEcdsaSmartAccount<
+export type KernelSmartAccount<
   transport extends Transport = Transport,
   chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<"kernelEcdsaSmartAccount", transport, chain>;
+> = Omit<SmartAccount<"kernelSmartAccount", transport, chain>, "getDummySignature"> & {
+  getDummySignature(calldata?: Hex): Promise<Hex>
+};
 
 /**
  * The account creation ABI for a kernel smart account (from the KernelFactory)
@@ -242,7 +244,7 @@ export async function signerToEcdsaKernelSmartAccount<
     ecdsaValidatorAddress?: Address;
     deployedAccountAddress?: Address;
   }
-): Promise<KernelEcdsaSmartAccount<TTransport, TChain>> {
+): Promise<KernelSmartAccount<TTransport, TChain>> {
   // Get the private key related account
   const viemSigner: Account =
     signer.type === "local"
@@ -298,7 +300,7 @@ export async function signerToEcdsaKernelSmartAccount<
     client: client,
     publicKey: accountAddress,
     entryPoint: entryPoint,
-    source: "kernelEcdsaSmartAccount",
+    source: "kernelSmartAccount",
 
     // Get the nonce of the smart account
     async getNonce() {
@@ -368,7 +370,7 @@ export async function signerToEcdsaKernelSmartAccount<
     },
 
     // Get simple dummy signature
-    async getDummySignature() {
+    async getDummySignature(_calldata?: Hex) {
       return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
     },
   };

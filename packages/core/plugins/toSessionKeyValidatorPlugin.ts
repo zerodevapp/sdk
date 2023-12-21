@@ -10,12 +10,10 @@ import {
   Client,
   Transport,
   Chain,
-  http,
   type Abi,
   type GetAbiItemParameters,
   type InferFunctionName,
   type Narrow,
-  createPublicClient,
   hexToSignature,
   signatureToHex,
   isHex,
@@ -56,6 +54,7 @@ import {
 import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount.js";
 import { getAction } from "../utils/getAction.js";
 import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js";
+import { DUMMY_ECDSA_SIG } from "../accounts/kernel/toKernelSmartAccount.js";
 
 // const encodePermissionData = (permission: Permission): Hex => {
 //   let data = permission.target;
@@ -236,13 +235,13 @@ export async function signerToSessionKeyValidator<
   };
 
   const getValidatorSignature = async (
-    userOperation: UserOperation,
+    accountAddress: Address,
     pluginEnableSignature?: Hex
   ): Promise<Hex> => {
     if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
       return mode;
     } else {
-      const enableData = await getEnableData(userOperation.sender);
+      const enableData = await getEnableData(accountAddress);
       const enableDataLength = enableData.length / 2 - 1;
       const enableSignature = pluginEnableSignature;
       if (!enableSignature) {
@@ -504,7 +503,10 @@ export async function signerToSessionKeyValidator<
       });
       const fixedSignature = fixSignedData(signature);
       return concat([
-        await getValidatorSignature(userOperation, pluginEnableSignature),
+        await getValidatorSignature(
+          userOperation.sender,
+          pluginEnableSignature
+        ),
         validatorData.sessionKey.address,
         fixedSignature,
         getEncodedPermissionProofData(userOperation.callData),
@@ -515,8 +517,23 @@ export async function signerToSessionKeyValidator<
       return 0n;
     },
 
-    async getDummySignature() {
-      return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
+    async getDummySignature(
+      accountAddress: Address,
+      calldata: Hex,
+      pluginEnableSignature: Hex
+    ) {
+      console.log(
+        "getDummySignature",
+        accountAddress,
+        calldata,
+        pluginEnableSignature
+      );
+      return concat([
+        await getValidatorSignature(accountAddress, pluginEnableSignature),
+        validatorData.sessionKey.address,
+        DUMMY_ECDSA_SIG,
+        getEncodedPermissionProofData(calldata),
+      ]);
     },
     getPluginApproveSignature: async () => {
       throw new Error("Not implemented");

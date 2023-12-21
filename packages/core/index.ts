@@ -31,6 +31,7 @@ import {
     createBundlerClient
 } from "./clients/createBundlerClient.js"
 import { createSmartAccountClient } from "./clients/createSmartAccountClient.js"
+import { createKernelAccountClient } from "./clients/createKernelAccountClient.js"
 import {
     type SmartAccountClient,
     type SmartAccountClientConfig
@@ -74,7 +75,8 @@ export {
     bundlerActions,
     WaitForUserOperationReceiptTimeoutError,
     createSmartAccountClient,
-    smartAccountActions
+    smartAccountActions,
+    createKernelAccountClient
 }
 import type { UserOperation } from "./types/userOperation.js"
 

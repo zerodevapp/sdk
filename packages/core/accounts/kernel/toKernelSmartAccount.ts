@@ -16,7 +16,7 @@ import { SignTransactionNotSupportedBySmartAccount } from "../types.js";
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js";
 import { KernelPlugin } from "../../plugins/types.js";
 
-export type KernelEcdsaSmartAccount<
+export type KernelSmartAccount<
   transport extends Transport = Transport,
   chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<"kernelSmartAccount", transport, chain>;
@@ -70,6 +70,9 @@ export const KERNEL_ADDRESSES: {
   FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
   ENTRYPOINT_ADDRESS: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 };
+
+export const DUMMY_ECDSA_SIG =
+  "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
 
 /**
  * Get the account initialization code for a kernel smart account
@@ -180,7 +183,7 @@ export async function toKernelSmartAccount<
     deployedAccountAddress?: Address;
     plugin?: KernelPlugin;
   }
-): Promise<KernelEcdsaSmartAccount<TTransport, TChain>> {
+): Promise<KernelSmartAccount<TTransport, TChain>> {
   // Helper to generate the init code for the smart account
   const currentValidator = plugin ?? defaultValidator;
   const generateInitCode = () =>
@@ -288,8 +291,13 @@ export async function toKernelSmartAccount<
     },
 
     // Get simple dummy signature
-    async getDummySignature() {
-      return currentValidator.getDummySignature();
+    async getDummySignature(calldata?: Hex) {
+      console.log("toKernelSmartAccount: getDummySignature", calldata)
+      let pluginEnableSignature;
+      if (plugin) {
+        pluginEnableSignature = await defaultValidator.getPluginApproveSignature(accountAddress, plugin);
+      }
+      return currentValidator.getDummySignature(accountAddress, calldata ?? "0x", pluginEnableSignature);
     },
   };
 }

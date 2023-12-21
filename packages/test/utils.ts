@@ -8,11 +8,12 @@ import {
   toKernelSmartAccount,
 } from "@zerodev/core/accounts";
 import { SponsorUserOperationMiddleware } from "@zerodev/core/actions/smartAccount";
+import { createKernelAccountClient } from "@zerodev/core";
 import {
   createPimlicoBundlerClient,
   createPimlicoPaymasterClient,
 } from "@zerodev/core/clients/pimlico";
-import { signerToEcdsaValidator } from "@zerodev/core/plugins";
+import { signerToEcdsaValidator, Operation } from "@zerodev/core/plugins";
 import {
   http,
   Address,
@@ -21,6 +22,7 @@ import {
   createWalletClient,
   encodeFunctionData,
   zeroAddress,
+  getFunctionSelector
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { goerli, polygonMumbai } from "viem/chains";
@@ -100,9 +102,21 @@ export const getSignerToSessionKeyKernelAccount = async () => {
     validatorData: {
       sessionKey,
       sessionKeyData: {
-        permissions: [{
-          target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Address,
-        }]
+        permissions: [
+          {
+            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Address,
+            executionRule: {
+              interval: 0,
+              runs: 0,
+              validAfter: 0,
+            },
+            rules: [],
+            sig: getFunctionSelector("transfer(address,uint256)") as Hex,
+            valueLimit: 0n,
+            index: 0,
+            operation: Operation.Call
+          }
+        ]
       }
     }
   });
@@ -161,6 +175,28 @@ export const getSmartAccountClient = async ({
   const chain = getTestingChain();
 
   return createSmartAccountClient({
+    account: account ?? (await getSignerToSimpleSmartAccount()),
+    chain,
+    transport: http(
+      `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
+    ),
+    sponsorUserOperation,
+  });
+};
+
+
+export const getKernelAccountClient = async ({
+  account,
+  sponsorUserOperation,
+}: SponsorUserOperationMiddleware & { account?: SmartAccount } = {}) => {
+  if (!process.env.PIMLICO_API_KEY)
+    throw new Error("PIMLICO_API_KEY environment variable not set");
+  if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
+    throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set");
+  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
+  const chain = getTestingChain();
+
+  return createKernelAccountClient({
     account: account ?? (await getSignerToSimpleSmartAccount()),
     chain,
     transport: http(

@@ -19,12 +19,12 @@ export type KernelPlugin<
   client: Client<transport, chain>;
   entryPoint: Address;
   getNonceKey: () => Promise<bigint>;
-  getDummySignature(): Promise<Hex>;
+  getDummySignature(accountAddress: Address, calldata:Hex, pluginEnableSignature?: Hex): Promise<Hex>;
   signUserOperation: (
     UserOperation: UserOperation,
     pluginEnableSignature?: Hex
   ) => Promise<Hex>;
-  getValidatorSignature: (userOperation: UserOperation) => Promise<Hex>;
+  getValidatorSignature: (accountAddress: Address) => Promise<Hex>;
   getEnableData(kernelAccountAddress?: Address): Promise<Hex>;
   getPluginApproveSignature(
     accountAddress: Address,

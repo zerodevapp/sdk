@@ -14,14 +14,14 @@ import {
 } from "./signerToSafeSmartAccount.js"
 
 import {
-    // type KernelEcdsaSmartAccount,
+    // type KernelSmartAccount,
     signerToEcdsaKernelSmartAccount
 } from "./kernel/signerToEcdsaKernelSmartAccount.js"
 
 import { signerToSessionKeyValidator } from "../plugins/toSessionKeyValidatorPlugin.js"
 
 import {
-    type KernelEcdsaSmartAccount,
+    type KernelSmartAccount,
     toKernelSmartAccount,
 } from "./kernel/toKernelSmartAccount.js"
 
@@ -42,7 +42,7 @@ export {
     privateKeyToSimpleSmartAccount,
     type SmartAccount,
     privateKeyToSafeSmartAccount,
-    type KernelEcdsaSmartAccount,
+    type KernelSmartAccount,
     signerToEcdsaKernelSmartAccount,
     signerToSessionKeyValidator,
     toKernelSmartAccount
