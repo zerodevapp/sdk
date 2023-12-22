@@ -88,6 +88,7 @@
     }
   },
   "peerDependencies": {
-    "viem": "^1.19.4"
+    "viem": "^1.19.4",
+    "permissionless": "0.0.16"
   }
 }

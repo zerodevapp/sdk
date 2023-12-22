@@ -12,10 +12,10 @@ import { getChainId } from "viem/actions";
 import {
   SmartAccountSigner,
   SignTransactionNotSupportedBySmartAccount,
-} from "../accounts";
-import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount";
+} from "permissionless/accounts";
+import { KERNEL_ADDRESSES } from "./index";
 import { KernelPlugin } from "./types";
-import { getUserOperationHash } from "../utils";
+import { getUserOperationHash } from "permissionless"
 
 export async function signerToEcdsaValidator<
   TTransport extends Transport = Transport,
@@ -27,7 +27,7 @@ export async function signerToEcdsaValidator<
     entryPoint,
     validatorAddress = KERNEL_ADDRESSES.ECDSA_VALIDATOR,
   }: {
-    signer: SmartAccountSigner;
+    signer: SmartAccountSigner<"local" | "external">;
     entryPoint: Address;
     validatorAddress?: Address;
   }
@@ -44,7 +44,7 @@ export async function signerToEcdsaValidator<
       : (signer as Account);
 
   // Fetch chain id
-  const [chainId] = await Promise.all([getChainId(client)]);
+  const chainId = await getChainId(client);
 
   // Build the EOA Signer
   const account = toAccount({

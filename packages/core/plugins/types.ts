@@ -7,7 +7,7 @@ import {
   LocalAccount,
   Transport,
 } from "viem";
-import { type UserOperation } from "../types/userOperation";
+import { type UserOperation } from "permissionless";
 
 export type KernelPlugin<
   Name extends string = string,
