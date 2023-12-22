@@ -4,7 +4,6 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount,
   } from "permissionless/accounts";
-// import { type SmartAccountSigner } from "permissionless/accounts/types.ts";
 import { Address, Hex, decodeEventLog, getContract, zeroAddress, type PublicClient } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { EntryPointAbi } from "./abis/EntryPoint.js";
@@ -21,7 +20,7 @@ import {
 } from "./utils.js";
 import { BundlerClient, SmartAccountClient } from "permissionless";
 import { polygonMumbai } from "viem/chains";
-import { signerToEcdsaKernelSmartAccount } from "permissionless/accounts";
+import { signerToEcdsaKernelSmartAccount } from "@zerodev/core";
 
 dotenv.config();
 

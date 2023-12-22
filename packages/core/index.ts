@@ -1,87 +1,75 @@
-// import type {
-//     EstimateUserOperationGasParameters,
-//     EstimateUserOperationGasReturnType
-// } from "./actions/bundler/estimateUserOperationGas.js"
-// import type { GetUserOperationByHashParameters } from "./actions/bundler/getUserOperationByHash.js"
-// import type { GetUserOperationByHashReturnType } from "./actions/bundler/getUserOperationByHash.js"
-// import type {
-//     GetUserOperationReceiptParameters,
-//     GetUserOperationReceiptReturnType
-// } from "./actions/bundler/getUserOperationReceipt.js"
-// import type { SendUserOperationParameters } from "./actions/bundler/sendUserOperation.js"
+import { type Transport, type Chain, type Account, type Client, type Address, type Hex, type PublicClient } from "viem";
+import type { SmartAccount } from "permissionless/accounts";
+import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount";
+import type { UserOperation } from "permissionless";
+import { BundlerClient, SmartAccountClient, createBundlerClient, createSmartAccountClient } from "permissionless";
 
-// import type { GetSenderAddressParams } from "./actions/public/getSenderAddress.js"
-// import { getSenderAddress } from "./actions/public/getSenderAddress.js"
+interface PublicClientConfig {
+    transport: Transport;
+}
 
-// import { chainId } from "./actions/bundler/chainId.js"
-// import { estimateUserOperationGas } from "./actions/bundler/estimateUserOperationGas.js"
-// import { getUserOperationByHash } from "./actions/bundler/getUserOperationByHash.js"
-// import { getUserOperationReceipt } from "./actions/bundler/getUserOperationReceipt.js"
-// import { sendUserOperation } from "./actions/bundler/sendUserOperation.js"
-// import { supportedEntryPoints } from "./actions/bundler/supportedEntryPoints.js"
-// import { waitForUserOperationReceipt } from "./actions/bundler/waitForUserOperationReceipt.js"
-// import {
-//     type WaitForUserOperationReceiptParameters,
-//     WaitForUserOperationReceiptTimeoutError
-// } from "./actions/bundler/waitForUserOperationReceipt.js"
-// import type { GetAccountNonceParams } from "./actions/public/getAccountNonce.js"
-// import { getAccountNonce } from "./actions/public/getAccountNonce.js"
-// import {
-//     type BundlerClient,
-//     createBundlerClient
-// } from "./clients/createBundlerClient.js"
-// import { createSmartAccountClient } from "./clients/createSmartAccountClient.js"
-// import {
-//     type SmartAccountClient,
-//     type SmartAccountClientConfig
-// } from "./clients/createSmartAccountClient.js"
-// import type { BundlerActions } from "./clients/decorators/bundler.js"
-// import { bundlerActions } from "./clients/decorators/bundler.js"
-// // import {
-// //     type SmartAccountActions,
-// //     smartAccountActions
-// // } from "./clients/decorators/smartAccount.js"
+interface BundlerClientConfig {
+    chain: Chain;
+    transport: Transport;
+}
 
-// export type {
-//     SendUserOperationParameters,
-//     EstimateUserOperationGasParameters,
-//     EstimateUserOperationGasReturnType,
-//     GetUserOperationByHashParameters,
-//     GetUserOperationByHashReturnType,
-//     GetUserOperationReceiptParameters,
-//     GetUserOperationReceiptReturnType,
-//     GetSenderAddressParams,
-//     GetAccountNonceParams,
-//     BundlerClient,
-//     BundlerActions,
-//     WaitForUserOperationReceiptParameters,
-//     SmartAccountClient,
-//     SmartAccountClientConfig,
-//     SmartAccountActions
-// }
+interface SmartAccountClientConfig {
+    account: SmartAccount;
+    chain: Chain;
+    transport: Transport;
+    sponsorUserOperation?: SponsorUserOperationMiddleware;
+}
 
-// export {
-//     sendUserOperation,
-//     estimateUserOperationGas,
-//     supportedEntryPoints,
-//     chainId,
-//     getUserOperationByHash,
-//     getUserOperationReceipt,
-//     getSenderAddress,
-//     getAccountNonce,
-//     waitForUserOperationReceipt,
-//     createBundlerClient,
-//     bundlerActions,
-//     WaitForUserOperationReceiptTimeoutError,
-//     createSmartAccountClient,
-//     smartAccountActions
-// }
-// import type { UserOperation } from "./types/userOperation.js"
+interface PluginConfig {
+    signer: Account;
+    client: Client<Transport, Chain | undefined>;
+    entryPoint: Address;
+    getNonceKey: () => Promise<bigint>;
+    getDummySignature: () => Promise<Hex>;
+    signUserOperation: (UserOperation: UserOperation) => Promise<Hex>;
+    getEnableData: () => Promise<Hex>;
+}
 
-// export { type UserOperation }
+export function getDefaultBundlerClient(chain: Chain, transport: Transport): BundlerClient {
+    const config: BundlerClientConfig = {
+        chain,
+        transport,
+    };
+    return createBundlerClient(config);
+}
 
-// import type { GetUserOperationHashParams } from "./utils/getUserOperationHash.js"
-// import { getUserOperationHash } from "./utils/getUserOperationHash.js"
+// Utility function to create a SmartAccountClient with default configuration
+export function getDefaultSmartAccountClient(
+    account: SmartAccount,
+    chain: Chain,
+    transport: Transport,
+    sponsorUserOperation?: SponsorUserOperationMiddleware
+): SmartAccountClient {
+    const config: SmartAccountClientConfig = {
+        account,
+        chain,
+        transport,
+        sponsorUserOperation,
+    };
 
-// export { getUserOperationHash, type GetUserOperationHashParams }
-// export * from "./utils/index.js"
+}
+
+// Utility function to create a PublicClient with default configuration
+export function getDefaultPublicClient(transport: Transport): PublicClient {
+    const config: PublicClientConfig = {
+        transport,
+    };
+
+}
+
+export {
+    createBundlerClient,
+    createSmartAccountClient,
+    type PublicClientConfig,
+    type BundlerClientConfig,
+    type SmartAccountClientConfig,
+    type PluginConfig,
+    type PublicClient,
+    type BundlerClient,
+    type SmartAccountClient,
+};
