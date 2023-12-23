@@ -7,6 +7,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount,
     SmartAccountSigner,
+    signerToEcdsaKernelSmartAccount
   } from "permissionless/accounts";
 
 export {
@@ -14,5 +15,6 @@ export {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount,
     type KernelEcdsaSmartAccount,
-    toKernelSmartAccount
+    toKernelSmartAccount,
+    signerToEcdsaKernelSmartAccount
 }

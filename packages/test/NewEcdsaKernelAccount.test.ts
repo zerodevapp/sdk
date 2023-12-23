@@ -20,7 +20,7 @@ import {
 } from "./utils.js";
 import { BundlerClient, SmartAccountClient } from "permissionless";
 import { polygonMumbai } from "viem/chains";
-import { signerToEcdsaKernelSmartAccount } from "@zerodev/core";
+import { signerToEcdsaKernelSmartAccount } from "@zerodev/core/accounts";
 
 dotenv.config();
 
