@@ -1,5 +1,5 @@
 import {
-  toKernelSmartAccount,
+  createKernelSmartAccount,
 } from "@zerodev/core/accounts";
 import { SmartAccountClient, BundlerClient, createBundlerClient, createSmartAccountClient, getSenderAddress, getAccountNonce } from "permissionless"
 import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
@@ -82,7 +82,7 @@ export const getSignerToEcdsaKernelAccount = async (): Promise<SmartAccount> => 
     signer: { ...signer, source: "local" as "local" | "external" },
   });
 
-  return toKernelSmartAccount(publicClient, {
+  return createKernelSmartAccount(publicClient, {
     entryPoint: getEntryPoint(),
     plugin: ecdsaValidatorPlugin,
   });

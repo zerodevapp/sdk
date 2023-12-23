@@ -1,7 +1,7 @@
 {
   "name": "@zerodev/core",
   "version": "0.0.13",
-  "author": "Pimlico",
+  "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
   "types": "./_types/index.d.ts",

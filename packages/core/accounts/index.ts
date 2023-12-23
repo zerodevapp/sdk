@@ -1,20 +1,20 @@
 import {
     type KernelEcdsaSmartAccount,
-    toKernelSmartAccount,
-} from "./kernel/toKernelSmartAccount.js"
+    createKernelSmartAccount
+} from "./kernel/createKernelSmartAccount.js"
 
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount,
     SmartAccountSigner,
     signerToEcdsaKernelSmartAccount
-  } from "permissionless/accounts";
+} from "permissionless/accounts"
 
 export {
     type SmartAccountSigner,
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount,
     type KernelEcdsaSmartAccount,
-    toKernelSmartAccount,
+    createKernelSmartAccount,
     signerToEcdsaKernelSmartAccount
 }
