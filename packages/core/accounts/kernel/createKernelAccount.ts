@@ -152,7 +152,7 @@ const getAccountAddress = async <
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
-export async function createKernelSmartAccount<
+export async function createKernelAccount<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TPlugin extends KernelPlugin<string, TTransport, TChain> = KernelPlugin<
