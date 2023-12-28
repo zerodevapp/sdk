@@ -36,7 +36,7 @@ Then, copy the `.env.example` file to `.env` and define all necessary environmen
 cp .env.example .env
 ```
 
-Edit .env to include all required environment variables.  Now you can run the tests:
+Edit .env to include all required environment variables.  Now you can run the tests from the repository root:
 
 ```bash
 bun test
