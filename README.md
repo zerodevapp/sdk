@@ -20,9 +20,10 @@ yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 bun install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
-## Environment Setup
+## Building and Testing
 
-Before running the tests, ensure you have installed the necessary dependencies and built the core package:
+Before running the tests, ensure you have installed [bun](https://bun.sh/) and all the necessary dependencies and built the core package:
+
 ```bash
 bun install
 cd packages/core
@@ -30,11 +31,16 @@ bun run build
 ```
 
 Then, copy the `.env.example` file to `.env` and define all necessary environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
-Edit .env to include all required environment variables
+Edit .env to include all required environment variables.  Now you can run the tests:
+
+```bash
+bun test
+```
 
 ## Contributing
 
