@@ -1,20 +1,8 @@
 # kernel.js
 
-The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart contract wallet](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages the `viem` and `permissionless` libraries to provide a robust and permissionless interaction layer with Kernel.
+The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
 
-## Features
-
-- **Modular Packages**: The SDK is structured into multiple packages, allowing you to include only the parts you need.
-- **ECDSA Validator Support**: Utilize the `@kerneljs/ecdsa-validator` plugin for ECDSAValidator support.
-- **SessionKey Validator**: Coming soon - a plugin for session key signature validation.
-- **Extendable**: Easily extend the core functionality with additional plugins and validators.
-
-## Packages
-
-The SDK includes the following packages to start with:
-
-- `@kerneljs/core`: The core package that provides the base functionality for interacting with the Kernel smart contract wallet.
-- `@kerneljs/ecdsa-validator`: A plugin package that implements the ECDSAValidator logic.
+[See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
 
 ## Installation
 
@@ -36,11 +24,6 @@ cp .env.example .env
 ```
 
 Edit .env to include all required environment variables
-
-
-## Documentation
-
-For detailed documentation and how to use other features of the SDK, please refer to our [documentation page](https://docs.kerneljs.org).
 
 ## Contributing
 
