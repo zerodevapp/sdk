@@ -16,9 +16,20 @@ npm install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
+```bash
+bun install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
+```
+
 ## Environment Setup
 
-Before running the tests, copy the `.env.example` file to `.env` and define all necessary environment variables:
+Before running the tests, ensure you have installed the necessary dependencies and built the core package:
+```bash
+bun install
+cd packages/core
+bun run build
+```
+
+Then, copy the `.env.example` file to `.env` and define all necessary environment variables:
 ```bash
 cp .env.example .env
 ```
