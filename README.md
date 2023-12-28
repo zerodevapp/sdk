@@ -28,6 +28,10 @@ npm install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
+```bash
+bun install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
+```
+
 ## Environment Setup
 
 Before running the tests, ensure you have installed the necessary dependencies and built the core package:
