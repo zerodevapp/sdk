@@ -41,6 +41,9 @@ const requiredEnvVars = [
   "RPC_URL",
   "ENTRYPOINT_ADDRESS",
   "GREETER_ADDRESS",
+  "ZERODEV_PROJECT_ID",
+  "ZERODEV_BUNDLER_RPC_HOST",
+  "ZERODEV_PAYMASTER_RPC_HOST"
 ];
 
 const validateEnvironmentVariables = (envVars: string[]): void => {
