@@ -83,7 +83,6 @@ export const sponsorUserOperation = async (
             }
         ]
     })
-    console.log(response)
     let result: UserOperation = {
         ...args.userOperation,
         paymasterAndData: response.paymasterAndData,
