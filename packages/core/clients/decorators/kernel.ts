@@ -1,9 +1,9 @@
+import { Client } from "viem"
 import {
     SponsorUserOperationParameters,
     SponsorUserOperationReturnType,
     sponsorUserOperation
 } from "../../actions/kernel/sponsorUserOperation"
-import { Client } from "viem"
 import { KernelPaymasterClient } from "../kernel"
 
 export type KernelPaymasterClientActions = {
