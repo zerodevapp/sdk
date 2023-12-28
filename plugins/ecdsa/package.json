@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/ecdsa-validator",
-  "version": "0.0.1-alpha.0",
+  "version": "0.0.1-alpha.1",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -23,8 +23,8 @@
     "lint:fix": "bun run lint --apply"
   },
   "peerDependencies": {
-    "viem": "1.19.4",
+    "viem": "^1.19.4",
     "@kerneljs/core": "workspace:*",
-    "permissionless": "0.0.19"
+    "permissionless": "^0.0.19"
   }
 }
