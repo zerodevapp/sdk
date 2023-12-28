@@ -5,7 +5,7 @@ import type {
 import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem/types/utils"
-import { KernelPaymasterClient } from "../../clients/kernel.js"
+import { KernelPaymasterClient } from "@zerodev/core/clients/kernel.js"
 
 export type SponsorUserOperationParameters = {
     userOperation: PartialBy<

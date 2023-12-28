@@ -3,7 +3,7 @@ import {
     SponsorUserOperationParameters,
     SponsorUserOperationReturnType,
     sponsorUserOperation
-} from "../../actions/kernel/sponsorUserOperation"
+} from "@zerodev/core/actions/kernel/sponsorUserOperation"
 import { KernelPaymasterClient } from "../kernel"
 
 export type KernelPaymasterClientActions = {

@@ -14,7 +14,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
-import { KernelPlugin } from "../../types/kernel.js"
+import { KernelPlugin } from '@zerodev/core/types/kernel';
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type KernelSmartAccount<
