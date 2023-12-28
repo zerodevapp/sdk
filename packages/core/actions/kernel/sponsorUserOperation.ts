@@ -1,4 +1,4 @@
-import { KernelPaymasterClient } from "@zerodev/core/clients/kernel.js"
+import { KernelPaymasterClient } from "../../clients/kernel.js"
 import type {
     UserOperation,
     UserOperationWithBigIntAsHex

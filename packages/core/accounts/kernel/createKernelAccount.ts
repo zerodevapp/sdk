@@ -1,4 +1,4 @@
-import { KernelPlugin } from "@zerodev/core/types/kernel"
+import { KernelPlugin } from "../../types/kernel"
 import { getAccountNonce, getSenderAddress } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,

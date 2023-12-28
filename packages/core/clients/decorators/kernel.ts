@@ -2,7 +2,7 @@ import {
     SponsorUserOperationParameters,
     SponsorUserOperationReturnType,
     sponsorUserOperation
-} from "@zerodev/core/actions/kernel/sponsorUserOperation"
+} from "../../actions/kernel/sponsorUserOperation"
 import { Client } from "viem"
 import { KernelPaymasterClient } from "../kernel"
 

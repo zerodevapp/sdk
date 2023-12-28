@@ -32,9 +32,9 @@
   },
   "exports": {
     ".": {
-      "types": "./_types/accounts/index.d.ts",
-      "import": "./_esm/accounts/index.js",
-      "default": "./_cjs/accounts/index.js"
+      "types": "./_types/index.d.ts",
+      "import": "./_esm/index.js",
+      "default": "./_cjs/index.js"
     },
     "./accounts": {
       "types": "./_types/accounts/index.d.ts",
