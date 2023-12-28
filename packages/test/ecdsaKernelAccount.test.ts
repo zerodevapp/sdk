@@ -1,384 +1,377 @@
-// import { beforeAll, describe, expect, test } from "bun:test"
-// import dotenv from "dotenv"
-// import {
-//     SignTransactionNotSupportedBySmartAccount,
-//     signerToEcdsaKernelSmartAccount
-// } from "@zerodev/core/accounts"
-// import { Address, Hex, decodeEventLog, getContract, zeroAddress } from "viem"
-// import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-// import { EntryPointAbi } from "./abis/EntryPoint.js"
-// import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
-// import {
-//     getBundlerClient,
-//     getEntryPoint,
-//     getPimlicoPaymasterClient,
-//     getPublicClient,
-//     getSignerToEcdsaKernelAccount,
-//     getSmartAccountClient,
-//     waitForNonceUpdate
-// } from "./utils.js"
+import { beforeAll, describe, expect, test } from "bun:test";
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
+import dotenv from "dotenv";
+import { BundlerClient, SmartAccountClient } from "permissionless";
+import {
+  SignTransactionNotSupportedBySmartAccount,
+  SmartAccount,
+} from "permissionless/accounts";
+import type { UserOperation } from "permissionless/types/userOperation.js";
+import {
+  Address,
+  Hex,
+  type PublicClient,
+  decodeEventLog,
+  getContract,
+  zeroAddress,
+  Transport,
+  Chain,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { EntryPointAbi } from "./abis/EntryPoint.js";
+import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js";
+import {
+  findUserOperationEvent,
+  getEntryPoint,
+  getKernelBundlerClient,
+  getKernelPaymasterClient,
+  getPublicClient,
+  getSignerToEcdsaKernelAccount,
+  getSmartAccountClient,
+} from "./utils.js";
+import { createKernelAccount } from "@zerodev/core/accounts";
 
-// dotenv.config()
+dotenv.config();
 
-// let testPrivateKey: Hex
-// let factoryAddress: Address
-// beforeAll(() => {
-//     if (!process.env.PIMLICO_API_KEY) {
-//         throw new Error("PIMLICO_API_KEY environment variable not set")
-//     }
-//     if (!process.env.STACKUP_API_KEY) {
-//         throw new Error("STACKUP_API_KEY environment variable not set")
-//     }
-//     if (!process.env.FACTORY_ADDRESS) {
-//         throw new Error("FACTORY_ADDRESS environment variable not set")
-//     }
-//     if (!process.env.TEST_PRIVATE_KEY) {
-//         throw new Error("TEST_PRIVATE_KEY environment variable not set")
-//     }
-//     if (!process.env.RPC_URL) {
-//         throw new Error("RPC_URL environment variable not set")
-//     }
-//     if (!process.env.ENTRYPOINT_ADDRESS) {
-//         throw new Error("ENTRYPOINT_ADDRESS environment variable not set")
-//     }
+const requiredEnvVars = [
+  "PIMLICO_API_KEY",
+  "STACKUP_API_KEY",
+  "FACTORY_ADDRESS",
+  "TEST_PRIVATE_KEY",
+  "RPC_URL",
+  "ENTRYPOINT_ADDRESS",
+  "GREETER_ADDRESS",
+];
 
-//     if (!process.env.GREETER_ADDRESS) {
-//         throw new Error("ENTRYPOINT_ADDRESS environment variable not set")
-//     }
-//     testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
-//     factoryAddress = process.env.FACTORY_ADDRESS as Address
-// })
+const validateEnvironmentVariables = (envVars: string[]): void => {
+  const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar]);
+  if (unsetEnvVars.length > 0) {
+    throw new Error(
+      `The following environment variables are not set: ${unsetEnvVars.join(
+        ", "
+      )}`
+    );
+  }
+};
 
-// /**
-//  * TODO: Should generify the basics test for every smart account & smart account client (address, signature, etc)
-//  */
-// describe("ECDSA kernel Account", () => {
-//     test("Account address", async () => {
-//         const ecdsaSmartAccount = await getSignerToEcdsaKernelAccount()
+validateEnvironmentVariables(requiredEnvVars);
 
-//         expect(ecdsaSmartAccount.address).toBeString()
-//         expect(ecdsaSmartAccount.address).toHaveLength(42)
-//         expect(ecdsaSmartAccount.address).toMatch(/^0x[0-9a-fA-F]{40}$/)
+const ETHEREUM_ADDRESS_LENGTH = 42;
+const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
+const SIGNATURE_LENGTH = 132;
+const SIGNATURE_REGEX = /^0x[0-9a-fA-F]{130}$/;
+const TX_HASH_LENGTH = 66;
+const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/;
+const TEST_TIMEOUT = 1000000;
 
-//         expect(async () => {
-//             await ecdsaSmartAccount.signTransaction({
-//                 to: zeroAddress,
-//                 value: 0n,
-//                 data: "0x"
-//             })
-//         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
-//     })
+describe("ECDSA kernel Account", () => {
+  let account: SmartAccount;
+  let publicClient: PublicClient;
+  let bundlerClient: BundlerClient;
+  let smartAccountClient: SmartAccountClient<Transport, Chain, SmartAccount>;
 
-//     test("Client signMessage", async () => {
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: await getSignerToEcdsaKernelAccount()
-//         })
+  beforeAll(async () => {
+    account = await getSignerToEcdsaKernelAccount();
+    publicClient = await getPublicClient();
+    bundlerClient = getKernelBundlerClient();
+    smartAccountClient = await getSmartAccountClient({
+      account,
+      sponsorUserOperation: async ({ userOperation }) => {
+        const kernelPaymaster = getKernelPaymasterClient();
+        const entryPoint = getEntryPoint();
+        return kernelPaymaster.sponsorUserOperation({
+          userOperation,
+          entryPoint,
+        });
+      },
+    });
+  });
 
-//         const response = await smartAccountClient.signMessage({
-//             message: "hello world"
-//         })
+  test("Account address should be a valid Ethereum address", async () => {
+    expect(account.address).toBeString();
+    expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH);
+    expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX);
+  });
 
-//         expect(response).toBeString()
-//         expect(response).toHaveLength(132)
-//         expect(response).toMatch(/^0x[0-9a-fA-F]{130}$/)
-//     })
+  test("Account should throw when trying to sign a transaction", async () => {
+    await expect(async () => {
+      await account.signTransaction({
+        to: zeroAddress,
+        value: 0n,
+        data: "0x",
+      });
+    }).toThrow(new SignTransactionNotSupportedBySmartAccount());
+  });
 
-//     test("Smart account client signTypedData", async () => {
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: await getSignerToEcdsaKernelAccount()
-//         })
+  test("Client signMessage should return a valid signature", async () => {
+    const message = "hello world";
+    const response = await smartAccountClient.signMessage({
+      message,
+    });
 
-//         const response = await smartAccountClient.signTypedData({
-//             domain: {
-//                 chainId: 1,
-//                 name: "Test",
-//                 verifyingContract: zeroAddress
-//             },
-//             primaryType: "Test",
-//             types: {
-//                 Test: [
-//                     {
-//                         name: "test",
-//                         type: "string"
-//                     }
-//                 ]
-//             },
-//             message: {
-//                 test: "hello world"
-//             }
-//         })
+    expect(response).toBeString();
+    expect(response).toHaveLength(SIGNATURE_LENGTH);
+    expect(response).toMatch(SIGNATURE_REGEX);
+  });
 
-//         expect(response).toBeString()
-//         expect(response).toHaveLength(132)
-//         expect(response).toMatch(/^0x[0-9a-fA-F]{130}$/)
-//     })
+  test("Smart account client signTypedData", async () => {
+    const domain = {
+      chainId: 1,
+      name: "Test",
+      verifyingContract: zeroAddress,
+    };
 
-//     test("Client deploy contract", async () => {
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: await getSignerToEcdsaKernelAccount()
-//         })
+    const primaryType = "Test";
 
-//         expect(async () => {
-//             await smartAccountClient.deployContract({
-//                 abi: GreeterAbi,
-//                 bytecode: GreeterBytecode
-//             })
-//         }).toThrow("Simple account doesn't support account deployment")
-//     })
+    const types = {
+      Test: [
+        {
+          name: "test",
+          type: "string",
+        },
+      ],
+    };
 
-//     test.skip("Smart account client send multiple transactions", async () => {
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: await getSignerToEcdsaKernelAccount()
-//         })
+    const message = {
+      test: "hello world",
+    };
+    const response = await smartAccountClient.signTypedData({
+      domain,
+      primaryType,
+      types,
+      message,
+    });
 
-//         const response = await smartAccountClient.sendTransactions({
-//             transactions: [
-//                 {
-//                     to: zeroAddress,
-//                     value: 0n,
-//                     data: "0x"
-//                 },
-//                 {
-//                     to: zeroAddress,
-//                     value: 0n,
-//                     data: "0x"
-//                 }
-//             ]
-//         })
-//         expect(response).toBeString()
-//         expect(response).toHaveLength(66)
-//         expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
-//         await waitForNonceUpdate()
-//     }, 1000000)
+    expect(response).toBeString();
+    expect(response).toHaveLength(SIGNATURE_LENGTH);
+    expect(response).toMatch(SIGNATURE_REGEX);
+  });
 
-//     test.skip("Write contract", async () => {
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: await getSignerToEcdsaKernelAccount()
-//         })
+  test("Client deploy contract", async () => {
+    expect(async () => {
+      await smartAccountClient.deployContract({
+        abi: GreeterAbi,
+        bytecode: GreeterBytecode,
+      });
+    }).toThrow("Kernel account doesn't support account deployment");
+  });
 
-//         const greeterContract = getContract({
-//             abi: GreeterAbi,
-//             address: process.env.GREETER_ADDRESS as Address,
-//             publicClient: await getPublicClient(),
-//             walletClient: smartAccountClient
-//         })
+  test(
+    "Smart account client send multiple transactions",
+    async () => {
+      const response = await smartAccountClient.sendTransactions({
+        transactions: [
+          {
+            to: zeroAddress,
+            value: 0n,
+            data: "0x",
+          },
+          {
+            to: zeroAddress,
+            value: 0n,
+            data: "0x",
+          },
+        ],
+      });
+      expect(response).toBeString();
+      expect(response).toHaveLength(TX_HASH_LENGTH);
+      expect(response).toMatch(TX_HASH_REGEX);
+      
+    },
+    TEST_TIMEOUT
+  );
 
-//         const oldGreet = await greeterContract.read.greet()
+  test.skip(
+    "Write contract",
+    async () => {
+      const greeterContract = getContract({
+        abi: GreeterAbi,
+        address: process.env.GREETER_ADDRESS as Address,
+        publicClient: await getPublicClient(),
+        walletClient: smartAccountClient,
+      });
 
-//         expect(oldGreet).toBeString()
+      const oldGreet = await greeterContract.read.greet();
 
-//         const txHash = await greeterContract.write.setGreeting(["hello world"])
+      expect(oldGreet).toBeString();
 
-//         expect(txHash).toBeString()
-//         expect(txHash).toHaveLength(66)
+      const txHash = await greeterContract.write.setGreeting(["hello world"]);
 
-//         const newGreet = await greeterContract.read.greet()
+      expect(txHash).toBeString();
+      expect(txHash).toHaveLength(66);
 
-//         expect(newGreet).toBeString()
-//         expect(newGreet).toEqual("hello world")
-//         await waitForNonceUpdate()
-//     }, 1000000)
+      const newGreet = await greeterContract.read.greet();
 
-//     test("Client send Transaction with paymaster", async () => {
-//         const account = await getSignerToEcdsaKernelAccount()
+      expect(newGreet).toBeString();
+      expect(newGreet).toEqual("hello world");
+      
+    },
+    TEST_TIMEOUT
+  );
 
-//         const publicClient = await getPublicClient()
+  test(
+    "Client send Transaction with paymaster",
+    async () => {
+      const response = await smartAccountClient.sendTransaction({
+        to: zeroAddress,
+        value: 0n,
+        data: "0x",
+      });
 
-//         const bundlerClient = getBundlerClient()
+      expect(response).toBeString();
+      expect(response).toHaveLength(TX_HASH_LENGTH);
+      expect(response).toMatch(TX_HASH_REGEX);
 
-//         const smartAccountClient = await getSmartAccountClient({
-//             account,
-//             sponsorUserOperation: async ({
-//                 entryPoint: _entryPoint,
-//                 userOperation
-//             }): Promise<{
-//                 paymasterAndData: Hex
-//                 preVerificationGas: bigint
-//                 verificationGasLimit: bigint
-//                 callGasLimit: bigint
-//             }> => {
-//                 const pimlicoPaymaster = getPimlicoPaymasterClient()
-//                 return pimlicoPaymaster.sponsorUserOperation({
-//                     userOperation,
-//                     entryPoint: getEntryPoint()
-//                 })
-//             }
-//         })
+      const transactionReceipt = await publicClient.waitForTransactionReceipt({
+        hash: response,
+      });
 
-//         const response = await smartAccountClient.sendTransaction({
-//             to: zeroAddress,
-//             value: 0n,
-//             data: "0x"
-//         })
+      const eventFound = findUserOperationEvent(transactionReceipt.logs);
+      
+    },
+    TEST_TIMEOUT
+  );
 
-//         expect(response).toBeString()
-//         expect(response).toHaveLength(66)
-//         expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+  test(
+    "Client send multiple Transactions with paymaster",
+    async () => {
+      const account = await getSignerToEcdsaKernelAccount();
 
-//         const transactionReceipt = await publicClient.waitForTransactionReceipt(
-//             {
-//                 hash: response
-//             }
-//         )
+      const publicClient = await getPublicClient();
 
-//         let eventFound = false
+      const bundlerClient = getKernelBundlerClient();
 
-//         for (const log of transactionReceipt.logs) {
-//             // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
-//             try {
-//                 const event = decodeEventLog({
-//                     abi: EntryPointAbi,
-//                     ...log
-//                 })
-//                 if (event.eventName === "UserOperationEvent") {
-//                     eventFound = true
-//                     const userOperation =
-//                         await bundlerClient.getUserOperationByHash({
-//                             hash: event.args.userOpHash
-//                         })
-//                     expect(
-//                         userOperation?.userOperation.paymasterAndData
-//                     ).not.toBe("0x")
-//                 }
-//             } catch {}
-//         }
+      const smartAccountClient = await getSmartAccountClient({
+        account,
+        sponsorUserOperation: async ({
+          entryPoint: _entryPoint,
+          userOperation,
+        }): Promise<UserOperation> => {
+          const kernelPaymaster = getKernelPaymasterClient();
+          return kernelPaymaster.sponsorUserOperation({
+            userOperation,
+            entryPoint: getEntryPoint(),
+          });
+        },
+      });
 
-//         expect(eventFound).toBeTrue()
-//         await waitForNonceUpdate()
-//     }, 1000000)
+      const response = await smartAccountClient.sendTransactions({
+        transactions: [
+          {
+            to: zeroAddress,
+            value: 0n,
+            data: "0x",
+          },
+          {
+            to: zeroAddress,
+            value: 0n,
+            data: "0x",
+          },
+        ],
+      });
 
-//     test("Client send multiple Transactions with paymaster", async () => {
-//         const account = await getSignerToEcdsaKernelAccount()
+      expect(response).toBeString();
+      expect(response).toHaveLength(66);
+      expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/);
 
-//         const publicClient = await getPublicClient()
+      const transactionReceipt = await publicClient.waitForTransactionReceipt({
+        hash: response,
+      });
 
-//         const bundlerClient = getBundlerClient()
+      let eventFound = false;
 
-//         const smartAccountClient = await getSmartAccountClient({
-//             account,
-//             sponsorUserOperation: async ({
-//                 entryPoint: _entryPoint,
-//                 userOperation
-//             }): Promise<{
-//                 paymasterAndData: Hex
-//                 preVerificationGas: bigint
-//                 verificationGasLimit: bigint
-//                 callGasLimit: bigint
-//             }> => {
-//                 const pimlicoPaymaster = getPimlicoPaymasterClient()
-//                 return pimlicoPaymaster.sponsorUserOperation({
-//                     userOperation,
-//                     entryPoint: getEntryPoint()
-//                 })
-//             }
-//         })
+      for (const log of transactionReceipt.logs) {
+        // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
+        try {
+          const event = decodeEventLog({
+            abi: EntryPointAbi,
+            ...log,
+          });
+          if (event.eventName === "UserOperationEvent") {
+            eventFound = true;
+            const userOperation = await bundlerClient.getUserOperationByHash({
+              hash: event.args.userOpHash,
+            });
+            expect(userOperation?.userOperation.paymasterAndData).not.toBe(
+              "0x"
+            );
+          }
+        } catch {}
+      }
 
-//         const response = await smartAccountClient.sendTransactions({
-//             transactions: [
-//                 {
-//                     to: zeroAddress,
-//                     value: 0n,
-//                     data: "0x"
-//                 },
-//                 {
-//                     to: zeroAddress,
-//                     value: 0n,
-//                     data: "0x"
-//                 }
-//             ]
-//         })
+      expect(eventFound).toBeTrue();
+      
+    },
+    TEST_TIMEOUT
+  );
 
-//         expect(response).toBeString()
-//         expect(response).toHaveLength(66)
-//         expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+  test(
+    "Can use a deployed account",
+    async () => {
+      const initialEcdsaSmartAccount = await getSignerToEcdsaKernelAccount();
+      const publicClient = await getPublicClient();
+      const smartAccountClient = await getSmartAccountClient({
+        account: initialEcdsaSmartAccount,
+        sponsorUserOperation: async ({
+          entryPoint: _entryPoint,
+          userOperation,
+        }): Promise<UserOperation> => {
+          const kernelPaymaster = getKernelPaymasterClient();
+          return kernelPaymaster.sponsorUserOperation({
+            userOperation,
+            entryPoint: getEntryPoint(),
+          });
+        },
+      });
 
-//         const transactionReceipt = await publicClient.waitForTransactionReceipt(
-//             {
-//                 hash: response
-//             }
-//         )
+      // Send an initial tx to deploy the account
+      const hash = await smartAccountClient.sendTransaction({
+        to: zeroAddress,
+        value: 0n,
+        data: "0x",
+      });
 
-//         let eventFound = false
+      // Wait for the tx to be done (so we are sure that the account is deployed)
+      await publicClient.waitForTransactionReceipt({ hash });
+      const deployedAccountAddress = initialEcdsaSmartAccount.address;
 
-//         for (const log of transactionReceipt.logs) {
-//             // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
-//             try {
-//                 const event = decodeEventLog({
-//                     abi: EntryPointAbi,
-//                     ...log
-//                 })
-//                 if (event.eventName === "UserOperationEvent") {
-//                     eventFound = true
-//                     const userOperation =
-//                         await bundlerClient.getUserOperationByHash({
-//                             hash: event.args.userOpHash
-//                         })
-//                     expect(
-//                         userOperation?.userOperation.paymasterAndData
-//                     ).not.toBe("0x")
-//                 }
-//             } catch {}
-//         }
+      // Build a new account with a valid owner
+      const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+      const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer,
+      });
+      const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
+        publicClient,
+        {
+          entryPoint: getEntryPoint(),
+          plugin: ecdsaValidatorPlugin,
+          deployedAccountAddress
+        }
+      );
 
-//         expect(eventFound).toBeTrue()
-//         await waitForNonceUpdate()
-//     }, 1000000)
+      // Ensure the two account have the same address
+      expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
+        initialEcdsaSmartAccount.address
+      );
 
-//     test.only("Can use a deployed account", async () => {
-//         const initialEcdsaSmartAccount = await getSignerToEcdsaKernelAccount()
-//         const publicClient = await getPublicClient()
-//         const smartAccountClient = await getSmartAccountClient({
-//             account: initialEcdsaSmartAccount,
-//             sponsorUserOperation: async ({
-//                 entryPoint: _entryPoint,
-//                 userOperation
-//             }): Promise<{
-//                 paymasterAndData: Hex
-//                 preVerificationGas: bigint
-//                 verificationGasLimit: bigint
-//                 callGasLimit: bigint
-//             }> => {
-//                 const pimlicoPaymaster = getPimlicoPaymasterClient()
-//                 return pimlicoPaymaster.sponsorUserOperation({
-//                     userOperation,
-//                     entryPoint: getEntryPoint()
-//                 })
-//             }
-//         })
-
-//         // Send an initial tx to deploy the account
-//         const hash = await smartAccountClient.sendTransaction({
-//             to: zeroAddress,
-//             value: 0n,
-//             data: "0x"
-//         })
-
-//         // Wait for the tx to be done (so we are sure that the account is deployed)
-//         await publicClient.waitForTransactionReceipt({ hash })
-//         const deployedAccountAddress = initialEcdsaSmartAccount.address
-
-//         // Build a new account with a valid owner
-//         const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex)
-//         const alreadyDeployedEcdsaSmartAccount =
-//             await signerToEcdsaKernelSmartAccount(publicClient, {
-//                 entryPoint: getEntryPoint(),
-//                 signer: signer,
-//                 deployedAccountAddress
-//             })
-
-//         // Ensure the two account have the same address
-//         expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
-//             initialEcdsaSmartAccount.address
-//         )
-
-//         // Ensure that it will fail with an invalid owner address
-//         const invalidOwner = privateKeyToAccount(generatePrivateKey())
-//         expect(async () => {
-//             await signerToEcdsaKernelSmartAccount(publicClient, {
-//                 entryPoint: getEntryPoint(),
-//                 signer: invalidOwner,
-//                 deployedAccountAddress
-//             })
-//         }).toThrow(new Error("Invalid owner for the already deployed account"))
-//     }, 1000000)
-// })
+      // Ensure that it will fail with an invalid owner address
+      // const invalidOwner = privateKeyToAccount(generatePrivateKey());
+      // const ecdsaValidatorPluginInvalidOwner = await signerToEcdsaValidator(publicClient, {
+      //   entryPoint: getEntryPoint(),
+      //   signer: invalidOwner,
+      // });
+      // expect(async () => {
+      //   await createKernelAccount(
+      //     publicClient,
+      //     {
+      //       entryPoint: getEntryPoint(),
+      //       plugin: ecdsaValidatorPluginInvalidOwner,
+      //       deployedAccountAddress
+      //     }
+      //   );
+      // }).toThrow(new Error("Invalid owner for the already deployed account"));
+    },
+    TEST_TIMEOUT
+  );
+});

@@ -1,3 +1,8 @@
+import { getAccountNonce, getSenderAddress } from "permissionless"
+import {
+    SignTransactionNotSupportedBySmartAccount,
+    SmartAccount
+} from "permissionless/accounts"
 import {
     type Address,
     type Chain,
@@ -9,15 +14,10 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
+import { KernelPlugin } from "../../types/kernel.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
-import { KernelPlugin } from "../../plugins/types.js"
-import { getSenderAddress, getAccountNonce } from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    SmartAccount
-} from "permissionless/accounts"
 
-export type KernelEcdsaSmartAccount<
+export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<"kernelSmartAccount", transport, chain>
@@ -177,7 +177,7 @@ export async function createKernelAccount<
         accountLogicAddress?: Address
         deployedAccountAddress?: Address
     }
-): Promise<KernelEcdsaSmartAccount<TTransport, TChain>> {
+): Promise<KernelSmartAccount<TTransport, TChain>> {
     // Helper to generate the init code for the smart account
     const generateInitCode = () =>
         getAccountInitCode({
@@ -269,14 +269,13 @@ export async function createKernelAccount<
                         }))
                     ]
                 })
-            } else {
-                // Encode a simple call
-                return encodeFunctionData({
-                    abi: KernelExecuteAbi,
-                    functionName: "execute",
-                    args: [_tx.to, _tx.value, _tx.data, 0]
-                })
             }
+            // Encode a simple call
+            return encodeFunctionData({
+                abi: KernelExecuteAbi,
+                functionName: "execute",
+                args: [_tx.to, _tx.value, _tx.data, 0]
+            })
         },
 
         // Get simple dummy signature

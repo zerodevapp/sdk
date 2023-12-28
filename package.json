@@ -1,5 +1,5 @@
 {
-  "workspaces": ["packages/*", "templates/*"],
+  "workspaces": ["packages/*", "templates/*", "plugins/*"],
   "private": true,
   "author": "ZeroDev",
   "type": "module",
@@ -21,12 +21,12 @@
   "keywords": [],
   "license": "MIT",
   "scripts": {
-    "build": "npm-run-all --parallel build:*"
+    "build": "sh build-all.sh",
+    "format": "biome format . --write",
+    "lint": "biome check .",
+    "lint:fix": "bun run lint --apply"
   },
   "simple-git-hooks": {
     "pre-commit": "bun run format && bun run lint:fix"
-  },
-  "dependencies": {
-    "permissionless": "^0.0.16"
   }
 }

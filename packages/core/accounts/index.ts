@@ -1,5 +1,5 @@
 import {
-    type KernelEcdsaSmartAccount,
+    type KernelSmartAccount,
     createKernelAccount
 } from "./kernel/createKernelAccount.js"
 
@@ -14,7 +14,7 @@ export {
     type SmartAccountSigner,
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount,
-    type KernelEcdsaSmartAccount,
+    type KernelSmartAccount,
     createKernelAccount,
     signerToEcdsaKernelSmartAccount
 }
