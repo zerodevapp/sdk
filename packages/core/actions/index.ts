@@ -1,1 +1,5 @@
-export { sponsorUserOperation, type SponsorUserOperationParameters, type SponsorUserOperationReturnType } from './kernel/sponsorUserOperation';
+export {
+    sponsorUserOperation,
+    type SponsorUserOperationParameters,
+    type SponsorUserOperationReturnType
+} from "./kernel/sponsorUserOperation"
