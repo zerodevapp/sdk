@@ -1,6 +1,6 @@
-# kerneljs
+# kernel.js
 
-The @kerneljs packages are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart contract wallet](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages the `viem` and `permissionless` libraries to provide a robust and permissionless interaction layer with Kernel.
+The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart contract wallet](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages the `viem` and `permissionless` libraries to provide a robust and permissionless interaction layer with Kernel.
 
 ## Features
 
