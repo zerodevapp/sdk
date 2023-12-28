@@ -1,6 +1,6 @@
-import { createKernelAccount } from "@zerodev/core/accounts"
-import { createKernelPaymasterClient } from "@zerodev/core/clients/kernel"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { createKernelAccount } from "@kerneljs/core/accounts"
+import { createKernelPaymasterClient } from "@kerneljs/core/clients/kernel"
+import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     BundlerClient,
     SmartAccountClient,

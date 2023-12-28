@@ -1,4 +1,4 @@
-import { KernelPlugin } from "@zerodev/core/types/kernel"
+import { KernelPlugin } from "@kerneljs/core/types/kernel"
 import { getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
