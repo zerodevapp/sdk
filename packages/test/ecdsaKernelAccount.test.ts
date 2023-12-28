@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import { createKernelAccount } from "@zerodev/core/accounts"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { createKernelAccount } from "@kerneljs/core/accounts"
+import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import dotenv from "dotenv"
 import { BundlerClient, SmartAccountClient } from "permissionless"
 import {

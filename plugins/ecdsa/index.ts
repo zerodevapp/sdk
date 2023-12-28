@@ -1,4 +1,4 @@
-import { type KernelPlugin } from "@zerodev/core/types/kernel"
+import { type KernelPlugin } from "@kerneljs/core/types/kernel"
 import { type Address } from "viem"
 import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin"
 
