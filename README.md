@@ -31,9 +31,9 @@ yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ## Environment Setup
 
 Before running the tests, copy the `.env.example` file to `.env` and define all necessary environment variables:
-'''bash
+```bash
 cp .env.example .env
-'''
+```
 
 Edit .env to include all required environment variables
 
