@@ -15,7 +15,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { KERNEL_ADDRESSES } from "./index"
+import { ENTRYPOINT_0_6, KERNEL_ADDRESSES } from "./index"
 
 export async function signerToEcdsaValidator<
     TTransport extends Transport = Transport,
@@ -26,11 +26,11 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain>,
     {
         signer,
-        entryPoint,
+        entryPoint = ENTRYPOINT_0_6,
         validatorAddress = KERNEL_ADDRESSES.ECDSA_VALIDATOR
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint: Address
+        entryPoint?: Address
         validatorAddress?: Address
     }
 ): Promise<KernelPlugin<"ECDSAValidator", TTransport, TChain>> {
