@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/ecdsa-validator",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.3",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -24,7 +24,7 @@
   },
   "peerDependencies": {
     "viem": "^1.19.4",
-    "@kerneljs/core": "workspace:*",
+    "@kerneljs/core": "*",
     "permissionless": "^0.0.19"
   }
 }
