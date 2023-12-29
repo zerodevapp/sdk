@@ -54,6 +54,7 @@ export type ZeroDevProviderConfig = {
   opts?: SmartAccountProviderOpts & {
     sendTxMaxRetries?: number;
     sendTxRetryIntervalMs?: number;
+    gasFeeBufferPecentage?: number;
   };
 };
 
@@ -76,6 +77,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   private _txMaxRetries: number;
   private _txRetryIntervalMs: number;
   private _shouldConsume: boolean = true;
+  public gasFeeBufferPecentage: number;
 
   constructor({
     projectId,
@@ -103,6 +105,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
+    this.gasFeeBufferPecentage = opts?.gasFeeBufferPecentage ?? 13;
     this._txMaxRetries = opts?.txMaxRetries ?? 20;
     this._txRetryIntervalMs = opts?.txRetryIntervalMs ?? 5000;
     this.bundlerProvider = bundlerProvider;
