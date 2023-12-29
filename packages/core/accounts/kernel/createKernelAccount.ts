@@ -1,7 +1,7 @@
 import { getAccountNonce, getSenderAddress } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
-    SmartAccount
+    type SmartAccount
 } from "permissionless/accounts"
 import {
     type Address,
@@ -14,7 +14,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
-import { KernelPlugin } from "../../types/kernel"
+import { type KernelPlugin } from "../../types/kernel"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type KernelSmartAccount<

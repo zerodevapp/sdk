@@ -1,14 +1,14 @@
 import {
-    Account,
-    Chain,
-    Client,
-    PublicClientConfig,
-    Transport,
+    type Account,
+    type Chain,
+    type Client,
+    type PublicClientConfig,
+    type Transport,
     createClient
 } from "viem"
-import { KernelPaymasterRpcSchema } from "../types/kernel"
+import { type KernelPaymasterRpcSchema } from "../types/kernel"
 import {
-    KernelPaymasterClientActions,
+    type KernelPaymasterClientActions,
     kernelPaymasterActions
 } from "./decorators/kernel"
 

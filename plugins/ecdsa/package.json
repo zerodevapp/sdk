@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/ecdsa-validator",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1-alpha.7",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -9,6 +9,18 @@
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
+  "files": [
+    "_esm",
+    "_cjs",
+    "_types",
+    "./**/*.ts",
+    "!_esm/**/*.tsbuildinfo",
+    "!_cjs/**/*.tsbuildinfo",
+    "!_types/**/*.tsbuildinfo",
+    "!.env",
+    "!./**/*.test.ts",
+    "!.changeset"
+  ],
   "scripts": {
     "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
     "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
