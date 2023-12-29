@@ -153,7 +153,7 @@ export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
   }
 
   const tip = BigInt(fee);
-  const buffer = (tip / 100n) * 13n;
+  const buffer = (tip / 100n) * BigInt(provider.gasFeeBufferPecentage);
   let maxPriorityFeePerGas = tip + buffer;
   maxPriorityFeePerGas =
     maxPriorityFeePerGas < provider.minPriorityFeePerBid
