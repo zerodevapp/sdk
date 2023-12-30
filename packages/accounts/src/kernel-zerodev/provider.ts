@@ -44,6 +44,10 @@ import type {
 } from "./paymaster/types.js";
 import { getChain } from "./utils.js";
 
+export type FeeOptions = {
+  maxFeePerGasBufferPercentage?: number;
+  maxPriorityFeePerGasBufferPercentage?: number;
+};
 export type ZeroDevProviderConfig = {
   projectId: string;
   chain: Chain | number;
@@ -54,7 +58,7 @@ export type ZeroDevProviderConfig = {
   opts?: SmartAccountProviderOpts & {
     sendTxMaxRetries?: number;
     sendTxRetryIntervalMs?: number;
-    gasFeeBufferPecentage?: number;
+    feeOptions?: FeeOptions;
   };
 };
 
@@ -77,7 +81,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   private _txMaxRetries: number;
   private _txRetryIntervalMs: number;
   private _shouldConsume: boolean = true;
-  public gasFeeBufferPecentage: number;
+  public feeOptions: Required<FeeOptions>;
 
   constructor({
     projectId,
@@ -105,7 +109,12 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         minPriorityFeePerBidDefaults.get(_chain.id),
     });
 
-    this.gasFeeBufferPecentage = opts?.gasFeeBufferPecentage ?? 13;
+    this.feeOptions = {
+      maxFeePerGasBufferPercentage:
+        opts?.feeOptions?.maxFeePerGasBufferPercentage ?? 0,
+      maxPriorityFeePerGasBufferPercentage:
+        opts?.feeOptions?.maxPriorityFeePerGasBufferPercentage ?? 13,
+    };
     this._txMaxRetries = opts?.txMaxRetries ?? 20;
     this._txRetryIntervalMs = opts?.txRetryIntervalMs ?? 5000;
     this.bundlerProvider = bundlerProvider;
