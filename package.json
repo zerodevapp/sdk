@@ -31,5 +31,8 @@
   },
   "simple-git-hooks": {
     "pre-commit": "bun run format && bun run lint:fix"
+  },
+  "dependencies": {
+    "@kerneljs/presets": "0.0.1-alpha.2"
   }
 }
