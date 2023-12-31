@@ -3,12 +3,16 @@ import { Hex, zeroAddress } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
 
+if (!process.env.ZERODEV_PROJECT_ID) {
+    throw new Error("ZERODEV_PROJECT_ID is not set")
+}
+
 const signer = privateKeyToAccount(process.env.PRIVATE_KEY as Hex)
 
 const kernelClient = await createEcdsaKernelAccountClient({
     // required
     chain: polygonMumbai,
-    projectId: process.env.ZERODEV_PROJECT_ID || "",
+    projectId: process.env.ZERODEV_PROJECT_ID,
     signer,
 
     // optional
