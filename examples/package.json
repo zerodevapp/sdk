@@ -1,0 +1,17 @@
+{
+  "name": "examples",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@kerneljs/core": "workspace:*",
+    "@kerneljs/ecdsa-validator": "workspace:*",
+    "dotenv": "^16.3.1",
+    "permissionless": "^0.0.19",
+    "viem": "^1.21.3"
+  }
+}
