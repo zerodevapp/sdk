@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/ecdsa-validator",
-  "version": "0.0.1-alpha.8",
+  "version": "0.0.1-alpha.9",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",

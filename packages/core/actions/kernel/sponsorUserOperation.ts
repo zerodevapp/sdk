@@ -5,6 +5,7 @@ import type {
 import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem/types/utils"
+import { KERNEL_ADDRESSES } from "../../accounts/index.js"
 import type { KernelPaymasterClient } from "../../clients/kernel.js"
 
 export type SponsorUserOperationParameters = {
@@ -15,7 +16,7 @@ export type SponsorUserOperationParameters = {
         | "verificationGasLimit"
         | "paymasterAndData"
     >
-    entryPoint: Address
+    entryPoint?: Address
     gasTokenData?: {
         tokenAddress: Hex
         erc20UserOp: PartialBy<
@@ -70,7 +71,8 @@ export const sponsorUserOperation = async (
                 userOp: deepHexlify(
                     args.userOperation
                 ) as UserOperationWithBigIntAsHex,
-                entryPointAddress: args.entryPoint,
+                entryPointAddress:
+                    args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
                 gasTokenData: args.gasTokenData && {
                     tokenAddress: args.gasTokenData.tokenAddress,
                     erc20UserOp: deepHexlify(
