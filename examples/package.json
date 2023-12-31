@@ -11,7 +11,7 @@
     "@kerneljs/core": "workspace:*",
     "@kerneljs/ecdsa-validator": "workspace:*",
     "dotenv": "^16.3.1",
-    "permissionless": "^0.0.19",
+    "permissionless": "^0.0.20",
     "viem": "^1.21.3"
   }
 }

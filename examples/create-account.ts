@@ -37,6 +37,18 @@ const kernelClient = createSmartAccountClient({
     }
 })
 
+const userOpHash = await kernelClient.sendUserOperation({
+    userOperation: {
+        callData: await account.encodeCallData({
+            to: zeroAddress,
+            value: 0n,
+            data: "0x"
+        })
+    }
+})
+
+console.log("userOp hash:", userOpHash)
+
 const txnHash = await kernelClient.sendTransaction({
     to: zeroAddress,
     value: 0n,
