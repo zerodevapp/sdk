@@ -26,7 +26,6 @@ Before running the tests, ensure you have installed [bun](https://bun.sh/) and a
 
 ```bash
 bun install
-cd packages/core
 bun run build
 ```
 
@@ -36,7 +35,7 @@ Then, copy the `.env.example` file to `.env` and define all necessary environmen
 cp .env.example .env
 ```
 
-Edit .env to include all required environment variables.  Now you can run the tests from the repository root:
+Now you can run the tests:
 
 ```bash
 bun test
