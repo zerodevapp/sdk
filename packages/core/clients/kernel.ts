@@ -6,7 +6,7 @@ import {
     type Transport,
     createClient
 } from "viem"
-import { type KernelPaymasterRpcSchema } from "../types/kernel"
+import type { KernelPaymasterRpcSchema } from "../types/kernel"
 import {
     type KernelPaymasterClientActions,
     kernelPaymasterActions

@@ -1,4 +1,4 @@
-import { type KernelPlugin } from "@kerneljs/core/types/kernel"
+import type { KernelPlugin } from "@kerneljs/core/types/kernel"
 import { getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,

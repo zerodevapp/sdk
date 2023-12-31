@@ -1,6 +1,6 @@
-import {
-    type UserOperation,
-    type UserOperationWithBigIntAsHex
+import type {
+    UserOperation,
+    UserOperationWithBigIntAsHex
 } from "permissionless/types/userOperation"
 import {
     type Account,
@@ -11,7 +11,7 @@ import {
     type LocalAccount,
     type Transport
 } from "viem"
-import { type PartialBy } from "viem/types/utils"
+import type { PartialBy } from "viem/types/utils"
 export type KernelPaymasterRpcSchema = [
     {
         Method: "zd_sponsorUserOperation"

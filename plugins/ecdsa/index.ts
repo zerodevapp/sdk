@@ -1,5 +1,5 @@
-import { type KernelPlugin } from "@kerneljs/core/types/kernel"
-import { type Address } from "viem"
+import type { KernelPlugin } from "@kerneljs/core/types/kernel"
+import type { Address } from "viem"
 import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin"
 
 export { signerToEcdsaValidator, type KernelPlugin }
