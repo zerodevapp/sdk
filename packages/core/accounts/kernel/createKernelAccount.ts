@@ -61,13 +61,13 @@ const createAccountAbi = [
  * Default addresses for kernel smart account
  */
 export const KERNEL_ADDRESSES: {
-    ECDSA_VALIDATOR: Address
-    ACCOUNT_V2_2_LOGIC: Address
+    ACCOUNT_V2_3_LOGIC: Address
     FACTORY_ADDRESS: Address
+    ENTRYPOINT_V0_6: Address
 } = {
-    ECDSA_VALIDATOR: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390",
-    ACCOUNT_V2_2_LOGIC: "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5",
-    FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3"
+    ACCOUNT_V2_3_LOGIC: "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab",
+    FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
+    ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
 
 /**
@@ -164,14 +164,14 @@ export async function createKernelAccount<
     client: Client<TTransport, TChain>,
     {
         plugin,
-        entryPoint,
+        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
-        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_2_LOGIC,
+        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
         deployedAccountAddress
     }: {
         plugin: TPlugin
-        entryPoint: Address
+        entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
         accountLogicAddress?: Address

@@ -1,3 +1,4 @@
+import { KERNEL_ADDRESSES } from "@kerneljs/core"
 import type { KernelPlugin } from "@kerneljs/core/types/kernel"
 import { getUserOperationHash } from "permissionless"
 import {
@@ -15,7 +16,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { ENTRYPOINT_0_6, KERNEL_ADDRESSES } from "./index"
+import { ECDSA_VALIDATOR_ADDRESS } from "./index"
 
 export async function signerToEcdsaValidator<
     TTransport extends Transport = Transport,
@@ -26,8 +27,8 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain>,
     {
         signer,
-        entryPoint = ENTRYPOINT_0_6,
-        validatorAddress = KERNEL_ADDRESSES.ECDSA_VALIDATOR
+        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        validatorAddress = ECDSA_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entryPoint?: Address
