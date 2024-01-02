@@ -43,13 +43,15 @@ export async function createEcdsaKernelAccountClient<
     projectId,
     signer,
     provider,
-    index
+    index,
+    usePaymaster = true
 }: {
     chain: TChain
     projectId: string
     signer: SmartAccountSigner<TSource, TAddress>
     provider?: Provider
     index?: bigint
+    usePaymaster?: boolean
 }): Promise<
     SmartAccountClient<
         HttpTransport,
@@ -74,17 +76,19 @@ export async function createEcdsaKernelAccountClient<
         account,
         chain,
         transport: http(getZeroDevBundlerRPC(projectId, provider)),
-        sponsorUserOperation: async ({
-            userOperation
-        }): Promise<UserOperation> => {
-            const kernelPaymaster = createKernelPaymasterClient({
-                chain: chain,
-                transport: http(getZeroDevPaymasterRPC(projectId, provider))
-            })
-            return kernelPaymaster.sponsorUserOperation({
-                userOperation
-            })
-        }
+        sponsorUserOperation: usePaymaster
+            ? async ({ userOperation }): Promise<UserOperation> => {
+                  const kernelPaymaster = createKernelPaymasterClient({
+                      chain: chain,
+                      transport: http(
+                          getZeroDevPaymasterRPC(projectId, provider)
+                      )
+                  })
+                  return kernelPaymaster.sponsorUserOperation({
+                      userOperation
+                  })
+              }
+            : undefined
     })
 
     return kernelClient as SmartAccountClient<

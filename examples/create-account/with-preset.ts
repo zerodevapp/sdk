@@ -16,8 +16,9 @@ const kernelClient = await createEcdsaKernelAccountClient({
     signer,
 
     // optional
-    provider: "STACKUP",
-    index: BigInt(1)
+    provider: "STACKUP", // defaults to a recommended provider
+    index: BigInt(1), // defaults to 0
+    usePaymaster: true // defaults to true
 })
 
 console.log("My account:", kernelClient.account.address)
