@@ -1,5 +1,5 @@
 {
-  "extends": "../templates/typescript/tsconfig.build.json",
+  "extends": "../../templates/typescript/tsconfig.build.json",
   "include": ["./"],
   "exclude": ["./**/*.test.ts", "./**/*.test-d.ts", "./**/*.bench.ts"],
   "compilerOptions": {

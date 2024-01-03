@@ -7,9 +7,9 @@
     },
     "dependencies": {
         "dotenv": "^16.3.1",
-        "viem": "^1.19.4",
+        "viem": "^1.21.4",
         "@kerneljs/core": "workspace:*",
         "@kerneljs/ecdsa-validator": "workspace:*",
-        "permissionless": "^0.0.19"
+        "permissionless": "^0.0.20"
     }
 }

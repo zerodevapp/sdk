@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/presets",
-  "version": "0.0.1-alpha.3",
+  "version": "0.0.1-alpha.4",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -9,6 +9,18 @@
   "type": "module",
   "devDependencies": {
     "bun-types": "latest"
+  },
+  "exports": {
+    ".": {
+      "types": "./_types/zerodev/index.d.ts",
+      "import": "./_esm/zerodev/index.js",
+      "default": "./_cjs/zerodev/index.js"
+    },
+    "./zerodev": {
+      "types": "./_types/zerodev/index.d.ts",
+      "import": "./_esm/zerodev/index.js",
+      "default": "./_cjs/zerodev/index.js"
+    }
   },
   "license": "MIT",
   "files": [
@@ -38,9 +50,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@kerneljs/core": "^0.0.1-alpha.5",
-    "@kerneljs/ecdsa-validator": "^0.0.1-alpha.11",
+    "@kerneljs/core": "^0.0.1-alpha.6",
+    "@kerneljs/ecdsa-validator": "^0.0.1-alpha.12",
     "permissionless": "^0.0.20",
-    "viem": "^1.21.3"
+    "viem": "^1.21.4"
   }
 }
