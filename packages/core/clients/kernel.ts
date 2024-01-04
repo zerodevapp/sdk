@@ -6,50 +6,48 @@ import {
     type Transport,
     createClient
 } from "viem"
-import type { KernelPaymasterRpcSchema } from "../types/kernel"
+import type { ZeroDevPaymasterRpcSchema } from "../types/kernel"
 import {
-    type KernelPaymasterClientActions,
-    kernelPaymasterActions
+    type ZeroDevPaymasterClientActions,
+    zerodevPaymasterActions
 } from "./decorators/kernel"
 
-export type KernelPaymasterClient = Client<
+export type ZeroDevPaymasterClient = Client<
     Transport,
     Chain | undefined,
     Account | undefined,
-    KernelPaymasterRpcSchema,
-    KernelPaymasterClientActions
+    ZeroDevPaymasterRpcSchema,
+    ZeroDevPaymasterClientActions
 >
 /**
- * Creates a pimlico specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/clients/chains.html).
+ * Creates a ZeroDev-specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/clients/chains.html).
  *
- * - Docs: https://docs.pimlico.io/permissionless/reference/clients/pimlicoPaymasterClient
- *
- * A Pimlico Paymaster Client is an interface to "pimlico paymaster endpoints" [JSON-RPC API](https://docs.pimlico.io/reference/verifying-paymaster/endpoints) methods such as sponsoring user operation, etc through Pimlico Paymaster Actions.
+ * - Docs: https://docs.zerodev.app/meta-infra/getting-started/intro
  *
  * @param config - {@link PublicClientConfig}
- * @returns A Pimlico Paymaster Client. {@link KernelPaymasterClient}
+ * @returns A ZeroDev Paymaster Client. {@link ZeroDevPaymasterClient}
  *
  * @example
  * import { createPublicClient, http } from 'viem'
  * import { mainnet } from 'viem/chains'
  *
- * const pimlicoPaymasterClient = createKernelPaymasterClient({
+ * const zerodevPaymasterClient = createZeroDevPaymasterClient({
  *   chain: mainnet,
- *   transport: http("https://api.pimlico.io/v2/goerli/rpc?apikey=YOUR_API_KEY_HERE"),
+ *   transport: http(`https://rpc.zerodev.app/api/v2/paymaster/${projectId}`),
  * })
  */
-export const createKernelPaymasterClient = <
+export const createZeroDevPaymasterClient = <
     transport extends Transport,
     chain extends Chain | undefined = undefined
 >(
     parameters: PublicClientConfig<transport, chain>
-): KernelPaymasterClient => {
-    const { key = "public", name = "Pimlico Paymaster Client" } = parameters
+): ZeroDevPaymasterClient => {
+    const { key = "public", name = "ZeroDev Paymaster Client" } = parameters
     const client = createClient({
         ...parameters,
         key,
         name,
-        type: "pimlicoPaymasterClient"
+        type: "zerodevPaymasterClient"
     })
-    return client.extend(kernelPaymasterActions)
+    return client.extend(zerodevPaymasterActions)
 }

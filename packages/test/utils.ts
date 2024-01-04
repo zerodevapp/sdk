@@ -1,5 +1,5 @@
 import { createKernelAccount } from "@kerneljs/core/accounts"
-import { createKernelPaymasterClient } from "@kerneljs/core/clients/kernel"
+import { createZeroDevPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     BundlerClient,
@@ -275,7 +275,7 @@ export const getPimlicoPaymasterClient = () => {
     })
 }
 
-export const getKernelPaymasterClient = () => {
+export const getZeroDevPaymasterClient = () => {
     if (!process.env.ZERODEV_PAYMASTER_RPC_HOST)
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
@@ -286,7 +286,7 @@ export const getKernelPaymasterClient = () => {
 
     const chain = getTestingChain()
 
-    return createKernelPaymasterClient({
+    return createZeroDevPaymasterClient({
         chain: chain,
         transport: http(
             `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${zeroDevProjectId}?paymasterProvider=ALCHEMY`

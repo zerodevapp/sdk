@@ -25,10 +25,10 @@ import {
     findUserOperationEvent,
     getEntryPoint,
     getKernelBundlerClient,
-    getKernelPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
-    getSmartAccountClient
+    getSmartAccountClient,
+    getZeroDevPaymasterClient
 } from "./utils.js"
 
 dotenv.config()
@@ -80,9 +80,9 @@ describe("ECDSA kernel Account", () => {
         smartAccountClient = await getSmartAccountClient({
             account,
             sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getKernelPaymasterClient()
+                const zerodevPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
+                return zerodevPaymaster.sponsorUserOperation({
                     userOperation,
                     entryPoint
                 })
@@ -250,8 +250,8 @@ describe("ECDSA kernel Account", () => {
                     entryPoint: _entryPoint,
                     userOperation
                 }): Promise<UserOperation> => {
-                    const kernelPaymaster = getKernelPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
                         userOperation,
                         entryPoint: getEntryPoint()
                     })
@@ -321,8 +321,8 @@ describe("ECDSA kernel Account", () => {
                     entryPoint: _entryPoint,
                     userOperation
                 }): Promise<UserOperation> => {
-                    const kernelPaymaster = getKernelPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
                         userOperation,
                         entryPoint: getEntryPoint()
                     })

@@ -1,4 +1,4 @@
 export {
-    kernelPaymasterActions,
-    type KernelPaymasterClientActions
+    zerodevPaymasterActions,
+    type ZeroDevPaymasterClientActions
 } from "./kernel"

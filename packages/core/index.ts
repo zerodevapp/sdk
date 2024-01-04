@@ -9,14 +9,14 @@ export {
     type SponsorUserOperationReturnType
 } from "./actions/kernel/sponsorUserOperation"
 export {
-    kernelPaymasterActions,
-    type KernelPaymasterClientActions
+    zerodevPaymasterActions,
+    type ZeroDevPaymasterClientActions
 } from "./clients/decorators/kernel"
 export {
-    createKernelPaymasterClient,
-    type KernelPaymasterClient
+    createZeroDevPaymasterClient,
+    type ZeroDevPaymasterClient
 } from "./clients/kernel"
 export {
     type KernelPlugin,
-    type KernelPaymasterRpcSchema
+    type ZeroDevPaymasterRpcSchema
 } from "./types/kernel"

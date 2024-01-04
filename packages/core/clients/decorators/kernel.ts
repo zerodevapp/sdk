@@ -4,9 +4,9 @@ import {
     type SponsorUserOperationReturnType,
     sponsorUserOperation
 } from "../../actions/kernel/sponsorUserOperation"
-import type { KernelPaymasterClient } from "../kernel"
+import type { ZeroDevPaymasterClient } from "../kernel"
 
-export type KernelPaymasterClientActions = {
+export type ZeroDevPaymasterClientActions = {
     /**
      * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
      *
@@ -34,9 +34,9 @@ export type KernelPaymasterClientActions = {
     ) => Promise<SponsorUserOperationReturnType>
 }
 
-export const kernelPaymasterActions = (
+export const zerodevPaymasterActions = (
     client: Client
-): KernelPaymasterClientActions => ({
+): ZeroDevPaymasterClientActions => ({
     sponsorUserOperation: async (args: SponsorUserOperationParameters) =>
-        sponsorUserOperation(client as KernelPaymasterClient, args)
+        sponsorUserOperation(client as ZeroDevPaymasterClient, args)
 })

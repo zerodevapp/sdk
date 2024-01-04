@@ -12,7 +12,7 @@ import {
     type Transport
 } from "viem"
 import type { PartialBy } from "viem/types/utils"
-export type KernelPaymasterRpcSchema = [
+export type ZeroDevPaymasterRpcSchema = [
     {
         Method: "zd_sponsorUserOperation"
         Parameters: [
