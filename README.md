@@ -1,71 +1,58 @@
-<p align="center"><a href="https://docs.pimlico/permissionless"><img width="1000" title="Permissionless" src='./assets/banner.png' /></a></p>
+# Kernel.js
 
-# Permissionless.js
+The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
 
-![Node Version](https://img.shields.io/badge/node-20.x-green)
+[See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
 
-Permissionless.js is a Typescript library built on top of [viem](https://viem.sh) for interacting with [ERC-4337 bundlers](https://eips.ethereum.org/EIPS/eip-4337) and paymasters.
+## Examples
 
-## Features
-
-- **Full ERC-4337 Support**: We support all bundler actions following [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337#rpc-methods-eth-namespace).
-- **Gas Sponsorship**: We support paymaster actions to allow you to easily sponsor gas fees.
-- **Built on & for viem**: We provide convenient helper functions like `createBundlerClient` to easily create viem clients.
-- More to come soon...
+For examples using Kernel.js, check out [the examples repo](https://github.com/zerodevapp/kernel.js-examples).
 
 ## Installation
 
-Install [viem](https://viem.sh) as a peer dependency
+To use the SDK, install the core package along with any plugins you need:
 
 ```bash
-npm install viem permissionless
+npm install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
 ```bash
-bun install viem permissionless
+yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
 ```bash
-yarn add viem permissionless
+bun install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
 ```
 
-## Quick start
+## Building and Testing
 
-Create a bundler client, and start sending user operations!
+Before running the tests, ensure you have installed [bun](https://bun.sh/) and all the necessary dependencies and built the core package:
 
-```typescript
-
-import { createBundlerClient } from "permissionless/clients/pimlico"
-import { goerli } from "viem/chains"
-import { http } from "viem"
-
-const bundlerClient = createBundlerClient({
-    chain: goerli,
-    transport: http(`https://api.pimlico.io/v1/goerli/rpc?apikey=${pimlicoApiKey}`) // Use any bundler url
-})
-
-const userOpHash = await bundlerClient.sendUserOperation({
-    userOperation: signedUserOperation,
-    entryPoint: entryPoint
-})
-```
-
-For detailed documentation visit our [docs page](https://docs.pimlico.io/permissionless).
-
-
-## Contributors
-
-For a full explanation of Permissionless.js, please visit our [docs page](https://docs.pimlico.io/permissionless)
-
-Build permissionless.js locally with:
 ```bash
+bun install
 bun run build
 ```
 
+Then, copy the `.env.example` file to `.env` and define all necessary environment variables:
+
+```bash
+cp .env.example .env
+```
+
+Now you can run the tests:
+
+```bash
+bun test
+```
+
+## Contributing
+
+Contributions are welcome! Please read our [contributing guidelines](./CONTRIBUTING.md) for details on how to contribute to the project.
+
 ## License
 
-Distributed under an MIT License. See [LICENSE](./LICENSE) for more information.
+The @kerneljs packages are released under the MIT License. See the [LICENSE](./LICENSE) file for more details.
 
 ## Contact
 
-Feel free to ask any questions in our [Telegram group](https://t.me/pimlicoHQ)
+If you have any questions or would like to get in touch with the team, please join our [Discord channel](https://discord.gg/KS9MRaTSjx).

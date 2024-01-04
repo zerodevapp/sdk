@@ -1,154 +1,127 @@
-import { createBundlerClient, createSmartAccountClient } from "@zerodev/core";
+import { createKernelAccount } from "@kerneljs/core/accounts"
+import { createKernelPaymasterClient } from "@kerneljs/core/clients/kernel"
+import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
-  SmartAccount,
-  signerToEcdsaKernelSmartAccount,
-  signerToSafeSmartAccount,
-  signerToSessionKeyValidator,
-  signerToSimpleSmartAccount,
-  toKernelSmartAccount,
-} from "@zerodev/core/accounts";
-import { SponsorUserOperationMiddleware } from "@zerodev/core/actions/smartAccount";
-import { createKernelAccountClient } from "@zerodev/core";
+    BundlerClient,
+    SmartAccountClient,
+    createBundlerClient,
+    createSmartAccountClient
+} from "permissionless"
 import {
-  createPimlicoBundlerClient,
-  createPimlicoPaymasterClient,
-} from "@zerodev/core/clients/pimlico";
-import { signerToEcdsaValidator, Operation } from "@zerodev/core/plugins";
+    type SmartAccount,
+    signerToSimpleSmartAccount
+} from "permissionless/accounts"
+import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
 import {
-  http,
-  Address,
-  Hex,
-  createPublicClient,
-  createWalletClient,
-  encodeFunctionData,
-  zeroAddress,
-  getFunctionSelector
-} from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { goerli, polygonMumbai } from "viem/chains";
-import * as allChains from "viem/chains";
+    createPimlicoBundlerClient,
+    createPimlicoPaymasterClient
+} from "permissionless/clients/pimlico"
+import {
+    http,
+    AbiItem,
+    Address,
+    Hex,
+    type Log,
+    type PublicClient,
+    type WalletClient,
+    createPublicClient,
+    createWalletClient,
+    decodeEventLog,
+    encodeFunctionData
+} from "viem"
+import { type Account, privateKeyToAccount } from "viem/accounts"
+import { type Chain, goerli } from "viem/chains"
+import * as allChains from "viem/chains"
+import { EntryPointAbi } from "./abis/EntryPoint.js"
 
-export const getFactoryAddress = () => {
-  if (!process.env.FACTORY_ADDRESS)
-    throw new Error("FACTORY_ADDRESS environment variable not set");
-  const factoryAddress = process.env.FACTORY_ADDRESS as Address;
-  return factoryAddress;
-};
-
-export const getPrivateKeyAccount = () => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
-  return privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-};
-
-export const getTestingChain = () => {
-  // If custom chain specified in environment variable, use that
-  if (process.env.TEST_CHAIN_ID) {
-    const chainId = parseInt(process.env.TEST_CHAIN_ID);
-    const chain = Object.values(allChains).find(
-      (chain) => chain.id === chainId
-    );
-    if (chain) return chain;
-  }
-
-  // Otherwise, use fallback to goerli
-  return goerli;
-};
-
-export const getSignerToSimpleSmartAccount = async () => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
-
-  const publicClient = await getPublicClient();
-
-  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-
-  return await signerToSimpleSmartAccount(publicClient, {
-    entryPoint: getEntryPoint(),
-    factoryAddress: getFactoryAddress(),
-    signer: signer,
-  });
-};
-
-export const getSignerToEcdsaKernelAccount = async () => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
-
-  const publicClient = await getPublicClient();
-
-  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-  const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
-    entryPoint: getEntryPoint(),
-    signer: signer,
-  });
-
-  return await toKernelSmartAccount(publicClient, {
-    entryPoint: getEntryPoint(),
-    defaultValidator: ecdsaValidatorPlugin,
-  });
-};
-
-export const getSignerToSessionKeyKernelAccount = async () => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
-  const publicClient = await getPublicClient();
-  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-  const sessionKey = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-  const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
-    signer: signer,
-  });
-  const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
-    signer: signer,
-    validatorData: {
-      sessionKey,
-      sessionKeyData: {
-        permissions: [
-          {
-            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B" as Address,
-            executionRule: {
-              interval: 0,
-              runs: 0,
-              validAfter: 0,
-            },
-            rules: [],
-            sig: getFunctionSelector("transfer(address,uint256)") as Hex,
-            valueLimit: 0n,
-            index: 0,
-            operation: Operation.Call
-          }
-        ]
-      }
+export const getFactoryAddress = (): Address => {
+    const factoryAddress = process.env.FACTORY_ADDRESS
+    if (!factoryAddress) {
+        throw new Error("FACTORY_ADDRESS environment variable not set")
     }
-  });
-  return await toKernelSmartAccount(publicClient, {
-    entryPoint: getEntryPoint(),
-    defaultValidator: ecdsaValidator,
-    plugin: sessionKeyPlugin
-  });
-};
+    return factoryAddress as Address
+}
 
-export const getSignerToSafeSmartAccount = async (args?: {
-  setupTransactions?: {
-    to: Address;
-    data: Address;
-    value: bigint;
-  }[];
-}) => {
-  if (!process.env.TEST_PRIVATE_KEY)
-    throw new Error("TEST_PRIVATE_KEY environment variable not set");
+export const getPrivateKeyAccount = (): Account => {
+    const privateKey = process.env.TEST_PRIVATE_KEY
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+    return privateKeyToAccount(privateKey as Hex)
+}
 
-  const publicClient = await getPublicClient();
+export const getTestingChain = (): Chain => {
+    const testChainId = process.env.TEST_CHAIN_ID
+    const chainId = testChainId ? parseInt(testChainId, 10) : goerli.id
+    const chain = Object.values(allChains).find((c) => c.id === chainId)
+    if (!chain) {
+        throw new Error(`Chain with id ${chainId} not found`)
+    }
+    return chain
+}
 
-  const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+export const getSignerToSimpleSmartAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
 
-  return await signerToSafeSmartAccount(publicClient, {
-    entryPoint: getEntryPoint(),
-    signer: signer,
-    safeVersion: "1.4.1",
-    saltNonce: 100n,
-    setupTransactions: args?.setupTransactions,
-  });
-};
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+
+        return signerToSimpleSmartAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            factoryAddress: getFactoryAddress(),
+            signer: { ...signer, source: "local" as "local" | "external" }
+        })
+    }
+
+export const getSignerToEcdsaKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
+
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" }
+            }
+        )
+
+        return createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugin: ecdsaValidatorPlugin
+        })
+    }
+
+// export const getSignerToSafeSmartAccount = async (args?: {
+//   setupTransactions?: {
+//     to: Address;
+//     data: Address;
+//     value: bigint;
+//   }[];
+// }) => {
+//   if (!process.env.TEST_PRIVATE_KEY)
+//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
+
+//   const publicClient = await getPublicClient();
+
+//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+
+//   return await signerToSafeSmartAccount(publicClient, {
+//     entryPoint: getEntryPoint(),
+//     signer: signer,
+//     safeVersion: "1.4.1",
+//     saltNonce: 100n,
+//     setupTransactions: args?.setupTransactions,
+//   });
+// };
 // export const getSignerToEcdsaKernelAccount = async () => {
 //   if (!process.env.TEST_PRIVATE_KEY)
 //     throw new Error("TEST_PRIVATE_KEY environment variable not set");
@@ -164,175 +137,220 @@ export const getSignerToSafeSmartAccount = async (args?: {
 // };
 
 export const getSmartAccountClient = async ({
-  account,
-  sponsorUserOperation,
-}: SponsorUserOperationMiddleware & { account?: SmartAccount } = {}) => {
-  if (!process.env.PIMLICO_API_KEY)
-    throw new Error("PIMLICO_API_KEY environment variable not set");
-  if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
-    throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set");
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
-  const chain = getTestingChain();
+    account,
+    sponsorUserOperation
+}: SponsorUserOperationMiddleware & {
+    account?: SmartAccount
+} = {}) => {
+    const pimlicoApiKey = process.env.PIMLICO_API_KEY
+    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
+    if (!pimlicoApiKey) {
+        throw new Error("PIMLICO_API_KEY environment variable not set")
+    }
+    if (!pimlicoBundlerRpcHost) {
+        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
+    }
 
-  return createSmartAccountClient({
-    account: account ?? (await getSignerToSimpleSmartAccount()),
-    chain,
-    transport: http(
-      `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
-    ),
-    sponsorUserOperation,
-  });
-};
+    const chain = getTestingChain()
+    const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
 
+    return createSmartAccountClient({
+        account: resolvedAccount,
+        chain,
+        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`),
+        sponsorUserOperation
+    })
+}
 
-export const getKernelAccountClient = async ({
-  account,
-  sponsorUserOperation,
-}: SponsorUserOperationMiddleware & { account?: SmartAccount } = {}) => {
-  if (!process.env.PIMLICO_API_KEY)
-    throw new Error("PIMLICO_API_KEY environment variable not set");
-  if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
-    throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set");
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
-  const chain = getTestingChain();
+export const getEoaWalletClient = (): WalletClient => {
+    const rpcUrl = process.env.RPC_URL
+    if (!rpcUrl) {
+        throw new Error("RPC_URL environment variable not set")
+    }
 
-  return createKernelAccountClient({
-    account: account ?? (await getSignerToSimpleSmartAccount()),
-    chain,
-    transport: http(
-      `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
-    ),
-    sponsorUserOperation,
-  });
-};
+    return createWalletClient({
+        account: getPrivateKeyAccount(),
+        chain: getTestingChain(),
+        transport: http(rpcUrl)
+    })
+}
 
-export const getEoaWalletClient = () => {
-  return createWalletClient({
-    account: getPrivateKeyAccount(),
-    chain: getTestingChain(),
-    transport: http(process.env.RPC_URL as string),
-  });
-};
+export const getEntryPoint = (): Address => {
+    const entryPointAddress = process.env.ENTRYPOINT_ADDRESS as Address
+    if (!entryPointAddress) {
+        throw new Error("ENTRYPOINT_ADDRESS environment variable not set")
+    }
+    return entryPointAddress
+}
 
-export const getEntryPoint = () => {
-  if (!process.env.ENTRYPOINT_ADDRESS)
-    throw new Error("ENTRYPOINT_ADDRESS environment variable not set");
-  return process.env.ENTRYPOINT_ADDRESS as Address;
-};
+export const getPublicClient = async (): Promise<PublicClient> => {
+    const rpcUrl = process.env.RPC_URL
+    if (!rpcUrl) {
+        throw new Error("RPC_URL environment variable not set")
+    }
 
-export const getPublicClient = async () => {
-  if (!process.env.RPC_URL)
-    throw new Error("RPC_URL environment variable not set");
+    const publicClient = createPublicClient({
+        transport: http(rpcUrl)
+    })
 
-  const publicClient = createPublicClient({
-    transport: http(process.env.RPC_URL as string),
-  });
+    const chainId = await publicClient.getChainId()
+    const testingChain = getTestingChain()
 
-  const chainId = await publicClient.getChainId();
+    if (chainId !== testingChain.id) {
+        throw new Error(
+            `Testing Chain ID (${testingChain.id}) not supported by RPC URL`
+        )
+    }
 
-  if (chainId !== getTestingChain().id)
-    throw new Error("Testing Chain ID not supported by RPC URL");
+    return publicClient
+}
 
-  return publicClient;
-};
+export const getBundlerClient = (): BundlerClient => {
+    const pimlicoApiKey = process.env.PIMLICO_API_KEY
+    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
+    if (!pimlicoApiKey || !pimlicoBundlerRpcHost) {
+        throw new Error(
+            "PIMLICO_API_KEY and PIMLICO_BUNDLER_RPC_HOST environment variables must be set"
+        )
+    }
 
-export const getBundlerClient = () => {
-  if (!process.env.PIMLICO_API_KEY)
-    throw new Error("PIMLICO_API_KEY environment variable not set");
-  if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
-    throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set");
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
+    const chain = getTestingChain()
 
-  const chain = getTestingChain();
+    return createBundlerClient({
+        chain,
+        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`)
+    })
+}
 
-  return createBundlerClient({
-    chain: chain,
-    transport: http(
-      `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
-    ),
-  });
-};
+export const getKernelBundlerClient = (): BundlerClient => {
+    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
+    if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
+        throw new Error(
+            "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
+        )
+    }
+
+    const chain = getTestingChain()
+
+    return createBundlerClient({
+        chain,
+        transport: http(`${zeroDevBundlerRpcHost}/${zeroDevProjectId}`)
+    })
+}
 
 export const getPimlicoBundlerClient = () => {
-  if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
-    throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set");
-  if (!process.env.PIMLICO_API_KEY)
-    throw new Error("PIMLICO_API_KEY environment variable not set");
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
+    if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
+        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
+    if (!process.env.PIMLICO_API_KEY)
+        throw new Error("PIMLICO_API_KEY environment variable not set")
+    const pimlicoApiKey = process.env.PIMLICO_API_KEY
 
-  const chain = getTestingChain();
+    const chain = getTestingChain()
 
-  return createPimlicoBundlerClient({
-    chain: chain,
-    transport: http(
-      `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
-    ),
-  });
-};
+    return createPimlicoBundlerClient({
+        chain: chain,
+        transport: http(
+            `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
+        )
+    })
+}
 
 export const getPimlicoPaymasterClient = () => {
-  if (!process.env.PIMLICO_PAYMASTER_RPC_HOST)
-    throw new Error("PIMLICO_PAYMASTER_RPC_HOST environment variable not set");
-  if (!process.env.PIMLICO_API_KEY)
-    throw new Error("PIMLICO_API_KEY environment variable not set");
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY;
+    if (!process.env.PIMLICO_PAYMASTER_RPC_HOST)
+        throw new Error(
+            "PIMLICO_PAYMASTER_RPC_HOST environment variable not set"
+        )
+    if (!process.env.PIMLICO_API_KEY)
+        throw new Error("PIMLICO_API_KEY environment variable not set")
+    const pimlicoApiKey = process.env.PIMLICO_API_KEY
 
-  const chain = getTestingChain();
+    const chain = getTestingChain()
 
-  return createPimlicoPaymasterClient({
-    chain: chain,
-    transport: http(
-      `${process.env.PIMLICO_PAYMASTER_RPC_HOST}?apikey=${pimlicoApiKey}`
-    ),
-  });
-};
+    return createPimlicoPaymasterClient({
+        chain: chain,
+        transport: http(
+            `${process.env.PIMLICO_PAYMASTER_RPC_HOST}?apikey=${pimlicoApiKey}`
+        )
+    })
+}
 
-export const isAccountDeployed = async (accountAddress: Address) => {
-  const publicClient = await getPublicClient();
+export const getKernelPaymasterClient = () => {
+    if (!process.env.ZERODEV_PAYMASTER_RPC_HOST)
+        throw new Error(
+            "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
+        )
+    if (!process.env.ZERODEV_PROJECT_ID)
+        throw new Error("ZERODEV_PROJECT_ID environment variable not set")
+    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
 
-  const contractCode = await publicClient.getBytecode({
-    address: accountAddress,
-  });
+    const chain = getTestingChain()
 
-  if ((contractCode?.length ?? 0) > 2) return true;
+    return createKernelPaymasterClient({
+        chain: chain,
+        transport: http(
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${zeroDevProjectId}?paymasterProvider=ALCHEMY`
+        )
+    })
+}
 
-  return false;
-};
+export const isAccountDeployed = async (
+    accountAddress: Address
+): Promise<boolean> => {
+    const publicClient = await getPublicClient()
+    const contractCode = await publicClient.getBytecode({
+        address: accountAddress
+    })
+    return (contractCode?.length ?? 0) > 2
+}
 
 export const getDummySignature = (): Hex => {
-  return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
-};
+    return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+}
 
 export const getOldUserOpHash = (): Hex => {
-  return "0xe9fad2cd67f9ca1d0b7a6513b2a42066784c8df938518da2b51bb8cc9a89ea34";
-};
+    return "0xe9fad2cd67f9ca1d0b7a6513b2a42066784c8df938518da2b51bb8cc9a89ea34"
+}
 
-export const waitForNonceUpdate = async () => {
-  return new Promise((res) => {
-    setTimeout(res, 10000);
-  });
-};
+export const waitForNonceUpdate = async (): Promise<void> => {
+    const tenSeconds = 10000
+    await new Promise((resolve) => setTimeout(resolve, tenSeconds))
+}
 
-export const generateApproveCallData = (paymasterAddress: Address) => {
-  const approveData = encodeFunctionData({
-    abi: [
-      {
-        inputs: [
-          { name: "_spender", type: "address" },
-          { name: "_value", type: "uint256" },
-        ],
-        name: "approve",
-        outputs: [{ name: "", type: "bool" }],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function",
-      },
-    ],
-    args: [
-      paymasterAddress,
-      0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn,
-    ],
-  });
+export const generateApproveCallData = (paymasterAddress: Address): Hex => {
+    const maxUint256 = BigInt(
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    )
+    const approveAbi: AbiItem[] = [
+        {
+            inputs: [
+                { name: "_spender", type: "address" },
+                { name: "_value", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function"
+        }
+    ]
 
-  return approveData;
-};
+    return encodeFunctionData({
+        abi: approveAbi,
+        functionName: "approve",
+        args: [paymasterAddress, maxUint256]
+    })
+}
+
+export const findUserOperationEvent = (logs: Log[]): boolean => {
+    return logs.some((log) => {
+        try {
+            const event = decodeEventLog({
+                abi: EntryPointAbi,
+                ...log
+            })
+            return event.eventName === "UserOperationEvent"
+        } catch {
+            return false
+        }
+    })
+}

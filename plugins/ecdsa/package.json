@@ -1,6 +1,6 @@
 {
-  "name": "@kerneljs/core",
-  "version": "0.0.1-alpha.6",
+  "name": "@kerneljs/ecdsa-validator",
+  "version": "0.0.1-alpha.12",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -8,14 +8,6 @@
   "typings": "./_types/index.d.ts",
   "type": "module",
   "sideEffects": false,
-  "description": "A utility library for working with ERC-4337",
-  "keywords": [
-    "ethereum",
-    "erc-4337",
-    "eip-4337",
-    "paymaster",
-    "bundler"
-  ],
   "license": "MIT",
   "files": [
     "_esm",
@@ -42,45 +34,9 @@
     "lint": "biome check .",
     "lint:fix": "bun run lint --apply"
   },
-  "exports": {
-    ".": {
-      "types": "./_types/index.d.ts",
-      "import": "./_esm/index.js",
-      "default": "./_cjs/index.js"
-    },
-    "./accounts": {
-      "types": "./_types/accounts/index.d.ts",
-      "import": "./_esm/accounts/index.js",
-      "default": "./_cjs/accounts/index.js"
-    },
-    "./plugins": {
-      "types": "./_types/plugins/index.d.ts",
-      "import": "./_esm/plugins/index.js",
-      "default": "./_cjs/plugins/index.js"
-    },
-    "./actions": {
-      "types": "./_types/actions/index.d.ts",
-      "import": "./_esm/actions/index.js",
-      "default": "./_cjs/actions/index.js"
-    },
-    "./actions/kernel": {
-      "types": "./_types/actions/kernel.d.ts",
-      "import": "./_esm/actions/kernel.js",
-      "default": "./_cjs/actions/kernel.js"
-    },
-    "./clients": {
-      "types": "./_types/clients/index.d.ts",
-      "import": "./_esm/clients/index.js",
-      "default": "./_cjs/clients/index.js"
-    },
-    "./clients/kernel": {
-      "types": "./_types/clients/kernel.d.ts",
-      "import": "./_esm/clients/kernel.js",
-      "default": "./_cjs/clients/kernel.js"
-    }
-  },
   "peerDependencies": {
     "viem": "^1.21.4",
+    "@kerneljs/core": "^0.0.1-alpha.6",
     "permissionless": "^0.0.20"
   }
 }

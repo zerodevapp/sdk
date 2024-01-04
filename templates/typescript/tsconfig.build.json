@@ -1,11 +1,8 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Build",
+  // This file is used to compile the for cjs and esm (see package.json build scripts). It should exclude all test files.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "declaration": true,
-    "inlineSources": true,
-    "noEmit": false,
-    "sourceMap": true
+      "moduleResolution": "node",
+      "sourceMap": true,
   }
 }
