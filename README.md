@@ -1,8 +1,12 @@
-# kernel.js
+# Kernel.js
 
 The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
 
 [See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
+
+## Examples
+
+For examples using Kernel.js, check out [the examples repo](https://github.com/zerodevapp/kernel.js-examples).
 
 ## Installation
 
