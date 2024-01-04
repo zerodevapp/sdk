@@ -134,9 +134,6 @@ const getAccountAddress = async <
     // Find the init code for this account
     const initCode = await initCodeProvider()
 
-    // Find the init code for this account
-    const initCode = await initCodeProvider()
-
     // Get the sender address based on the init code
     return getSenderAddress(client, {
         initCode,
@@ -231,41 +228,25 @@ export async function createKernelAccount<
         // Get the nonce of the smart account
         async getNonce() {
             return getAccountNonce(client, {
-        sender: accountAddress,
-        entryPoint: entryPoint,
-        source: "kernelSmartAccount",
-
-    // Sign a user operation
-    async signUserOperation(userOperation) {
-      const hash = getUserOperationHash({
-        userOperation: {
-          ...userOperation,
-          signature: "0x",
+                sender: accountAddress,
+                entryPoint: entryPoint
+            })
         },
-        entryPoint: entryPoint,
-        chainId: chainId,
-      });
-      const signature = await signMessage(client, {
-        account: viemSigner,
-        message: { raw: hash },
-      });
-      // Always use the sudo mode, since we will use external paymaster
-      return concatHex(["0x00000000", signature]);
-    },
 
         // Sign a user operation
         async signUserOperation(userOperation) {
             return plugin.signUserOperation(userOperation)
         },
 
-      if ((contractCode?.length ?? 0) > 2) return "0x";
+        // Encode the init code
+        async getInitCode() {
+            const contractCode = await getBytecode(client, {
+                address: accountAddress
+            })
+
+            if ((contractCode?.length ?? 0) > 2) return "0x"
 
             return generateInitCode()
-        },
-
-        // Encode the deploy call data
-        async encodeDeployCallData(_) {
-            throw new Error("Simple account doesn't support account deployment")
         },
 
         // Encode the deploy call data
