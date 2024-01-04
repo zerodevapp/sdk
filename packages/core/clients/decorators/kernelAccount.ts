@@ -9,6 +9,7 @@ import type {
     WriteContractParameters
 } from "viem"
 import type { SmartAccount } from "../../accounts/types.js"
+import { prepareUserOperationRequest } from "../../actions/kernelAccount/prepareUserOperationRequest.js"
 import {
     type SendTransactionsWithPaymasterParameters,
     sendTransactions
@@ -19,7 +20,7 @@ import {
 } from "../../actions/smartAccount/deployContract.js"
 import {
     type PrepareUserOperationRequestReturnType,
-    type SponsorUserOperationMiddleware,
+    type SponsorUserOperationMiddleware
 } from "../../actions/smartAccount/prepareUserOperationRequest.js"
 import {
     type SendTransactionWithPaymasterParameters,
@@ -31,7 +32,6 @@ import {
     type WriteContractWithPaymasterParameters,
     writeContract
 } from "../../actions/smartAccount/writeContract.js"
-import { prepareUserOperationRequest } from "../../actions/kernelAccount/prepareUserOperationRequest.js";
 
 export type SmartAccountActions<
     TChain extends Chain | undefined = Chain | undefined,

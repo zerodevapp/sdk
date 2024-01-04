@@ -1,5 +1,6 @@
 import type { Address, Chain, Client, Hex, Transport } from "viem"
 import { estimateFeesPerGas } from "viem/actions"
+import { KernelSmartAccount } from "../../accounts/kernel/signerToEcdsaKernelSmartAccount.js"
 import type { SmartAccount } from "../../accounts/types.js"
 import type {
     GetAccountParameter,
@@ -12,7 +13,6 @@ import {
     parseAccount
 } from "../../utils/index.js"
 import { estimateUserOperationGas } from "../bundler/estimateUserOperationGas.js"
-import { KernelSmartAccount } from "../../accounts/kernel/signerToEcdsaKernelSmartAccount.js";
 
 export type SponsorUserOperationMiddleware = {
     sponsorUserOperation?: (args: {
@@ -27,7 +27,7 @@ export type SponsorUserOperationMiddleware = {
 }
 
 export type PrepareUserOperationRequestParameters<
-    TAccount extends SmartAccount | undefined = SmartAccount | undefined,
+    TAccount extends SmartAccount | undefined = SmartAccount | undefined
 > = {
     userOperation: PartialBy<
         UserOperation,
@@ -70,7 +70,8 @@ export async function prepareUserOperationRequest<
             partialUserOperation.sender || account.address,
             partialUserOperation.nonce || account.getNonce(),
             partialUserOperation.initCode || account.getInitCode(),
-            partialUserOperation.signature || account.getDummySignature(partialUserOperation.callData),
+            partialUserOperation.signature ||
+                account.getDummySignature(partialUserOperation.callData),
             partialUserOperation.callData,
             !partialUserOperation.maxFeePerGas ||
             !partialUserOperation.maxPriorityFeePerGas

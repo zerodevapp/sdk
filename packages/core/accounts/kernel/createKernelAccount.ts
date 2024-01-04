@@ -26,36 +26,36 @@ export type KernelSmartAccount<
  * The account creation ABI for a kernel smart account (from the KernelFactory)
  */
 const createAccountAbi = [
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_implementation",
-        type: "address",
-      },
-      {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
-      },
-      {
-        internalType: "uint256",
-        name: "_index",
-        type: "uint256",
-      },
-    ],
-    name: "createAccount",
-    outputs: [
-      {
-        internalType: "address",
-        name: "proxy",
-        type: "address",
-      },
-    ],
-    stateMutability: "payable",
-    type: "function",
-  },
-] as const;
+    {
+        inputs: [
+            {
+                internalType: "address",
+                name: "_implementation",
+                type: "address"
+            },
+            {
+                internalType: "bytes",
+                name: "_data",
+                type: "bytes"
+            },
+            {
+                internalType: "uint256",
+                name: "_index",
+                type: "uint256"
+            }
+        ],
+        name: "createAccount",
+        outputs: [
+            {
+                internalType: "address",
+                name: "proxy",
+                type: "address"
+            }
+        ],
+        stateMutability: "payable",
+        type: "function"
+    }
+] as const
 
 /**
  * Default addresses for kernel smart account
@@ -93,7 +93,7 @@ const getAccountInitCode = async ({
     validatorAddress: Address
     enableData: Promise<Hex>
 }): Promise<Hex> => {
-  if (!owner) throw new Error("Owner account not found");
+    if (!owner) throw new Error("Owner account not found")
 
     // Build the account initialization data
     const initialisationData = encodeFunctionData({
@@ -102,16 +102,16 @@ const getAccountInitCode = async ({
         args: [validatorAddress, await enableData]
     })
 
-  // Build the account init code
-  return concatHex([
-    factoryAddress,
-    encodeFunctionData({
-      abi: createAccountAbi,
-      functionName: "createAccount",
-      args: [accountLogicAddress, initialisationData, index],
-    }) as Hex,
-  ]);
-};
+    // Build the account init code
+    return concatHex([
+        factoryAddress,
+        encodeFunctionData({
+            abi: createAccountAbi,
+            functionName: "createAccount",
+            args: [accountLogicAddress, initialisationData, index]
+        }) as Hex
+    ])
+}
 
 /**
  * Check the validity of an existing account address, or fetch the pre-deterministic account address for a kernel smart wallet
@@ -120,8 +120,8 @@ const getAccountInitCode = async ({
  * @param initCodeProvider
  */
 const getAccountAddress = async <
-  TTransport extends Transport = Transport,
-  TChain extends Chain | undefined = Chain | undefined
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
 >({
     client,
     entryPoint,
@@ -134,15 +134,15 @@ const getAccountAddress = async <
     // Find the init code for this account
     const initCode = await initCodeProvider()
 
-  // Find the init code for this account
-  const initCode = await initCodeProvider();
+    // Find the init code for this account
+    const initCode = await initCodeProvider()
 
-  // Get the sender address based on the init code
-  return getSenderAddress(client, {
-    initCode,
-    entryPoint,
-  });
-};
+    // Get the sender address based on the init code
+    return getSenderAddress(client, {
+        initCode,
+        entryPoint
+    })
+}
 
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
@@ -202,7 +202,7 @@ export async function createKernelAccount<
             })
     ])
 
-  if (!accountAddress) throw new Error("Account address not found");
+    if (!accountAddress) throw new Error("Account address not found")
 
     // Build the EOA Signer
     const account = toAccount({
@@ -221,16 +221,16 @@ export async function createKernelAccount<
         }
     })
 
-  return {
-    ...account,
-    client: client,
-    publicKey: accountAddress,
-    entryPoint: entryPoint,
-    source: "kernelSmartAccount",
+    return {
+        ...account,
+        client: client,
+        publicKey: accountAddress,
+        entryPoint: entryPoint,
+        source: "kernelSmartAccount",
 
-    // Get the nonce of the smart account
-    async getNonce() {
-      return getAccountNonce(client, {
+        // Get the nonce of the smart account
+        async getNonce() {
+            return getAccountNonce(client, {
         sender: accountAddress,
         entryPoint: entryPoint,
         source: "kernelSmartAccount",
@@ -260,13 +260,13 @@ export async function createKernelAccount<
 
       if ((contractCode?.length ?? 0) > 2) return "0x";
 
-      return generateInitCode();
-    },
+            return generateInitCode()
+        },
 
-    // Encode the deploy call data
-    async encodeDeployCallData(_) {
-      throw new Error("Simple account doesn't support account deployment");
-    },
+        // Encode the deploy call data
+        async encodeDeployCallData(_) {
+            throw new Error("Simple account doesn't support account deployment")
+        },
 
         // Encode the deploy call data
         async encodeDeployCallData(_) {

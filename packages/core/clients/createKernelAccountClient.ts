@@ -11,10 +11,8 @@ import { type SmartAccount } from "../accounts/types.js"
 import { type SponsorUserOperationMiddleware } from "../actions/smartAccount/prepareUserOperationRequest.js"
 import { type BundlerRpcSchema } from "../types/bundler.js"
 import type { Prettify } from "../types/index.js"
-import {
-    type SmartAccountActions,
-} from "./decorators/smartAccount.js"
-import { kernelAccountActions } from "./decorators/kernelAccount.js";
+import { kernelAccountActions } from "./decorators/kernelAccount.js"
+import { type SmartAccountActions } from "./decorators/smartAccount.js"
 
 /**
  * TODO:
