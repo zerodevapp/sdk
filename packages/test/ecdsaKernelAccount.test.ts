@@ -97,11 +97,13 @@ describe("ECDSA kernel Account", () => {
     })
 
     test("Account should throw when trying to sign a transaction", async () => {
-        await account.signTransaction({
-            to: zeroAddress,
-            value: 0n,
-            data: "0x"
-        })
+        await expect(async () => {
+            await account.signTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+        }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
     test("Client signMessage should return a valid signature", async () => {
@@ -148,14 +150,27 @@ describe("ECDSA kernel Account", () => {
         expect(response).toMatch(SIGNATURE_REGEX)
     })
 
-    test("Client deploy contract", async () => {
-        expect(async () => {
-            await smartAccountClient.deployContract({
+    test(
+        "Client deploy contract",
+        async () => {
+            const response = await smartAccountClient.deployContract({
                 abi: GreeterAbi,
                 bytecode: GreeterBytecode
             })
-        }).toThrow("Kernel account doesn't support account deployment")
-    })
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: response
+                })
+
+            expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Smart account client send multiple transactions",
@@ -181,7 +196,7 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.skip(
+    test(
         "Write contract",
         async () => {
             const greeterContract = getContract({
@@ -228,7 +243,7 @@ describe("ECDSA kernel Account", () => {
                     hash: response
                 })
 
-            const eventFound = findUserOperationEvent(transactionReceipt.logs)
+            expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
         },
         TEST_TIMEOUT
     )
