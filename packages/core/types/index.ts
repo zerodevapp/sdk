@@ -1,1 +1,7 @@
-export { type KernelPlugin, type KernelPaymasterRpcSchema } from "./kernel"
+export type {
+    KernelPlugin,
+    KernelPaymasterRpcSchema,
+    ExecutorData
+} from "./kernel"
+
+export { ValidatorMode } from "./kernel"

@@ -2,8 +2,11 @@ import { createKernelAccount } from "@kerneljs/core/accounts"
 import { createKernelPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
+    getPermissionFromABI,
+    signerToSessionKeyValidator
+} from "@kerneljs/session-key"
+import {
     BundlerClient,
-    SmartAccountClient,
     createBundlerClient,
     createSmartAccountClient
 } from "permissionless"
@@ -29,10 +32,15 @@ import {
     decodeEventLog,
     encodeFunctionData
 } from "viem"
-import { type Account, privateKeyToAccount } from "viem/accounts"
+import {
+    type Account,
+    generatePrivateKey,
+    privateKeyToAccount
+} from "viem/accounts"
 import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
+import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
@@ -96,45 +104,55 @@ export const getSignerToEcdsaKernelAccount =
 
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            plugin: ecdsaValidatorPlugin
+            defaultValidator: ecdsaValidatorPlugin,
+            index: 213123n
         })
     }
 
-// export const getSignerToSafeSmartAccount = async (args?: {
-//   setupTransactions?: {
-//     to: Address;
-//     data: Address;
-//     value: bigint;
-//   }[];
-// }) => {
-//   if (!process.env.TEST_PRIVATE_KEY)
-//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
+export const getSignerToSessionKeyKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
 
-//   const publicClient = await getPublicClient();
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const sessionKey = privateKeyToAccount(generatePrivateKey())
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" }
+            }
+        )
 
-//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+        const sessionKeyPlugin = await signerToSessionKeyValidator(
+            publicClient,
+            {
+                signer: sessionKey,
+                validatorData: {
+                    sessionKey,
+                    sessionKeyData: {
+                        permissions: [
+                            getPermissionFromABI({
+                                abi: TEST_ERC20Abi,
+                                functionName: "transfer",
+                                target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
+                            })
+                        ]
+                    }
+                }
+            }
+        )
 
-//   return await signerToSafeSmartAccount(publicClient, {
-//     entryPoint: getEntryPoint(),
-//     signer: signer,
-//     safeVersion: "1.4.1",
-//     saltNonce: 100n,
-//     setupTransactions: args?.setupTransactions,
-//   });
-// };
-// export const getSignerToEcdsaKernelAccount = async () => {
-//   if (!process.env.TEST_PRIVATE_KEY)
-//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
-
-//   const publicClient = await getPublicClient();
-//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
-
-//   return await signerToEcdsaKernelSmartAccount(publicClient, {
-//     entryPoint: getEntryPoint(),
-//     signer: signer,
-//     index: 100n,
-//   });
-// };
+        return createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            defaultValidator: ecdsaValidatorPlugin,
+            plugin: sessionKeyPlugin,
+            index: 213123n
+        })
+    }
 
 export const getSmartAccountClient = async ({
     account,
@@ -142,14 +160,14 @@ export const getSmartAccountClient = async ({
 }: SponsorUserOperationMiddleware & {
     account?: SmartAccount
 } = {}) => {
-    const pimlicoApiKey = process.env.PIMLICO_API_KEY
-    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
-    if (!pimlicoApiKey) {
-        throw new Error("PIMLICO_API_KEY environment variable not set")
-    }
-    if (!pimlicoBundlerRpcHost) {
-        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
-    }
+    if (!process.env.ZERODEV_PAYMASTER_RPC_HOST)
+        throw new Error(
+            "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
+        )
+    if (!process.env.ZERODEV_PROJECT_ID)
+        throw new Error("ZERODEV_PROJECT_ID environment variable not set")
+    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
 
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
@@ -157,7 +175,9 @@ export const getSmartAccountClient = async ({
     return createSmartAccountClient({
         account: resolvedAccount,
         chain,
-        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`),
+        transport: http(
+            `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?bundlerProvider=ALCHEMY`
+        ),
         sponsorUserOperation
     })
 }

@@ -154,15 +154,11 @@ const getAccountAddress = async <
  */
 export async function createKernelAccount<
     TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TPlugin extends KernelPlugin<string, TTransport, TChain> = KernelPlugin<
-        "ECDSAValidator",
-        TTransport,
-        TChain
-    >
+    TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain>,
     {
+        defaultValidator,
         plugin,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
@@ -170,7 +166,8 @@ export async function createKernelAccount<
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
         deployedAccountAddress
     }: {
-        plugin: TPlugin
+        defaultValidator: KernelPlugin<string, TTransport, TChain>
+        plugin?: KernelPlugin<string, TTransport, TChain>
         entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
@@ -178,15 +175,16 @@ export async function createKernelAccount<
         deployedAccountAddress?: Address
     }
 ): Promise<KernelSmartAccount<TTransport, TChain>> {
+    const currentValidator = plugin ?? defaultValidator
     // Helper to generate the init code for the smart account
     const generateInitCode = () =>
         getAccountInitCode({
-            owner: plugin.signer.address,
+            owner: defaultValidator.signer.address,
             index,
             factoryAddress,
             accountLogicAddress,
-            validatorAddress: plugin.address,
-            enableData: plugin.getEnableData()
+            validatorAddress: defaultValidator.address,
+            enableData: defaultValidator.getEnableData()
         })
 
     // Fetch account address and chain id
@@ -205,14 +203,17 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            return signMessage(client, { account: plugin.signer, message })
+            return signMessage(client, {
+                account: currentValidator.signer,
+                message
+            })
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
         async signTypedData(typedData) {
             return signTypedData(client, {
-                account: plugin.signer,
+                account: currentValidator.signer,
                 ...typedData
             })
         }
@@ -235,7 +236,18 @@ export async function createKernelAccount<
 
         // Sign a user operation
         async signUserOperation(userOperation) {
-            return plugin.signUserOperation(userOperation)
+            let pluginEnableSignature
+            if (plugin) {
+                pluginEnableSignature =
+                    await defaultValidator.getPluginApproveSignature(
+                        accountAddress,
+                        plugin
+                    )
+            }
+            return currentValidator.signUserOperation(
+                userOperation,
+                pluginEnableSignature
+            )
         },
 
         // Encode the init code
@@ -279,8 +291,19 @@ export async function createKernelAccount<
         },
 
         // Get simple dummy signature
-        async getDummySignature() {
-            return plugin.getDummySignature()
+        async getDummySignature(userOperation) {
+            let pluginEnableSignature
+            if (plugin) {
+                pluginEnableSignature =
+                    await defaultValidator.getPluginApproveSignature(
+                        accountAddress,
+                        plugin
+                    )
+            }
+            return currentValidator.getDummySignature(
+                userOperation,
+                pluginEnableSignature
+            )
         }
     }
 }

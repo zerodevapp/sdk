@@ -1,35 +1,28 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import { SmartAccountClient, UserOperation } from "@zerodev/core"
-import { prepareUserOperationRequest } from "@zerodev/core/actions/kernelAccount/prepareUserOperationRequest"
-import {
-    signerToEcdsaValidator,
-    signerToSessionKeyValidator
-} from "@zerodev/core/plugins"
-import { SessionKeyValidatorPlugin } from "@zerodev/core/plugins/toSessionKeyValidatorPlugin"
+import { type SessionKeyValidatorPlugin } from "@kerneljs/session-key"
+import { SmartAccountClient } from "permissionless"
+import { SmartAccount } from "permissionless/accounts"
 import {
     http,
     Address,
+    Chain,
     type Client,
     Hex,
+    PrivateKeyAccount,
     PublicClient,
+    Transport,
     createClient,
     createPublicClient,
     encodeFunctionData,
     getFunctionSelector,
     zeroAddress
 } from "viem"
-import {
-    getChainId,
-    readContract,
-    signMessage,
-    signTypedData
-} from "viem/actions"
+import { privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
-import { getAction } from "../core/utils/getAction"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
 import {
     getEntryPoint,
-    getKernelAccountClient,
+    getKernelPaymasterClient,
     getPimlicoPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
@@ -45,103 +38,52 @@ describe("Session Key kernel Account", async () => {
     })
     let sessionKeyValidatorPlugin: SessionKeyValidatorPlugin
     let testPrivateKey: Hex
+    let owner: PrivateKeyAccount
     let accountAddress: Address
     let Test_ERC20Address: Address
-    let ecdsaSmartAccountClient: SmartAccountClient
-    let sessionKeySmartAccountClient: SmartAccountClient
+    let ecdsaSmartAccountClient: SmartAccountClient<
+        Transport,
+        Chain,
+        SmartAccount
+    >
+    let sessionKeySmartAccountClient: SmartAccountClient<
+        Transport,
+        Chain,
+        SmartAccount
+    >
 
     beforeAll(async () => {
         Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
         publicClient = await getPublicClient()
-        // sessionKeyValidatorPlugin = await getSignerToSessionKeyKernelAccount();
         testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
+        owner = privateKeyToAccount(testPrivateKey)
 
-        sessionKeySmartAccountClient = await getKernelAccountClient({
+        sessionKeySmartAccountClient = await getSmartAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
-            sponsorUserOperation: async ({
-                entryPoint: _entryPoint,
-                userOperation
-            }): Promise<{
-                paymasterAndData: Hex
-                preVerificationGas: bigint
-                verificationGasLimit: bigint
-                callGasLimit: bigint
-            }> => {
-                const pimlicoPaymaster = getPimlicoPaymasterClient()
-                return pimlicoPaymaster.sponsorUserOperation({
+            sponsorUserOperation: async ({ userOperation }) => {
+                const kernelPaymaster = getKernelPaymasterClient()
+                const entryPoint = getEntryPoint()
+                return kernelPaymaster.sponsorUserOperation({
                     userOperation,
-                    entryPoint: getEntryPoint()
+                    entryPoint
                 })
             }
         })
         accountAddress = (await sessionKeySmartAccountClient.account
             ?.address) as Address
 
-        ecdsaSmartAccountClient = await getKernelAccountClient({
+        ecdsaSmartAccountClient = await getSmartAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
-            sponsorUserOperation: async ({
-                entryPoint: _entryPoint,
-                userOperation
-            }): Promise<{
-                paymasterAndData: Hex
-                preVerificationGas: bigint
-                verificationGasLimit: bigint
-                callGasLimit: bigint
-            }> => {
-                const pimlicoPaymaster = getPimlicoPaymasterClient()
-                return pimlicoPaymaster.sponsorUserOperation({
+            sponsorUserOperation: async ({ userOperation }) => {
+                const kernelPaymaster = getKernelPaymasterClient()
+                const entryPoint = getEntryPoint()
+                return kernelPaymaster.sponsorUserOperation({
                     userOperation,
-                    entryPoint: getEntryPoint()
+                    entryPoint
                 })
             }
         })
     })
-
-    // test("Validate signature", async () => {
-    //   const message = "Test message";
-    //   const signature = await client.signMessage({
-    //     account: sessionKeyValidatorPlugin.address,
-    //     message: message,
-    //   });
-    //   const isValid = await sessionKeyValidatorPlugin.validateSignature(message, signature);
-    //   expect(isValid).toBe(true);
-
-    //   sessionKeyValidatorPlugin
-    // });
-
-    // test("Enable session key", async () => {
-    //   const enableData = await sessionKeyValidatorPlugin.getEnableData();
-    //   const transactionHash = await publicClient.sendTransaction({
-    //     to: accountAddress,
-    //     data: enableData,
-    //     value: 0n
-    //   });
-    //   expect(transactionHash).toBeString();
-    //   expect(transactionHash).toHaveLength(66);
-    //   expect(transactionHash).toMatch(/^0x[0-9a-fA-F]{64}$/);
-    // });
-
-    // test("Disable session key", async () => {
-    //   const disableData = await sessionKeyValidatorPlugin.getDisableData();
-    //   const transactionHash = await publicClient.sendTransaction({
-    //     to: accountAddress,
-    //     data: disableData,
-    //     value: 0n
-    //   });
-    //   expect(transactionHash).toBeString();
-    //   expect(transactionHash).toHaveLength(66);
-    //   expect(transactionHash).toMatch(/^0x[0-9a-fA-F]{64}$/);
-    // });
-
-    // test("Validate signature", async () => {
-    //   const message = "Test message";
-    //   const signature = await publicClient.signMessage({
-    //     account: accountAddress,
-    //     message: message
-    //   });
-    //   const isValid = await sessionKeyValidatorPlugin.validateSignature(message, signature);
-    //   expect(isValid).toBe(true);
-    // });
 
     test("should execute the erc20 token transfer action using SessionKey", async () => {
         console.log("accountAddress", accountAddress)
@@ -165,9 +107,7 @@ describe("Session Key kernel Account", async () => {
             const mintTransactionHash =
                 await ecdsaSmartAccountClient.sendTransaction({
                     to: Test_ERC20Address,
-                    data: mintData,
-                    account: await getSignerToEcdsaKernelAccount(),
-                    chain: polygonMumbai
+                    data: mintData
                 })
             console.log(
                 "mintTransactionHash",
@@ -178,20 +118,33 @@ describe("Session Key kernel Account", async () => {
         const transferData = encodeFunctionData({
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [zeroAddress, 100000000n]
+            args: [owner.address, 100000000n]
         })
 
+        const balanceOfReceipientBefore = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
         const transferTransactionHash =
             await sessionKeySmartAccountClient.sendTransaction({
                 to: Test_ERC20Address,
-                data: transferData,
-                chain: polygonMumbai,
-                account: await getSignerToSessionKeyKernelAccount()
+                data: transferData
             })
 
         console.log(
             "transferTransactionHash",
             `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+        )
+        const balanceOfReceipientAfter = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
+        expect(balanceOfReceipientAfter).toBe(
+            balanceOfReceipientBefore + 100000000n
         )
 
         // const balanceOfAccountAfterTransfer = await getAction(
@@ -206,30 +159,4 @@ describe("Session Key kernel Account", async () => {
 
         // expect(balanceOfAccountAfterTransfer).toBe(BigInt(0));
     }, 1000000)
-
-    // test("Sign user operation", async () => {
-    //   const userOperation: UserOperation = {
-    //     sender: accountAddress,
-    //     nonce: 1,
-    //     initCode: "",
-    //     callData: "",
-    //     callGasLimit: 0n,
-    //     verificationGasLimit: 0n,
-    //     preVerificationGas: 0n,
-    //     maxFeePerGas: 0n,
-    //     maxPriorityFeePerGas: 0n,
-    //     paymaster: zeroAddress,
-    //     paymasterData: "",
-    //     signature: ""
-    //   };
-    //   const signature = await sessionKeyValidatorPlugin.signUserOperation(userOperation);
-    //   expect(signature).toBeString();
-    //   expect(signature).toHaveLength(132);
-    //   expect(signature).toMatch(/^0x[0-9a-fA-F]{130}$/);
-    // });
-
-    // test("Enforce permissions", async () => {
-    //   // Permissions setup and enforcement logic
-    //   // ...
-    // });
 })

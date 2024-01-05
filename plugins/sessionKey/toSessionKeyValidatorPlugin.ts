@@ -1,15 +1,15 @@
 import {
     type Abi,
     type Account,
-    Address,
-    Chain,
-    Client,
+    type Address,
+    type Chain,
+    type Client,
     type GetAbiItemParameters,
     type Hex,
     type InferFunctionName,
+    type LocalAccount,
     type Narrow,
-    Transport,
-    encodeFunctionData,
+    type Transport,
     getFunctionSelector,
     hexToSignature,
     isHex,
@@ -32,9 +32,13 @@ import {
     encodeAbiParameters,
     getAbiItem
 } from "viem/utils"
-import { SessionKeyValidatorAbi } from "../accounts/kernel/abi/SessionKeyValidatorAbi.js"
-// import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js";
+import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
+import { KernelAccountAbi } from "@kerneljs/core"
+import { KERNEL_ADDRESSES } from "@kerneljs/core"
+import { constants } from "@kerneljs/core"
+import type { KernelPlugin } from "@kerneljs/core/types"
+import { ValidatorMode } from "@kerneljs/core/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -44,25 +48,12 @@ import {
 } from "abitype"
 import { type Pretty } from "abitype/src/types.js"
 import { MerkleTree } from "merkletreejs"
+import { getAction, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
-    SmartAccountSigner
-} from "../accounts"
-import { KernelAccountAbi } from "../accounts/kernel/abi/KernelAccountAbi.js"
-import { KERNEL_ADDRESSES } from "../accounts/kernel/signerToEcdsaKernelSmartAccount.js"
-import { DUMMY_ECDSA_SIG } from "../accounts/kernel/toKernelSmartAccount.js"
-import { UserOperation } from "../types/userOperation.js"
-import { getUserOperationHash } from "../utils"
-import { getAction } from "../utils/getAction.js"
-import { KernelPlugin, ValidatorMode } from "./types"
-
-// const encodePermissionData = (permission: Permission): Hex => {
-//   let data = permission.target;
-//   if (permission.index !== undefined) {
-//     data += pad(toHex(permission.index), { size: 32 });
-//   }
-//   return "0x";
-// };
+    type SmartAccountSigner
+} from "permissionless/accounts"
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 
 export type SessionNonces = {
     lastNonce: bigint
@@ -121,9 +112,6 @@ export type SessionKeyValidatorPlugin<
     TChain extends Chain | undefined = Chain | undefined
 > = KernelPlugin<"SessionKeyValidator", TTransport, TChain> & {
     merkleTree: MerkleTree
-    getEnableData: (data?: any) => Promise<Hex>
-    getDisableData: (data?: any) => Promise<Hex>
-    validateSignature: (hash: Hex, signature: Hex) => Promise<boolean>
 }
 
 export type SessionKeyValidatorData = {
@@ -140,18 +128,20 @@ export type ExecutorData = {
 
 export async function signerToSessionKeyValidator<
     TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    TChain extends Chain | undefined = Chain | undefined,
+    TSource extends string = "custom",
+    TAddress extends Address = Address
 >(
     client: Client<TTransport, TChain>,
     {
         signer,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_ADDRESS,
+        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorData,
-        validatorAddress = KERNEL_ADDRESSES.SESSION_KEY_VALIDATOR,
+        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS,
         executorData,
         mode = ValidatorMode.enable
     }: {
-        signer: SmartAccountSigner
+        signer: SmartAccountSigner<TSource, TAddress>
         validatorData: SessionKeyValidatorData
         entryPoint?: Address
         validatorAddress?: Address
@@ -167,15 +157,32 @@ export async function signerToSessionKeyValidator<
         validAfter: 0,
         validUntil: 0
     }
-    const viemSigner: Account =
-        signer.type === "local"
-            ? ({
-                  ...signer,
-                  signTransaction: (_, __) => {
-                      throw new SignTransactionNotSupportedBySmartAccount()
-                  }
-              } as Account)
-            : (signer as Account)
+    const sessionKeyData: SessionKeyData = {
+        ...validatorData.sessionKeyData,
+        validAfter: validatorData?.sessionKeyData?.validAfter ?? 0,
+        validUntil: validatorData?.sessionKeyData?.validUntil ?? 0,
+        paymaster: validatorData?.sessionKeyData?.paymaster ?? zeroAddress
+    }
+    sessionKeyData.permissions =
+        sessionKeyData.permissions?.map((perm, index) => ({
+            ...perm,
+            valueLimit: perm.valueLimit ?? 0n,
+            sig: perm.sig ?? pad("0x", { size: 4 }),
+            rules: perm.rules ?? [],
+            index,
+            executionRule: perm.executionRule ?? {
+                validAfter: 0,
+                interval: 0,
+                runs: 0
+            },
+            operation: perm.operation ?? Operation.Call
+        })) ?? []
+    const viemSigner: LocalAccount = {
+        ...signer,
+        signTransaction: (_, __) => {
+            throw new SignTransactionNotSupportedBySmartAccount()
+        }
+    } as LocalAccount
 
     // // Fetch chain id
     const [chainId] = await Promise.all([getChainId(client)])
@@ -194,32 +201,43 @@ export async function signerToSessionKeyValidator<
         }
     })
 
-    const merkleTree: MerkleTree = new MerkleTree(
-        (validatorData?.sessionKeyData?.permissions ?? []).map((permission) =>
-            encodePermissionData(permission)
-        ),
-        keccak256,
-        { sortPairs: true, hashLeaves: true }
+    const encodedPermissionData = sessionKeyData.permissions.map((permission) =>
+        encodePermissionData(permission)
     )
+
+    if (encodedPermissionData.length && encodedPermissionData.length === 1)
+        encodedPermissionData.push(encodedPermissionData[0])
+
+    const merkleTree: MerkleTree = sessionKeyData.permissions?.length
+        ? new MerkleTree(encodedPermissionData, keccak256, {
+              sortPairs: true,
+              hashLeaves: true
+          })
+        : new MerkleTree([pad("0x00", { size: 32 })], keccak256, {
+              hashLeaves: false,
+              complete: true
+          })
 
     const getEnableData = async (
         kernelAccountAddress?: Address
     ): Promise<Hex> => {
+        console.log("kernelAccountAddress", kernelAccountAddress)
         if (!kernelAccountAddress) {
             throw new Error("Kernel account address not provided")
         }
         const lastNonce =
             (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n
+        console.log("lastNonce", lastNonce)
         return concat([
-            validatorAddress,
+            validatorData?.sessionKey.address,
             pad(merkleTree.getHexRoot() as Hex, { size: 32 }),
-            pad(toHex(validatorData?.sessionKeyData?.validAfter ?? 0), {
+            pad(toHex(sessionKeyData?.validAfter ?? 0), {
                 size: 6
             }),
-            pad(toHex(validatorData?.sessionKeyData?.validUntil ?? 0), {
+            pad(toHex(sessionKeyData?.validUntil ?? 0), {
                 size: 6
             }),
-            validatorData?.sessionKeyData?.paymaster ?? zeroAddress,
+            sessionKeyData?.paymaster ?? zeroAddress,
             pad(toHex(lastNonce), { size: 32 })
         ])
     }
@@ -236,6 +254,7 @@ export async function signerToSessionKeyValidator<
             functionName: "nonces",
             args: [kernelAccountAddress]
         })
+        console.log("nonce", nonce)
 
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
@@ -246,25 +265,24 @@ export async function signerToSessionKeyValidator<
     ): Promise<Hex> => {
         if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
             return mode
-        } else {
-            const enableData = await getEnableData(accountAddress)
-            const enableDataLength = enableData.length / 2 - 1
-            const enableSignature = pluginEnableSignature
-            if (!enableSignature) {
-                throw new Error("Enable signature not set")
-            }
-            return concat([
-                mode, // 4 bytes 0 - 4
-                pad(toHex(_executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
-                pad(toHex(_executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
-                pad(validatorAddress, { size: 20 }), // 20 bytes 16 - 36
-                pad(_executorData.executor, { size: 20 }), // 20 bytes 36 - 56
-                pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
-                enableData, // 88 - 88 + enableData.length
-                pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
-                enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
-            ])
         }
+        const enableData = await getEnableData(accountAddress)
+        const enableDataLength = enableData.length / 2 - 1
+        const enableSignature = pluginEnableSignature
+        if (!enableSignature) {
+            throw new Error("Enable signature not set")
+        }
+        return concat([
+            mode, // 4 bytes 0 - 4
+            pad(toHex(_executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
+            pad(toHex(_executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
+            pad(validatorAddress, { size: 20 }), // 20 bytes 16 - 36
+            pad(_executorData.executor, { size: 20 }), // 20 bytes 36 - 56
+            pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
+            enableData, // 88 - 88 + enableData.length
+            pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
+            enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
+        ])
     }
 
     const findMatchingPermissions = (
@@ -291,9 +309,8 @@ export async function signerToSessionKeyValidator<
                     dataArray.push(arg.data)
                 }
                 return filterPermissions(targets, dataArray, values)
-            } else {
-                throw Error("Invalid function")
             }
+            throw Error("Invalid function")
         } catch (error) {
             return undefined
         }
@@ -311,7 +328,7 @@ export async function signerToSessionKeyValidator<
             throw Error("Invalid arguments")
         }
         const filteredPermissions = targets.map((target, index) => {
-            const permissionsList = validatorData?.sessionKeyData?.permissions
+            const permissionsList = sessionKeyData?.permissions
             if (!permissionsList || !permissionsList.length) return undefined
 
             const targetToMatch = target.toLowerCase()
@@ -441,15 +458,19 @@ export async function signerToSessionKeyValidator<
 
     const getEncodedPermissionProofData = (callData: Hex): Hex => {
         const matchingPermission = findMatchingPermissions(callData)
+        console.log("matchingPermission", matchingPermission)
         // [TODO]: add shouldDelegateViaFallback() check
-        if (!matchingPermission && !false /*shouldDelegateViaFallback()*/) {
+        if (
+            !matchingPermission &&
+            !(merkleTree.getHexRoot() === pad("0x00", { size: 32 }))
+        ) {
             throw Error(
                 "SessionKeyValidator: No matching permission found for the userOp"
             )
         }
         const encodedPermissionData =
-            validatorData?.sessionKeyData?.permissions &&
-            validatorData?.sessionKeyData.permissions.length !== 0 &&
+            sessionKeyData?.permissions &&
+            sessionKeyData.permissions.length !== 0 &&
             matchingPermission
                 ? encodePermissionData(matchingPermission)
                 : "0x"
@@ -466,8 +487,8 @@ export async function signerToSessionKeyValidator<
                 keccak256(encodedPermissionData)
             )
         }
-        return validatorData?.sessionKeyData?.permissions &&
-            validatorData.sessionKeyData.permissions.length !== 0 &&
+        return sessionKeyData?.permissions &&
+            sessionKeyData.permissions.length !== 0 &&
             matchingPermission
             ? encodePermissionData(matchingPermission, merkleProof)
             : "0x"
@@ -484,35 +505,9 @@ export async function signerToSessionKeyValidator<
         source: "SessionKeyValidator",
         getEnableData,
 
-        getDisableData: async (data?: any): Promise<Hex> => {
-            return encodeFunctionData({
-                abi: SessionKeyValidatorAbi,
-                functionName: "disable",
-                args: [data]
-            })
-        },
-        getValidatorSignature,
-
-        validateSignature: async (
-            hash: Hex,
-            signature: Hex
-        ): Promise<boolean> => {
-            // Call the smart contract to validate the signature
-            const result = getAction(
-                client,
-                readContract
-            )({
-                abi: SessionKeyValidatorAbi,
-                address: validatorAddress,
-                functionName: "validateSignature",
-                args: [hash, signature]
-            })
-            return result.toString() !== `0x${"01".padStart(16, "0")}`
-        },
-
         signUserOperation: async (
-            userOperation: UserOperation,
-            pluginEnableSignature?: Hex
+            userOperation,
+            pluginEnableSignature
         ): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
@@ -540,25 +535,16 @@ export async function signerToSessionKeyValidator<
             return 0n
         },
 
-        async getDummySignature(
-            accountAddress: Address,
-            calldata: Hex,
-            pluginEnableSignature: Hex
-        ) {
-            console.log(
-                "getDummySignature",
-                accountAddress,
-                calldata,
-                pluginEnableSignature
-            )
+        async getDummySignature(userOperation, pluginEnableSignature) {
+            console.log("userOperation", userOperation)
             return concat([
                 await getValidatorSignature(
-                    accountAddress,
+                    userOperation.sender,
                     pluginEnableSignature
                 ),
                 validatorData.sessionKey.address,
-                DUMMY_ECDSA_SIG,
-                getEncodedPermissionProofData(calldata)
+                constants.DUMMY_ECDSA_SIG,
+                getEncodedPermissionProofData(userOperation.callData)
             ])
         },
         getPluginApproveSignature: async () => {

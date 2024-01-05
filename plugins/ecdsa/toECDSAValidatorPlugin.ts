@@ -1,6 +1,6 @@
 import { KERNEL_ADDRESSES } from "@kerneljs/core"
-import type { KernelPlugin } from "@kerneljs/core/types/kernel"
-import { getUserOperationHash } from "permissionless"
+import type { KernelPlugin } from "@kerneljs/core/types"
+import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -9,9 +9,13 @@ import {
     type Address,
     type Chain,
     type Client,
+    type Hex,
     type LocalAccount,
     type Transport,
-    concatHex
+    concatHex,
+    hexToBigInt,
+    pad,
+    toHex
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
@@ -75,7 +79,7 @@ export async function signerToEcdsaValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(userOperation) {
+        async signUserOperation(userOperation: UserOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
@@ -95,6 +99,54 @@ export async function signerToEcdsaValidator<
         // Get simple dummy signature
         async getDummySignature() {
             return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+        },
+        async getPluginApproveSignature(
+            accountAddress: Address,
+            plugin: KernelPlugin
+        ): Promise<Hex> {
+            const sender = accountAddress
+            const executorData = plugin.getExecutorData()
+            if (!executorData.selector || !executorData.executor) {
+                throw new Error("Invalid executor data")
+            }
+            const ownerSig = await account.signTypedData({
+                domain: {
+                    name: "Kernel",
+                    version: "0.2.3",
+                    chainId,
+                    verifyingContract: sender
+                },
+                types: {
+                    ValidatorApproved: [
+                        { name: "sig", type: "bytes4" },
+                        { name: "validatorData", type: "uint256" },
+                        { name: "executor", type: "address" },
+                        { name: "enableData", type: "bytes" }
+                    ]
+                },
+                message: {
+                    sig: executorData.selector,
+                    validatorData: hexToBigInt(
+                        concatHex([
+                            pad(toHex(executorData.validUntil ?? 0), {
+                                size: 6
+                            }),
+                            pad(toHex(executorData.validAfter ?? 0), {
+                                size: 6
+                            }),
+                            plugin.address
+                        ]),
+                        { size: 32 }
+                    ),
+                    executor: executorData.executor as Address,
+                    enableData: await plugin.getEnableData(sender)
+                },
+                primaryType: "ValidatorApproved"
+            })
+            return ownerSig
+        },
+        getExecutorData: () => {
+            throw new Error("Not implemented")
         }
     }
 }

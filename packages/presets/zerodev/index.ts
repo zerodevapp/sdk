@@ -68,7 +68,7 @@ export async function createEcdsaKernelAccountClient<
     })
 
     const account = await createKernelAccount(publicClient, {
-        plugin: ecdsaValidator,
+        defaultValidator: ecdsaValidator,
         index
     })
 

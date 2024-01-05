@@ -355,7 +355,7 @@ describe("ECDSA kernel Account", () => {
                 publicClient,
                 {
                     entryPoint: getEntryPoint(),
-                    plugin: ecdsaValidatorPlugin,
+                    defaultValidator: ecdsaValidatorPlugin,
                     deployedAccountAddress
                 }
             )
@@ -364,23 +364,6 @@ describe("ECDSA kernel Account", () => {
             expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
                 initialEcdsaSmartAccount.address
             )
-
-            // Ensure that it will fail with an invalid owner address
-            // const invalidOwner = privateKeyToAccount(generatePrivateKey());
-            // const ecdsaValidatorPluginInvalidOwner = await signerToEcdsaValidator(publicClient, {
-            //   entryPoint: getEntryPoint(),
-            //   signer: invalidOwner,
-            // });
-            // expect(async () => {
-            //   await createKernelAccount(
-            //     publicClient,
-            //     {
-            //       entryPoint: getEntryPoint(),
-            //       plugin: ecdsaValidatorPluginInvalidOwner,
-            //       deployedAccountAddress
-            //     }
-            //   );
-            // }).toThrow(new Error("Invalid owner for the already deployed account"));
         },
         TEST_TIMEOUT
     )

@@ -63,6 +63,11 @@
       "import": "./_esm/actions/index.js",
       "default": "./_cjs/actions/index.js"
     },
+    "./types": {
+      "types": "./_types/types/index.d.ts",
+      "import": "./_esm/types/index.js",
+      "default": "./_cjs/types/index.js"
+    },
     "./actions/kernel": {
       "types": "./_types/actions/kernel.d.ts",
       "import": "./_esm/actions/kernel.js",
