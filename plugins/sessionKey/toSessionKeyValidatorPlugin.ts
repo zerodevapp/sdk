@@ -1,21 +1,15 @@
 import {
     type Abi,
-    type Account,
     type Address,
     type Chain,
     type Client,
-    type GetAbiItemParameters,
     type Hex,
-    type InferFunctionName,
     type LocalAccount,
-    type Narrow,
     type Transport,
     getFunctionSelector,
-    hexToSignature,
     isHex,
     keccak256,
     pad,
-    signatureToHex,
     toHex,
     zeroAddress
 } from "viem"
@@ -26,27 +20,13 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import {
-    concat,
-    decodeFunctionData,
-    encodeAbiParameters,
-    getAbiItem
-} from "viem/utils"
+import { concat, decodeFunctionData, encodeAbiParameters } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@kerneljs/core"
 import { KERNEL_ADDRESSES } from "@kerneljs/core"
 import { constants } from "@kerneljs/core"
-import type { KernelPlugin } from "@kerneljs/core/types"
 import { ValidatorMode } from "@kerneljs/core/types"
-import {
-    type AbiFunction,
-    type AbiParameter,
-    type AbiParameterKind,
-    type AbiParameterToPrimitiveType,
-    type ExtractAbiFunction
-} from "abitype"
-import { type Pretty } from "abitype/src/types.js"
 import { MerkleTree } from "merkletreejs"
 import { getAction, getUserOperationHash } from "permissionless"
 import {
@@ -54,18 +34,22 @@ import {
     type SmartAccountSigner
 } from "permissionless/accounts"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
-
-export type SessionNonces = {
-    lastNonce: bigint
-    invalidNonce: bigint
-}
+import type {
+    ExecutorData,
+    PermissionCore,
+    SessionKeyData,
+    SessionKeyValidatorData,
+    SessionKeyValidatorPlugin,
+    SessionNonces
+} from "./types.js"
+import { fixSignedData, getPermissionFromABI } from "./utils.js"
 
 export enum Operation {
     Call = 0,
     DelegateCall = 1
 }
 
-enum ParamOperator {
+export enum ParamOperator {
     EQUAL = 0,
     GREATER_THAN = 1,
     LESS_THAN = 2,
@@ -74,63 +58,13 @@ enum ParamOperator {
     NOT_EQUAL = 5
 }
 
-// type SessionNonces = {
-//   lastNonce: bigint;
-//   invalidNonce: bigint;
-// };
-
-type ExecutionRule = {
-    validAfter: number // 48 bits
-    interval: number // 48 bits
-    runs: number // 48 bits
-}
-interface ParamRules {
-    offset: number
-    condition: ParamOperator
-    param: Hex
-}
-
-type Permission = {
-    target: Address
-    index?: number
-    rules?: ParamRules[]
-    sig?: Hex
-    valueLimit?: bigint
-    executionRule?: ExecutionRule
-    operation?: Operation
-}
-
-interface SessionKeyData {
-    validUntil?: number
-    validAfter?: number
-    paymaster?: Address
-    permissions?: Permission[]
-}
-
-export type SessionKeyValidatorPlugin<
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
-> = KernelPlugin<"SessionKeyValidator", TTransport, TChain> & {
-    merkleTree: MerkleTree
-}
-
-export type SessionKeyValidatorData = {
-    sessionKey: Account
-    sessionKeyData?: SessionKeyData
-}
-
-export type ExecutorData = {
-    executor: Address
-    selector: Hex
-    validUntil: number
-    validAfter: number
-}
-
 export async function signerToSessionKeyValidator<
+    TAbi extends Abi | readonly unknown[],
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
-    TAddress extends Address = Address
+    TAddress extends Address = Address,
+    TFunctionName extends string | undefined = string
 >(
     client: Client<TTransport, TChain>,
     {
@@ -142,7 +76,7 @@ export async function signerToSessionKeyValidator<
         mode = ValidatorMode.enable
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        validatorData: SessionKeyValidatorData
+        validatorData: SessionKeyValidatorData<TAbi, TFunctionName>
         entryPoint?: Address
         validatorAddress?: Address
         executorData?: ExecutorData
@@ -157,18 +91,30 @@ export async function signerToSessionKeyValidator<
         validAfter: 0,
         validUntil: 0
     }
-    const sessionKeyData: SessionKeyData = {
+    const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData.sessionKeyData,
         validAfter: validatorData?.sessionKeyData?.validAfter ?? 0,
         validUntil: validatorData?.sessionKeyData?.validUntil ?? 0,
         paymaster: validatorData?.sessionKeyData?.paymaster ?? zeroAddress
     }
+    const generatedPermissionParams =
+        validatorData?.sessionKeyData?.permissions?.map((perm) =>
+            getPermissionFromABI({
+                abi: perm.abi as Abi,
+                functionName: perm.functionName as string,
+                args: perm.args as []
+            })
+        )
     sessionKeyData.permissions =
         sessionKeyData.permissions?.map((perm, index) => ({
             ...perm,
             valueLimit: perm.valueLimit ?? 0n,
-            sig: perm.sig ?? pad("0x", { size: 4 }),
-            rules: perm.rules ?? [],
+            sig:
+                perm.sig ??
+                generatedPermissionParams?.[index]?.sig ??
+                pad("0x", { size: 4 }),
+            rules:
+                perm.rules ?? generatedPermissionParams?.[index]?.rules ?? [],
             index,
             executionRule: perm.executionRule ?? {
                 validAfter: 0,
@@ -284,7 +230,7 @@ export async function signerToSessionKeyValidator<
 
     const findMatchingPermissions = (
         callData: Hex
-    ): Permission | Permission[] | undefined => {
+    ): PermissionCore | PermissionCore[] | undefined => {
         try {
             const { functionName, args } = decodeFunctionData({
                 abi: KernelAccountAbi,
@@ -317,7 +263,7 @@ export async function signerToSessionKeyValidator<
         targets: Address[],
         dataArray: Hex[],
         values: bigint[]
-    ): Permission[] | undefined => {
+    ): PermissionCore[] | undefined => {
         if (
             targets.length !== dataArray.length ||
             targets.length !== values.length
@@ -374,14 +320,14 @@ export async function signerToSessionKeyValidator<
         return filteredPermissions.every(
             (permission) => permission !== undefined
         )
-            ? (filteredPermissions as Permission[])
+            ? (filteredPermissions as PermissionCore[])
             : undefined
     }
 
     const filterByOperation = (
-        permissions: Permission[],
+        permissions: PermissionCore[],
         operation: Operation
-    ): Permission[] => {
+    ): PermissionCore[] => {
         return permissions.filter(
             (permission) =>
                 permission.operation === operation ||
@@ -390,9 +336,9 @@ export async function signerToSessionKeyValidator<
     }
 
     const filterBySignature = (
-        permissions: Permission[],
+        permissions: PermissionCore[],
         signature: string
-    ): Permission[] => {
+    ): PermissionCore[] => {
         return permissions.filter(
             (permission) =>
                 (permission.sig ?? pad("0x", { size: 4 })).toLowerCase() ===
@@ -401,9 +347,9 @@ export async function signerToSessionKeyValidator<
     }
 
     const findPermissionByRule = (
-        permissions: Permission[],
+        permissions: PermissionCore[],
         data: string
-    ): Permission | undefined => {
+    ): PermissionCore | undefined => {
         return permissions.find((permission) => {
             for (const rule of permission.rules ?? []) {
                 const dataParam: Hex = getFormattedHex(
@@ -555,7 +501,7 @@ export async function signerToSessionKeyValidator<
 }
 
 export const encodePermissionData = (
-    permission: Permission | Permission[],
+    permission: PermissionCore | PermissionCore[],
     merkleProof?: string[] | string[][]
 ): Hex => {
     const permissionParam = {
@@ -641,126 +587,4 @@ export const encodePermissionData = (
         values = [permission]
     }
     return encodeAbiParameters(params, values)
-}
-
-export function getPermissionFromABI<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
->({
-    abi,
-    target,
-    args,
-    functionName,
-    valueLimit
-}: GeneratePermissionFromArgsParameters<TAbi, TFunctionName>): Permission {
-    const abiItem = getAbiItem({
-        abi,
-        args,
-        name: functionName
-    } as GetAbiItemParameters)
-    if (abiItem.type !== "function") {
-        throw Error(`${functionName} not found in abi`)
-    }
-    const functionSelector = getFunctionSelector(abiItem)
-    let paramRules: ParamRules[] = []
-    if (args && Array.isArray(args)) {
-        paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)
-            .map(
-                (arg, i) =>
-                    arg && {
-                        param: pad(
-                            isHex(arg.value)
-                                ? arg.value
-                                : toHex(
-                                      arg.value as Parameters<typeof toHex>[0]
-                                  ),
-                            { size: 32 }
-                        ),
-                        offset: i * 32,
-                        condition: arg.operator
-                    }
-            )
-            .filter((rule) => rule) as ParamRules[]
-    }
-    return {
-        sig: functionSelector,
-        rules: paramRules,
-        target,
-        valueLimit: valueLimit ?? 0n
-    }
-}
-
-export type GetFunctionArgs<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string,
-    TAbiFunction extends AbiFunction = TAbi extends Abi
-        ? ExtractAbiFunction<TAbi, TFunctionName>
-        : AbiFunction,
-    TArgs = CombinedArgs<TAbiFunction["inputs"]>,
-    FailedToParseArgs =
-        | ([TArgs] extends [never] ? true : false)
-        | (readonly unknown[] extends TArgs ? true : false)
-> = true extends FailedToParseArgs
-    ? {
-          args?: readonly unknown[]
-      }
-    : TArgs extends readonly []
-    ? { args?: never }
-    : {
-          args?: TArgs
-      }
-
-export type GeneratePermissionFromArgsParameters<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string,
-    _FunctionName = TAbi extends Abi
-        ? InferFunctionName<TAbi, TFunctionName>
-        : never
-> = Pick<Permission, "target" | "valueLimit"> & {
-    functionName?: _FunctionName
-} & (TFunctionName extends string
-        ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
-        : _FunctionName extends string
-        ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-        : never)
-
-export type AbiParametersToPrimitiveTypes<
-    TAbiParameters extends readonly AbiParameter[],
-    TAbiParameterKind extends AbiParameterKind = AbiParameterKind
-> = Pretty<{
-    [K in keyof TAbiParameters]: AbiParameterToPrimitiveType<
-        TAbiParameters[K],
-        TAbiParameterKind
-    >
-}>
-
-export type AbiParametersToConditons<
-    TAbiParameters extends readonly AbiParameter[]
-> = Pretty<{
-    [K in keyof TAbiParameters]: ParamOperator
-}>
-
-export type CombinedArgs<
-    TAbiParameters extends readonly AbiParameter[],
-    TAbiParameterKind extends AbiParameterKind = AbiParameterKind
-> = {
-    [K in keyof TAbiParameters]: {
-        operator: ParamOperator
-        value: AbiParameterToPrimitiveType<TAbiParameters[K], TAbiParameterKind>
-    } | null
-}
-
-export const fixSignedData = (sig: Hex): Hex => {
-    let signature = sig
-    if (!isHex(signature)) {
-        signature = `0x${signature}`
-        if (!isHex(signature)) {
-            throw new Error(`Invalid signed data ${sig}`)
-        }
-    }
-
-    let { r, s, v } = hexToSignature(signature)
-    if (v === 0n || v === 1n) v += 27n
-    const joined = signatureToHex({ r, s, v })
-    return joined
 }

@@ -2,7 +2,7 @@ import { createKernelAccount } from "@kerneljs/core/accounts"
 import { createZeroDevPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
-    getPermissionFromABI,
+    ParamOperator,
     signerToSessionKeyValidator
 } from "@kerneljs/session-key"
 import {
@@ -135,11 +135,18 @@ export const getSignerToSessionKeyKernelAccount =
                     sessionKey,
                     sessionKeyData: {
                         permissions: [
-                            getPermissionFromABI({
+                            {
+                                target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
                                 abi: TEST_ERC20Abi,
                                 functionName: "transfer",
-                                target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
-                            })
+                                args: [
+                                    {
+                                        operator: ParamOperator.EQUAL,
+                                        value: signer.address
+                                    },
+                                    null
+                                ]
+                            }
                         ]
                     }
                 }
