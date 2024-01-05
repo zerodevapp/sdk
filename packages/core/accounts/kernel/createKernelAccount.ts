@@ -7,10 +7,13 @@ import {
     type Address,
     type Chain,
     type Client,
+    type EncodeDeployDataParameters,
     type Hex,
     type Transport,
     concatHex,
-    encodeFunctionData
+    encodeDeployData,
+    encodeFunctionData,
+    parseAbi
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
@@ -56,6 +59,15 @@ const createAccountAbi = [
         type: "function"
     }
 ] as const
+
+// Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
+// Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
+const createCallAddress = "0x9b35Af71d77eaf8d7e40252370304687390A1A52"
+
+const createCallAbi = parseAbi([
+    "function performCreate(uint256 value, bytes memory deploymentData) public returns (address newContract)",
+    "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
+])
 
 /**
  * Default addresses for kernel smart account
@@ -250,8 +262,28 @@ export async function createKernelAccount<
         },
 
         // Encode the deploy call data
-        async encodeDeployCallData(_) {
-            throw new Error("Kernel account doesn't support account deployment")
+        async encodeDeployCallData(_tx) {
+            return encodeFunctionData({
+                abi: KernelExecuteAbi,
+                functionName: "execute",
+                args: [
+                    createCallAddress,
+                    0n,
+                    encodeFunctionData({
+                        abi: createCallAbi,
+                        functionName: "performCreate",
+                        args: [
+                            0n,
+                            encodeDeployData({
+                                abi: _tx.abi,
+                                bytecode: _tx.bytecode,
+                                args: _tx.args
+                            } as EncodeDeployDataParameters)
+                        ]
+                    }),
+                    1
+                ]
+            })
         },
 
         // Encode a call
