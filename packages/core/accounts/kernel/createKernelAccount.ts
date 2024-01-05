@@ -265,10 +265,9 @@ export async function createKernelAccount<
         async encodeDeployCallData(_tx) {
             return encodeFunctionData({
                 abi: KernelExecuteAbi,
-                functionName: "execute",
+                functionName: "executeDelegateCall",
                 args: [
                     createCallAddress,
-                    0n,
                     encodeFunctionData({
                         abi: createCallAbi,
                         functionName: "performCreate",
@@ -280,8 +279,7 @@ export async function createKernelAccount<
                                 args: _tx.args
                             } as EncodeDeployDataParameters)
                         ]
-                    }),
-                    1
+                    })
                 ]
             })
         },

@@ -59,6 +59,24 @@ export const KernelExecuteAbi = [
         outputs: [],
         stateMutability: "payable",
         type: "function"
+    },
+    {
+        inputs: [
+            {
+                internalType: "address",
+                name: "to",
+                type: "address"
+            },
+            {
+                internalType: "bytes",
+                name: "data",
+                type: "bytes"
+            }
+        ],
+        name: "executeDelegateCall",
+        outputs: [],
+        stateMutability: "payable",
+        type: "function"
     }
 ] as const
 

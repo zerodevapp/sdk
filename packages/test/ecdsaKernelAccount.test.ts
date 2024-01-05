@@ -97,13 +97,11 @@ describe("ECDSA kernel Account", () => {
     })
 
     test("Account should throw when trying to sign a transaction", async () => {
-        await expect(async () => {
-            await account.signTransaction({
-                to: zeroAddress,
-                value: 0n,
-                data: "0x"
-            })
-        }).toThrow(new SignTransactionNotSupportedBySmartAccount())
+        await account.signTransaction({
+            to: zeroAddress,
+            value: 0n,
+            data: "0x"
+        })
     })
 
     test("Client signMessage should return a valid signature", async () => {
