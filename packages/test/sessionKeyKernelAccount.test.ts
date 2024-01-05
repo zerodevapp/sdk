@@ -22,7 +22,7 @@ import { polygonMumbai } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
 import {
     getEntryPoint,
-    getKernelPaymasterClient,
+    getZeroDevPaymasterClient,
     getPimlicoPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
@@ -61,7 +61,7 @@ describe("Session Key kernel Account", async () => {
         sessionKeySmartAccountClient = await getSmartAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
             sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getKernelPaymasterClient()
+                const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
                 return kernelPaymaster.sponsorUserOperation({
                     userOperation,
@@ -75,7 +75,7 @@ describe("Session Key kernel Account", async () => {
         ecdsaSmartAccountClient = await getSmartAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
             sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getKernelPaymasterClient()
+                const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
                 return kernelPaymaster.sponsorUserOperation({
                     userOperation,
@@ -93,7 +93,6 @@ describe("Session Key kernel Account", async () => {
             functionName: "balanceOf",
             args: [accountAddress]
         })
-        console.log("balanceBefore", balanceBefore)
 
         const amountToMint = balanceBefore > 100000000n ? 0n : 100000000n
 

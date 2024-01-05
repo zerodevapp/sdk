@@ -221,13 +221,11 @@ export async function signerToSessionKeyValidator<
     const getEnableData = async (
         kernelAccountAddress?: Address
     ): Promise<Hex> => {
-        console.log("kernelAccountAddress", kernelAccountAddress)
         if (!kernelAccountAddress) {
             throw new Error("Kernel account address not provided")
         }
         const lastNonce =
             (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n
-        console.log("lastNonce", lastNonce)
         return concat([
             validatorData?.sessionKey.address,
             pad(merkleTree.getHexRoot() as Hex, { size: 32 }),
@@ -254,7 +252,6 @@ export async function signerToSessionKeyValidator<
             functionName: "nonces",
             args: [kernelAccountAddress]
         })
-        console.log("nonce", nonce)
 
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
@@ -458,7 +455,6 @@ export async function signerToSessionKeyValidator<
 
     const getEncodedPermissionProofData = (callData: Hex): Hex => {
         const matchingPermission = findMatchingPermissions(callData)
-        console.log("matchingPermission", matchingPermission)
         // [TODO]: add shouldDelegateViaFallback() check
         if (
             !matchingPermission &&
@@ -536,7 +532,6 @@ export async function signerToSessionKeyValidator<
         },
 
         async getDummySignature(userOperation, pluginEnableSignature) {
-            console.log("userOperation", userOperation)
             return concat([
                 await getValidatorSignature(
                     userOperation.sender,
@@ -710,10 +705,10 @@ export type GetFunctionArgs<
           args?: readonly unknown[]
       }
     : TArgs extends readonly []
-      ? { args?: never }
-      : {
-              args?: TArgs
-          }
+    ? { args?: never }
+    : {
+          args?: TArgs
+      }
 
 export type GeneratePermissionFromArgsParameters<
     TAbi extends Abi | readonly unknown[],
@@ -726,11 +721,8 @@ export type GeneratePermissionFromArgsParameters<
 } & (TFunctionName extends string
         ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-          ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                  TAbi,
-                  _FunctionName
-              >
-          : never)
+        ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+        : never)
 
 export type AbiParametersToPrimitiveTypes<
     TAbiParameters extends readonly AbiParameter[],
@@ -772,26 +764,3 @@ export const fixSignedData = (sig: Hex): Hex => {
     const joined = signatureToHex({ r, s, v })
     return joined
 }
-
-// export const getChainId = async (
-//   projectId: string,
-//   backendUrl?: string
-// ): Promise<number | undefined> => {
-//   try {
-//     const {
-//       data: { chainId },
-//     } = await axios.post(
-//       `${backendUrl ?? BACKEND_URL}/v1/projects/get-chain-id`,
-//       {
-//         projectId,
-//       },
-//       {
-//         headers: { "Content-Type": "application/json" },
-//       }
-//     );
-//     return chainId;
-//   } catch (error) {
-//     console.log(error);
-//     return undefined;
-//   }
-// };
