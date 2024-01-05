@@ -1,7 +1,7 @@
 import type { KernelSmartAccount } from "@kerneljs/core"
 import {
     createKernelAccount,
-    createKernelPaymasterClient
+    createZeroDevPaymasterClient
 } from "@kerneljs/core"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import type { SmartAccountClient, UserOperation } from "permissionless"
@@ -78,13 +78,13 @@ export async function createEcdsaKernelAccountClient<
         transport: http(getZeroDevBundlerRPC(projectId, provider)),
         sponsorUserOperation: usePaymaster
             ? async ({ userOperation }): Promise<UserOperation> => {
-                  const kernelPaymaster = createKernelPaymasterClient({
+                  const zerodevPaymaster = createZeroDevPaymasterClient({
                       chain: chain,
                       transport: http(
                           getZeroDevPaymasterRPC(projectId, provider)
                       )
                   })
-                  return kernelPaymaster.sponsorUserOperation({
+                  return zerodevPaymaster.sponsorUserOperation({
                       userOperation
                   })
               }

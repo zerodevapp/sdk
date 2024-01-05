@@ -1,4 +1,4 @@
 export {
-    createKernelPaymasterClient,
-    type KernelPaymasterClient
+    createZeroDevPaymasterClient,
+    type ZeroDevPaymasterClient
 } from "./kernel"

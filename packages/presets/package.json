@@ -1,6 +1,6 @@
 {
   "name": "@kerneljs/presets",
-  "version": "0.0.1-alpha.4",
+  "version": "0.0.1-alpha.5",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -50,7 +50,7 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@kerneljs/core": "^0.0.1-alpha.6",
+    "@kerneljs/core": "^0.0.1-alpha.7",
     "@kerneljs/ecdsa-validator": "^0.0.1-alpha.12",
     "permissionless": "^0.0.20",
     "viem": "^1.21.4"

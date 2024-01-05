@@ -6,7 +6,7 @@ import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem/types/utils"
 import { KERNEL_ADDRESSES } from "../../accounts/index.js"
-import type { KernelPaymasterClient } from "../../clients/kernel.js"
+import type { ZeroDevPaymasterClient } from "../../clients/kernel.js"
 
 export type SponsorUserOperationParameters = {
     userOperation: PartialBy<
@@ -36,31 +36,9 @@ export type SponsorUserOperationReturnType = UserOperation
 
 /**
  * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
- *
- * - Docs: https://docs.pimlico.io/permissionless/reference/stackup-paymaster-actions/sponsorUserOperation
- *
- * @param client {@link PimlicoBundlerClient} that you created using viem's createClient whose transport url is pointing to the Pimlico's bundler.
- * @param args {@link sponsorUserOperationParameters} UserOperation you want to sponsor & entryPoint.
- * @returns paymasterAndData & updated gas parameters, see {@link SponsorUserOperationReturnType}
- *
- *
- * @example
- * import { createClient } from "viem"
- * import { sponsorUserOperation } from "permissionless/actions/stackup"
- *
- * const bundlerClient = createClient({
- *      chain: goerli,
- *      transport: http("https://api.stackup.sh/v2/paymaster/YOUR_API_KEY_HERE")
- * })
- *
- * await sponsorUserOperation(bundlerClient, {
- *      userOperation: userOperationWithDummySignature,
- *      entryPoint: entryPoint
- * }})
- *
  */
 export const sponsorUserOperation = async (
-    client: KernelPaymasterClient,
+    client: ZeroDevPaymasterClient,
     args: SponsorUserOperationParameters
 ): Promise<SponsorUserOperationReturnType> => {
     const response = await client.request({

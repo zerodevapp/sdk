@@ -1,6 +1,6 @@
 export type {
     KernelPlugin,
-    KernelPaymasterRpcSchema,
+    ZeroDevPaymasterRpcSchema,
     ExecutorData
 } from "./kernel"
 
