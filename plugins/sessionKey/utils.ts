@@ -1,22 +1,22 @@
+import type { AbiFunction } from "abitype"
 import {
     type Abi,
-    getAbiItem,
     type GetAbiItemParameters,
-    getFunctionSelector,
-    pad,
-    isHex,
-    toHex,
     type Hex,
+    getAbiItem,
+    getFunctionSelector,
     hexToSignature,
-    signatureToHex
+    isHex,
+    pad,
+    signatureToHex,
+    toHex
 } from "viem"
 import type {
+    CombinedArgs,
     GeneratePermissionFromArgsParameters,
-    PermissionCore,
     ParamRules,
-    CombinedArgs
+    PermissionCore
 } from "./types"
-import type { AbiFunction } from "abitype"
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],

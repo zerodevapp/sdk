@@ -1,3 +1,13 @@
+import type { KernelPlugin } from "@kerneljs/core"
+import {
+    type AbiFunction,
+    type AbiParameter,
+    type AbiParameterKind,
+    type AbiParameterToPrimitiveType,
+    type ExtractAbiFunction
+} from "abitype"
+import type { Pretty } from "abitype/src/types.js"
+import MerkleTree from "merkletreejs"
 import type {
     Abi,
     Account,
@@ -9,16 +19,6 @@ import type {
     Transport
 } from "viem"
 import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin"
-import {
-    type AbiFunction,
-    type AbiParameter,
-    type AbiParameterKind,
-    type AbiParameterToPrimitiveType,
-    type ExtractAbiFunction
-} from "abitype"
-import type { Pretty } from "abitype/src/types.js"
-import type { KernelPlugin } from "@kerneljs/core"
-import MerkleTree from "merkletreejs"
 
 export type SessionNonces = {
     lastNonce: bigint
@@ -56,8 +56,11 @@ export type Permission<
 } & (TFunctionName extends string
         ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-        ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-        : never)
+          ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<
+                  TAbi,
+                  _FunctionName
+              >
+          : never)
 
 export interface SessionKeyData<
     TAbi extends Abi | readonly unknown[],
@@ -106,10 +109,10 @@ export type GetFunctionArgs<
           args?: readonly unknown[]
       }
     : TArgs extends readonly []
-    ? { args?: never }
-    : {
-          args?: TArgs
-      }
+      ? { args?: never }
+      : {
+              args?: TArgs
+          }
 
 export type GeneratePermissionFromArgsParameters<
     TAbi extends Abi | readonly unknown[],
@@ -122,8 +125,8 @@ export type GeneratePermissionFromArgsParameters<
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
     : _FunctionName extends string
-    ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-    : never)
+      ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+      : never)
 
 export type AbiParametersToPrimitiveTypes<
     TAbiParameters extends readonly AbiParameter[],
