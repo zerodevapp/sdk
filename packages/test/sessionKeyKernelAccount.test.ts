@@ -22,12 +22,12 @@ import { polygonMumbai } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
 import {
     getEntryPoint,
-    getZeroDevPaymasterClient,
     getPimlicoPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
-    getSmartAccountClient
+    getSmartAccountClient,
+    getZeroDevPaymasterClient
 } from "./utils"
 
 describe("Session Key kernel Account", async () => {
