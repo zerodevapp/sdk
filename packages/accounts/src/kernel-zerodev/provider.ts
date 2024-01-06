@@ -67,7 +67,7 @@ export enum Operation {
   DelegateCall = 1,
 }
 
-type UserOpDataOperationTypes<T> = T extends UserOperationCallData
+export type UserOpDataOperationTypes<T> = T extends UserOperationCallData
   ? Operation.Call | Operation.DelegateCall
   : T extends BatchUserOperationCallData
   ? Operation.Call
@@ -92,7 +92,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     bundlerProvider,
     opts,
   }: ZeroDevProviderConfig) {
-    const _chain = typeof chain === "number" ? getChain(chain) : chain;
+    const _chain = typeof chain === 'number' ? getChain(chain) : chain;
     const rpcClient = createZeroDevPublicErc4337Client({
       chain: _chain,
       rpcUrl,
@@ -136,7 +136,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     operation: UserOpDataOperationTypes<UserOperationCallData> = Operation.Call
   ): Promise<Hash> => {
     if (!request.to) {
-      throw new Error("transaction is missing to address");
+      throw new Error('transaction is missing to address');
     }
 
     const overrides: UserOperationOverrides = {};
@@ -150,8 +150,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     const { hash } = await this.sendUserOperation(
       {
         target: request.to,
-        data: request.data ?? "0x",
-        value: request.value ? fromHex(request.value, "bigint") : 0n,
+        data: request.data ?? '0x',
+        value: request.value ? fromHex(request.value, 'bigint') : 0n,
       },
       overrides,
       operation
@@ -169,13 +169,13 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   ): Promise<UserOperationStruct> => {
     this._shouldConsume = false;
     if (!isKernelAccount(this.account)) {
-      throw new Error("account not connected!");
+      throw new Error('account not connected!');
     }
     if (!this.account.validator) {
-      throw new Error("validator not connected!");
+      throw new Error('validator not connected!');
     }
 
-    let callData: BytesLike = "0x";
+    let callData: BytesLike = '0x';
 
     if (Array.isArray(data)) {
       if (operation === Operation.Call) {
@@ -237,7 +237,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     return deepHexlify(await resolveProperties<UserOperationStruct>(result));
   };
 
-  sendUserOperation = async <
+  public sendUserOperation = async <
     T extends UserOperationCallData | BatchUserOperationCallData
   >(
     data: T,
@@ -246,16 +246,16 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   ): Promise<SendUserOperationResult> => {
     if (!this._shouldConsume)
       throw new Error(
-        "Cannot send user operation while building user operation"
+        'Cannot send user operation while building user operation'
       );
     if (!isKernelAccount(this.account)) {
-      throw new Error("account not connected!");
+      throw new Error('account not connected!');
     }
     if (!this.account.validator) {
-      throw new Error("validator not connected!");
+      throw new Error('validator not connected!');
     }
 
-    let callData: BytesLike = "0x";
+    let callData: BytesLike = '0x';
 
     if (Array.isArray(data)) {
       if (operation === Operation.Call) {
@@ -284,7 +284,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     }
 
     const initCode = await this.account.getInitCode();
-    let hash: string = "";
+    let hash: string = '';
     let i = 0;
     const nonce = await this.account.getNonce();
     let uoStruct: UserOperationStruct;
@@ -348,7 +348,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
         }
         throw this.unwrapError(error);
       }
-    } while (hash === "");
+    } while (hash === '');
 
     return {
       hash,
@@ -361,7 +361,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       const failedOpMessage: string | undefined = errorIn?.cause?.message;
       return (
         (failedOpMessage?.includes(
-          "replacement op must increase maxFeePerGas and MaxPriorityFeePerGas"
+          'replacement op must increase maxFeePerGas and MaxPriorityFeePerGas'
         ) ||
           failedOpMessage?.match(/.*replacement.*underpriced.*/) !== null) ??
         false
@@ -372,13 +372,13 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
 
   unwrapError(errorIn: any): Error {
     if (errorIn?.cause != null) {
-      let paymasterInfo: string = "";
+      let paymasterInfo: string = '';
       let failedOpMessage: string | undefined = errorIn?.cause?.message;
-      if (failedOpMessage?.includes("FailedOp") === true) {
+      if (failedOpMessage?.includes('FailedOp') === true) {
         // TODO: better error extraction methods will be needed
         const matched = failedOpMessage.match(/FailedOp\((.*)\)/);
         if (matched != null) {
-          const split = matched[1].split(",");
+          const split = matched[1].split(',');
           paymasterInfo = `(paymaster address: ${split[1]})`;
           failedOpMessage = split[2];
         }
@@ -395,7 +395,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
     let blockNumber = await this.rpcClient.getBlockNumber();
     for (let i = 0; i < this._txMaxRetries; i++) {
-      if (this.bundlerProvider === "GELATO") {
+      if (this.bundlerProvider === 'GELATO') {
         const receipt = await this.getUserOperationReceipt(
           hash as `0x${string}`
         )
@@ -409,7 +409,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       } else {
         const logs = await this.rpcClient.getLogs({
           address: ENTRYPOINT_ADDRESS,
-          event: getAbiItem({ abi: EntryPointAbi, name: "UserOperationEvent" }),
+          event: getAbiItem({ abi: EntryPointAbi, name: 'UserOperationEvent' }),
           args: { userOpHash: hash },
           fromBlock: blockNumber - 100n,
         });
@@ -422,12 +422,12 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
       );
     }
 
-    throw new Error("Failed to find transaction for User Operation");
+    throw new Error('Failed to find transaction for User Operation');
   };
 
   getAccount: () => KernelSmartContractAccount = () => {
     if (!isKernelAccount(this.account)) {
-      throw new Error("account not connected!");
+      throw new Error('account not connected!');
     }
     return this.account;
   };
@@ -435,14 +435,14 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   dummyPaymasterDataMiddleware: AccountMiddlewareFn = async (
     struct: UserOperationStruct
   ): Promise<UserOperationStruct> => {
-    struct.paymasterAndData = "0x";
+    struct.paymasterAndData = '0x';
     return struct;
   };
 
   withZeroDevPaymasterAndData(config: PaymasterConfig<PaymasterPolicy>) {
     if (!this.isConnected()) {
       throw new Error(
-        "ZeroDevProvider: account is not set, did you call `connect` first?"
+        'ZeroDevProvider: account is not set, did you call `connect` first?'
       );
     }
 
@@ -454,22 +454,22 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
   ) => {
     const { method, params } = args;
     switch (method) {
-      case "eth_chainId":
+      case 'eth_chainId':
         return this.chain.id;
-      case "eth_sendTransaction":
+      case 'eth_sendTransaction':
         const [tx] = params as [RpcTransactionRequest];
         return this.sendTransaction(tx);
-      case "eth_signTypedData_v4":
+      case 'eth_signTypedData_v4':
         //@ts-expect-error
         return this.signTypedData(JSON.parse(params[1]));
-      case "personal_sign":
+      case 'personal_sign':
         if (!this.account) {
-          throw new Error("account not connected!");
+          throw new Error('account not connected!');
         }
         const [data, address] = params!;
         if (address.toLowerCase() !== (await this.getAddress()).toLowerCase()) {
           throw new Error(
-            "cannot sign for address that is not the current account"
+            'cannot sign for address that is not the current account'
           );
         }
         // @ts-ignore

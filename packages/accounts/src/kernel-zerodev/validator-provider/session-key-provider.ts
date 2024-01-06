@@ -12,17 +12,27 @@ import {
   LocalAccountSigner,
   type Hex,
   type SmartAccountSigner,
-} from "@alchemy/aa-core";
-import { getChainId } from "../api/index.js";
-import { polygonMumbai } from "viem/chains";
-import { SESSION_KEY_VALIDATOR_ADDRESS } from "../constants.js";
-import { base64ToBytes, bytesToBase64, getChain } from "../utils.js";
-import type { RequiredProps, WithRequired } from "../types.js";
-import type { KernelBaseValidatorParams } from "../validator/base.js";
+  type UserOperationCallData,
+  type SendUserOperationResult,
+  type UserOperationOverrides,
+  type BatchUserOperationCallData,
+} from '@alchemy/aa-core';
+import { getChainId } from '../api/index.js';
+import { polygonMumbai } from 'viem/chains';
+import { SESSION_KEY_VALIDATOR_ADDRESS } from '../constants.js';
+import { base64ToBytes, bytesToBase64, getChain } from '../utils.js';
+import type { RequiredProps, WithRequired } from '../types.js';
+import type { KernelBaseValidatorParams } from '../validator/base.js';
+import {
+  type UserOpDataOperationTypes,
+  Operation,
+  ZeroDevProvider,
+} from '../provider.js';
+import { isBatchUserOperationCallData } from '../paymaster/token-paymaster.js';
 
 export type PrefillSessionData = {
   sessionKeyParams: SessionKeyParams &
-    WithRequired<SessionKeyParams, "sessionPrivateKey">;
+    WithRequired<SessionKeyParams, 'sessionPrivateKey'>;
 };
 
 export type SessionKeyProviderParams = PrefillSessionData &
@@ -38,7 +48,7 @@ export class SessionKeyProvider extends ValidatorProvider<
     params: ExtendedValidatorProviderParams<SessionKeyValidatorParams>
   ) {
     const chain =
-      typeof params.opts?.providerConfig?.chain === "number"
+      typeof params.opts?.providerConfig?.chain === 'number'
         ? getChain(params.opts.providerConfig.chain)
         : params.opts?.providerConfig?.chain ?? polygonMumbai;
     const validator = new SessionKeyValidator({
@@ -68,7 +78,7 @@ export class SessionKeyProvider extends ValidatorProvider<
   ): Promise<SessionKeyProvider> {
     const chainId = await getChainId(params.projectId);
     if (!chainId) {
-      throw new Error("ChainId not found");
+      throw new Error('ChainId not found');
     }
     const chain = getChain(chainId);
     const instance = new SessionKeyProvider({
@@ -122,7 +132,7 @@ export class SessionKeyProvider extends ValidatorProvider<
     const initCode = await this.getAccount().getInitCode();
     const accountAddress = await this.getAddress();
     if (!initCode) {
-      throw Error("initCode not set");
+      throw Error('initCode not set');
     }
     sessionKeyParams = {
       ...sessionKeyParams,
@@ -138,11 +148,32 @@ export class SessionKeyProvider extends ValidatorProvider<
 
   public static deserializeSessionKeyParams(
     sessionKeyParams: string
-  ): PrefillSessionData["sessionKeyParams"] {
+  ): PrefillSessionData['sessionKeyParams'] {
     const uint8Array = base64ToBytes(sessionKeyParams);
     const jsonString = new TextDecoder().decode(uint8Array);
-    return JSON.parse(jsonString) as PrefillSessionData["sessionKeyParams"];
+    return JSON.parse(jsonString) as PrefillSessionData['sessionKeyParams'];
   }
+
+  public sendUserOperation = async <
+    T extends UserOperationCallData | BatchUserOperationCallData
+  >(
+    data: T,
+    overrides?: UserOperationOverrides,
+    operation: UserOpDataOperationTypes<T> = Operation.Call as UserOpDataOperationTypes<T>
+  ): Promise<SendUserOperationResult> => {
+    if (isBatchUserOperationCallData(data)) {
+      throw new Error(
+        'Batch operations are not supported for session key provider'
+      );
+    }
+
+    return ZeroDevProvider.prototype.sendUserOperation.call(
+      this,
+      data,
+      overrides,
+      operation
+    );
+  };
 
   changeSessionKeyData = this.sendEnableUserOperation;
 
