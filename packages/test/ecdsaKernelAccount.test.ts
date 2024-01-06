@@ -281,7 +281,7 @@ describe("ECDSA kernel Account", () => {
 
             const bundlerClient = getKernelBundlerClient()
 
-            const smartAccountClient = await getSmartAccountClient({
+            const smartAccountClient = await getKernelAccountClient({
                 account,
                 sponsorUserOperation: async ({
                     entryPoint: _entryPoint,
@@ -352,7 +352,7 @@ describe("ECDSA kernel Account", () => {
             const initialEcdsaSmartAccount =
                 await getSignerToEcdsaKernelAccount()
             const publicClient = await getPublicClient()
-            const smartAccountClient = await getSmartAccountClient({
+            const smartAccountClient = await getKernelAccountClient({
                 account: initialEcdsaSmartAccount,
                 sponsorUserOperation: async ({
                     entryPoint: _entryPoint,
