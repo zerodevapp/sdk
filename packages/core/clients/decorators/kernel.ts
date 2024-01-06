@@ -1,3 +1,4 @@
+import { type SmartAccountActions, smartAccountActions } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
 import type { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
 import type { Chain, Client, Transport } from "viem"
@@ -29,10 +30,27 @@ export const zerodevPaymasterActions = (
         sponsorUserOperation(client as ZeroDevPaymasterClient, args)
 })
 
+// export type KernelAccountClientActions<
+//     TChain extends Chain | undefined = Chain | undefined,
+//     TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
+// > = {
+//     signUserOperation: <TTransport extends Transport>(
+//         args: Parameters<
+//             typeof signUserOperation<TTransport, TChain, TSmartAccount>
+//         >[1]
+//     ) => Promise<SignUserOperationReturnType>
+// }
+
 export type KernelAccountClientActions<
     TChain extends Chain | undefined = Chain | undefined,
     TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
-> = {
+> = SmartAccountActions<TChain, TSmartAccount> & {
+    /**
+     * Signs a user operation with the given transport, chain, and smart account.
+     *
+     * @param args - Parameters for the signUserOperation function
+     * @returns A promise that resolves to the result of the signUserOperation function
+     */
     signUserOperation: <TTransport extends Transport>(
         args: Parameters<
             typeof signUserOperation<TTransport, TChain, TSmartAccount>
@@ -51,6 +69,7 @@ export const kernelAccountClientActions =
     >(
         client: Client<TTransport, TChain, TSmartAccount>
     ): KernelAccountClientActions<TChain, TSmartAccount> => ({
+        ...smartAccountActions({ sponsorUserOperation })(client),
         signUserOperation: (args) =>
             signUserOperation(client, {
                 ...args,

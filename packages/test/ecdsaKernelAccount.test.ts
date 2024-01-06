@@ -29,7 +29,6 @@ import {
     getKernelBundlerClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
-    getSmartAccountClient,
     getZeroDevPaymasterClient
 } from "./utils.js"
 
@@ -73,25 +72,13 @@ describe("ECDSA kernel Account", () => {
     let account: SmartAccount
     let publicClient: PublicClient
     let bundlerClient: BundlerClient
-    let smartAccountClient: SmartAccountClient<Transport, Chain, SmartAccount>
-    let kernelAccountClient: KernelAccountClient<Transport, Chain, SmartAccount>
+    let smartAccountClient: KernelAccountClient<Transport, Chain, SmartAccount>
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
-        smartAccountClient = await getSmartAccountClient({
-            account,
-            sponsorUserOperation: async ({ userOperation }) => {
-                const zerodevPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
-            }
-        })
-        kernelAccountClient = await getKernelAccountClient({
+        smartAccountClient = await getKernelAccountClient({
             account,
             sponsorUserOperation: async ({ userOperation }) => {
                 const zerodevPaymaster = getZeroDevPaymasterClient()
@@ -242,16 +229,22 @@ describe("ECDSA kernel Account", () => {
     test.only(
         "Client signs and then sends UserOp with paymaster",
         async () => {
-            const userOp = await kernelAccountClient.signUserOperation({
+            const userOp = await smartAccountClient.signUserOperation({
                 userOperation: {
-                    callData: await kernelAccountClient.account.encodeCallData({
+                    callData: await smartAccountClient.account.encodeCallData({
                         to: zeroAddress,
                         value: 0n,
                         data: "0x"
                     })
                 }
             })
-            console.log(userOp)
+
+            expect(userOp.signature).not.toBe("0x")
+
+            const userOpHash = await smartAccountClient.sendUserOperation({
+                userOperation: userOp
+            })
+            expect(userOpHash).toHaveLength(66)
         },
         TEST_TIMEOUT
     )
