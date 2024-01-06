@@ -1,8 +1,9 @@
 export {
     createKernelAccount,
     type KernelSmartAccount,
-    KERNEL_ADDRESSES
-} from "./accounts/kernel/createKernelAccount"
+    KERNEL_ADDRESSES,
+    type CallType
+} from "./accounts"
 export {
     sponsorUserOperation,
     type SponsorUserOperationParameters,

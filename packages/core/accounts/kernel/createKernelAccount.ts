@@ -20,10 +20,28 @@ import { getBytecode, signMessage, signTypedData } from "viem/actions"
 import type { KernelPlugin } from "../../types/kernel"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
+export type CallType = "call" | "delegatecall"
+
+type KernelEncodeCallDataArgs =
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }[]
+
 export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<"kernelSmartAccount", transport, chain>
+> = SmartAccount<"kernelSmartAccount", transport, chain> & {
+    encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
+}
 
 /**
  * The account creation ABI for a kernel smart account (from the KernelFactory)
@@ -286,26 +304,45 @@ export async function createKernelAccount<
 
         // Encode a call
         async encodeCallData(_tx) {
-            if (Array.isArray(_tx)) {
+            const tx = _tx as KernelEncodeCallDataArgs
+            if (Array.isArray(tx)) {
                 // Encode a batched call
                 return encodeFunctionData({
                     abi: KernelExecuteAbi,
                     functionName: "executeBatch",
                     args: [
-                        _tx.map((tx) => ({
-                            to: tx.to,
-                            value: tx.value,
-                            data: tx.data
-                        }))
+                        tx.map((txn) => {
+                            if (txn.callType === "delegatecall") {
+                                throw new Error("Cannot batch delegatecall")
+                            }
+                            return {
+                                to: txn.to,
+                                value: txn.value,
+                                data: txn.data
+                            }
+                        })
                     ]
                 })
             }
-            // Encode a simple call
-            return encodeFunctionData({
-                abi: KernelExecuteAbi,
-                functionName: "execute",
-                args: [_tx.to, _tx.value, _tx.data, 0]
-            })
+
+            // Default to `call`
+            if (!tx.callType || tx.callType === "call") {
+                return encodeFunctionData({
+                    abi: KernelExecuteAbi,
+                    functionName: "execute",
+                    args: [tx.to, tx.value, tx.data, 0]
+                })
+            }
+
+            if (tx.callType === "delegatecall") {
+                return encodeFunctionData({
+                    abi: KernelExecuteAbi,
+                    functionName: "executeDelegateCall",
+                    args: [tx.to, tx.data]
+                })
+            }
+
+            throw new Error("Invalid call type")
         },
 
         // Get simple dummy signature

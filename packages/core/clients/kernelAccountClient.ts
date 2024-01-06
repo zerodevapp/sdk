@@ -10,6 +10,7 @@ import {
     type Transport,
     createClient
 } from "viem"
+import { type KernelSmartAccount } from "../accounts"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
@@ -18,7 +19,9 @@ import {
 export type KernelAccountClient<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends SmartAccount | undefined = SmartAccount | undefined
+    account extends KernelSmartAccount | undefined =
+        | KernelSmartAccount
+        | undefined
 > = Prettify<
     Client<
         transport,
@@ -49,7 +52,7 @@ export type SmartAccountClientConfig<
 export const createKernelAccountClient = <
     TTransport extends Transport,
     TChain extends Chain | undefined = undefined,
-    TSmartAccount extends SmartAccount | undefined = undefined
+    TSmartAccount extends KernelSmartAccount | undefined = undefined
 >(
     parameters: SmartAccountClientConfig<TTransport, TChain, TSmartAccount> &
         SponsorUserOperationMiddleware
