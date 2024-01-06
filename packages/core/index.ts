@@ -7,15 +7,21 @@ export {
     sponsorUserOperation,
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType
-} from "./actions/kernel/sponsorUserOperation"
+} from "./actions/paymaster/sponsorUserOperation"
 export {
     zerodevPaymasterActions,
-    type ZeroDevPaymasterClientActions
+    type ZeroDevPaymasterClientActions,
+    kernelAccountClientActions,
+    type KernelAccountClientActions
 } from "./clients/decorators/kernel"
 export {
     createZeroDevPaymasterClient,
     type ZeroDevPaymasterClient
-} from "./clients/kernel"
+} from "./clients/paymasterClient"
+export {
+    createKernelAccountClient,
+    type KernelAccountClient
+} from "./clients/kernelAccountClient"
 export {
     type KernelPlugin,
     type ZeroDevPaymasterRpcSchema

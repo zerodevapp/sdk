@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { KernelAccountClient, kernelAccountClientActions } from "@kerneljs/core"
 import { createKernelAccount } from "@kerneljs/core/accounts"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import dotenv from "dotenv"
@@ -24,6 +25,7 @@ import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
+    getKernelAccountClient,
     getKernelBundlerClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
@@ -72,12 +74,24 @@ describe("ECDSA kernel Account", () => {
     let publicClient: PublicClient
     let bundlerClient: BundlerClient
     let smartAccountClient: SmartAccountClient<Transport, Chain, SmartAccount>
+    let kernelAccountClient: KernelAccountClient<Transport, Chain, SmartAccount>
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
         smartAccountClient = await getSmartAccountClient({
+            account,
+            sponsorUserOperation: async ({ userOperation }) => {
+                const zerodevPaymaster = getZeroDevPaymasterClient()
+                const entryPoint = getEntryPoint()
+                return zerodevPaymaster.sponsorUserOperation({
+                    userOperation,
+                    entryPoint
+                })
+            }
+        })
+        kernelAccountClient = await getKernelAccountClient({
             account,
             sponsorUserOperation: async ({ userOperation }) => {
                 const zerodevPaymaster = getZeroDevPaymasterClient()
@@ -221,6 +235,23 @@ describe("ECDSA kernel Account", () => {
 
             expect(newGreet).toBeString()
             expect(newGreet).toEqual("hello world")
+        },
+        TEST_TIMEOUT
+    )
+
+    test.only(
+        "Client signs and then sends UserOp with paymaster",
+        async () => {
+            const userOp = await kernelAccountClient.signUserOperation({
+                userOperation: {
+                    callData: await kernelAccountClient.account.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    })
+                }
+            })
+            console.log(userOp)
         },
         TEST_TIMEOUT
     )

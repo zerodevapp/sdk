@@ -1,5 +1,8 @@
+import {
+    createKernelAccountClient,
+    createZeroDevPaymasterClient
+} from "@kerneljs/core"
 import { createKernelAccount } from "@kerneljs/core/accounts"
-import { createZeroDevPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     BundlerClient,
@@ -155,6 +158,32 @@ export const getSmartAccountClient = async ({
     const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
 
     return createSmartAccountClient({
+        account: resolvedAccount,
+        chain,
+        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`),
+        sponsorUserOperation
+    })
+}
+
+export const getKernelAccountClient = async ({
+    account,
+    sponsorUserOperation
+}: SponsorUserOperationMiddleware & {
+    account?: SmartAccount
+} = {}) => {
+    const pimlicoApiKey = process.env.PIMLICO_API_KEY
+    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
+    if (!pimlicoApiKey) {
+        throw new Error("PIMLICO_API_KEY environment variable not set")
+    }
+    if (!pimlicoBundlerRpcHost) {
+        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
+    }
+
+    const chain = getTestingChain()
+    const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
+
+    return createKernelAccountClient({
         account: resolvedAccount,
         chain,
         transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`),

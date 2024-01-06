@@ -32,7 +32,7 @@ export type SignUserOperationParameters<
 } & GetAccountParameter<TAccount> &
     SponsorUserOperationMiddleware
 
-export type SignUserOperationRequestReturnType = UserOperation
+export type SignUserOperationReturnType = UserOperation
 
 export async function signUserOperation<
     TTransport extends Transport = Transport,
@@ -41,7 +41,7 @@ export async function signUserOperation<
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: SignUserOperationParameters<TAccount>
-): Promise<SignUserOperationRequestReturnType> {
+): Promise<SignUserOperationReturnType> {
     const { account: account_ = client.account } = args
     if (!account_) throw new AccountOrClientNotFoundError()
 
