@@ -315,9 +315,12 @@ export const getOldUserOpHash = (): Hex => {
     return "0xe9fad2cd67f9ca1d0b7a6513b2a42066784c8df938518da2b51bb8cc9a89ea34"
 }
 
+export const sleep = async (milliseconds: number): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
 export const waitForNonceUpdate = async (): Promise<void> => {
-    const tenSeconds = 10000
-    await new Promise((resolve) => setTimeout(resolve, tenSeconds))
+    return sleep(10000)
 }
 
 export const generateApproveCallData = (paymasterAddress: Address): Hex => {

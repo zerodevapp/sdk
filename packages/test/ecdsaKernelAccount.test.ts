@@ -33,7 +33,9 @@ import {
     getKernelBundlerClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
-    getZeroDevPaymasterClient
+    getZeroDevPaymasterClient,
+    sleep,
+    waitForNonceUpdate
 } from "./utils.js"
 
 dotenv.config()
@@ -230,10 +232,34 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.only(
+    test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
             const userOp = await kernelClient.signUserOperation({
+                userOperation: {
+                    callData: await kernelClient.account.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    })
+                }
+            })
+            expect(userOp.signature).not.toBe("0x")
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                userOperation: userOp
+            })
+            expect(userOpHash).toHaveLength(66)
+
+            await waitForNonceUpdate()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client send UserOp with delegatecall",
+        async () => {
+            const userOpHash = await kernelClient.sendUserOperation({
                 userOperation: {
                     callData: await kernelClient.account.encodeCallData({
                         to: zeroAddress,
@@ -244,12 +270,9 @@ describe("ECDSA kernel Account", () => {
                 }
             })
 
-            expect(userOp.signature).not.toBe("0x")
-
-            const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: userOp
-            })
             expect(userOpHash).toHaveLength(66)
+
+            await waitForNonceUpdate()
         },
         TEST_TIMEOUT
     )
