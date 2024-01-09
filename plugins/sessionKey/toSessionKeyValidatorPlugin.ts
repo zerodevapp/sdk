@@ -42,7 +42,6 @@ import type {
     SessionNonces
 } from "./types.js"
 import {
-    // bytesToBase64,
     encodePermissionData,
     fixSignedData,
     getPermissionFromABI
