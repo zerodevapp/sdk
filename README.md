@@ -1,5 +1,7 @@
 # Kernel.js
 
+> If you find yourself here, you've discovered a secret!  Kernel.js is an upcoming SDK by ZeroDev.  It's in alpha and not officially released, and the docs are still in the works.  Please proceed with caution.
+
 The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
 
 [See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
