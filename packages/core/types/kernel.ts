@@ -70,7 +70,7 @@ export type KernelPlugin<
         UserOperation: UserOperation,
         pluginEnableSignature?: Hex
     ) => Promise<Hex>
-    getPluginApproveSignature(
+    getPluginEnableSignature(
         accountAddress: Address,
         plugin: KernelPlugin
     ): Promise<Hex>

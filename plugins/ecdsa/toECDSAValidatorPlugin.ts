@@ -100,7 +100,7 @@ export async function signerToEcdsaValidator<
         async getDummySignature() {
             return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
         },
-        async getPluginApproveSignature(
+        async getPluginEnableSignature(
             accountAddress: Address,
             plugin: KernelPlugin
         ): Promise<Hex> {

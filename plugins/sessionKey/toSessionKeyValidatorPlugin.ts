@@ -20,7 +20,7 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import { concat, decodeFunctionData, encodeAbiParameters } from "viem/utils"
+import { concat, decodeFunctionData } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@kerneljs/core"
@@ -38,11 +38,15 @@ import type {
     ExecutorData,
     PermissionCore,
     SessionKeyData,
-    SessionKeyValidatorData,
-    SessionKeyValidatorPlugin,
+    SessionKeyPlugin,
     SessionNonces
 } from "./types.js"
-import { fixSignedData, getPermissionFromABI } from "./utils.js"
+import {
+    // bytesToBase64,
+    encodePermissionData,
+    fixSignedData,
+    getPermissionFromABI
+} from "./utils.js"
 
 export enum Operation {
     Call = 0,
@@ -76,13 +80,13 @@ export async function signerToSessionKeyValidator<
         mode = ValidatorMode.enable
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        validatorData: SessionKeyValidatorData<TAbi, TFunctionName>
+        validatorData: SessionKeyData<TAbi, TFunctionName>
         entryPoint?: Address
         validatorAddress?: Address
         executorData?: ExecutorData
         mode?: ValidatorMode
     }
-): Promise<SessionKeyValidatorPlugin<TTransport, TChain>> {
+): Promise<SessionKeyPlugin<TTransport, TChain>> {
     const _executorData = executorData ?? {
         executor: zeroAddress,
         selector: getFunctionSelector(
@@ -92,19 +96,18 @@ export async function signerToSessionKeyValidator<
         validUntil: 0
     }
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
-        ...validatorData.sessionKeyData,
-        validAfter: validatorData?.sessionKeyData?.validAfter ?? 0,
-        validUntil: validatorData?.sessionKeyData?.validUntil ?? 0,
-        paymaster: validatorData?.sessionKeyData?.paymaster ?? zeroAddress
+        ...validatorData,
+        validAfter: validatorData?.validAfter ?? 0,
+        validUntil: validatorData?.validUntil ?? 0,
+        paymaster: validatorData?.paymaster ?? zeroAddress
     }
-    const generatedPermissionParams =
-        validatorData?.sessionKeyData?.permissions?.map((perm) =>
-            getPermissionFromABI({
-                abi: perm.abi as Abi,
-                functionName: perm.functionName as string,
-                args: perm.args as []
-            })
-        )
+    const generatedPermissionParams = validatorData?.permissions?.map((perm) =>
+        getPermissionFromABI({
+            abi: perm.abi as Abi,
+            functionName: perm.functionName as string,
+            args: perm.args as []
+        })
+    )
     sessionKeyData.permissions =
         sessionKeyData.permissions?.map((perm, index) => ({
             ...perm,
@@ -173,7 +176,7 @@ export async function signerToSessionKeyValidator<
         const lastNonce =
             (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n
         return concat([
-            validatorData?.sessionKey.address,
+            signer.address,
             pad(merkleTree.getHexRoot() as Hex, { size: 32 }),
             pad(toHex(sessionKeyData?.validAfter ?? 0), {
                 size: 6
@@ -467,7 +470,7 @@ export async function signerToSessionKeyValidator<
                     userOperation.sender,
                     pluginEnableSignature
                 ),
-                validatorData.sessionKey.address,
+                signer.address,
                 fixedSignature,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
@@ -483,12 +486,12 @@ export async function signerToSessionKeyValidator<
                     userOperation.sender,
                     pluginEnableSignature
                 ),
-                validatorData.sessionKey.address,
+                signer.address,
                 constants.DUMMY_ECDSA_SIG,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
         },
-        getPluginApproveSignature: async () => {
+        getPluginEnableSignature: async () => {
             throw new Error("Not implemented")
         },
         getExecutorData: () => {
@@ -496,95 +499,12 @@ export async function signerToSessionKeyValidator<
                 throw new Error("Invalid executor data")
             }
             return _executorData
+        },
+        exportSessionKeyParams: () => {
+            return {
+                executorData: _executorData,
+                sessionKeyData: sessionKeyData as SessionKeyData<Abi, string>
+            }
         }
     }
-}
-
-export const encodePermissionData = (
-    permission: PermissionCore | PermissionCore[],
-    merkleProof?: string[] | string[][]
-): Hex => {
-    const permissionParam = {
-        components: [
-            {
-                name: "index",
-                type: "uint32"
-            },
-            {
-                name: "target",
-                type: "address"
-            },
-            {
-                name: "sig",
-                type: "bytes4"
-            },
-            {
-                name: "valueLimit",
-                type: "uint256"
-            },
-            {
-                components: [
-                    {
-                        name: "offset",
-                        type: "uint256"
-                    },
-                    {
-                        internalType: "enum ParamCondition",
-                        name: "condition",
-                        type: "uint8"
-                    },
-                    {
-                        name: "param",
-                        type: "bytes32"
-                    }
-                ],
-                name: "rules",
-                type: "tuple[]"
-            },
-            {
-                components: [
-                    {
-                        name: "interval",
-                        type: "uint48"
-                    },
-                    {
-                        name: "runs",
-                        type: "uint48"
-                    },
-                    {
-                        internalType: "ValidAfter",
-                        name: "validAfter",
-                        type: "uint48"
-                    }
-                ],
-                name: "executionRule",
-                type: "tuple"
-            },
-            {
-                internalType: "enum Operation",
-                name: "operation",
-                type: "uint8"
-            }
-        ],
-        name: "permission",
-        type: Array.isArray(permission) ? "tuple[]" : "tuple"
-    }
-    let params
-    let values
-    if (merkleProof) {
-        params = [
-            permissionParam,
-            {
-                name: "merkleProof",
-                type: Array.isArray(merkleProof[0])
-                    ? "bytes32[][]"
-                    : "bytes32[]"
-            }
-        ]
-        values = [permission, merkleProof]
-    } else {
-        params = [permissionParam]
-        values = [permission]
-    }
-    return encodeAbiParameters(params, values)
 }

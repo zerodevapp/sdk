@@ -3,6 +3,8 @@ import { createZeroDevPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
+    accountToSerializedSessionKeyAccountParams,
+    serializedSessionKeyAccountParamsToAccount,
     signerToSessionKeyValidator
 } from "@kerneljs/session-key"
 import {
@@ -105,7 +107,7 @@ export const getSignerToEcdsaKernelAccount =
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             defaultValidator: ecdsaValidatorPlugin,
-            index: 213123n
+            index: 21312223n
         })
     }
 
@@ -132,33 +134,39 @@ export const getSignerToSessionKeyKernelAccount =
             {
                 signer: sessionKey,
                 validatorData: {
-                    sessionKey,
-                    sessionKeyData: {
-                        permissions: [
-                            {
-                                target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
-                                abi: TEST_ERC20Abi,
-                                functionName: "transfer",
-                                args: [
-                                    {
-                                        operator: ParamOperator.EQUAL,
-                                        value: signer.address
-                                    },
-                                    null
-                                ]
-                            }
-                        ]
-                    }
+                    permissions: [
+                        {
+                            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+                            abi: TEST_ERC20Abi,
+                            functionName: "transfer",
+                            args: [
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: signer.address
+                                },
+                                null
+                            ]
+                        }
+                    ]
                 }
             }
         )
 
-        return createKernelAccount(publicClient, {
+        const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             defaultValidator: ecdsaValidatorPlugin,
             plugin: sessionKeyPlugin,
-            index: 213123n
+            index: 21312223n
         })
+
+        const serializedSessionKeyAccountParams =
+            await accountToSerializedSessionKeyAccountParams(account)
+
+        return await serializedSessionKeyAccountParamsToAccount(
+            publicClient,
+            serializedSessionKeyAccountParams,
+            sessionKey
+        )
     }
 
 export const getSmartAccountClient = async ({

@@ -10,7 +10,6 @@ import type { Pretty } from "abitype/src/types.js"
 import MerkleTree from "merkletreejs"
 import type {
     Abi,
-    Account,
     Address,
     Chain,
     Hex,
@@ -72,19 +71,25 @@ export interface SessionKeyData<
     permissions?: Permission<TAbi, TFunctionName>[]
 }
 
-export type SessionKeyValidatorPlugin<
+export type ExportSessionKeyParams = {
+    executorData: ExecutorData
+    sessionKeyData: SessionKeyData<Abi, string>
+}
+
+export type SessionKeyAccountParams = {
+    initCode: Hex
+    sessionKeyParams: ExportSessionKeyParams
+    enableSignature?: Hex
+    privateKey?: Hex
+}
+
+// [TODO] Rename to SessionKeyPlugin
+export type SessionKeyPlugin<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 > = KernelPlugin<"SessionKeyValidator", TTransport, TChain> & {
     merkleTree: MerkleTree
-}
-
-export type SessionKeyValidatorData<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
-> = {
-    sessionKey: Account
-    sessionKeyData?: SessionKeyData<TAbi, TFunctionName>
+    exportSessionKeyParams(): ExportSessionKeyParams
 }
 
 export type ExecutorData = {

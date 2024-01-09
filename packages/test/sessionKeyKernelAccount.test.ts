@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import { type SessionKeyValidatorPlugin } from "@kerneljs/session-key"
+import { type SessionKeyPlugin } from "@kerneljs/session-key"
 import { SmartAccountClient } from "permissionless"
 import { SmartAccount } from "permissionless/accounts"
 import {
@@ -36,7 +36,7 @@ describe("Session Key kernel Account", async () => {
         chain: polygonMumbai,
         transport: http(process.env.RPC_URL as string)
     })
-    let sessionKeyValidatorPlugin: SessionKeyValidatorPlugin
+    let sessionKeyValidatorPlugin: SessionKeyPlugin
     let testPrivateKey: Hex
     let owner: PrivateKeyAccount
     let accountAddress: Address
@@ -114,10 +114,11 @@ describe("Session Key kernel Account", async () => {
             )
         }
 
+        const amountToTransfer = 100000000n
         const transferData = encodeFunctionData({
             abi: TEST_ERC20Abi,
             functionName: "transfer",
-            args: [owner.address, 100000000n]
+            args: [owner.address, amountToTransfer]
         })
 
         const balanceOfReceipientBefore = await client.readContract({
@@ -143,19 +144,7 @@ describe("Session Key kernel Account", async () => {
             args: [owner.address]
         })
         expect(balanceOfReceipientAfter).toBe(
-            balanceOfReceipientBefore + 100000000n
+            balanceOfReceipientBefore + amountToTransfer
         )
-
-        // const balanceOfAccountAfterTransfer = await getAction(
-        //   client,
-        //   readContract
-        // )({
-        //   abi: TEST_ERC20Abi,
-        //   address: Test_ERC20Address,
-        //   functionName: "balanceOf",
-        //   args: [accountAddress],
-        // });
-
-        // expect(balanceOfAccountAfterTransfer).toBe(BigInt(0));
     }, 1000000)
 })
