@@ -1,5 +1,5 @@
-import type { KernelPlugin } from "@kerneljs/core/types/kernel"
-import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin"
+import type { KernelPlugin } from "@kerneljs/core/types"
+import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin.js"
 
 export { signerToEcdsaValidator, type KernelPlugin }
 

@@ -7,15 +7,34 @@ import {
     type Address,
     type Chain,
     type Client,
+    type EncodeDeployDataParameters,
     type Hex,
     type Transport,
     concatHex,
-    encodeFunctionData
+    encodeDeployData,
+    encodeFunctionData,
+    parseAbi
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
-import type { KernelPlugin } from "../../types/kernel"
+import type { KernelPlugin } from "../../types/kernel.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
+
+export type CallType = "call" | "delegatecall"
+
+type KernelEncodeCallDataArgs =
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }[]
 
 export type KernelSmartAccount<
     transport extends Transport = Transport,
@@ -25,6 +44,7 @@ export type KernelSmartAccount<
     plugin?: KernelPlugin<string, transport, chain>
     getPluginEnableSignature: () => Promise<Hex | undefined>
     generateInitCode: () => Promise<Hex>
+    encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
 
 /**
@@ -61,6 +81,15 @@ const createAccountAbi = [
         type: "function"
     }
 ] as const
+
+// Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
+// Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
+const createCallAddress = "0x9b35Af71d77eaf8d7e40252370304687390A1A52"
+
+const createCallAbi = parseAbi([
+    "function performCreate(uint256 value, bytes memory deploymentData) public returns (address newContract)",
+    "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
+])
 
 /**
  * Default addresses for kernel smart account
@@ -287,32 +316,69 @@ export async function createKernelAccount<
         },
 
         // Encode the deploy call data
-        async encodeDeployCallData(_) {
-            throw new Error("Kernel account doesn't support account deployment")
+        async encodeDeployCallData(_tx) {
+            return encodeFunctionData({
+                abi: KernelExecuteAbi,
+                functionName: "executeDelegateCall",
+                args: [
+                    createCallAddress,
+                    encodeFunctionData({
+                        abi: createCallAbi,
+                        functionName: "performCreate",
+                        args: [
+                            0n,
+                            encodeDeployData({
+                                abi: _tx.abi,
+                                bytecode: _tx.bytecode,
+                                args: _tx.args
+                            } as EncodeDeployDataParameters)
+                        ]
+                    })
+                ]
+            })
         },
 
         // Encode a call
         async encodeCallData(_tx) {
-            if (Array.isArray(_tx)) {
+            const tx = _tx as KernelEncodeCallDataArgs
+            if (Array.isArray(tx)) {
                 // Encode a batched call
                 return encodeFunctionData({
                     abi: KernelExecuteAbi,
                     functionName: "executeBatch",
                     args: [
-                        _tx.map((tx) => ({
-                            to: tx.to,
-                            value: tx.value,
-                            data: tx.data
-                        }))
+                        tx.map((txn) => {
+                            if (txn.callType === "delegatecall") {
+                                throw new Error("Cannot batch delegatecall")
+                            }
+                            return {
+                                to: txn.to,
+                                value: txn.value,
+                                data: txn.data
+                            }
+                        })
                     ]
                 })
             }
-            // Encode a simple call
-            return encodeFunctionData({
-                abi: KernelExecuteAbi,
-                functionName: "execute",
-                args: [_tx.to, _tx.value, _tx.data, 0]
-            })
+
+            // Default to `call`
+            if (!tx.callType || tx.callType === "call") {
+                return encodeFunctionData({
+                    abi: KernelExecuteAbi,
+                    functionName: "execute",
+                    args: [tx.to, tx.value, tx.data, 0]
+                })
+            }
+
+            if (tx.callType === "delegatecall") {
+                return encodeFunctionData({
+                    abi: KernelExecuteAbi,
+                    functionName: "executeDelegateCall",
+                    args: [tx.to, tx.data]
+                })
+            }
+
+            throw new Error("Invalid call type")
         },
 
         // Get simple dummy signature

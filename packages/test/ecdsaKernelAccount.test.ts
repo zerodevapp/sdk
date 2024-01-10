@@ -1,8 +1,13 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import { createKernelAccount } from "@kerneljs/core/accounts"
+import {
+    type CallType,
+    KernelAccountClient,
+    KernelSmartAccount,
+    createKernelAccount
+} from "@kerneljs/core"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import dotenv from "dotenv"
-import { BundlerClient, SmartAccountClient } from "permissionless"
+import { BundlerClient } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
@@ -24,11 +29,13 @@ import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
+    getKernelAccountClient,
     getKernelBundlerClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
-    getSmartAccountClient,
-    getZeroDevPaymasterClient
+    getZeroDevPaymasterClient,
+    sleep,
+    waitForNonceUpdate
 } from "./utils.js"
 
 dotenv.config()
@@ -71,13 +78,13 @@ describe("ECDSA kernel Account", () => {
     let account: SmartAccount
     let publicClient: PublicClient
     let bundlerClient: BundlerClient
-    let smartAccountClient: SmartAccountClient<Transport, Chain, SmartAccount>
+    let kernelClient: KernelAccountClient<Transport, Chain, KernelSmartAccount>
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
-        smartAccountClient = await getSmartAccountClient({
+        kernelClient = await getKernelAccountClient({
             account,
             sponsorUserOperation: async ({ userOperation }) => {
                 const zerodevPaymaster = getZeroDevPaymasterClient()
@@ -108,7 +115,7 @@ describe("ECDSA kernel Account", () => {
 
     test("Client signMessage should return a valid signature", async () => {
         const message = "hello world"
-        const response = await smartAccountClient.signMessage({
+        const response = await kernelClient.signMessage({
             message
         })
 
@@ -138,7 +145,7 @@ describe("ECDSA kernel Account", () => {
         const message = {
             test: "hello world"
         }
-        const response = await smartAccountClient.signTypedData({
+        const response = await kernelClient.signTypedData({
             domain,
             primaryType,
             types,
@@ -150,19 +157,32 @@ describe("ECDSA kernel Account", () => {
         expect(response).toMatch(SIGNATURE_REGEX)
     })
 
-    test("Client deploy contract", async () => {
-        expect(async () => {
-            await smartAccountClient.deployContract({
+    test(
+        "Client deploy contract",
+        async () => {
+            const response = await kernelClient.deployContract({
                 abi: GreeterAbi,
                 bytecode: GreeterBytecode
             })
-        }).toThrow("Kernel account doesn't support account deployment")
-    })
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: response
+                })
+
+            expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Smart account client send multiple transactions",
         async () => {
-            const response = await smartAccountClient.sendTransactions({
+            const response = await kernelClient.sendTransactions({
                 transactions: [
                     {
                         to: zeroAddress,
@@ -183,14 +203,14 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.skip(
+    test(
         "Write contract",
         async () => {
             const greeterContract = getContract({
                 abi: GreeterAbi,
                 address: process.env.GREETER_ADDRESS as Address,
                 publicClient: await getPublicClient(),
-                walletClient: smartAccountClient
+                walletClient: kernelClient
             })
 
             const oldGreet = await greeterContract.read.greet()
@@ -213,9 +233,54 @@ describe("ECDSA kernel Account", () => {
     )
 
     test(
+        "Client signs and then sends UserOp with paymaster",
+        async () => {
+            const userOp = await kernelClient.signUserOperation({
+                userOperation: {
+                    callData: await kernelClient.account.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    })
+                }
+            })
+            expect(userOp.signature).not.toBe("0x")
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                userOperation: userOp
+            })
+            expect(userOpHash).toHaveLength(66)
+
+            await waitForNonceUpdate()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client send UserOp with delegatecall",
+        async () => {
+            const userOpHash = await kernelClient.sendUserOperation({
+                userOperation: {
+                    callData: await kernelClient.account.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x",
+                        callType: "delegatecall"
+                    })
+                }
+            })
+
+            expect(userOpHash).toHaveLength(66)
+
+            await waitForNonceUpdate()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Client send Transaction with paymaster",
         async () => {
-            const response = await smartAccountClient.sendTransaction({
+            const response = await kernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"
@@ -230,7 +295,7 @@ describe("ECDSA kernel Account", () => {
                     hash: response
                 })
 
-            const eventFound = findUserOperationEvent(transactionReceipt.logs)
+            expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
         },
         TEST_TIMEOUT
     )
@@ -244,7 +309,7 @@ describe("ECDSA kernel Account", () => {
 
             const bundlerClient = getKernelBundlerClient()
 
-            const smartAccountClient = await getSmartAccountClient({
+            const kernelClient = await getKernelAccountClient({
                 account,
                 sponsorUserOperation: async ({
                     entryPoint: _entryPoint,
@@ -258,7 +323,7 @@ describe("ECDSA kernel Account", () => {
                 }
             })
 
-            const response = await smartAccountClient.sendTransactions({
+            const response = await kernelClient.sendTransactions({
                 transactions: [
                     {
                         to: zeroAddress,
@@ -315,7 +380,7 @@ describe("ECDSA kernel Account", () => {
             const initialEcdsaSmartAccount =
                 await getSignerToEcdsaKernelAccount()
             const publicClient = await getPublicClient()
-            const smartAccountClient = await getSmartAccountClient({
+            const kernelClient = await getKernelAccountClient({
                 account: initialEcdsaSmartAccount,
                 sponsorUserOperation: async ({
                     entryPoint: _entryPoint,
@@ -330,7 +395,7 @@ describe("ECDSA kernel Account", () => {
             })
 
             // Send an initial tx to deploy the account
-            const hash = await smartAccountClient.sendTransaction({
+            const hash = await kernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"

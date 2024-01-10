@@ -1,5 +1,6 @@
 export {
     createKernelAccount,
     type KernelSmartAccount,
-    KERNEL_ADDRESSES
-} from "./kernel/createKernelAccount"
+    KERNEL_ADDRESSES,
+    type CallType
+} from "./kernel/createKernelAccount.js"

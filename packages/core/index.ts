@@ -1,24 +1,31 @@
 export {
     createKernelAccount,
     type KernelSmartAccount,
-    KERNEL_ADDRESSES
-} from "./accounts/kernel/createKernelAccount"
+    KERNEL_ADDRESSES,
+    type CallType
+} from "./accounts/index.js"
 export {
     sponsorUserOperation,
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType
-} from "./actions/kernel/sponsorUserOperation"
+} from "./actions/paymaster/sponsorUserOperation.js"
 export {
     zerodevPaymasterActions,
-    type ZeroDevPaymasterClientActions
-} from "./clients/decorators/kernel"
+    type ZeroDevPaymasterClientActions,
+    kernelAccountClientActions,
+    type KernelAccountClientActions
+} from "./clients/decorators/kernel.js"
 export {
     createZeroDevPaymasterClient,
     type ZeroDevPaymasterClient
-} from "./clients/kernel"
+} from "./clients/paymasterClient.js"
+export {
+    createKernelAccountClient,
+    type KernelAccountClient
+} from "./clients/kernelAccountClient.js"
 export {
     type KernelPlugin,
     type ZeroDevPaymasterRpcSchema
-} from "./types/kernel"
+} from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi"
 export * as constants from "./constants"

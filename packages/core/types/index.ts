@@ -2,6 +2,6 @@ export type {
     KernelPlugin,
     ZeroDevPaymasterRpcSchema,
     ExecutorData
-} from "./kernel"
+} from "./kernel.js"
 
-export { ValidatorMode } from "./kernel"
+export { ValidatorMode } from "./kernel.js"

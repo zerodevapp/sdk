@@ -1,11 +1,11 @@
-import type { KernelSmartAccount } from "@kerneljs/core"
+import type { KernelAccountClient, KernelSmartAccount } from "@kerneljs/core"
 import {
     createKernelAccount,
+    createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@kerneljs/core"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
-import type { SmartAccountClient, UserOperation } from "permissionless"
-import { createSmartAccountClient } from "permissionless"
+import type { UserOperation } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { Address, Chain, HttpTransport } from "viem"
 import { http, createPublicClient } from "viem"
@@ -53,7 +53,7 @@ export async function createEcdsaKernelAccountClient<
     index?: bigint
     usePaymaster?: boolean
 }): Promise<
-    SmartAccountClient<
+    KernelAccountClient<
         HttpTransport,
         TChain,
         KernelSmartAccount<HttpTransport, TChain>
@@ -72,7 +72,7 @@ export async function createEcdsaKernelAccountClient<
         index
     })
 
-    const kernelClient = createSmartAccountClient({
+    const kernelClient = createKernelAccountClient({
         account,
         chain,
         transport: http(getZeroDevBundlerRPC(projectId, provider)),
@@ -91,7 +91,7 @@ export async function createEcdsaKernelAccountClient<
             : undefined
     })
 
-    return kernelClient as SmartAccountClient<
+    return kernelClient as KernelAccountClient<
         HttpTransport,
         TChain,
         KernelSmartAccount<HttpTransport, TChain>

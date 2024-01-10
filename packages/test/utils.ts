@@ -1,5 +1,8 @@
+import {
+    createKernelAccountClient,
+    createZeroDevPaymasterClient
+} from "@kerneljs/core"
 import { createKernelAccount } from "@kerneljs/core/accounts"
-import { createZeroDevPaymasterClient } from "@kerneljs/core/clients/kernel"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
@@ -169,7 +172,7 @@ export const getSignerToSessionKeyKernelAccount =
         )
     }
 
-export const getSmartAccountClient = async ({
+export const getKernelAccountClient = async ({
     account,
     sponsorUserOperation
 }: SponsorUserOperationMiddleware & {
@@ -187,7 +190,7 @@ export const getSmartAccountClient = async ({
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
 
-    return createSmartAccountClient({
+    return createKernelAccountClient({
         account: resolvedAccount,
         chain,
         transport: http(
@@ -347,9 +350,12 @@ export const getOldUserOpHash = (): Hex => {
     return "0xe9fad2cd67f9ca1d0b7a6513b2a42066784c8df938518da2b51bb8cc9a89ea34"
 }
 
+export const sleep = async (milliseconds: number): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
 export const waitForNonceUpdate = async (): Promise<void> => {
-    const tenSeconds = 10000
-    await new Promise((resolve) => setTimeout(resolve, tenSeconds))
+    return sleep(10000)
 }
 
 export const generateApproveCallData = (paymasterAddress: Address): Hex => {

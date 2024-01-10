@@ -1,4 +1,4 @@
 export {
     zerodevPaymasterActions,
     type ZeroDevPaymasterClientActions
-} from "./kernel"
+} from "./kernel.js"

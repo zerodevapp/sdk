@@ -6,11 +6,11 @@ import {
     type Transport,
     createClient
 } from "viem"
-import type { ZeroDevPaymasterRpcSchema } from "../types/kernel"
+import type { ZeroDevPaymasterRpcSchema } from "../types/kernel.js"
 import {
     type ZeroDevPaymasterClientActions,
     zerodevPaymasterActions
-} from "./decorators/kernel"
+} from "./decorators/kernel.js"
 
 export type ZeroDevPaymasterClient = Client<
     Transport,

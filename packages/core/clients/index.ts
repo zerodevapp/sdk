@@ -1,4 +1,9 @@
 export {
     createZeroDevPaymasterClient,
     type ZeroDevPaymasterClient
-} from "./kernel"
+} from "./paymasterClient.js"
+
+export {
+    createKernelAccountClient,
+    type KernelAccountClient
+} from "./kernelAccountClient.js"
