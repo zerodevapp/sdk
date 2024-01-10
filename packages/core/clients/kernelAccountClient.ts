@@ -10,11 +10,11 @@ import {
     type Transport,
     createClient
 } from "viem"
-import { type KernelSmartAccount } from "../accounts"
+import { type KernelSmartAccount } from "../accounts/index.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
-} from "./decorators/kernel"
+} from "./decorators/kernel.js"
 
 export type KernelAccountClient<
     transport extends Transport = Transport,

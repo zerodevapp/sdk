@@ -5,14 +5,14 @@ import type { Chain, Client, Transport } from "viem"
 import type {
     SignUserOperationParameters,
     SignUserOperationReturnType
-} from "../../actions"
-import { signUserOperation } from "../../actions"
+} from "../../actions/index.js"
+import { signUserOperation } from "../../actions/index.js"
 import {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType,
     sponsorUserOperation
-} from "../../actions/paymaster/sponsorUserOperation"
-import type { ZeroDevPaymasterClient } from "../paymasterClient"
+} from "../../actions/paymaster/sponsorUserOperation.js"
+import type { ZeroDevPaymasterClient } from "../paymasterClient.js"
 
 export type ZeroDevPaymasterClientActions = {
     /**

@@ -16,7 +16,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { ECDSA_VALIDATOR_ADDRESS } from "./index"
+import { ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export async function signerToEcdsaValidator<
     TTransport extends Transport = Transport,

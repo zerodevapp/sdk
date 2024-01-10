@@ -17,7 +17,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
-import type { KernelPlugin } from "../../types/kernel"
+import type { KernelPlugin } from "../../types/kernel.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type CallType = "call" | "delegatecall"
