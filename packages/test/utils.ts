@@ -4,21 +4,12 @@ import {
 } from "@kerneljs/core"
 import { createKernelAccount } from "@kerneljs/core/accounts"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
-import {
-    BundlerClient,
-    SmartAccountClient,
-    createBundlerClient,
-    createSmartAccountClient
-} from "permissionless"
+import { BundlerClient, createBundlerClient } from "permissionless"
 import {
     type SmartAccount,
     signerToSimpleSmartAccount
 } from "permissionless/accounts"
 import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
-import {
-    createPimlicoBundlerClient,
-    createPimlicoPaymasterClient
-} from "permissionless/clients/pimlico"
 import {
     http,
     AbiItem,
@@ -139,28 +130,45 @@ export const getSignerToEcdsaKernelAccount =
 //   });
 // };
 
+const DEFAULT_PROVIDER = "ALCHEMY"
+
+const getBundlerRpc = (): string => {
+    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
+    if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
+        throw new Error(
+            "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
+        )
+    }
+
+    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?bundlerProvider=${DEFAULT_PROVIDER}`
+}
+
+const getPaymasterRpc = (): string => {
+    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
+    if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
+        throw new Error(
+            "ZERODEV_PROJECT_ID and ZERODEV_PAYMASTER_RPC_HOST environment variables must be set"
+        )
+    }
+
+    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?paymasterProvider=${DEFAULT_PROVIDER}`
+}
+
 export const getKernelAccountClient = async ({
     account,
     sponsorUserOperation
 }: SponsorUserOperationMiddleware & {
     account?: SmartAccount
 } = {}) => {
-    const pimlicoApiKey = process.env.PIMLICO_API_KEY
-    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
-    if (!pimlicoApiKey) {
-        throw new Error("PIMLICO_API_KEY environment variable not set")
-    }
-    if (!pimlicoBundlerRpcHost) {
-        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
-    }
-
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
 
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
-        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`),
+        transport: http(getBundlerRpc()),
         sponsorUserOperation
     })
 }
@@ -208,73 +216,12 @@ export const getPublicClient = async (): Promise<PublicClient> => {
     return publicClient
 }
 
-export const getBundlerClient = (): BundlerClient => {
-    const pimlicoApiKey = process.env.PIMLICO_API_KEY
-    const pimlicoBundlerRpcHost = process.env.PIMLICO_BUNDLER_RPC_HOST
-    if (!pimlicoApiKey || !pimlicoBundlerRpcHost) {
-        throw new Error(
-            "PIMLICO_API_KEY and PIMLICO_BUNDLER_RPC_HOST environment variables must be set"
-        )
-    }
-
-    const chain = getTestingChain()
-
-    return createBundlerClient({
-        chain,
-        transport: http(`${pimlicoBundlerRpcHost}?apikey=${pimlicoApiKey}`)
-    })
-}
-
 export const getKernelBundlerClient = (): BundlerClient => {
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
-    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
-    if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
-        throw new Error(
-            "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
-        )
-    }
-
     const chain = getTestingChain()
 
     return createBundlerClient({
         chain,
-        transport: http(`${zeroDevBundlerRpcHost}/${zeroDevProjectId}`)
-    })
-}
-
-export const getPimlicoBundlerClient = () => {
-    if (!process.env.PIMLICO_BUNDLER_RPC_HOST)
-        throw new Error("PIMLICO_BUNDLER_RPC_HOST environment variable not set")
-    if (!process.env.PIMLICO_API_KEY)
-        throw new Error("PIMLICO_API_KEY environment variable not set")
-    const pimlicoApiKey = process.env.PIMLICO_API_KEY
-
-    const chain = getTestingChain()
-
-    return createPimlicoBundlerClient({
-        chain: chain,
-        transport: http(
-            `${process.env.PIMLICO_BUNDLER_RPC_HOST}?apikey=${pimlicoApiKey}`
-        )
-    })
-}
-
-export const getPimlicoPaymasterClient = () => {
-    if (!process.env.PIMLICO_PAYMASTER_RPC_HOST)
-        throw new Error(
-            "PIMLICO_PAYMASTER_RPC_HOST environment variable not set"
-        )
-    if (!process.env.PIMLICO_API_KEY)
-        throw new Error("PIMLICO_API_KEY environment variable not set")
-    const pimlicoApiKey = process.env.PIMLICO_API_KEY
-
-    const chain = getTestingChain()
-
-    return createPimlicoPaymasterClient({
-        chain: chain,
-        transport: http(
-            `${process.env.PIMLICO_PAYMASTER_RPC_HOST}?apikey=${pimlicoApiKey}`
-        )
+        transport: http(getBundlerRpc())
     })
 }
 
@@ -291,9 +238,7 @@ export const getZeroDevPaymasterClient = () => {
 
     return createZeroDevPaymasterClient({
         chain: chain,
-        transport: http(
-            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${zeroDevProjectId}?paymasterProvider=ALCHEMY`
-        )
+        transport: http(getPaymasterRpc())
     })
 }
 
