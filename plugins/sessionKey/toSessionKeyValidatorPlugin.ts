@@ -61,6 +61,8 @@ export enum ParamOperator {
     NOT_EQUAL = 5
 }
 
+export const anyPaymaster = "0x0000000000000000000000000000000000000001"
+
 export async function signerToSessionKeyValidator<
     TAbi extends Abi | readonly unknown[],
     TTransport extends Transport = Transport,
@@ -79,7 +81,7 @@ export async function signerToSessionKeyValidator<
         mode = ValidatorMode.enable
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        validatorData: SessionKeyData<TAbi, TFunctionName>
+        validatorData?: SessionKeyData<TAbi, TFunctionName>
         entryPoint?: Address
         validatorAddress?: Address
         executorData?: ExecutorData
@@ -240,6 +242,7 @@ export async function signerToSessionKeyValidator<
             return (
                 execDetail.validator.toLowerCase() ===
                     validatorAddress.toLowerCase() &&
+                enableData[4] !== 0n &&
                 enableDataHex.toLowerCase() ===
                     (
                         await getEnableData(kernelAccountAddress, enableData[4])
@@ -552,6 +555,9 @@ export async function signerToSessionKeyValidator<
                 executorData: _executorData,
                 sessionKeyData: sessionKeyData as SessionKeyData<Abi, string>
             }
+        },
+        shouldDelegateViaFallback: () => {
+            return merkleTree.getHexRoot() === pad("0x00", { size: 32 })
         }
     }
 }

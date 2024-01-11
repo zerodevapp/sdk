@@ -1,6 +1,7 @@
 export {
     signerToSessionKeyValidator,
-    ParamOperator
+    ParamOperator,
+    anyPaymaster
 } from "./toSessionKeyValidatorPlugin.js"
 export { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 export * from "./utils.js"

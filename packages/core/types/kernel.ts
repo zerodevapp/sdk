@@ -76,6 +76,7 @@ export type KernelPlugin<
     ): Promise<Hex>
     getEnableData(accountAddress?: Address): Promise<Hex>
     getExecutorData(): ExecutorData
+    shouldDelegateViaFallback(): boolean
 }
 
 export type ExecutorData = {

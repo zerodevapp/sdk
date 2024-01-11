@@ -363,6 +363,12 @@ export async function createKernelAccount<
 
             // Default to `call`
             if (!tx.callType || tx.callType === "call") {
+                if (
+                    tx.to.toLowerCase() === accountAddress &&
+                    currentValidator.shouldDelegateViaFallback()
+                ) {
+                    return tx.data
+                }
                 return encodeFunctionData({
                     abi: KernelExecuteAbi,
                     functionName: "execute",

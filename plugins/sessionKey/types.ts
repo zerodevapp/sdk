@@ -53,9 +53,9 @@ export type Permission<
 > = PermissionCore & {
     functionName?: _FunctionName
 } & (TFunctionName extends string
-        ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
+        ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-        ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+        ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
         : never)
 
 export interface SessionKeyData<

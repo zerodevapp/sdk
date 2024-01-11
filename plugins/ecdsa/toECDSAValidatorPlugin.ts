@@ -72,6 +72,9 @@ export async function signerToEcdsaValidator<
         entryPoint: entryPoint,
         source: "ECDSAValidator",
 
+        shouldDelegateViaFallback(): boolean {
+            return true
+        },
         async getEnableData() {
             return viemSigner.address
         },

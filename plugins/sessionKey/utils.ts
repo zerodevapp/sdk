@@ -32,6 +32,12 @@ export function getPermissionFromABI<
     PermissionCore,
     "sig" | "rules"
 > {
+    if (!abi || !functionName) {
+        return {
+            sig: undefined,
+            rules: undefined
+        }
+    }
     const abiItem = getAbiItem({
         abi,
         args,

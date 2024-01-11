@@ -187,7 +187,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     TChain extends Chain | undefined = Chain | undefined
 >(
     sessionKeyPlugin: SessionKeyPlugin<TTransport, TChain>
-): Promise<SmartAccount> => {
+): Promise<KernelSmartAccount> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
         throw new Error("TEST_PRIVATE_KEY environment variable not set")
