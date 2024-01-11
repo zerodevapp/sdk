@@ -1,4 +1,6 @@
 import {
+    KernelAccountClient,
+    KernelSmartAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@kerneljs/core"
@@ -31,6 +33,7 @@ import {
     Hex,
     type Log,
     type PublicClient,
+    Transport,
     type WalletClient,
     createPublicClient,
     createWalletClient,
@@ -123,7 +126,8 @@ export const getSignerToSessionKeyKernelAccount =
 
         const publicClient = await getPublicClient()
         const signer = privateKeyToAccount(privateKey)
-        const sessionKey = privateKeyToAccount(generatePrivateKey())
+        const sessionPrivateKey = generatePrivateKey()
+        const sessionKey = privateKeyToAccount(sessionPrivateKey)
         const ecdsaValidatorPlugin = await signerToEcdsaValidator(
             publicClient,
             {
@@ -177,7 +181,7 @@ export const getKernelAccountClient = async ({
     sponsorUserOperation
 }: SponsorUserOperationMiddleware & {
     account?: SmartAccount
-} = {}) => {
+} = {}): Promise<KernelAccountClient<Transport, Chain, KernelSmartAccount>> => {
     if (!process.env.ZERODEV_PAYMASTER_RPC_HOST)
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
@@ -197,7 +201,7 @@ export const getKernelAccountClient = async ({
             `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?bundlerProvider=ALCHEMY`
         ),
         sponsorUserOperation
-    })
+    }) as KernelAccountClient<Transport, Chain, KernelSmartAccount>
 }
 
 export const getEoaWalletClient = (): WalletClient => {

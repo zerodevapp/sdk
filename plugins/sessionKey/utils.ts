@@ -151,8 +151,10 @@ export const encodePermissionData = (
         name: "permission",
         type: Array.isArray(permission) ? "tuple[]" : "tuple"
     }
-    let params
-    let values
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    let params: any[]
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    let values: any[]
     if (merkleProof) {
         params = [
             permissionParam,

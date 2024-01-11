@@ -20,7 +20,7 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import { concat, decodeFunctionData } from "viem/utils"
+import { concat, concatHex, decodeFunctionData } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@kerneljs/core"
@@ -167,12 +167,14 @@ export async function signerToSessionKeyValidator<
           })
 
     const getEnableData = async (
-        kernelAccountAddress?: Address
+        kernelAccountAddress?: Address,
+        enabledLastNonce?: bigint
     ): Promise<Hex> => {
         if (!kernelAccountAddress) {
             throw new Error("Kernel account address not provided")
         }
         const lastNonce =
+            enabledLastNonce ??
             (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n
         return concat([
             signer.address,
@@ -204,11 +206,59 @@ export async function signerToSessionKeyValidator<
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
 
+    const getPluginEnableStatus = async (
+        kernelAccountAddress: Address,
+        selector: Hex = _executorData.selector
+    ): Promise<boolean> => {
+        try {
+            const execDetail = await getAction(
+                client,
+                readContract
+            )({
+                abi: KernelAccountAbi,
+                address: kernelAccountAddress,
+                functionName: "getExecution",
+                args: [selector]
+            })
+            const enableData = await getAction(
+                client,
+                readContract
+            )({
+                abi: SessionKeyValidatorAbi,
+                address: validatorAddress,
+                functionName: "sessionData",
+                args: [signer.address, kernelAccountAddress]
+            })
+            const enableDataHex = concatHex([
+                signer.address,
+                pad(enableData[0], { size: 32 }),
+                pad(toHex(enableData[1]), { size: 6 }),
+                pad(toHex(enableData[2]), { size: 6 }),
+                enableData[3],
+                pad(toHex(enableData[4]), { size: 32 })
+            ])
+            return (
+                execDetail.validator.toLowerCase() ===
+                    validatorAddress.toLowerCase() &&
+                enableDataHex.toLowerCase() ===
+                    (
+                        await getEnableData(kernelAccountAddress, enableData[4])
+                    ).toLowerCase()
+            )
+        } catch (error) {
+            console.log("error", error)
+            return false
+        }
+    }
+
     const getValidatorSignature = async (
         accountAddress: Address,
         pluginEnableSignature?: Hex
     ): Promise<Hex> => {
-        if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
+        const isPluginEnabled = await getPluginEnableStatus(accountAddress)
+        mode = isPluginEnabled ? ValidatorMode.plugin : ValidatorMode.enable
+        console.log("mode", mode)
+        if (mode === ValidatorMode.plugin) {
             return mode
         }
         const enableData = await getEnableData(accountAddress)

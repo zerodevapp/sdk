@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { KernelAccountClient, KernelSmartAccount } from "@kerneljs/core"
 import { type SessionKeyPlugin } from "@kerneljs/session-key"
 import { SmartAccountClient } from "permissionless"
 import { SmartAccount } from "permissionless/accounts"
@@ -22,11 +23,11 @@ import { polygonMumbai } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
 import {
     getEntryPoint,
+    getKernelAccountClient,
     getPimlicoPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
-    getSmartAccountClient,
     getZeroDevPaymasterClient
 } from "./utils"
 
@@ -41,15 +42,15 @@ describe("Session Key kernel Account", async () => {
     let owner: PrivateKeyAccount
     let accountAddress: Address
     let Test_ERC20Address: Address
-    let ecdsaSmartAccountClient: SmartAccountClient<
+    let ecdsaSmartAccountClient: KernelAccountClient<
         Transport,
         Chain,
-        SmartAccount
+        KernelSmartAccount
     >
-    let sessionKeySmartAccountClient: SmartAccountClient<
+    let sessionKeySmartAccountClient: KernelAccountClient<
         Transport,
         Chain,
-        SmartAccount
+        KernelSmartAccount
     >
 
     beforeAll(async () => {
@@ -58,7 +59,7 @@ describe("Session Key kernel Account", async () => {
         testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
         owner = privateKeyToAccount(testPrivateKey)
 
-        sessionKeySmartAccountClient = await getSmartAccountClient({
+        sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
@@ -72,7 +73,7 @@ describe("Session Key kernel Account", async () => {
         accountAddress = (await sessionKeySmartAccountClient.account
             ?.address) as Address
 
-        ecdsaSmartAccountClient = await getSmartAccountClient({
+        ecdsaSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
