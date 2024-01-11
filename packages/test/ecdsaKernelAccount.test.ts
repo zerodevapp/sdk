@@ -232,7 +232,7 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.only(
+    test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
             const userOp = await kernelClient.signUserOperation({
