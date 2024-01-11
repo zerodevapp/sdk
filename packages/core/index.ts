@@ -2,7 +2,8 @@ export {
     createKernelAccount,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
-    type CallType
+    type CallType,
+    addressToEmptyAccount
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,

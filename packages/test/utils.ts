@@ -4,7 +4,10 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@kerneljs/core"
-import { createKernelAccount } from "@kerneljs/core/accounts"
+import {
+    addressToEmptyAccount,
+    createKernelAccount
+} from "@kerneljs/core/accounts"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
@@ -128,6 +131,7 @@ export const getSignerToSessionKeyKernelAccount =
         const signer = privateKeyToAccount(privateKey)
         const sessionPrivateKey = generatePrivateKey()
         const sessionKey = privateKeyToAccount(sessionPrivateKey)
+        const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
         const ecdsaValidatorPlugin = await signerToEcdsaValidator(
             publicClient,
             {
@@ -139,7 +143,7 @@ export const getSignerToSessionKeyKernelAccount =
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
-                signer: sessionKey,
+                signer: sessionKeyEmptyAccount,
                 validatorData: {
                     permissions: [
                         {

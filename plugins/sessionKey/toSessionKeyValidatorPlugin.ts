@@ -246,7 +246,6 @@ export async function signerToSessionKeyValidator<
                     ).toLowerCase()
             )
         } catch (error) {
-            console.log("error", error)
             return false
         }
     }
@@ -257,7 +256,6 @@ export async function signerToSessionKeyValidator<
     ): Promise<Hex> => {
         const isPluginEnabled = await getPluginEnableStatus(accountAddress)
         mode = isPluginEnabled ? ValidatorMode.plugin : ValidatorMode.enable
-        console.log("mode", mode)
         if (mode === ValidatorMode.plugin) {
             return mode
         }
