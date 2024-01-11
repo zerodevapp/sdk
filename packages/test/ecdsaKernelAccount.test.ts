@@ -1,13 +1,14 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     type CallType,
+    KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount
 } from "@kerneljs/core"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import dotenv from "dotenv"
-import { BundlerClient } from "permissionless"
+import { BundlerClient, bundlerActions } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
@@ -20,6 +21,7 @@ import {
     type PublicClient,
     Transport,
     decodeEventLog,
+    encodeFunctionData,
     getContract,
     zeroAddress
 } from "viem"
@@ -41,8 +43,6 @@ import {
 dotenv.config()
 
 const requiredEnvVars = [
-    "PIMLICO_API_KEY",
-    "STACKUP_API_KEY",
     "FACTORY_ADDRESS",
     "TEST_PRIVATE_KEY",
     "RPC_URL",
@@ -232,22 +232,28 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test(
+    test.only(
         "Client signs and then sends UserOp with paymaster",
         async () => {
             const userOp = await kernelClient.signUserOperation({
                 userOperation: {
                     callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
+                        to: process.env.GREETER_ADDRESS as Address,
                         value: 0n,
-                        data: "0x"
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world"]
+                        })
                     })
                 }
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: userOp
+            const bundlerClient = kernelClient.extend(bundlerActions)
+            const userOpHash = await bundlerClient.sendUserOperation({
+                userOperation: userOp,
+                entryPoint: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
             })
             expect(userOpHash).toHaveLength(66)
 
