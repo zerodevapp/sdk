@@ -2,7 +2,8 @@ export {
     createKernelAccount,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
-    type CallType
+    type CallType,
+    addressToEmptyAccount
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,
@@ -27,3 +28,5 @@ export {
     type KernelPlugin,
     type ZeroDevPaymasterRpcSchema
 } from "./types/kernel.js"
+export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
+export * as constants from "./constants.js"

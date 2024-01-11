@@ -40,6 +40,10 @@ export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<"kernelSmartAccount", transport, chain> & {
+    defaultValidator?: KernelPlugin<string, transport, chain>
+    plugin?: KernelPlugin<string, transport, chain>
+    getPluginEnableSignature: () => Promise<Hex | undefined>
+    generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
 
@@ -184,40 +188,51 @@ const getAccountAddress = async <
  */
 export async function createKernelAccount<
     TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TPlugin extends KernelPlugin<string, TTransport, TChain> = KernelPlugin<
-        "ECDSAValidator",
-        TTransport,
-        TChain
-    >
+    TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain>,
     {
+        defaultValidator,
         plugin,
+        pluginEnableSignature,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
-        deployedAccountAddress
+        deployedAccountAddress,
+        initCode
     }: {
-        plugin: TPlugin
+        defaultValidator?: KernelPlugin<string, TTransport, TChain>
+        plugin?: KernelPlugin<string, TTransport, TChain>
+        pluginEnableSignature?: Hex
         entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
         accountLogicAddress?: Address
         deployedAccountAddress?: Address
+        initCode?: Hex
     }
 ): Promise<KernelSmartAccount<TTransport, TChain>> {
+    if (!defaultValidator && !plugin)
+        throw new Error(
+            "You must provide at least defaultValidator or plugin for the kernel smart account"
+        )
+    const currentValidator =
+        plugin ?? (defaultValidator as KernelPlugin<string, TTransport, TChain>)
     // Helper to generate the init code for the smart account
-    const generateInitCode = () =>
-        getAccountInitCode({
-            owner: plugin.signer.address,
-            index,
-            factoryAddress,
-            accountLogicAddress,
-            validatorAddress: plugin.address,
-            enableData: plugin.getEnableData()
-        })
+    const generateInitCode = () => {
+        if (initCode) return Promise.resolve(initCode)
+        else if (defaultValidator)
+            return getAccountInitCode({
+                owner: defaultValidator.signer.address,
+                index,
+                factoryAddress,
+                accountLogicAddress,
+                validatorAddress: defaultValidator.address,
+                enableData: defaultValidator.getEnableData()
+            })
+        else throw new Error("No init code or default validator provided")
+    }
 
     // Fetch account address and chain id
     const [accountAddress] = await Promise.all([
@@ -235,18 +250,31 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            return signMessage(client, { account: plugin.signer, message })
+            return signMessage(client, {
+                account: currentValidator.signer,
+                message
+            })
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
         async signTypedData(typedData) {
             return signTypedData(client, {
-                account: plugin.signer,
+                account: currentValidator.signer,
                 ...typedData
             })
         }
     })
+
+    const getPluginEnableSignature = () => {
+        if (pluginEnableSignature) return Promise.resolve(pluginEnableSignature)
+        else if (plugin && defaultValidator)
+            return defaultValidator.getPluginEnableSignature(
+                accountAddress,
+                plugin
+            )
+        return Promise.resolve(undefined)
+    }
 
     return {
         ...account,
@@ -262,11 +290,19 @@ export async function createKernelAccount<
                 entryPoint: entryPoint
             })
         },
+        defaultValidator,
+        plugin,
+        getPluginEnableSignature,
 
         // Sign a user operation
         async signUserOperation(userOperation) {
-            return plugin.signUserOperation(userOperation)
+            const pluginEnableSignature = await getPluginEnableSignature()
+            return currentValidator.signUserOperation(
+                userOperation,
+                pluginEnableSignature
+            )
         },
+        generateInitCode,
 
         // Encode the init code
         async getInitCode() {
@@ -327,6 +363,12 @@ export async function createKernelAccount<
 
             // Default to `call`
             if (!tx.callType || tx.callType === "call") {
+                if (
+                    tx.to.toLowerCase() === accountAddress &&
+                    currentValidator.shouldDelegateViaFallback()
+                ) {
+                    return tx.data
+                }
                 return encodeFunctionData({
                     abi: KernelExecuteAbi,
                     functionName: "execute",
@@ -346,8 +388,12 @@ export async function createKernelAccount<
         },
 
         // Get simple dummy signature
-        async getDummySignature() {
-            return plugin.getDummySignature()
+        async getDummySignature(userOperation) {
+            const pluginEnableSignature = await getPluginEnableSignature()
+            return currentValidator.getDummySignature(
+                userOperation,
+                pluginEnableSignature
+            )
         }
     }
 }

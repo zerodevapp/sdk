@@ -62,7 +62,32 @@ export type KernelPlugin<
     client: Client<transport, chain>
     entryPoint: Address
     getNonceKey: () => Promise<bigint>
-    getDummySignature(): Promise<Hex>
-    signUserOperation: (UserOperation: UserOperation) => Promise<Hex>
-    getEnableData(): Promise<Hex>
+    getDummySignature(
+        userOperation: UserOperation,
+        pluginEnableSignature?: Hex
+    ): Promise<Hex>
+    signUserOperation: (
+        UserOperation: UserOperation,
+        pluginEnableSignature?: Hex
+    ) => Promise<Hex>
+    getPluginEnableSignature(
+        accountAddress: Address,
+        plugin: KernelPlugin
+    ): Promise<Hex>
+    getEnableData(accountAddress?: Address): Promise<Hex>
+    getExecutorData(): ExecutorData
+    shouldDelegateViaFallback(): boolean
+}
+
+export type ExecutorData = {
+    executor: Address
+    selector: Hex
+    validUntil: number
+    validAfter: number
+}
+
+export enum ValidatorMode {
+    sudo = "0x00000000",
+    plugin = "0x00000001",
+    enable = "0x00000002"
 }

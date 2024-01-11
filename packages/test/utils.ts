@@ -1,10 +1,26 @@
 import {
+    KernelAccountClient,
+    KernelSmartAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@kerneljs/core"
-import { createKernelAccount } from "@kerneljs/core/accounts"
+import {
+    addressToEmptyAccount,
+    createKernelAccount
+} from "@kerneljs/core/accounts"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
-import { BundlerClient, createBundlerClient } from "permissionless"
+import {
+    ParamOperator,
+    SessionKeyPlugin,
+    accountToSerializedSessionKeyAccountParams,
+    serializedSessionKeyAccountParamsToAccount,
+    signerToSessionKeyValidator
+} from "@kerneljs/session-key"
+import {
+    BundlerClient,
+    createBundlerClient,
+    createSmartAccountClient
+} from "permissionless"
 import {
     type SmartAccount,
     signerToSimpleSmartAccount
@@ -17,17 +33,24 @@ import {
     Hex,
     type Log,
     type PublicClient,
+    Transport,
     type WalletClient,
     createPublicClient,
     createWalletClient,
     decodeEventLog,
     encodeFunctionData
 } from "viem"
-import { type Account, privateKeyToAccount } from "viem/accounts"
+import {
+    type Account,
+    generatePrivateKey,
+    privateKeyToAccount
+} from "viem/accounts"
 import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
+import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
+export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -90,45 +113,96 @@ export const getSignerToEcdsaKernelAccount =
 
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            plugin: ecdsaValidatorPlugin
+            defaultValidator: ecdsaValidatorPlugin,
+            index: 21312223n
         })
     }
 
-// export const getSignerToSafeSmartAccount = async (args?: {
-//   setupTransactions?: {
-//     to: Address;
-//     data: Address;
-//     value: bigint;
-//   }[];
-// }) => {
-//   if (!process.env.TEST_PRIVATE_KEY)
-//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
+export const getSignerToSessionKeyKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
 
-//   const publicClient = await getPublicClient();
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const sessionPrivateKey = generatePrivateKey()
+        const sessionKey = privateKeyToAccount(sessionPrivateKey)
+        const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" }
+            }
+        )
 
-//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+        const sessionKeyPlugin = await signerToSessionKeyValidator(
+            publicClient,
+            {
+                signer: sessionKeyEmptyAccount,
+                validatorData: {
+                    permissions: [
+                        {
+                            target: Test_ERC20Address,
+                            abi: TEST_ERC20Abi,
+                            functionName: "transfer",
+                            args: [
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: signer.address
+                                },
+                                null
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
 
-//   return await signerToSafeSmartAccount(publicClient, {
-//     entryPoint: getEntryPoint(),
-//     signer: signer,
-//     safeVersion: "1.4.1",
-//     saltNonce: 100n,
-//     setupTransactions: args?.setupTransactions,
-//   });
-// };
-// export const getSignerToEcdsaKernelAccount = async () => {
-//   if (!process.env.TEST_PRIVATE_KEY)
-//     throw new Error("TEST_PRIVATE_KEY environment variable not set");
+        const account = await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            defaultValidator: ecdsaValidatorPlugin,
+            plugin: sessionKeyPlugin,
+            index: 21312223n
+        })
 
-//   const publicClient = await getPublicClient();
-//   const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex);
+        const serializedSessionKeyAccountParams =
+            await accountToSerializedSessionKeyAccountParams(account)
 
-//   return await signerToEcdsaKernelSmartAccount(publicClient, {
-//     entryPoint: getEntryPoint(),
-//     signer: signer,
-//     index: 100n,
-//   });
-// };
+        return await serializedSessionKeyAccountParamsToAccount(
+            publicClient,
+            serializedSessionKeyAccountParams,
+            sessionKey
+        )
+    }
+
+export const getSessionKeyToSessionKeyKernelAccount = async <
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
+>(
+    sessionKeyPlugin: SessionKeyPlugin<TTransport, TChain>
+): Promise<KernelSmartAccount> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        defaultValidator: ecdsaValidatorPlugin,
+        plugin: sessionKeyPlugin,
+        index: 21312223n
+    })
+}
 
 const DEFAULT_PROVIDER = "ALCHEMY"
 
@@ -170,7 +244,7 @@ export const getKernelAccountClient = async ({
         chain,
         transport: http(getBundlerRpc()),
         sponsorUserOperation
-    })
+    }) as KernelAccountClient<Transport, Chain, KernelSmartAccount>
 }
 
 export const getEoaWalletClient = (): WalletClient => {
