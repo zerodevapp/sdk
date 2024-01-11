@@ -11,6 +11,7 @@ import {
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
+    SessionKeyPlugin,
     accountToSerializedSessionKeyAccountParams,
     serializedSessionKeyAccountParamsToAccount,
     signerToSessionKeyValidator
@@ -53,6 +54,7 @@ import * as allChains from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
+export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -147,7 +149,7 @@ export const getSignerToSessionKeyKernelAccount =
                 validatorData: {
                     permissions: [
                         {
-                            target: "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B",
+                            target: Test_ERC20Address,
                             abi: TEST_ERC20Abi,
                             functionName: "transfer",
                             args: [
@@ -179,6 +181,32 @@ export const getSignerToSessionKeyKernelAccount =
             sessionKey
         )
     }
+
+export const getSessionKeyToSessionKeyKernelAccount = async <
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
+>(
+    sessionKeyPlugin: SessionKeyPlugin<TTransport, TChain>
+): Promise<SmartAccount> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        defaultValidator: ecdsaValidatorPlugin,
+        plugin: sessionKeyPlugin,
+        index: 21312223n
+    })
+}
 
 export const getKernelAccountClient = async ({
     account,

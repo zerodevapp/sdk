@@ -86,13 +86,13 @@ export async function signerToSessionKeyValidator<
         mode?: ValidatorMode
     }
 ): Promise<SessionKeyPlugin<TTransport, TChain>> {
-    const _executorData = executorData ?? {
-        executor: zeroAddress,
-        selector: getFunctionSelector(
-            "execute(address, uint256, bytes, uint8)"
-        ),
-        validAfter: 0,
-        validUntil: 0
+    const _executorData: Required<ExecutorData> = {
+        executor: executorData?.executor ?? zeroAddress,
+        selector:
+            executorData?.selector ??
+            getFunctionSelector("execute(address, uint256, bytes, uint8)"),
+        validAfter: executorData?.validAfter ?? 0,
+        validUntil: executorData?.validUntil ?? 0
     }
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData,
