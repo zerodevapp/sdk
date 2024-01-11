@@ -2,8 +2,8 @@ import { createKernelAccount } from "@kerneljs/core"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { Address, Hex } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin"
-import { deserializeSessionKeyAccountParams } from "./utils"
+import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
+import { deserializeSessionKeyAccountParams } from "./utils.js"
 
 export const serializedSessionKeyAccountParamsToAccount = async <
     TSource extends string = "custom",

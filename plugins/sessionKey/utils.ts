@@ -19,7 +19,7 @@ import type {
     PermissionCore,
     SessionKeyAccountParams,
     SessionKeyPlugin
-} from "./types"
+} from "./types.js"
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],

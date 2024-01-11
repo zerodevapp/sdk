@@ -3,7 +3,7 @@ import type { Hex } from "viem"
 import {
     isSessionKeyValidatorPlugin,
     serializeSessionKeyAccountParams
-} from "./utils"
+} from "./utils.js"
 
 export const accountToSerializedSessionKeyAccountParams = async (
     account: KernelSmartAccount,

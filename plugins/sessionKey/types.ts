@@ -17,7 +17,7 @@ import type {
     Narrow,
     Transport
 } from "viem"
-import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin"
+import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
 
 export type SessionNonces = {
     lastNonce: bigint
