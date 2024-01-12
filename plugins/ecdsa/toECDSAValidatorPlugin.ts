@@ -1,6 +1,10 @@
-import { KERNEL_ADDRESSES } from "@kerneljs/core"
+import { constants, KERNEL_ADDRESSES } from "@kerneljs/core"
 import type { KernelPlugin } from "@kerneljs/core/types"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    type UserOperation,
+    getAction,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -18,7 +22,7 @@ import {
     toHex
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { signMessage, signTypedData } from "viem/actions"
+import { getStorageAt, signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
@@ -112,10 +116,21 @@ export async function signerToEcdsaValidator<
             if (!executorData.selector || !executorData.executor) {
                 throw new Error("Invalid executor data")
             }
+            let kernelImplAddr = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC
+            try {
+                const strgAddr = await getAction(
+                    client,
+                    getStorageAt
+                )({
+                    address: sender,
+                    slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+                })
+                if (strgAddr) kernelImplAddr = `0x${strgAddr.slice(26)}` as Hex
+            } catch (error) {}
             const ownerSig = await account.signTypedData({
                 domain: {
                     name: "Kernel",
-                    version: "0.2.3",
+                    version: constants.getKernelVersion(kernelImplAddr),
                     chainId,
                     verifyingContract: sender
                 },
