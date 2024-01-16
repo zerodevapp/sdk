@@ -53,6 +53,7 @@ export type ZeroDevProviderConfig = {
   chain: Chain | number;
   entryPointAddress?: Address;
   rpcUrl?: string;
+  bundlerRpcUrl?: string;
   account?: KernelSmartContractAccount;
   bundlerProvider?: PaymasterAndBundlerProviders;
   opts?: SmartAccountProviderOpts & {
@@ -87,7 +88,8 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     projectId,
     chain,
     entryPointAddress = ENTRYPOINT_ADDRESS,
-    rpcUrl = BUNDLER_URL,
+    rpcUrl,
+    bundlerRpcUrl = BUNDLER_URL,
     account,
     bundlerProvider,
     opts,
@@ -96,6 +98,7 @@ export class ZeroDevProvider extends SmartAccountProvider<HttpTransport> {
     const rpcClient = createZeroDevPublicErc4337Client({
       chain: _chain,
       rpcUrl,
+      bundlerRpcUrl,
       projectId,
       bundlerProvider,
     });

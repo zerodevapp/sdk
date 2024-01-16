@@ -12,6 +12,7 @@ interface ZeroDevClientConfig {
   chain: Chain;
   projectId: string;
   rpcUrl?: string;
+  bundlerRpcUrl?: string;
   bundlerProvider?: PaymasterAndBundlerProviders;
 }
 
@@ -37,20 +38,21 @@ function isMethodInErc4337RpcSchema(
 export const createZeroDevPublicErc4337Client = ({
   chain,
   rpcUrl,
+  bundlerRpcUrl,
   projectId,
   bundlerProvider,
 }: ZeroDevClientConfig): PublicErc4337Client<HttpTransport> => {
-  const erc4337Transport = http(rpcUrl, {
+  const erc4337Transport = http(bundlerRpcUrl ?? BUNDLER_URL, {
     fetchOptions: {
       // @ts-ignore
-      headers: rpcUrl === BUNDLER_URL ? { projectId, bundlerProvider } : {},
+      headers: bundlerRpcUrl === BUNDLER_URL ? { projectId, bundlerProvider } : {},
     },
     name: "Connected bundler network",
     key: "connected-bundler-network",
     retryCount: 0,
     timeout: 35000,
   });
-  const publicTransport = http(CHAIN_ID_TO_NODE[chain.id]);
+  const publicTransport = http(rpcUrl ?? CHAIN_ID_TO_NODE[chain.id]);
   let client = createPublicErc4337FromClient(
     createPublicClient({
       chain,

@@ -7,7 +7,7 @@ export const config = {
   ownerWallet: process.env.OWNER_WALLET,
   mockWallet: "0x48D4d3536cDe7A257087206870c6B6E76e3D4ff4",
   chain: polygonMumbai,
-  rpcProvider: "https://mumbai-bundler.etherspot.io/",
+  rpcProvider: process.env.RPC_URL,
   validatorAddress: "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390" as Hex,
   accountFactoryAddress: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3" as Hex,
   entryPointAddress: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Hex,

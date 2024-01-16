@@ -92,7 +92,8 @@ export class KernelSmartContractAccount<
       typeof params.rpcClient === "string"
         ? createZeroDevPublicErc4337Client({
             chain,
-            rpcUrl: params.rpcClient ?? BUNDLER_URL,
+            rpcUrl: params.rpcClient,
+            bundlerRpcUrl: params.rpcClient ?? BUNDLER_URL,
             projectId: params.projectId,
             bundlerProvider: params.bundlerProvider,
           })
