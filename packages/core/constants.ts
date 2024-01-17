@@ -10,10 +10,3 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
 }
 export const LATEST_KERNEL_VERSION = "0.2.3"
 
-export const getKernelVersion = (kernelImpl?: Address): string => {
-    if (!kernelImpl || kernelImpl === zeroAddress) return LATEST_KERNEL_VERSION
-    for (const [addr, ver] of Object.entries(KernelImplToVersionMap)) {
-        if (addr.toLowerCase() === kernelImpl.toLowerCase()) return ver
-    }
-    return "0.2.1"
-}

@@ -79,6 +79,37 @@ export type KernelPlugin<
     shouldDelegateViaFallback(): boolean
 }
 
+export type KernelValidator<Name extends string = string> =
+    LocalAccount<Name> & {
+        getNonceKey: () => Promise<bigint>
+        getDummySignature(
+            userOperation: UserOperation,
+            pluginEnableSignature?: Hex
+        ): Promise<Hex>
+        signUserOperation: (
+            userOperation: UserOperation,
+            pluginEnableSignature?: Hex
+        ) => Promise<Hex>
+        getEnableData(accountAddress?: Address): Promise<Hex>
+        getExecutorData(): ExecutorData
+    }
+
+export type ValidatorInitData = {
+    validatorAddress: Address
+    enableData: Promise<Hex>
+}
+
+export type KernelPluginManager = KernelValidator & {
+    getEnableSignature(accountAddress: Address): Promise<Hex>
+    getValidatorInitData(): ValidatorInitData
+}
+
+export type KernelPluginManagerParams = {
+    validator: KernelValidator
+    defaultValidator?: KernelValidator
+    pluginEnableSignature?: Hex
+}
+
 export type ExecutorData = {
     executor: Address
     selector: Hex
