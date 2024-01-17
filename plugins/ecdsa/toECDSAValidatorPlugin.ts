@@ -1,9 +1,6 @@
 import { KERNEL_ADDRESSES } from "@kerneljs/core"
 import type { KernelPlugin } from "@kerneljs/core/types"
-import {
-    type UserOperation,
-    getUserOperationHash
-} from "permissionless"
+import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -14,7 +11,8 @@ import {
     type Client,
     type LocalAccount,
     type Transport,
-    concatHex} from "viem"
+    concatHex
+} from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"

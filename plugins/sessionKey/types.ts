@@ -55,11 +55,11 @@ export type Permission<
 } & (TFunctionName extends string
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-        ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-              TAbi,
-              _FunctionName
-          >
-        : never)
+          ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
+                  TAbi,
+                  _FunctionName
+              >
+          : never)
 
 export interface SessionKeyData<
     TAbi extends Abi | readonly unknown[],
@@ -119,10 +119,10 @@ export type GetFunctionArgs<
           args?: readonly unknown[]
       }
     : TArgs extends readonly []
-    ? { args?: never }
-    : {
-          args?: TArgs
-      }
+      ? { args?: never }
+      : {
+              args?: TArgs
+          }
 
 export type GeneratePermissionFromArgsParameters<
     TAbi extends Abi | readonly unknown[],
@@ -135,8 +135,8 @@ export type GeneratePermissionFromArgsParameters<
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
     : _FunctionName extends string
-    ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-    : never)
+      ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+      : never)
 
 export type AbiParametersToPrimitiveTypes<
     TAbiParameters extends readonly AbiParameter[],

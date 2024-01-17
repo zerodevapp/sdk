@@ -178,9 +178,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -254,9 +253,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -336,9 +334,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -429,9 +426,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -482,9 +478,8 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account = await getSessionKeyToSessionKeyKernelAccount(
-            sessionKeyPlugin
-        )
+        const account =
+            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
             await accountToSerializedSessionKeyAccountParams(
                 account,
@@ -553,9 +548,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            )
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         })
 
         const amountToTransfer = 10000n
@@ -595,9 +589,8 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account = await getSessionKeyToSessionKeyKernelAccount(
-            sessionKeyPlugin
-        )
+        const account =
+            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
             await accountToSerializedSessionKeyAccountParams(account)
 
