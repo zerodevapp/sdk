@@ -11,7 +11,7 @@ import {
     toHex
 } from "viem"
 import { getChainId, getStorageAt } from "viem/actions"
-import {
+import type {
     KernelPluginManager,
     KernelPluginManagerParams} from "../../types/kernel"
 import { getKernelVersion } from "../../utils"
