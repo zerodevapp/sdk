@@ -426,7 +426,9 @@ describe("ECDSA kernel Account", () => {
                 publicClient,
                 {
                     entryPoint: getEntryPoint(),
-                    defaultValidator: ecdsaValidatorPlugin,
+                    plugins: {
+                        validator: ecdsaValidatorPlugin
+                    },
                     deployedAccountAddress
                 }
             )

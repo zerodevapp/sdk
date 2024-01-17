@@ -78,8 +78,7 @@ export async function signerToSessionKeyValidator<
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS,
         executorData,
-        mode = ValidatorMode.enable,
-        enableSignature
+        mode = ValidatorMode.enable
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
@@ -87,7 +86,6 @@ export async function signerToSessionKeyValidator<
         validatorAddress?: Address
         executorData?: ExecutorData
         mode?: ValidatorMode
-        enableSignature?: Hex
     }
 ): Promise<SessionKeyPlugin<TTransport, TChain>> {
     const _executorData: Required<ExecutorData> = {
@@ -256,7 +254,8 @@ export async function signerToSessionKeyValidator<
     }
 
     const getValidatorSignature = async (
-        accountAddress: Address
+        accountAddress: Address,
+        enableSignature?: Hex
     ): Promise<Hex> => {
         const isPluginEnabled = await getPluginEnableStatus(accountAddress)
         mode = isPluginEnabled ? ValidatorMode.plugin : ValidatorMode.enable
@@ -516,7 +515,10 @@ export async function signerToSessionKeyValidator<
             })
             const fixedSignature = fixSignedData(signature)
             return concat([
-                await getValidatorSignature(userOperation.sender),
+                await getValidatorSignature(
+                    userOperation.sender,
+                    pluginEnableSignature
+                ),
                 signer.address,
                 fixedSignature,
                 getEncodedPermissionProofData(userOperation.callData)
@@ -529,14 +531,14 @@ export async function signerToSessionKeyValidator<
 
         async getDummySignature(userOperation, pluginEnableSignature) {
             return concat([
-                await getValidatorSignature(userOperation.sender),
+                await getValidatorSignature(
+                    userOperation.sender,
+                    pluginEnableSignature
+                ),
                 signer.address,
                 constants.DUMMY_ECDSA_SIG,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
-        },
-        getPluginEnableSignature: async () => {
-            throw new Error("Not implemented")
         },
         getExecutorData: () => {
             if (!_executorData?.selector || !_executorData?.executor) {

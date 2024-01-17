@@ -70,10 +70,10 @@ export type KernelPlugin<
         UserOperation: UserOperation,
         pluginEnableSignature?: Hex
     ) => Promise<Hex>
-    getPluginEnableSignature(
-        accountAddress: Address,
-        plugin: KernelPlugin
-    ): Promise<Hex>
+    // getPluginEnableSignature(
+    //     accountAddress: Address,
+    //     plugin: KernelPlugin
+    // ): Promise<Hex>
     getEnableData(accountAddress?: Address): Promise<Hex>
     getExecutorData(): ExecutorData
     shouldDelegateViaFallback(): boolean
@@ -96,18 +96,19 @@ export type KernelValidator<Name extends string = string> =
 
 export type ValidatorInitData = {
     validatorAddress: Address
-    enableData: Promise<Hex>
+    enableData: Hex
 }
 
 export type KernelPluginManager = KernelValidator & {
-    getEnableSignature(accountAddress: Address): Promise<Hex>
-    getValidatorInitData(): ValidatorInitData
+    getPluginEnableSignature(accountAddress: Address): Promise<Hex>
+    getValidatorInitData(): Promise<ValidatorInitData>
 }
 
 export type KernelPluginManagerParams = {
     validator: KernelValidator
     defaultValidator?: KernelValidator
     pluginEnableSignature?: Hex
+    validatorInitData?: ValidatorInitData
 }
 
 export type ExecutorData = {

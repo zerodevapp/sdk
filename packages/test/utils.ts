@@ -113,8 +113,9 @@ export const getSignerToEcdsaKernelAccount =
 
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            defaultValidator: ecdsaValidatorPlugin,
-            index: 21312223n
+            plugins: {
+                validator: ecdsaValidatorPlugin
+            }
         })
     }
 
@@ -163,9 +164,10 @@ export const getSignerToSessionKeyKernelAccount =
 
         const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            defaultValidator: ecdsaValidatorPlugin,
-            plugin: sessionKeyPlugin,
-            index: 21312223n
+            plugins: {
+                validator: sessionKeyPlugin,
+                defaultValidator: ecdsaValidatorPlugin
+            }
         })
 
         const serializedSessionKeyAccountParams =
@@ -198,9 +200,10 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
 
     return await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
-        defaultValidator: ecdsaValidatorPlugin,
-        plugin: sessionKeyPlugin,
-        index: 21312223n
+        plugins: {
+            validator: sessionKeyPlugin,
+            defaultValidator: ecdsaValidatorPlugin
+        }
     })
 }
 

@@ -16,9 +16,8 @@ import {
     parseAbi
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode, signMessage, signTypedData } from "viem/actions"
+import { getBytecode } from "viem/actions"
 import type {
-    KernelPlugin,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
@@ -51,6 +50,7 @@ export type KernelSmartAccount<
     // defaultValidator?: KernelPlugin<string, transport, chain>
     // plugin?: KernelPlugin<string, transport, chain>
     // getPluginEnableSignature: () => Promise<Hex | undefined>
+    kernelPluginManager: KernelPluginManager
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
@@ -130,13 +130,13 @@ const getAccountInitCode = async ({
     factoryAddress: Address
     accountLogicAddress: Address
     validatorAddress: Address
-    enableData: Promise<Hex>
+    enableData: Hex
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = encodeFunctionData({
         abi: KernelInitAbi,
         functionName: "initialize",
-        args: [validatorAddress, await enableData]
+        args: [validatorAddress, enableData]
     })
 
     // Build the account init code
@@ -195,23 +195,21 @@ export async function createKernelAccount<
 >(
     client: Client<TTransport, TChain>,
     {
-        pluginEnableSignature,
+        plugins,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
-        deployedAccountAddress,
-        plugins
+        deployedAccountAddress
     }: {
-        pluginEnableSignature?: Hex
+        plugins:
+            | Omit<KernelPluginManagerParams, "pluginEnableSignature">
+            | KernelPluginManager
         entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
         accountLogicAddress?: Address
         deployedAccountAddress?: Address
-        plugins:
-            | Omit<KernelPluginManagerParams, "pluginEnableSignature">
-            | KernelPluginManager
     }
 ): Promise<KernelSmartAccount<TTransport, TChain>> {
     const kernelPluginManager = isKernelPluginManager(plugins)
@@ -221,8 +219,9 @@ export async function createKernelAccount<
               defaultValidator: plugins.defaultValidator
           })
     // Helper to generate the init code for the smart account
-    const generateInitCode = () => {
-        const validatorInitData = kernelPluginManager.getValidatorInitData()
+    const generateInitCode = async () => {
+        const validatorInitData =
+            await kernelPluginManager.getValidatorInitData()
         return getAccountInitCode({
             index,
             factoryAddress,
@@ -285,10 +284,18 @@ export async function createKernelAccount<
         // defaultValidator,
         // plugin,
         // getPluginEnableSignature,
+        kernelPluginManager,
 
         // Sign a user operation
         async signUserOperation(userOperation) {
-            return kernelPluginManager.signUserOperation(userOperation)
+            const pluginEnableSignature =
+                await kernelPluginManager.getPluginEnableSignature(
+                    accountAddress
+                )
+            return kernelPluginManager.signUserOperation(
+                userOperation,
+                pluginEnableSignature
+            )
         },
         generateInitCode,
 
@@ -379,7 +386,14 @@ export async function createKernelAccount<
 
         // Get simple dummy signature
         async getDummySignature(userOperation) {
-            return kernelPluginManager.getDummySignature(userOperation)
+            const pluginEnableSignature =
+                await kernelPluginManager.getPluginEnableSignature(
+                    accountAddress
+                )
+            return kernelPluginManager.getDummySignature(
+                userOperation,
+                pluginEnableSignature
+            )
         }
     }
 }

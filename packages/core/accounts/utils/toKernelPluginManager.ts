@@ -1,16 +1,15 @@
 import { getAction } from "permissionless"
-import {
+import type {
     KernelPluginManager,
-    KernelPluginManagerParams,
-    KernelValidator
+    KernelPluginManagerParams
 } from "../../types/kernel"
 import { KERNEL_ADDRESSES } from "../kernel/createKernelAccount"
 import {
-    Address,
-    Chain,
-    Client,
-    Hex,
-    Transport,
+    type Address,
+    type Chain,
+    type Client,
+    type Hex,
+    type Transport,
     concatHex,
     hexToBigInt,
     pad,
@@ -23,7 +22,7 @@ export function isKernelPluginManager(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
 ): plugin is KernelPluginManager {
-    return plugin.getEnableSignature !== undefined
+    return plugin.getPluginEnableSignature !== undefined
 }
 
 export async function toKernelPluginManager<
@@ -34,13 +33,15 @@ export async function toKernelPluginManager<
     {
         validator,
         defaultValidator,
-        pluginEnableSignature
+        pluginEnableSignature,
+        validatorInitData
     }: KernelPluginManagerParams
 ): Promise<KernelPluginManager> {
     const chainId = await getChainId(client)
     return {
         ...validator,
-        getEnableSignature: async (accountAddress: Address) => {
+        getPluginEnableSignature: async (accountAddress: Address) => {
+            if (pluginEnableSignature) return pluginEnableSignature
             if (!defaultValidator) return "0x"
             const executorData = validator.getExecutorData()
             if (!executorData.selector || !executorData.executor) {
@@ -93,11 +94,14 @@ export async function toKernelPluginManager<
             })
             return ownerSig
         },
-        getValidatorInitData: () => {
-            if (!defaultValidator) throw new Error("No default validator")
+        getValidatorInitData: async () => {
+            if (validatorInitData) return validatorInitData
             return {
-                validatorAddress: defaultValidator.address,
-                enableData: defaultValidator.getEnableData()
+                validatorAddress:
+                    defaultValidator?.address ?? validator.address,
+                enableData:
+                    (await defaultValidator?.getEnableData()) ??
+                    (await validator.getEnableData())
             }
         }
     }
