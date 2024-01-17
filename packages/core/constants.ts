@@ -9,4 +9,3 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3"
 }
 export const LATEST_KERNEL_VERSION = "0.2.3"
-

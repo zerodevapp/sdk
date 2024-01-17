@@ -21,11 +21,11 @@ import type {
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
-import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
+import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type CallType = "call" | "delegatecall"
 
