@@ -1,11 +1,5 @@
 import { getAction } from "permissionless"
 import {
-    KernelPluginManager,
-    KernelPluginManagerParams,
-    KernelValidator
-} from "../../types/kernel"
-import { KERNEL_ADDRESSES } from "../kernel/createKernelAccount"
-import {
     Address,
     Chain,
     Client,
@@ -17,7 +11,13 @@ import {
     toHex
 } from "viem"
 import { getChainId, getStorageAt } from "viem/actions"
+import {
+    KernelPluginManager,
+    KernelPluginManagerParams,
+    KernelValidator
+} from "../../types/kernel"
 import { getKernelVersion } from "../../utils"
+import { KERNEL_ADDRESSES } from "../kernel/createKernelAccount"
 
 export function isKernelPluginManager(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
