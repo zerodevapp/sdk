@@ -13,9 +13,11 @@ import {
 import { getChainId, getStorageAt } from "viem/actions"
 import type {
     KernelPluginManager,
-    KernelPluginManagerParams} from "../../types/kernel"
+    KernelPluginManagerParams
+} from "../../types/kernel"
 import { getKernelVersion } from "../../utils"
 import { KERNEL_ADDRESSES } from "../kernel/createKernelAccount"
+import { LATEST_KERNEL_VERSION } from "../../constants"
 
 export function isKernelPluginManager(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -46,7 +48,7 @@ export async function toKernelPluginManager<
             if (!executorData.selector || !executorData.executor) {
                 throw new Error("Invalid executor data")
             }
-            let kernelImplAddr = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC
+            let kernelImplAddr: Address | undefined
             try {
                 const strgAddr = await getAction(
                     client,
@@ -60,7 +62,9 @@ export async function toKernelPluginManager<
             const ownerSig = await defaultValidator.signTypedData({
                 domain: {
                     name: "Kernel",
-                    version: getKernelVersion(kernelImplAddr),
+                    version: kernelImplAddr
+                        ? getKernelVersion(kernelImplAddr)
+                        : LATEST_KERNEL_VERSION,
                     chainId,
                     verifyingContract: accountAddress
                 },
