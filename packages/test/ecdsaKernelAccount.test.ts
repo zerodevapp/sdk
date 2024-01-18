@@ -117,7 +117,7 @@ describe("ECDSA kernel Account", () => {
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
-    test.only(
+    test(
         "Client signMessage should return a valid signature",
         async () => {
             // to make sure kernel is deployed
@@ -171,78 +171,82 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.only("Smart account client signTypedData", async () => {
-        const domain = {
-            chainId: 1,
-            name: "Test",
-            verifyingContract: zeroAddress
-        }
+    test(
+        "Smart account client signTypedData",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
 
-        const primaryType = "Test"
+            const primaryType = "Test"
 
-        const types = {
-            Test: [
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const response = await kernelClient.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+            const eip1271Abi = [
                 {
-                    name: "test",
-                    type: "string"
+                    type: "function",
+                    name: "isValidSignature",
+                    inputs: [
+                        {
+                            name: "data",
+                            type: "bytes32",
+                            internalType: "bytes32"
+                        },
+                        {
+                            name: "signature",
+                            type: "bytes",
+                            internalType: "bytes"
+                        }
+                    ],
+                    outputs: [
+                        {
+                            name: "magicValue",
+                            type: "bytes4",
+                            internalType: "bytes4"
+                        }
+                    ],
+                    stateMutability: "view"
                 }
             ]
-        }
 
-        const message = {
-            test: "hello world"
-        }
-        const typedHash = hashTypedData({
-            domain,
-            primaryType,
-            types,
-            message
-        })
-
-        const response = await kernelClient.signTypedData({
-            domain,
-            primaryType,
-            types,
-            message
-        })
-        const eip1271Abi = [
-            {
-                type: "function",
-                name: "isValidSignature",
-                inputs: [
-                    {
-                        name: "data",
-                        type: "bytes32",
-                        internalType: "bytes32"
-                    },
-                    {
-                        name: "signature",
-                        type: "bytes",
-                        internalType: "bytes"
-                    }
-                ],
-                outputs: [
-                    {
-                        name: "magicValue",
-                        type: "bytes4",
-                        internalType: "bytes4"
-                    }
-                ],
-                stateMutability: "view"
-            }
-        ]
-
-        const eip1271response = await publicClient.readContract({
-            address: account.address,
-            abi: eip1271Abi,
-            functionName: "isValidSignature",
-            args: [typedHash, response]
-        })
-        expect(eip1271response).toEqual("0x1626ba7e")
-        expect(response).toBeString()
-        expect(response).toHaveLength(SIGNATURE_LENGTH)
-        expect(response).toMatch(SIGNATURE_REGEX)
-    })
+            const eip1271response = await publicClient.readContract({
+                address: account.address,
+                abi: eip1271Abi,
+                functionName: "isValidSignature",
+                args: [typedHash, response]
+            })
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+            expect(response).toHaveLength(SIGNATURE_LENGTH)
+            expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Client deploy contract",
