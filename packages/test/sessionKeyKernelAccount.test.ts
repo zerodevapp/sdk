@@ -31,7 +31,7 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
-import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
+import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import {
     Test_ERC20Address,
     getEntryPoint,
@@ -55,7 +55,6 @@ describe("Session Key kernel Account", async () => {
             name: "executeBatch"
         })
     )
-    let sessionKeyValidatorPlugin: SessionKeyPlugin
     let testPrivateKey: Hex
     let owner: PrivateKeyAccount
     let accountAddress: Address
@@ -305,7 +304,6 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 signer: privateKeyToAccount(generatePrivateKey()),
-                executorData: { selector: executeBatchSelector },
                 validatorData: {
                     permissions: [
                         {
@@ -334,8 +332,10 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin,
+                executeBatchSelector
+            ),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -598,9 +598,6 @@ describe("Session Key kernel Account", async () => {
             serializedSessionKeyAccountParams
         )
 
-        expect(
-            params.sessionKeyParams.sessionKeyData.permissions?.[0]
-                .valueLimit === bigInt
-        )
+        expect(params.sessionKeyParams.permissions?.[0].valueLimit === bigInt)
     }, 1000000)
 })

@@ -193,7 +193,7 @@ export function isSessionKeyValidatorPlugin(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
 ): plugin is SessionKeyPlugin {
-    return plugin?.exportSessionKeyParams !== undefined
+    return plugin?.getPluginSerializationParams !== undefined
 }
 // We need to be able to serialize bigint to transmit session key over
 // the network.

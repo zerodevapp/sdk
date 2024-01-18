@@ -38,7 +38,9 @@ import {
     createPublicClient,
     createWalletClient,
     decodeEventLog,
-    encodeFunctionData
+    encodeFunctionData,
+    getFunctionSelector,
+    zeroAddress
 } from "viem"
 import {
     type Account,
@@ -184,7 +186,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    sessionKeyPlugin: SessionKeyPlugin<TTransport, TChain>
+    sessionKeyPlugin: SessionKeyPlugin,
+    executorSelector?: Hex
 ): Promise<KernelSmartAccount> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
@@ -202,7 +205,17 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
         entryPoint: getEntryPoint(),
         plugins: {
             validator: sessionKeyPlugin,
-            defaultValidator: ecdsaValidatorPlugin
+            defaultValidator: ecdsaValidatorPlugin,
+            executorData: {
+                selector:
+                    executorSelector ??
+                    getFunctionSelector(
+                        "execute(address, uint256, bytes, uint8)"
+                    ),
+                executor: zeroAddress,
+                validAfter: 0,
+                validUntil: 0
+            }
         }
     })
 }

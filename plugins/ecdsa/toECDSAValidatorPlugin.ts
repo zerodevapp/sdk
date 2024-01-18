@@ -1,5 +1,6 @@
 import { KERNEL_ADDRESSES } from "@kerneljs/core"
-import type { KernelPlugin } from "@kerneljs/core/types"
+import type { KernelValidator } from "@kerneljs/core/types"
+import { ValidatorMode } from "@kerneljs/core/types"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -10,8 +11,7 @@ import {
     type Chain,
     type Client,
     type LocalAccount,
-    type Transport,
-    concatHex
+    type Transport
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
@@ -34,7 +34,7 @@ export async function signerToEcdsaValidator<
         entryPoint?: Address
         validatorAddress?: Address
     }
-): Promise<KernelPlugin<"ECDSAValidator", TTransport, TChain>> {
+): Promise<KernelValidator<"ECDSAValidator">> {
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -63,9 +63,6 @@ export async function signerToEcdsaValidator<
     return {
         ...account,
         address: validatorAddress,
-        signer: viemSigner,
-        client: client,
-        entryPoint: entryPoint,
         source: "ECDSAValidator",
 
         shouldDelegateViaFallback(): boolean {
@@ -91,72 +88,16 @@ export async function signerToEcdsaValidator<
                 account: viemSigner,
                 message: { raw: hash }
             })
-            // Always use the sudo mode, since we will use external paymaster
-            return concatHex(["0x00000000", signature])
+            return signature
         },
 
         // Get simple dummy signature
         async getDummySignature() {
-            return "0x00000000fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+            return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
         },
-        // async getPluginEnableSignature(
-        //     accountAddress: Address,
-        //     plugin: KernelPlugin
-        // ): Promise<Hex> {
-        //     const sender = accountAddress
-        //     const executorData = plugin.getExecutorData()
-        //     if (!executorData.selector || !executorData.executor) {
-        //         throw new Error("Invalid executor data")
-        //     }
-        //     let kernelImplAddr = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC
-        //     try {
-        //         const strgAddr = await getAction(
-        //             client,
-        //             getStorageAt
-        //         )({
-        //             address: sender,
-        //             slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
-        //         })
-        //         if (strgAddr) kernelImplAddr = `0x${strgAddr.slice(26)}` as Hex
-        //     } catch (error) {}
-        //     const ownerSig = await account.signTypedData({
-        //         domain: {
-        //             name: "Kernel",
-        //             version: getKernelVersion(kernelImplAddr),
-        //             chainId,
-        //             verifyingContract: sender
-        //         },
-        //         types: {
-        //             ValidatorApproved: [
-        //                 { name: "sig", type: "bytes4" },
-        //                 { name: "validatorData", type: "uint256" },
-        //                 { name: "executor", type: "address" },
-        //                 { name: "enableData", type: "bytes" }
-        //             ]
-        //         },
-        //         message: {
-        //             sig: executorData.selector,
-        //             validatorData: hexToBigInt(
-        //                 concatHex([
-        //                     pad(toHex(executorData.validUntil ?? 0), {
-        //                         size: 6
-        //                     }),
-        //                     pad(toHex(executorData.validAfter ?? 0), {
-        //                         size: 6
-        //                     }),
-        //                     plugin.address
-        //                 ]),
-        //                 { size: 32 }
-        //             ),
-        //             executor: executorData.executor as Address,
-        //             enableData: await plugin.getEnableData(sender)
-        //         },
-        //         primaryType: "ValidatorApproved"
-        //     })
-        //     return ownerSig
-        // },
-        getExecutorData: () => {
-            throw new Error("Not implemented")
+
+        async getValidatorMode() {
+            return ValidatorMode.sudo
         }
     }
 }

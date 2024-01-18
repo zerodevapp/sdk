@@ -47,9 +47,6 @@ export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<"kernelSmartAccount", transport, chain> & {
-    // defaultValidator?: KernelPlugin<string, transport, chain>
-    // plugin?: KernelPlugin<string, transport, chain>
-    // getPluginEnableSignature: () => Promise<Hex | undefined>
     kernelPluginManager: KernelPluginManager
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
@@ -202,9 +199,7 @@ export async function createKernelAccount<
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
         deployedAccountAddress
     }: {
-        plugins:
-            | Omit<KernelPluginManagerParams, "pluginEnableSignature">
-            | KernelPluginManager
+        plugins: KernelPluginManagerParams | KernelPluginManager
         entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
@@ -216,7 +211,9 @@ export async function createKernelAccount<
         ? plugins
         : await toKernelPluginManager(client, {
               validator: plugins.validator,
-              defaultValidator: plugins.defaultValidator
+              defaultValidator: plugins.defaultValidator,
+              executorData: plugins.executorData,
+              pluginEnableSignature: plugins.pluginEnableSignature
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
@@ -288,14 +285,7 @@ export async function createKernelAccount<
 
         // Sign a user operation
         async signUserOperation(userOperation) {
-            const pluginEnableSignature =
-                await kernelPluginManager.getPluginEnableSignature(
-                    accountAddress
-                )
-            return kernelPluginManager.signUserOperation(
-                userOperation,
-                pluginEnableSignature
-            )
+            return kernelPluginManager.signUserOperation(userOperation)
         },
         generateInitCode,
 
@@ -386,14 +376,7 @@ export async function createKernelAccount<
 
         // Get simple dummy signature
         async getDummySignature(userOperation) {
-            const pluginEnableSignature =
-                await kernelPluginManager.getPluginEnableSignature(
-                    accountAddress
-                )
-            return kernelPluginManager.getDummySignature(
-                userOperation,
-                pluginEnableSignature
-            )
+            return kernelPluginManager.getDummySignature(userOperation)
         }
     }
 }

@@ -6,7 +6,6 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
-    getFunctionSelector,
     isHex,
     keccak256,
     pad,
@@ -35,7 +34,6 @@ import {
 } from "permissionless/accounts"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type {
-    ExecutorData,
     PermissionCore,
     SessionKeyData,
     SessionKeyPlugin,
@@ -76,26 +74,14 @@ export async function signerToSessionKeyValidator<
         signer,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorData,
-        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS,
-        executorData,
-        mode = ValidatorMode.enable
+        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
         entryPoint?: Address
         validatorAddress?: Address
-        executorData?: ExecutorData
-        mode?: ValidatorMode
     }
-): Promise<SessionKeyPlugin<TTransport, TChain>> {
-    const _executorData: Required<ExecutorData> = {
-        executor: executorData?.executor ?? zeroAddress,
-        selector:
-            executorData?.selector ??
-            getFunctionSelector("execute(address, uint256, bytes, uint8)"),
-        validAfter: executorData?.validAfter ?? 0,
-        validUntil: executorData?.validUntil ?? 0
-    }
+): Promise<SessionKeyPlugin> {
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData,
         validAfter: validatorData?.validAfter ?? 0,
@@ -208,9 +194,9 @@ export async function signerToSessionKeyValidator<
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
 
-    const getPluginEnableStatus = async (
+    const isPluginEnabled = async (
         kernelAccountAddress: Address,
-        selector: Hex = _executorData.selector
+        selector: Hex
     ): Promise<boolean> => {
         try {
             const execDetail = await getAction(
@@ -251,33 +237,6 @@ export async function signerToSessionKeyValidator<
         } catch (error) {
             return false
         }
-    }
-
-    const getValidatorSignature = async (
-        accountAddress: Address,
-        enableSignature?: Hex
-    ): Promise<Hex> => {
-        const isPluginEnabled = await getPluginEnableStatus(accountAddress)
-        mode = isPluginEnabled ? ValidatorMode.plugin : ValidatorMode.enable
-        if (mode === ValidatorMode.plugin) {
-            return mode
-        }
-        const enableData = await getEnableData(accountAddress)
-        const enableDataLength = enableData.length / 2 - 1
-        if (!enableSignature) {
-            throw new Error("Enable signature not set")
-        }
-        return concat([
-            mode, // 4 bytes 0 - 4
-            pad(toHex(_executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
-            pad(toHex(_executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
-            pad(validatorAddress, { size: 20 }), // 20 bytes 16 - 36
-            pad(_executorData.executor, { size: 20 }), // 20 bytes 36 - 56
-            pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
-            enableData, // 88 - 88 + enableData.length
-            pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
-            enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
-        ])
     }
 
     const findMatchingPermissions = (
@@ -488,21 +447,13 @@ export async function signerToSessionKeyValidator<
             : "0x"
     }
 
-    // const merkleRoot = merkleTree.getHexRoot();
     return {
         ...account,
         address: validatorAddress,
-        signer: viemSigner,
-        client: client,
-        entryPoint: entryPoint,
-        merkleTree,
         source: "SessionKeyValidator",
         getEnableData,
 
-        signUserOperation: async (
-            userOperation,
-            pluginEnableSignature
-        ): Promise<Hex> => {
+        signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
                 entryPoint,
@@ -515,10 +466,6 @@ export async function signerToSessionKeyValidator<
             })
             const fixedSignature = fixSignedData(signature)
             return concat([
-                await getValidatorSignature(
-                    userOperation.sender,
-                    pluginEnableSignature
-                ),
                 signer.address,
                 fixedSignature,
                 getEncodedPermissionProofData(userOperation.callData)
@@ -529,31 +476,22 @@ export async function signerToSessionKeyValidator<
             return 0n
         },
 
-        async getDummySignature(userOperation, pluginEnableSignature) {
+        async getDummySignature(userOperation) {
             return concat([
-                await getValidatorSignature(
-                    userOperation.sender,
-                    pluginEnableSignature
-                ),
                 signer.address,
                 constants.DUMMY_ECDSA_SIG,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
         },
-        getExecutorData: () => {
-            if (!_executorData?.selector || !_executorData?.executor) {
-                throw new Error("Invalid executor data")
-            }
-            return _executorData
-        },
-        exportSessionKeyParams: () => {
-            return {
-                executorData: _executorData,
-                sessionKeyData: sessionKeyData as SessionKeyData<Abi, string>
-            }
-        },
+        getPluginSerializationParams: (): SessionKeyData<Abi, string> =>
+            sessionKeyData as SessionKeyData<Abi, string>,
         shouldDelegateViaFallback: () => {
             return merkleTree.getHexRoot() === pad("0x00", { size: 32 })
+        },
+        getValidatorMode: async (accountAddress, selector) => {
+            return (await isPluginEnabled(accountAddress, selector))
+                ? ValidatorMode.plugin
+                : ValidatorMode.enable
         }
     }
 }

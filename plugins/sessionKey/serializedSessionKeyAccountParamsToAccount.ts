@@ -25,8 +25,8 @@ export const serializedSessionKeyAccountParamsToAccount = async <
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
-        validatorData: params.sessionKeyParams.sessionKeyData,
-        executorData: params.sessionKeyParams.executorData
+        validatorData: params.sessionKeyParams
+        // executorData: params.sessionKeyParams.executorData
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
@@ -36,7 +36,8 @@ export const serializedSessionKeyAccountParamsToAccount = async <
     const kernelPluginManager = await toKernelPluginManager(client, {
         validator: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
-        validatorInitData
+        validatorInitData,
+        executorData: params.executorData
     })
 
     return createKernelAccount(client, {

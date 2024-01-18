@@ -1,5 +1,5 @@
 import { type Address, zeroAddress } from "viem"
-import { KernelImplToVersionMap, LATEST_KERNEL_VERSION } from "./constants"
+import { KernelImplToVersionMap, LATEST_KERNEL_VERSION } from "./constants.js"
 
 export const getKernelVersion = (kernelImpl?: Address): string => {
     if (!kernelImpl || kernelImpl === zeroAddress) return LATEST_KERNEL_VERSION

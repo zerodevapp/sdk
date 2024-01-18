@@ -11,7 +11,7 @@ import {
 // ): Promise<string> => {
 //     if (!isSessionKeyValidatorPlugin(account.plugin))
 //         throw new Error("Account plugin is not a session key validator")
-//     const sessionKeyParams = account.plugin.exportSessionKeyParams()
+//     const sessionKeyParams = account.plugin.getPluginSerializationParams()
 //     const enableSignature = await account.getPluginEnableSignature()
 
 //     const paramsToBeSerialized = {
@@ -31,7 +31,8 @@ export const accountToSerializedSessionKeyAccountParams = async (
     if (!isSessionKeyValidatorPlugin(account.kernelPluginManager))
         throw new Error("Account plugin is not a session key validator")
     const sessionKeyParams =
-        account.kernelPluginManager.exportSessionKeyParams()
+        account.kernelPluginManager.getPluginSerializationParams()
+    const executorData = account.kernelPluginManager.getExecutorData()
     const enableSignature =
         await account.kernelPluginManager.getPluginEnableSignature(
             account.address
@@ -43,6 +44,7 @@ export const accountToSerializedSessionKeyAccountParams = async (
 
     const paramsToBeSerialized = {
         sessionKeyParams,
+        executorData,
         accountParams,
         enableSignature,
         privateKey

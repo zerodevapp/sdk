@@ -1,5 +1,5 @@
 export type {
-    KernelPlugin,
+    KernelValidator,
     ZeroDevPaymasterRpcSchema,
     ExecutorData,
     KernelPluginManager,

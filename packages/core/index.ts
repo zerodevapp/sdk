@@ -25,7 +25,7 @@ export {
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
 export {
-    type KernelPlugin,
+    type KernelValidator,
     type ZeroDevPaymasterRpcSchema,
     type KernelPluginManager
 } from "./types/kernel.js"
