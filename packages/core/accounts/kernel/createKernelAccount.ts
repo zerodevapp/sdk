@@ -296,7 +296,7 @@ export async function createKernelAccount<
                 method: "eth_call",
                 params: [
                     {
-                        to: KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC, // TODO: get account logic address
+                        to: accountLogicAddress,
                         data: encodeFunctionData({
                             abi: eip1271Abi,
                             functionName: "eip712Domain"

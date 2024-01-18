@@ -116,56 +116,59 @@ describe("ECDSA kernel Account", () => {
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
-    test.only("Client signMessage should return a valid signature", async () => {
-        // to make sure kernel is deployed
-        await kernelClient.sendTransactions({
-            transactions: [
+    test(
+        "Client signMessage should return a valid signature",
+        async () => {
+            // to make sure kernel is deployed
+            await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            const message = "hello world"
+            const response = await kernelClient.signMessage({
+                message
+            })
+            const eip1271Abi = [
                 {
-                    to: zeroAddress,
-                    value: 0n,
-                    data: "0x"
-                },
-                {
-                    to: zeroAddress,
-                    value: 0n,
-                    data: "0x"
+                    type: "function",
+                    name: "isValidSignature",
+                    inputs: [
+                        {
+                            name: "data",
+                            type: "bytes32",
+                            internalType: "bytes32"
+                        },
+                        {
+                            name: "signature",
+                            type: "bytes",
+                            internalType: "bytes"
+                        }
+                    ],
+                    outputs: [
+                        {
+                            name: "magicValue",
+                            type: "bytes4",
+                            internalType: "bytes4"
+                        }
+                    ],
+                    stateMutability: "view"
                 }
             ]
-        })
-        const message = "hello world"
-        const response = await kernelClient.signMessage({
-            message
-        })
-        const eip1271Abi = [
-            {
-                type: "function",
-                name: "isValidSignature",
-                inputs: [
-                    { name: "data", type: "bytes32", internalType: "bytes32" },
-                    { name: "signature", type: "bytes", internalType: "bytes" }
-                ],
-                outputs: [
-                    {
-                        name: "magicValue",
-                        type: "bytes4",
-                        internalType: "bytes4"
-                    }
-                ],
-                stateMutability: "view"
-            }
-        ]
 
-        const eip1271response = await publicClient.readContract({
-            address: account.address,
-            abi: eip1271Abi,
-            functionName: "isValidSignature",
-            args: [keccak256(stringToHex(message)), response]
-        })
-        expect(eip1271response).toEqual("0x1626ba7e")
-        expect(response).toBeString()
-        expect(response).toHaveLength(SIGNATURE_LENGTH)
-        expect(response).toMatch(SIGNATURE_REGEX)
-    })
+            const eip1271response = await publicClient.readContract({
+                address: account.address,
+                abi: eip1271Abi,
+                functionName: "isValidSignature",
+                args: [keccak256(stringToHex(message)), response]
+            })
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+            expect(response).toHaveLength(SIGNATURE_LENGTH)
+            expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
 
     test("Smart account client signTypedData", async () => {
         const domain = {
