@@ -99,7 +99,7 @@ const createCallAbi = parseAbi([
     "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
 ])
 
-const eip1271Abi = [
+export const EIP1271ABI = [
     {
         type: "function",
         name: "eip712Domain",
@@ -240,7 +240,7 @@ const signHashedMessage = async <
             {
                 to: account.logicAddress,
                 data: encodeFunctionData({
-                    abi: eip1271Abi,
+                    abi: EIP1271ABI,
                     functionName: "eip712Domain"
                 })
             },
@@ -248,7 +248,7 @@ const signHashedMessage = async <
         ]
     })
     const decoded = decodeFunctionResult({
-        abi: [...eip1271Abi],
+        abi: [...EIP1271ABI],
         functionName: "eip712Domain",
         data: domain
     })

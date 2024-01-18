@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     type CallType,
+    EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
@@ -130,36 +131,10 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.signMessage({
                 message
             })
-            const eip1271Abi = [
-                {
-                    type: "function",
-                    name: "isValidSignature",
-                    inputs: [
-                        {
-                            name: "data",
-                            type: "bytes32",
-                            internalType: "bytes32"
-                        },
-                        {
-                            name: "signature",
-                            type: "bytes",
-                            internalType: "bytes"
-                        }
-                    ],
-                    outputs: [
-                        {
-                            name: "magicValue",
-                            type: "bytes4",
-                            internalType: "bytes4"
-                        }
-                    ],
-                    stateMutability: "view"
-                }
-            ]
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: eip1271Abi,
+                abi: EIP1271ABI,
                 functionName: "isValidSignature",
                 args: [keccak256(stringToHex(message)), response]
             })
@@ -207,36 +182,10 @@ describe("ECDSA kernel Account", () => {
                 types,
                 message
             })
-            const eip1271Abi = [
-                {
-                    type: "function",
-                    name: "isValidSignature",
-                    inputs: [
-                        {
-                            name: "data",
-                            type: "bytes32",
-                            internalType: "bytes32"
-                        },
-                        {
-                            name: "signature",
-                            type: "bytes",
-                            internalType: "bytes"
-                        }
-                    ],
-                    outputs: [
-                        {
-                            name: "magicValue",
-                            type: "bytes4",
-                            internalType: "bytes4"
-                        }
-                    ],
-                    stateMutability: "view"
-                }
-            ]
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: eip1271Abi,
+                abi: EIP1271ABI,
                 functionName: "isValidSignature",
                 args: [typedHash, response]
             })
