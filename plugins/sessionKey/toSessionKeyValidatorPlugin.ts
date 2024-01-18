@@ -6,7 +6,6 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
-    isHex,
     keccak256,
     pad,
     toHex,
@@ -19,7 +18,7 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import { concat, concatHex, decodeFunctionData } from "viem/utils"
+import { concat, concatHex } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@kerneljs/core"

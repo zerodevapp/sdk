@@ -24,17 +24,16 @@ import {
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
+import { getBytecode } from "viem/actions"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
-    KernelPluginManagerParams,
-    KernelValidator
+    KernelPluginManagerParams
 } from "../../types/kernel.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
-import { getBytecode } from "viem/actions"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type KernelSmartAccount<
