@@ -10,22 +10,31 @@ import {
     type EncodeDeployDataParameters,
     type Hex,
     type Transport,
+    type TypedDataDefinition,
     concatHex,
+    decodeFunctionResult,
+    encodeAbiParameters,
     encodeDeployData,
     encodeFunctionData,
-    parseAbi
+    getTypesForEIP712Domain,
+    hashTypedData,
+    keccak256,
+    parseAbi,
+    stringToHex,
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode } from "viem/actions"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
-    KernelPluginManagerParams
+    KernelPluginManagerParams,
+    KernelValidator
 } from "../../types/kernel.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
+import { getBytecode } from "viem/actions"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type KernelSmartAccount<
@@ -81,6 +90,39 @@ const createCallAbi = parseAbi([
     "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
 ])
 
+export const EIP1271ABI = [
+    {
+        type: "function",
+        name: "eip712Domain",
+        inputs: [],
+        outputs: [
+            { name: "fields", type: "bytes1", internalType: "bytes1" },
+            { name: "name", type: "string", internalType: "string" },
+            { name: "version", type: "string", internalType: "string" },
+            { name: "chainId", type: "uint256", internalType: "uint256" },
+            {
+                name: "verifyingContract",
+                type: "address",
+                internalType: "address"
+            },
+            { name: "salt", type: "bytes32", internalType: "bytes32" },
+            { name: "extensions", type: "uint256[]", internalType: "uint256[]" }
+        ],
+        stateMutability: "view"
+    },
+    {
+        type: "function",
+        name: "isValidSignature",
+        inputs: [
+            { name: "data", type: "bytes32", internalType: "bytes32" },
+            { name: "signature", type: "bytes", internalType: "bytes" }
+        ],
+        outputs: [
+            { name: "magicValue", type: "bytes4", internalType: "bytes4" }
+        ],
+        stateMutability: "view"
+    }
+] as const
 /**
  * Default addresses for kernel smart account
  */
@@ -225,29 +267,92 @@ export async function createKernelAccount<
 
     if (!accountAddress) throw new Error("Account address not found")
 
+    const signHashedMessage = async (messageHash: Hex): Promise<Hex> => {
+        const domain = await client.request({
+            method: "eth_call",
+            params: [
+                {
+                    to: accountLogicAddress,
+                    data: encodeFunctionData({
+                        abi: EIP1271ABI,
+                        functionName: "eip712Domain"
+                    })
+                },
+                "latest"
+            ]
+        })
+        const decoded = decodeFunctionResult({
+            abi: [...EIP1271ABI],
+            functionName: "eip712Domain",
+            data: domain
+        })
+
+        const encoded = encodeAbiParameters(
+            [
+                { type: "bytes32" },
+                { type: "bytes32" },
+                { type: "bytes32" },
+                { type: "uint256" },
+                { type: "address" }
+            ],
+            [
+                keccak256(
+                    stringToHex(
+                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                    )
+                ),
+                keccak256(stringToHex(decoded[1])),
+                keccak256(stringToHex(decoded[2])),
+                decoded[3],
+                accountAddress
+            ]
+        )
+
+        const domainSeparator = keccak256(encoded)
+        const digest = keccak256(
+            concatHex(["0x1901", domainSeparator, messageHash])
+        )
+        return kernelPluginManager.signMessage({
+            message: {
+                raw: digest
+            }
+        })
+    }
+
     // Build the EOA Signer
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            return kernelPluginManager.signMessage({ message })
+            let messageHash: Hex
+            if (typeof message === "string")
+                messageHash = keccak256(stringToHex(message))
+            else messageHash = keccak256(message.raw)
+            return signHashedMessage(messageHash)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
         async signTypedData(typedData) {
-            return kernelPluginManager.signTypedData(typedData)
+            const types = {
+                EIP712Domain: getTypesForEIP712Domain({
+                    domain: typedData.domain
+                }),
+                ...typedData.types
+            }
+
+            // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
+            // as we can't statically check this with TypeScript.
+            validateTypedData({
+                domain: typedData.domain,
+                message: typedData.message,
+                primaryType: typedData.primaryType,
+                types: types
+            } as TypedDataDefinition)
+
+            const typedHash = hashTypedData(typedData)
+            return await signHashedMessage(typedHash)
         }
     })
-
-    // const getPluginEnableSignature = () => {
-    //     if (pluginEnableSignature) return Promise.resolve(pluginEnableSignature)
-    //     else if (plugin && defaultValidator)
-    //         return defaultValidator.getPluginEnableSignature(
-    //             accountAddress,
-    //             plugin
-    //         )
-    //     return Promise.resolve(undefined)
-    // }
 
     return {
         ...account,
