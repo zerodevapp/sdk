@@ -13,7 +13,11 @@ import {
     concatHex,
     encodeDeployData,
     encodeFunctionData,
-    parseAbi
+    parseAbi,
+    keccak256,
+    stringToHex,
+    decodeFunctionResult,
+    encodeAbiParameters
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage, signTypedData } from "viem/actions"
@@ -91,6 +95,39 @@ const createCallAbi = parseAbi([
     "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
 ])
 
+const eip1271Abi = [
+    {
+        type: "function",
+        name: "eip712Domain",
+        inputs: [],
+        outputs: [
+            { name: "fields", type: "bytes1", internalType: "bytes1" },
+            { name: "name", type: "string", internalType: "string" },
+            { name: "version", type: "string", internalType: "string" },
+            { name: "chainId", type: "uint256", internalType: "uint256" },
+            {
+                name: "verifyingContract",
+                type: "address",
+                internalType: "address"
+            },
+            { name: "salt", type: "bytes32", internalType: "bytes32" },
+            { name: "extensions", type: "uint256[]", internalType: "uint256[]" }
+        ],
+        stateMutability: "view"
+    },
+    {
+        type: "function",
+        name: "isValidSignature",
+        inputs: [
+            { name: "data", type: "bytes32", internalType: "bytes32" },
+            { name: "signature", type: "bytes", internalType: "bytes" }
+        ],
+        outputs: [
+            { name: "magicValue", type: "bytes4", internalType: "bytes4" }
+        ],
+        stateMutability: "view"
+    }
+] as const
 /**
  * Default addresses for kernel smart account
  */
@@ -250,9 +287,60 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
+            let messageHash: Hex
+            if (typeof message === "string")
+                messageHash = keccak256(stringToHex(message))
+            else messageHash = keccak256(message.raw)
+
+            const domain = await client.request({
+                method: "eth_call",
+                params: [
+                    {
+                        to: KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC, // TODO: get account logic address
+                        data: encodeFunctionData({
+                            abi: eip1271Abi,
+                            functionName: "eip712Domain"
+                        })
+                    },
+                    "latest"
+                ]
+            })
+            const decoded = decodeFunctionResult({
+                abi: [...eip1271Abi],
+                functionName: "eip712Domain",
+                data: domain
+            })
+
+            const encoded = encodeAbiParameters(
+                [
+                    { type: "bytes32" },
+                    { type: "bytes32" },
+                    { type: "bytes32" },
+                    { type: "uint256" },
+                    { type: "address" }
+                ],
+                [
+                    keccak256(
+                        stringToHex(
+                            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                        )
+                    ),
+                    keccak256(stringToHex(decoded[1])),
+                    keccak256(stringToHex(decoded[2])),
+                    decoded[3],
+                    accountAddress
+                ]
+            )
+
+            const domainSeparator = keccak256(encoded)
+            const digest = keccak256(
+                concatHex(["0x1901", domainSeparator, messageHash])
+            )
             return signMessage(client, {
                 account: currentValidator.signer,
-                message
+                message: {
+                    raw: digest
+                }
             })
         },
         async signTransaction(_, __) {
