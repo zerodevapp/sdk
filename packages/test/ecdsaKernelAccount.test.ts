@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     type CallType,
+    EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
@@ -23,6 +24,7 @@ import {
     decodeEventLog,
     encodeFunctionData,
     getContract,
+    hashTypedData,
     keccak256,
     stringToHex,
     toHex,
@@ -129,36 +131,10 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.signMessage({
                 message
             })
-            const eip1271Abi = [
-                {
-                    type: "function",
-                    name: "isValidSignature",
-                    inputs: [
-                        {
-                            name: "data",
-                            type: "bytes32",
-                            internalType: "bytes32"
-                        },
-                        {
-                            name: "signature",
-                            type: "bytes",
-                            internalType: "bytes"
-                        }
-                    ],
-                    outputs: [
-                        {
-                            name: "magicValue",
-                            type: "bytes4",
-                            internalType: "bytes4"
-                        }
-                    ],
-                    stateMutability: "view"
-                }
-            ]
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: eip1271Abi,
+                abi: EIP1271ABI,
                 functionName: "isValidSignature",
                 args: [keccak256(stringToHex(message)), response]
             })
@@ -170,38 +146,56 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test("Smart account client signTypedData", async () => {
-        const domain = {
-            chainId: 1,
-            name: "Test",
-            verifyingContract: zeroAddress
-        }
+    test(
+        "Smart account client signTypedData",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
 
-        const primaryType = "Test"
+            const primaryType = "Test"
 
-        const types = {
-            Test: [
-                {
-                    name: "test",
-                    type: "string"
-                }
-            ]
-        }
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
 
-        const message = {
-            test: "hello world"
-        }
-        const response = await kernelClient.signTypedData({
-            domain,
-            primaryType,
-            types,
-            message
-        })
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
 
-        expect(response).toBeString()
-        expect(response).toHaveLength(SIGNATURE_LENGTH)
-        expect(response).toMatch(SIGNATURE_REGEX)
-    })
+            const response = await kernelClient.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const eip1271response = await publicClient.readContract({
+                address: account.address,
+                abi: EIP1271ABI,
+                functionName: "isValidSignature",
+                args: [typedHash, response]
+            })
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+            expect(response).toHaveLength(SIGNATURE_LENGTH)
+            expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Client deploy contract",

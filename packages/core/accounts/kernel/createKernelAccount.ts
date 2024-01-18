@@ -10,17 +10,21 @@ import {
     type EncodeDeployDataParameters,
     type Hex,
     type Transport,
+    type TypedDataDefinition,
     concatHex,
     decodeFunctionResult,
     encodeAbiParameters,
     encodeDeployData,
     encodeFunctionData,
+    getTypesForEIP712Domain,
+    hashTypedData,
     keccak256,
     parseAbi,
-    stringToHex
+    stringToHex,
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode, signMessage, signTypedData } from "viem/actions"
+import { getBytecode, signMessage } from "viem/actions"
 import type { KernelPlugin } from "../../types/kernel.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
@@ -95,7 +99,7 @@ const createCallAbi = parseAbi([
     "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
 ])
 
-const eip1271Abi = [
+export const EIP1271ABI = [
     {
         type: "function",
         name: "eip712Domain",
@@ -212,6 +216,76 @@ const getAccountAddress = async <
     })
 }
 
+const signHashedMessage = async <
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
+>(
+    client: Client<TTransport, TChain>,
+    {
+        currentValidator,
+        account,
+        messageHash
+    }: {
+        currentValidator: KernelPlugin<string, TTransport, TChain>
+        account: {
+            logicAddress: Address
+            address: Address
+        }
+        messageHash: Hex
+    }
+): Promise<Hex> => {
+    const domain = await client.request({
+        method: "eth_call",
+        params: [
+            {
+                to: account.logicAddress,
+                data: encodeFunctionData({
+                    abi: EIP1271ABI,
+                    functionName: "eip712Domain"
+                })
+            },
+            "latest"
+        ]
+    })
+    const decoded = decodeFunctionResult({
+        abi: [...EIP1271ABI],
+        functionName: "eip712Domain",
+        data: domain
+    })
+
+    const encoded = encodeAbiParameters(
+        [
+            { type: "bytes32" },
+            { type: "bytes32" },
+            { type: "bytes32" },
+            { type: "uint256" },
+            { type: "address" }
+        ],
+        [
+            keccak256(
+                stringToHex(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                )
+            ),
+            keccak256(stringToHex(decoded[1])),
+            keccak256(stringToHex(decoded[2])),
+            decoded[3],
+            account.address
+        ]
+    )
+
+    const domainSeparator = keccak256(encoded)
+    const digest = keccak256(
+        concatHex(["0x1901", domainSeparator, messageHash])
+    )
+    return signMessage(client, {
+        account: currentValidator.signer,
+        message: {
+            raw: digest
+        }
+    })
+}
+
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -291,65 +365,43 @@ export async function createKernelAccount<
             if (typeof message === "string")
                 messageHash = keccak256(stringToHex(message))
             else messageHash = keccak256(message.raw)
-
-            const domain = await client.request({
-                method: "eth_call",
-                params: [
-                    {
-                        to: accountLogicAddress,
-                        data: encodeFunctionData({
-                            abi: eip1271Abi,
-                            functionName: "eip712Domain"
-                        })
-                    },
-                    "latest"
-                ]
-            })
-            const decoded = decodeFunctionResult({
-                abi: [...eip1271Abi],
-                functionName: "eip712Domain",
-                data: domain
-            })
-
-            const encoded = encodeAbiParameters(
-                [
-                    { type: "bytes32" },
-                    { type: "bytes32" },
-                    { type: "bytes32" },
-                    { type: "uint256" },
-                    { type: "address" }
-                ],
-                [
-                    keccak256(
-                        stringToHex(
-                            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                        )
-                    ),
-                    keccak256(stringToHex(decoded[1])),
-                    keccak256(stringToHex(decoded[2])),
-                    decoded[3],
-                    accountAddress
-                ]
-            )
-
-            const domainSeparator = keccak256(encoded)
-            const digest = keccak256(
-                concatHex(["0x1901", domainSeparator, messageHash])
-            )
-            return signMessage(client, {
-                account: currentValidator.signer,
-                message: {
-                    raw: digest
-                }
+            return signHashedMessage(client, {
+                currentValidator,
+                account: {
+                    address: accountAddress,
+                    logicAddress: accountLogicAddress
+                },
+                messageHash
             })
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
         async signTypedData(typedData) {
-            return signTypedData(client, {
-                account: currentValidator.signer,
-                ...typedData
+            const types = {
+                EIP712Domain: getTypesForEIP712Domain({
+                    domain: typedData.domain
+                }),
+                ...typedData.types
+            }
+
+            // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
+            // as we can't statically check this with TypeScript.
+            validateTypedData({
+                domain: typedData.domain,
+                message: typedData.message,
+                primaryType: typedData.primaryType,
+                types: types
+            } as TypedDataDefinition)
+
+            const typedHash = hashTypedData(typedData)
+            return await signHashedMessage(client, {
+                currentValidator,
+                account: {
+                    address: accountAddress,
+                    logicAddress: accountLogicAddress
+                },
+                messageHash: typedHash
             })
         }
     })

@@ -3,7 +3,8 @@ export {
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     type CallType,
-    addressToEmptyAccount
+    addressToEmptyAccount,
+    EIP1271ABI
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,
