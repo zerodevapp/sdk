@@ -1,4 +1,5 @@
-import type { KernelPlugin } from "@kerneljs/core"
+import type { KernelValidator } from "@kerneljs/core"
+import type { ExecutorData, PluginValidityData } from "@kerneljs/core/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -7,16 +8,7 @@ import {
     type ExtractAbiFunction
 } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
-import MerkleTree from "merkletreejs"
-import type {
-    Abi,
-    Address,
-    Chain,
-    Hex,
-    InferFunctionName,
-    Narrow,
-    Transport
-} from "viem"
+import type { Abi, Address, Hex, InferFunctionName, Narrow } from "viem"
 import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
 
 export type SessionNonces = {
@@ -71,32 +63,22 @@ export interface SessionKeyData<
     permissions?: Permission<TAbi, TFunctionName>[]
 }
 
-export type ExportSessionKeyParams = {
-    executorData: ExecutorData
-    sessionKeyData: SessionKeyData<Abi, string>
+export type ExportSessionKeyAccountParams = {
+    initCode: Hex
+    accountAddress: Address
 }
 
 export type SessionKeyAccountParams = {
-    initCode: Hex
-    sessionKeyParams: ExportSessionKeyParams
+    sessionKeyParams: SessionKeyData<Abi, string>
+    executorData: ExecutorData
+    validityData: PluginValidityData
+    accountParams: ExportSessionKeyAccountParams
     enableSignature?: Hex
     privateKey?: Hex
 }
 
-// [TODO] Rename to SessionKeyPlugin
-export type SessionKeyPlugin<
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
-> = KernelPlugin<"SessionKeyValidator", TTransport, TChain> & {
-    merkleTree: MerkleTree
-    exportSessionKeyParams(): ExportSessionKeyParams
-}
-
-export type ExecutorData = {
-    executor?: Address
-    selector?: Hex
-    validUntil?: number
-    validAfter?: number
+export type SessionKeyPlugin = KernelValidator<"SessionKeyValidator"> & {
+    getPluginSerializationParams(): SessionKeyData<Abi, string>
 }
 
 export type GetFunctionArgs<

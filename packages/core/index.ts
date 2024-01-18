@@ -2,7 +2,6 @@ export {
     createKernelAccount,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
-    type CallType,
     addressToEmptyAccount,
     EIP1271ABI
 } from "./accounts/index.js"
@@ -26,8 +25,12 @@ export {
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
 export {
-    type KernelPlugin,
-    type ZeroDevPaymasterRpcSchema
+    type KernelValidator,
+    type ZeroDevPaymasterRpcSchema,
+    type KernelPluginManager
 } from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
+export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
+export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
+export * from "./utils.js"

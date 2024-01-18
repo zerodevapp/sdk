@@ -6,8 +6,6 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
-    getFunctionSelector,
-    isHex,
     keccak256,
     pad,
     toHex,
@@ -20,7 +18,7 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import { concat, concatHex, decodeFunctionData } from "viem/utils"
+import { concat, concatHex } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@kerneljs/core"
@@ -35,14 +33,13 @@ import {
 } from "permissionless/accounts"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type {
-    ExecutorData,
-    PermissionCore,
     SessionKeyData,
     SessionKeyPlugin,
     SessionNonces
 } from "./types.js"
 import {
     encodePermissionData,
+    findMatchingPermissions,
     fixSignedData,
     getPermissionFromABI
 } from "./utils.js"
@@ -76,26 +73,14 @@ export async function signerToSessionKeyValidator<
         signer,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorData,
-        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS,
-        executorData,
-        mode = ValidatorMode.enable
+        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
         entryPoint?: Address
         validatorAddress?: Address
-        executorData?: ExecutorData
-        mode?: ValidatorMode
     }
-): Promise<SessionKeyPlugin<TTransport, TChain>> {
-    const _executorData: Required<ExecutorData> = {
-        executor: executorData?.executor ?? zeroAddress,
-        selector:
-            executorData?.selector ??
-            getFunctionSelector("execute(address, uint256, bytes, uint8)"),
-        validAfter: executorData?.validAfter ?? 0,
-        validUntil: executorData?.validUntil ?? 0
-    }
+): Promise<SessionKeyPlugin> {
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData,
         validAfter: validatorData?.validAfter ?? 0,
@@ -208,9 +193,9 @@ export async function signerToSessionKeyValidator<
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
 
-    const getPluginEnableStatus = async (
+    const isPluginEnabled = async (
         kernelAccountAddress: Address,
-        selector: Hex = _executorData.selector
+        selector: Hex
     ): Promise<boolean> => {
         try {
             const execDetail = await getAction(
@@ -253,208 +238,11 @@ export async function signerToSessionKeyValidator<
         }
     }
 
-    const getValidatorSignature = async (
-        accountAddress: Address,
-        pluginEnableSignature?: Hex
-    ): Promise<Hex> => {
-        const isPluginEnabled = await getPluginEnableStatus(accountAddress)
-        mode = isPluginEnabled ? ValidatorMode.plugin : ValidatorMode.enable
-        if (mode === ValidatorMode.plugin) {
-            return mode
-        }
-        const enableData = await getEnableData(accountAddress)
-        const enableDataLength = enableData.length / 2 - 1
-        const enableSignature = pluginEnableSignature
-        if (!enableSignature) {
-            throw new Error("Enable signature not set")
-        }
-        return concat([
-            mode, // 4 bytes 0 - 4
-            pad(toHex(_executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
-            pad(toHex(_executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
-            pad(validatorAddress, { size: 20 }), // 20 bytes 16 - 36
-            pad(_executorData.executor, { size: 20 }), // 20 bytes 36 - 56
-            pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
-            enableData, // 88 - 88 + enableData.length
-            pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
-            enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
-        ])
-    }
-
-    const findMatchingPermissions = (
-        callData: Hex
-    ): PermissionCore | PermissionCore[] | undefined => {
-        try {
-            const { functionName, args } = decodeFunctionData({
-                abi: KernelAccountAbi,
-                data: callData
-            })
-
-            if (functionName !== "execute" && functionName !== "executeBatch")
-                return undefined
-            if (functionName === "execute") {
-                const [to, value, data] = args
-                return filterPermissions([to], [data], [value])?.[0]
-            } else if (functionName === "executeBatch") {
-                const targets: Hex[] = []
-                const values: bigint[] = []
-                const dataArray: Hex[] = []
-                for (const arg of args[0]) {
-                    targets.push(arg.to)
-                    values.push(arg.value)
-                    dataArray.push(arg.data)
-                }
-                return filterPermissions(targets, dataArray, values)
-            }
-            throw Error("Invalid function")
-        } catch (error) {
-            return undefined
-        }
-    }
-
-    const filterPermissions = (
-        targets: Address[],
-        dataArray: Hex[],
-        values: bigint[]
-    ): PermissionCore[] | undefined => {
-        if (
-            targets.length !== dataArray.length ||
-            targets.length !== values.length
-        ) {
-            throw Error("Invalid arguments")
-        }
-        const filteredPermissions = targets.map((target, index) => {
-            const permissionsList = sessionKeyData?.permissions
-            if (!permissionsList || !permissionsList.length) return undefined
-
-            const targetToMatch = target.toLowerCase()
-
-            // Filter permissions by target
-            const targetPermissions = permissionsList.filter(
-                (permission) =>
-                    permission.target.toLowerCase() === targetToMatch ||
-                    permission.target.toLowerCase() ===
-                        zeroAddress.toLowerCase()
-            )
-
-            if (!targetPermissions.length) return undefined
-
-            const operationPermissions = filterByOperation(
-                targetPermissions,
-                // [TODO]: Check if we need to pass operation from userOp after Kernel v2.3 in
-                Operation.Call
-            )
-
-            if (!operationPermissions.length) return undefined
-
-            const signaturePermissions = filterBySignature(
-                targetPermissions,
-                dataArray[index].slice(0, 10).toLowerCase()
-            )
-
-            const valueLimitPermissions = signaturePermissions.filter(
-                (permission) => (permission.valueLimit ?? 0n) >= values[index]
-            )
-
-            if (!valueLimitPermissions.length) return undefined
-
-            const sortedPermissions = valueLimitPermissions.sort((a, b) => {
-                if ((b.valueLimit ?? 0n) > (a.valueLimit ?? 0n)) {
-                    return 1
-                } else if ((b.valueLimit ?? 0n) < (a.valueLimit ?? 0n)) {
-                    return -1
-                } else {
-                    return 0
-                }
-            })
-
-            return findPermissionByRule(sortedPermissions, dataArray[index])
-        })
-        return filteredPermissions.every(
-            (permission) => permission !== undefined
-        )
-            ? (filteredPermissions as PermissionCore[])
-            : undefined
-    }
-
-    const filterByOperation = (
-        permissions: PermissionCore[],
-        operation: Operation
-    ): PermissionCore[] => {
-        return permissions.filter(
-            (permission) =>
-                permission.operation === operation ||
-                Operation.Call === operation
-        )
-    }
-
-    const filterBySignature = (
-        permissions: PermissionCore[],
-        signature: string
-    ): PermissionCore[] => {
-        return permissions.filter(
-            (permission) =>
-                (permission.sig ?? pad("0x", { size: 4 })).toLowerCase() ===
-                signature
-        )
-    }
-
-    const findPermissionByRule = (
-        permissions: PermissionCore[],
-        data: string
-    ): PermissionCore | undefined => {
-        return permissions.find((permission) => {
-            for (const rule of permission.rules ?? []) {
-                const dataParam: Hex = getFormattedHex(
-                    `0x${data.slice(
-                        10 + rule.offset * 2,
-                        10 + rule.offset * 2 + 64
-                    )}`
-                )
-                const ruleParam: Hex = getFormattedHex(rule.param)
-
-                if (
-                    !evaluateRuleCondition(dataParam, ruleParam, rule.condition)
-                ) {
-                    return false
-                }
-            }
-            return true
-        })
-    }
-
-    const getFormattedHex = (value: string): Hex => {
-        return pad(isHex(value) ? value : toHex(value), {
-            size: 32
-        }).toLowerCase() as Hex
-    }
-
-    const evaluateRuleCondition = (
-        dataParam: Hex,
-        ruleParam: Hex,
-        condition: ParamOperator
-    ): boolean => {
-        switch (condition) {
-            case ParamOperator.EQUAL:
-                return dataParam === ruleParam
-            case ParamOperator.GREATER_THAN:
-                return dataParam > ruleParam
-            case ParamOperator.LESS_THAN:
-                return dataParam < ruleParam
-            case ParamOperator.GREATER_THAN_OR_EQUAL:
-                return dataParam >= ruleParam
-            case ParamOperator.LESS_THAN_OR_EQUAL:
-                return dataParam <= ruleParam
-            case ParamOperator.NOT_EQUAL:
-                return dataParam !== ruleParam
-            default:
-                return false
-        }
-    }
-
     const getEncodedPermissionProofData = (callData: Hex): Hex => {
-        const matchingPermission = findMatchingPermissions(callData)
-        // [TODO]: add shouldDelegateViaFallback() check
+        const matchingPermission = findMatchingPermissions(
+            callData,
+            sessionKeyData?.permissions
+        )
         if (
             !matchingPermission &&
             !(merkleTree.getHexRoot() === pad("0x00", { size: 32 }))
@@ -489,21 +277,13 @@ export async function signerToSessionKeyValidator<
             : "0x"
     }
 
-    // const merkleRoot = merkleTree.getHexRoot();
     return {
         ...account,
         address: validatorAddress,
-        signer: viemSigner,
-        client: client,
-        entryPoint: entryPoint,
-        merkleTree,
         source: "SessionKeyValidator",
         getEnableData,
 
-        signUserOperation: async (
-            userOperation,
-            pluginEnableSignature
-        ): Promise<Hex> => {
+        signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
                 entryPoint,
@@ -516,10 +296,6 @@ export async function signerToSessionKeyValidator<
             })
             const fixedSignature = fixSignedData(signature)
             return concat([
-                await getValidatorSignature(
-                    userOperation.sender,
-                    pluginEnableSignature
-                ),
                 signer.address,
                 fixedSignature,
                 getEncodedPermissionProofData(userOperation.callData)
@@ -527,37 +303,22 @@ export async function signerToSessionKeyValidator<
         },
 
         getNonceKey: async () => {
-            return 0n
+            return BigInt(signer.address)
         },
 
-        async getDummySignature(userOperation, pluginEnableSignature) {
+        async getDummySignature(userOperation) {
             return concat([
-                await getValidatorSignature(
-                    userOperation.sender,
-                    pluginEnableSignature
-                ),
                 signer.address,
                 constants.DUMMY_ECDSA_SIG,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
         },
-        getPluginEnableSignature: async () => {
-            throw new Error("Not implemented")
-        },
-        getExecutorData: () => {
-            if (!_executorData?.selector || !_executorData?.executor) {
-                throw new Error("Invalid executor data")
-            }
-            return _executorData
-        },
-        exportSessionKeyParams: () => {
-            return {
-                executorData: _executorData,
-                sessionKeyData: sessionKeyData as SessionKeyData<Abi, string>
-            }
-        },
-        shouldDelegateViaFallback: () => {
-            return merkleTree.getHexRoot() === pad("0x00", { size: 32 })
+        getPluginSerializationParams: (): SessionKeyData<Abi, string> =>
+            sessionKeyData as SessionKeyData<Abi, string>,
+        getValidatorMode: async (accountAddress, selector) => {
+            return (await isPluginEnabled(accountAddress, selector))
+                ? ValidatorMode.plugin
+                : ValidatorMode.enable
         }
     }
 }

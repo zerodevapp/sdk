@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
-    type CallType,
     EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
@@ -466,7 +465,9 @@ describe("ECDSA kernel Account", () => {
                 publicClient,
                 {
                     entryPoint: getEntryPoint(),
-                    defaultValidator: ecdsaValidatorPlugin,
+                    plugins: {
+                        validator: ecdsaValidatorPlugin
+                    },
                     deployedAccountAddress
                 }
             )

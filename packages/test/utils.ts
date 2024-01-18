@@ -8,6 +8,7 @@ import {
     addressToEmptyAccount,
     createKernelAccount
 } from "@kerneljs/core/accounts"
+import type { ExecutorData } from "@kerneljs/core/types"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
@@ -38,7 +39,9 @@ import {
     createPublicClient,
     createWalletClient,
     decodeEventLog,
-    encodeFunctionData
+    encodeFunctionData,
+    getFunctionSelector,
+    zeroAddress
 } from "viem"
 import {
     type Account,
@@ -113,8 +116,9 @@ export const getSignerToEcdsaKernelAccount =
 
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            defaultValidator: ecdsaValidatorPlugin,
-            index: 21312223n
+            plugins: {
+                validator: ecdsaValidatorPlugin
+            }
         })
     }
 
@@ -163,9 +167,10 @@ export const getSignerToSessionKeyKernelAccount =
 
         const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
-            defaultValidator: ecdsaValidatorPlugin,
-            plugin: sessionKeyPlugin,
-            index: 21312223n
+            plugins: {
+                validator: sessionKeyPlugin,
+                defaultValidator: ecdsaValidatorPlugin
+            }
         })
 
         const serializedSessionKeyAccountParams =
@@ -182,7 +187,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    sessionKeyPlugin: SessionKeyPlugin<TTransport, TChain>
+    sessionKeyPlugin: SessionKeyPlugin,
+    executorData?: ExecutorData
 ): Promise<KernelSmartAccount> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
@@ -198,9 +204,11 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
 
     return await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
-        defaultValidator: ecdsaValidatorPlugin,
-        plugin: sessionKeyPlugin,
-        index: 21312223n
+        plugins: {
+            validator: sessionKeyPlugin,
+            defaultValidator: ecdsaValidatorPlugin,
+            executorData
+        }
     })
 }
 

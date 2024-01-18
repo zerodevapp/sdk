@@ -24,33 +24,23 @@ import {
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode, signMessage } from "viem/actions"
-import type { KernelPlugin } from "../../types/kernel.js"
+import { getBytecode } from "viem/actions"
+import type {
+    KernelEncodeCallDataArgs,
+    KernelPluginManager,
+    KernelPluginManagerParams
+} from "../../types/kernel.js"
+import {
+    isKernelPluginManager,
+    toKernelPluginManager
+} from "../utils/toKernelPluginManager.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
-
-export type CallType = "call" | "delegatecall"
-
-type KernelEncodeCallDataArgs =
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }[]
 
 export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<"kernelSmartAccount", transport, chain> & {
-    defaultValidator?: KernelPlugin<string, transport, chain>
-    plugin?: KernelPlugin<string, transport, chain>
-    getPluginEnableSignature: () => Promise<Hex | undefined>
+    kernelPluginManager: KernelPluginManager
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
@@ -147,34 +137,29 @@ export const KERNEL_ADDRESSES: {
 
 /**
  * Get the account initialization code for a kernel smart account
- * @param owner
  * @param index
  * @param factoryAddress
  * @param accountLogicAddress
  * @param ecdsaValidatorAddress
  */
 const getAccountInitCode = async ({
-    owner,
     index,
     factoryAddress,
     accountLogicAddress,
     validatorAddress,
     enableData
 }: {
-    owner: Address
     index: bigint
     factoryAddress: Address
     accountLogicAddress: Address
     validatorAddress: Address
-    enableData: Promise<Hex>
+    enableData: Hex
 }): Promise<Hex> => {
-    if (!owner) throw new Error("Owner account not found")
-
     // Build the account initialization data
     const initialisationData = encodeFunctionData({
         abi: KernelInitAbi,
         functionName: "initialize",
-        args: [validatorAddress, await enableData]
+        args: [validatorAddress, enableData]
     })
 
     // Build the account init code
@@ -216,76 +201,6 @@ const getAccountAddress = async <
     })
 }
 
-const signHashedMessage = async <
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<TTransport, TChain>,
-    {
-        currentValidator,
-        account,
-        messageHash
-    }: {
-        currentValidator: KernelPlugin<string, TTransport, TChain>
-        account: {
-            logicAddress: Address
-            address: Address
-        }
-        messageHash: Hex
-    }
-): Promise<Hex> => {
-    const domain = await client.request({
-        method: "eth_call",
-        params: [
-            {
-                to: account.logicAddress,
-                data: encodeFunctionData({
-                    abi: EIP1271ABI,
-                    functionName: "eip712Domain"
-                })
-            },
-            "latest"
-        ]
-    })
-    const decoded = decodeFunctionResult({
-        abi: [...EIP1271ABI],
-        functionName: "eip712Domain",
-        data: domain
-    })
-
-    const encoded = encodeAbiParameters(
-        [
-            { type: "bytes32" },
-            { type: "bytes32" },
-            { type: "bytes32" },
-            { type: "uint256" },
-            { type: "address" }
-        ],
-        [
-            keccak256(
-                stringToHex(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                )
-            ),
-            keccak256(stringToHex(decoded[1])),
-            keccak256(stringToHex(decoded[2])),
-            decoded[3],
-            account.address
-        ]
-    )
-
-    const domainSeparator = keccak256(encoded)
-    const digest = keccak256(
-        concatHex(["0x1901", domainSeparator, messageHash])
-    )
-    return signMessage(client, {
-        account: currentValidator.signer,
-        message: {
-            raw: digest
-        }
-    })
-}
-
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -303,46 +218,40 @@ export async function createKernelAccount<
 >(
     client: Client<TTransport, TChain>,
     {
-        defaultValidator,
-        plugin,
-        pluginEnableSignature,
+        plugins,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
-        deployedAccountAddress,
-        initCode
+        deployedAccountAddress
     }: {
-        defaultValidator?: KernelPlugin<string, TTransport, TChain>
-        plugin?: KernelPlugin<string, TTransport, TChain>
-        pluginEnableSignature?: Hex
+        plugins: KernelPluginManagerParams | KernelPluginManager
         entryPoint?: Address
         index?: bigint
         factoryAddress?: Address
         accountLogicAddress?: Address
         deployedAccountAddress?: Address
-        initCode?: Hex
     }
 ): Promise<KernelSmartAccount<TTransport, TChain>> {
-    if (!defaultValidator && !plugin)
-        throw new Error(
-            "You must provide at least defaultValidator or plugin for the kernel smart account"
-        )
-    const currentValidator =
-        plugin ?? (defaultValidator as KernelPlugin<string, TTransport, TChain>)
+    const kernelPluginManager = isKernelPluginManager(plugins)
+        ? plugins
+        : await toKernelPluginManager(client, {
+              validator: plugins.validator,
+              defaultValidator: plugins.defaultValidator,
+              executorData: plugins.executorData,
+              pluginEnableSignature: plugins.pluginEnableSignature
+          })
     // Helper to generate the init code for the smart account
-    const generateInitCode = () => {
-        if (initCode) return Promise.resolve(initCode)
-        else if (defaultValidator)
-            return getAccountInitCode({
-                owner: defaultValidator.signer.address,
-                index,
-                factoryAddress,
-                accountLogicAddress,
-                validatorAddress: defaultValidator.address,
-                enableData: defaultValidator.getEnableData()
-            })
-        else throw new Error("No init code or default validator provided")
+    const generateInitCode = async () => {
+        const validatorInitData =
+            await kernelPluginManager.getValidatorInitData()
+        return getAccountInitCode({
+            index,
+            factoryAddress,
+            accountLogicAddress,
+            validatorAddress: validatorInitData.validatorAddress,
+            enableData: validatorInitData.enableData
+        })
     }
 
     // Fetch account address and chain id
@@ -357,6 +266,58 @@ export async function createKernelAccount<
 
     if (!accountAddress) throw new Error("Account address not found")
 
+    const signHashedMessage = async (messageHash: Hex): Promise<Hex> => {
+        const domain = await client.request({
+            method: "eth_call",
+            params: [
+                {
+                    to: accountLogicAddress,
+                    data: encodeFunctionData({
+                        abi: EIP1271ABI,
+                        functionName: "eip712Domain"
+                    })
+                },
+                "latest"
+            ]
+        })
+        const decoded = decodeFunctionResult({
+            abi: [...EIP1271ABI],
+            functionName: "eip712Domain",
+            data: domain
+        })
+
+        const encoded = encodeAbiParameters(
+            [
+                { type: "bytes32" },
+                { type: "bytes32" },
+                { type: "bytes32" },
+                { type: "uint256" },
+                { type: "address" }
+            ],
+            [
+                keccak256(
+                    stringToHex(
+                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                    )
+                ),
+                keccak256(stringToHex(decoded[1])),
+                keccak256(stringToHex(decoded[2])),
+                decoded[3],
+                accountAddress
+            ]
+        )
+
+        const domainSeparator = keccak256(encoded)
+        const digest = keccak256(
+            concatHex(["0x1901", domainSeparator, messageHash])
+        )
+        return kernelPluginManager.signMessage({
+            message: {
+                raw: digest
+            }
+        })
+    }
+
     // Build the EOA Signer
     const account = toAccount({
         address: accountAddress,
@@ -365,14 +326,7 @@ export async function createKernelAccount<
             if (typeof message === "string")
                 messageHash = keccak256(stringToHex(message))
             else messageHash = keccak256(message.raw)
-            return signHashedMessage(client, {
-                currentValidator,
-                account: {
-                    address: accountAddress,
-                    logicAddress: accountLogicAddress
-                },
-                messageHash
-            })
+            return signHashedMessage(messageHash)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -395,26 +349,9 @@ export async function createKernelAccount<
             } as TypedDataDefinition)
 
             const typedHash = hashTypedData(typedData)
-            return await signHashedMessage(client, {
-                currentValidator,
-                account: {
-                    address: accountAddress,
-                    logicAddress: accountLogicAddress
-                },
-                messageHash: typedHash
-            })
+            return await signHashedMessage(typedHash)
         }
     })
-
-    const getPluginEnableSignature = () => {
-        if (pluginEnableSignature) return Promise.resolve(pluginEnableSignature)
-        else if (plugin && defaultValidator)
-            return defaultValidator.getPluginEnableSignature(
-                accountAddress,
-                plugin
-            )
-        return Promise.resolve(undefined)
-    }
 
     return {
         ...account,
@@ -425,22 +362,18 @@ export async function createKernelAccount<
 
         // Get the nonce of the smart account
         async getNonce() {
+            const key = await kernelPluginManager.getNonceKey()
             return getAccountNonce(client, {
                 sender: accountAddress,
-                entryPoint: entryPoint
+                entryPoint: entryPoint,
+                key
             })
         },
-        defaultValidator,
-        plugin,
-        getPluginEnableSignature,
+        kernelPluginManager,
 
         // Sign a user operation
         async signUserOperation(userOperation) {
-            const pluginEnableSignature = await getPluginEnableSignature()
-            return currentValidator.signUserOperation(
-                userOperation,
-                pluginEnableSignature
-            )
+            return kernelPluginManager.signUserOperation(userOperation)
         },
         generateInitCode,
 
@@ -503,10 +436,7 @@ export async function createKernelAccount<
 
             // Default to `call`
             if (!tx.callType || tx.callType === "call") {
-                if (
-                    tx.to.toLowerCase() === accountAddress &&
-                    currentValidator.shouldDelegateViaFallback()
-                ) {
+                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
                     return tx.data
                 }
                 return encodeFunctionData({
@@ -529,11 +459,7 @@ export async function createKernelAccount<
 
         // Get simple dummy signature
         async getDummySignature(userOperation) {
-            const pluginEnableSignature = await getPluginEnableSignature()
-            return currentValidator.getDummySignature(
-                userOperation,
-                pluginEnableSignature
-            )
+            return kernelPluginManager.getDummySignature(userOperation)
         }
     }
 }

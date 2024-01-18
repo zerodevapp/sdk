@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
+    constants,
     KernelAccountAbi,
     KernelAccountClient,
-    KernelSmartAccount
+    KernelSmartAccount,
+    TokenActionsAbi
 } from "@kerneljs/core"
 import {
     ParamOperator,
@@ -31,7 +33,7 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
-import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
+import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import {
     Test_ERC20Address,
     getEntryPoint,
@@ -55,7 +57,12 @@ describe("Session Key kernel Account", async () => {
             name: "executeBatch"
         })
     )
-    let sessionKeyValidatorPlugin: SessionKeyPlugin
+    const transfer20ActionSelector = getFunctionSelector(
+        getAbiItem({
+            abi: TokenActionsAbi,
+            name: "transfer20Action"
+        })
+    )
     let testPrivateKey: Hex
     let owner: PrivateKeyAccount
     let accountAddress: Address
@@ -132,7 +139,6 @@ describe("Session Key kernel Account", async () => {
     })
 
     test("should execute the erc20 token transfer action using SessionKey", async () => {
-        console.log("accountAddress", accountAddress)
         await mintToAccount(100000000n)
 
         const amountToTransfer = 10000n
@@ -151,6 +157,67 @@ describe("Session Key kernel Account", async () => {
         const transferTransactionHash =
             await sessionKeySmartAccountClient.sendTransaction({
                 to: Test_ERC20Address,
+                data: transferData
+            })
+
+        console.log(
+            "transferTransactionHash",
+            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+        )
+        const balanceOfReceipientAfter = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
+        expect(balanceOfReceipientAfter).toBe(
+            balanceOfReceipientBefore + amountToTransfer
+        )
+    }, 1000000)
+
+    test("should execute the erc20 token transfer action using SessionKey and Token Action executor", async () => {
+        await mintToAccount(100000000n)
+        const sessionKeyPlugin = await signerToSessionKeyValidator(
+            publicClient,
+            {
+                signer: privateKeyToAccount(generatePrivateKey())
+            }
+        )
+
+        const _sessionKeySmartAccountClient = await getKernelAccountClient({
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin,
+                {
+                    executor: constants.TOKEN_ACTION,
+                    selector: transfer20ActionSelector
+                }
+            ),
+            sponsorUserOperation: async ({ userOperation }) => {
+                const kernelPaymaster = getZeroDevPaymasterClient()
+                const entryPoint = getEntryPoint()
+                return kernelPaymaster.sponsorUserOperation({
+                    userOperation,
+                    entryPoint
+                })
+            }
+        })
+
+        const amountToTransfer = 10000n
+        const transferData = encodeFunctionData({
+            abi: TokenActionsAbi,
+            functionName: "transfer20Action",
+            args: [Test_ERC20Address, amountToTransfer, owner.address]
+        })
+
+        const balanceOfReceipientBefore = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
+        const transferTransactionHash =
+            await _sessionKeySmartAccountClient.sendTransaction({
+                to: accountAddress,
                 data: transferData
             })
 
@@ -306,7 +373,6 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 signer: privateKeyToAccount(generatePrivateKey()),
-                executorData: { selector: executeBatchSelector },
                 validatorData: {
                     permissions: [
                         {
@@ -335,8 +401,13 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin,
+                {
+                    selector: executeBatchSelector,
+                    executor: zeroAddress
+                }
+            ),
             sponsorUserOperation: async ({ userOperation }) => {
                 const kernelPaymaster = getZeroDevPaymasterClient()
                 const entryPoint = getEntryPoint()
@@ -599,9 +670,6 @@ describe("Session Key kernel Account", async () => {
             serializedSessionKeyAccountParams
         )
 
-        expect(
-            params.sessionKeyParams.sessionKeyData.permissions?.[0]
-                .valueLimit === bigInt
-        )
+        expect(params.sessionKeyParams.permissions?.[0].valueLimit === bigInt)
     }, 1000000)
 })
