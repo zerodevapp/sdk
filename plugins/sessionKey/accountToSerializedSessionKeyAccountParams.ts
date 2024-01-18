@@ -14,6 +14,7 @@ export const accountToSerializedSessionKeyAccountParams = async (
     const sessionKeyParams =
         account.kernelPluginManager.getPluginSerializationParams()
     const executorData = account.kernelPluginManager.getExecutorData()
+    const validityData = account.kernelPluginManager.getValidityData()
     const enableSignature =
         await account.kernelPluginManager.getPluginEnableSignature(
             account.address
@@ -26,6 +27,7 @@ export const accountToSerializedSessionKeyAccountParams = async (
     const paramsToBeSerialized = {
         sessionKeyParams,
         executorData,
+        validityData,
         accountParams,
         enableSignature,
         privateKey

@@ -73,6 +73,7 @@ export type KernelPluginManager = KernelValidator & {
     getPluginEnableSignature(accountAddress: Address): Promise<Hex>
     getValidatorInitData(): Promise<ValidatorInitData>
     getExecutorData(): ExecutorData
+    getValidityData(): PluginValidityData
 }
 
 export type KernelPluginManagerParams = {
@@ -81,11 +82,14 @@ export type KernelPluginManagerParams = {
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData
-}
+} & Partial<PluginValidityData>
 
 export type ExecutorData = {
     executor: Address
     selector: Hex
+}
+
+export type PluginValidityData = {
     validUntil: number
     validAfter: number
 }

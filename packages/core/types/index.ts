@@ -5,7 +5,8 @@ export type {
     KernelPluginManager,
     ValidatorInitData,
     CallType,
-    KernelEncodeCallDataArgs
+    KernelEncodeCallDataArgs,
+    PluginValidityData
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"

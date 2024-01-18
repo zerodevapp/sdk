@@ -190,8 +190,6 @@ describe("Session Key kernel Account", async () => {
                 {
                     executor: constants.TOKEN_ACTION,
                     selector: transfer20ActionSelector,
-                    validAfter: 0,
-                    validUntil: 0
                 }
             ),
             sponsorUserOperation: async ({ userOperation }) => {
@@ -407,9 +405,7 @@ describe("Session Key kernel Account", async () => {
                 sessionKeyPlugin,
                 {
                     selector: executeBatchSelector,
-                    executor: zeroAddress,
-                    validAfter: 0,
-                    validUntil: 0
+                    executor: zeroAddress
                 }
             ),
             sponsorUserOperation: async ({ userOperation }) => {

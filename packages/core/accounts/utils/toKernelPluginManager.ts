@@ -43,10 +43,10 @@ export async function toKernelPluginManager<
             executor: zeroAddress,
             selector: getFunctionSelector(
                 "execute(address, uint256, bytes, uint8)"
-            ),
-            validAfter: 0,
-            validUntil: 0
-        }
+            )
+        },
+        validAfter = 0,
+        validUntil = 0
     }: KernelPluginManagerParams
 ): Promise<KernelPluginManager> {
     const chainId = await getChainId(client)
@@ -67,8 +67,8 @@ export async function toKernelPluginManager<
         }
         return concat([
             mode, // 4 bytes 0 - 4
-            pad(toHex(executorData.validUntil), { size: 6 }), // 6 bytes 4 - 10
-            pad(toHex(executorData.validAfter), { size: 6 }), // 6 bytes 10 - 16
+            pad(toHex(validUntil), { size: 6 }), // 6 bytes 4 - 10
+            pad(toHex(validAfter), { size: 6 }), // 6 bytes 10 - 16
             pad(validator.address, { size: 20 }), // 20 bytes 16 - 36
             pad(executorData.executor, { size: 20 }), // 20 bytes 36 - 56
             pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
@@ -115,10 +115,10 @@ export async function toKernelPluginManager<
                 sig: executorData.selector,
                 validatorData: hexToBigInt(
                     concatHex([
-                        pad(toHex(executorData.validUntil ?? 0), {
+                        pad(toHex(validUntil ?? 0), {
                             size: 6
                         }),
-                        pad(toHex(executorData.validAfter ?? 0), {
+                        pad(toHex(validAfter ?? 0), {
                             size: 6
                         }),
                         validator.address
@@ -145,6 +145,10 @@ export async function toKernelPluginManager<
             ])
         },
         getExecutorData: () => executorData,
+        getValidityData: () => ({
+            validAfter,
+            validUntil
+        }),
         getDummySignature: async (userOperation) => {
             return concatHex([
                 await getValidatorSignature(

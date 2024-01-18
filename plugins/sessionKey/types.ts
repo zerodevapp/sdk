@@ -1,5 +1,5 @@
 import type { KernelValidator } from "@kerneljs/core"
-import type { ExecutorData } from "@kerneljs/core/types"
+import type { ExecutorData, PluginValidityData } from "@kerneljs/core/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -71,6 +71,7 @@ export type ExportSessionKeyAccountParams = {
 export type SessionKeyAccountParams = {
     sessionKeyParams: SessionKeyData<Abi, string>
     executorData: ExecutorData
+    validityData: PluginValidityData
     accountParams: ExportSessionKeyAccountParams
     enableSignature?: Hex
     privateKey?: Hex

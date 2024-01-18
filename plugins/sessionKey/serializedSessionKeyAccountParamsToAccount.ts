@@ -36,7 +36,8 @@ export const serializedSessionKeyAccountParamsToAccount = async <
         validator: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
-        executorData: params.executorData
+        executorData: params.executorData,
+        ...params.validityData
     })
 
     return createKernelAccount(client, {
