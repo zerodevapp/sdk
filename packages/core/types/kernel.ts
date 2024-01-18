@@ -57,7 +57,6 @@ export type KernelValidator<Name extends string = string> =
             pluginEnableSignature?: Hex
         ) => Promise<Hex>
         getEnableData(accountAddress?: Address): Promise<Hex>
-        shouldDelegateViaFallback(): boolean
         getValidatorMode(
             accountAddress: Address,
             selector: Hex

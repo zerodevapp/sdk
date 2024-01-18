@@ -189,7 +189,7 @@ describe("Session Key kernel Account", async () => {
                 sessionKeyPlugin,
                 {
                     executor: constants.TOKEN_ACTION,
-                    selector: transfer20ActionSelector,
+                    selector: transfer20ActionSelector
                 }
             ),
             sponsorUserOperation: async ({ userOperation }) => {

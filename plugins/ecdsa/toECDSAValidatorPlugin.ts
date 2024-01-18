@@ -65,9 +65,6 @@ export async function signerToEcdsaValidator<
         address: validatorAddress,
         source: "ECDSAValidator",
 
-        shouldDelegateViaFallback(): boolean {
-            return true
-        },
         async getEnableData() {
             return viemSigner.address
         },

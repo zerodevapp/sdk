@@ -258,14 +258,13 @@ export async function createKernelAccount<
 
         // Get the nonce of the smart account
         async getNonce() {
+            const key = await kernelPluginManager.getNonceKey()
             return getAccountNonce(client, {
                 sender: accountAddress,
-                entryPoint: entryPoint
+                entryPoint: entryPoint,
+                key
             })
         },
-        // defaultValidator,
-        // plugin,
-        // getPluginEnableSignature,
         kernelPluginManager,
 
         // Sign a user operation
@@ -333,12 +332,7 @@ export async function createKernelAccount<
 
             // Default to `call`
             if (!tx.callType || tx.callType === "call") {
-                if (
-                    tx.to.toLowerCase() === accountAddress.toLowerCase()
-                    // [TODO]
-                    // &&
-                    // currentValidator.shouldDelegateViaFallback()
-                ) {
+                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
                     return tx.data
                 }
                 return encodeFunctionData({
