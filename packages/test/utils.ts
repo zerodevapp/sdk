@@ -8,6 +8,7 @@ import {
     addressToEmptyAccount,
     createKernelAccount
 } from "@kerneljs/core/accounts"
+import type { ExecutorData } from "@kerneljs/core/types"
 import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
@@ -187,7 +188,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     TChain extends Chain | undefined = Chain | undefined
 >(
     sessionKeyPlugin: SessionKeyPlugin,
-    executorSelector?: Hex
+    executorData?: ExecutorData
 ): Promise<KernelSmartAccount> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
@@ -206,16 +207,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
         plugins: {
             validator: sessionKeyPlugin,
             defaultValidator: ecdsaValidatorPlugin,
-            executorData: {
-                selector:
-                    executorSelector ??
-                    getFunctionSelector(
-                        "execute(address, uint256, bytes, uint8)"
-                    ),
-                executor: zeroAddress,
-                validAfter: 0,
-                validUntil: 0
-            }
+            executorData
         }
     })
 }

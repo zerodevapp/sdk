@@ -26,7 +26,6 @@ export const serializedSessionKeyAccountParamsToAccount = async <
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
         validatorData: params.sessionKeyParams
-        // executorData: params.sessionKeyParams.executorData
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(

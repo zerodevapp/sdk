@@ -45,28 +45,6 @@ export type ZeroDevPaymasterRpcSchema = [
     }
 ]
 
-// export type KernelPlugin<
-//     Name extends string = string,
-//     transport extends Transport = Transport,
-//     chain extends Chain | undefined = Chain | undefined
-// > = LocalAccount<Name> & {
-//     signer: Account
-//     client: Client<transport, chain>
-//     entryPoint: Address
-//     getNonceKey: () => Promise<bigint>
-//     getDummySignature(
-//         userOperation: UserOperation,
-//         pluginEnableSignature?: Hex
-//     ): Promise<Hex>
-//     signUserOperation: (
-//         UserOperation: UserOperation,
-//         pluginEnableSignature?: Hex
-//     ) => Promise<Hex>
-//     getEnableData(accountAddress?: Address): Promise<Hex>
-//     shouldDelegateViaFallback(): boolean
-//     isPluginEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
-// }
-
 export type KernelValidator<Name extends string = string> =
     LocalAccount<Name> & {
         getNonceKey: () => Promise<bigint>
@@ -117,3 +95,19 @@ export enum ValidatorMode {
     plugin = "0x00000001",
     enable = "0x00000002"
 }
+
+export type CallType = "call" | "delegatecall"
+
+export type KernelEncodeCallDataArgs =
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+          callType: CallType | undefined
+      }[]

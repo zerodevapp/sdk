@@ -2,7 +2,6 @@ export {
     createKernelAccount,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
-    type CallType,
     addressToEmptyAccount
 } from "./accounts/index.js"
 export {
@@ -31,5 +30,6 @@ export {
 } from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
 export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
+export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"

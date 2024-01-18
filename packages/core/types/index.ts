@@ -3,7 +3,9 @@ export type {
     ZeroDevPaymasterRpcSchema,
     ExecutorData,
     KernelPluginManager,
-    ValidatorInitData
+    ValidatorInitData,
+    CallType,
+    KernelEncodeCallDataArgs
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"

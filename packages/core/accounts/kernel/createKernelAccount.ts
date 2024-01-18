@@ -18,6 +18,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { getBytecode } from "viem/actions"
 import type {
+    KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
@@ -26,22 +27,6 @@ import {
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
-
-export type CallType = "call" | "delegatecall"
-
-type KernelEncodeCallDataArgs =
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }[]
 
 export type KernelSmartAccount<
     transport extends Transport = Transport,
@@ -349,7 +334,7 @@ export async function createKernelAccount<
             // Default to `call`
             if (!tx.callType || tx.callType === "call") {
                 if (
-                    tx.to.toLowerCase() === accountAddress
+                    tx.to.toLowerCase() === accountAddress.toLowerCase()
                     // [TODO]
                     // &&
                     // currentValidator.shouldDelegateViaFallback()
