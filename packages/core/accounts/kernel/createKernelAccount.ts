@@ -10,18 +10,18 @@ import {
     type EncodeDeployDataParameters,
     type Hex,
     type Transport,
+    type TypedDataDefinition,
     concatHex,
     decodeFunctionResult,
     encodeAbiParameters,
     encodeDeployData,
     encodeFunctionData,
+    getTypesForEIP712Domain,
+    hashTypedData,
     keccak256,
     parseAbi,
     stringToHex,
-    hashTypedData,
-    getTypesForEIP712Domain,
-    validateTypedData,
-    type TypedDataDefinition
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, signMessage } from "viem/actions"

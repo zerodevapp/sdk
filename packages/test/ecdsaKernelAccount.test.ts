@@ -23,11 +23,11 @@ import {
     decodeEventLog,
     encodeFunctionData,
     getContract,
+    hashTypedData,
     keccak256,
     stringToHex,
     toHex,
-    zeroAddress,
-    hashTypedData
+    zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
