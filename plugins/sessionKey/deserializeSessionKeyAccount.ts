@@ -9,18 +9,18 @@ import { privateKeyToAccount } from "viem/accounts"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
 
-export const serializedSessionKeyAccountParamsToAccount = async <
+export const deserializeSessionKeyAccount = async <
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
     client: Parameters<typeof createKernelAccount>[0],
     sessionKeyAccountParams: string,
-    sessionKeysigner?: SmartAccountSigner<TSource, TAddress>
+    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
 ) => {
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
     let signer: SmartAccountSigner<string, Hex>
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
-    else if (sessionKeysigner) signer = sessionKeysigner
+    else if (sessionKeySigner) signer = sessionKeySigner
     else throw new Error("No signer or serialized sessionKey provided")
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {

@@ -5,7 +5,7 @@ import {
     serializeSessionKeyAccountParams
 } from "./utils.js"
 
-export const accountToSerializedSessionKeyAccountParams = async (
+export const serializeSessionKeyAccount = async (
     account: KernelSmartAccount,
     privateKey?: Hex
 ): Promise<string> => {

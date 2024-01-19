@@ -9,10 +9,10 @@ import {
 import {
     ParamOperator,
     type SessionKeyPlugin,
-    accountToSerializedSessionKeyAccountParams,
     anyPaymaster,
+    deserializeSessionKeyAccount,
     deserializeSessionKeyAccountParams,
-    serializedSessionKeyAccountParamsToAccount,
+    serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@kerneljs/session-key"
 import {
@@ -553,13 +553,10 @@ describe("Session Key kernel Account", async () => {
         const account =
             await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
-            await accountToSerializedSessionKeyAccountParams(
-                account,
-                sessionPrivateKey
-            )
+            await serializeSessionKeyAccount(account, sessionPrivateKey)
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await serializedSessionKeyAccountParamsToAccount(
+            account: await deserializeSessionKeyAccount(
                 publicClient,
                 serializedSessionKeyAccountParams
             ),
@@ -664,7 +661,7 @@ describe("Session Key kernel Account", async () => {
         const account =
             await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
-            await accountToSerializedSessionKeyAccountParams(account)
+            await serializeSessionKeyAccount(account)
 
         const params = deserializeSessionKeyAccountParams(
             serializedSessionKeyAccountParams

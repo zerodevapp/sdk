@@ -13,8 +13,8 @@ import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
 import {
     ParamOperator,
     SessionKeyPlugin,
-    accountToSerializedSessionKeyAccountParams,
-    serializedSessionKeyAccountParamsToAccount,
+    deserializeSessionKeyAccount,
+    serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@kerneljs/session-key"
 import {
@@ -174,9 +174,9 @@ export const getSignerToSessionKeyKernelAccount =
         })
 
         const serializedSessionKeyAccountParams =
-            await accountToSerializedSessionKeyAccountParams(account)
+            await serializeSessionKeyAccount(account)
 
-        return await serializedSessionKeyAccountParamsToAccount(
+        return await deserializeSessionKeyAccount(
             publicClient,
             serializedSessionKeyAccountParams,
             sessionKey
