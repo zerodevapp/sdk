@@ -19,7 +19,7 @@ import {
     type KernelPluginManager,
     type KernelPluginManagerParams,
     ValidatorMode
-} from "../../types/kernel"
+} from "../../types/kernel.js"
 import { getKernelVersion } from "../../utils.js"
 
 export function isKernelPluginManager(
