@@ -298,7 +298,7 @@ export const revokeSessionKey = async <
         TChain,
         KernelSmartAccount<TTransport, TChain>
     >,
-    sessionKeyAddress: Address
+    sessionKeyAddress: Address = "0x"
 ): Promise<Hex> => {
     return await accountClient.sendUserOperation({
         userOperation: {
