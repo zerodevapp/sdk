@@ -33,7 +33,7 @@ export const providerToSmartAccountSigner = async (
     return walletClientToCustomSigner(walletClient)
 }
 
-export const walletClientToSmartAccountSigner = async (
+export const walletClientToSmartAccountSigner = (
     walletClient: WalletClient
 ) => {
     // biome-ignore lint/suspicious/noExplicitAny: I believe this type error is because of a version mismatch between viem and permissionless
