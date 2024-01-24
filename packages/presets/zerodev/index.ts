@@ -93,7 +93,7 @@ export async function createEcdsaKernelAccountClient<
             : undefined
     })
 
-    return kernelClient as KernelAccountClient<
+    return kernelClient as unknown as KernelAccountClient<
         HttpTransport,
         TChain,
         KernelSmartAccount<HttpTransport, TChain>

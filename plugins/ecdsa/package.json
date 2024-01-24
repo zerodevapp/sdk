@@ -35,8 +35,8 @@
     "lint:fix": "bun run lint --apply"
   },
   "peerDependencies": {
-    "viem": "^1.21.4",
-    "@kerneljs/core": "^0.0.1-alpha.17",
-    "permissionless": "^0.0.20"
+    "viem": "^2.0.0",
+    "@kerneljs/core": "^0.0.1-alpha.19",
+    "permissionless": "^0.0.30"
   }
 }

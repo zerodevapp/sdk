@@ -7,8 +7,16 @@ import {
     type AbiParameterToPrimitiveType,
     type ExtractAbiFunction
 } from "abitype"
+import type { ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
-import type { Abi, Address, Hex, InferFunctionName, Narrow } from "viem"
+import {
+    type Abi,
+    type AbiStateMutability,
+    type Address,
+    type Hex,
+    type Narrow,
+    encodeFunctionData
+} from "viem"
 import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
 
 export type SessionNonces = {
@@ -80,6 +88,22 @@ export type SessionKeyAccountParams = {
 export type SessionKeyPlugin = KernelValidator<"SessionKeyValidator"> & {
     getPluginSerializationParams(): SessionKeyData<Abi, string>
 }
+
+export type InferFunctionName<
+    TAbi extends Abi | readonly unknown[] = Abi,
+    TFunctionName extends string | undefined = string,
+    TAbiStateMutability extends AbiStateMutability = AbiStateMutability
+> = TAbi extends Abi
+    ? ExtractAbiFunctionNames<
+          TAbi,
+          TAbiStateMutability
+      > extends infer AbiFunctionNames
+        ?
+              | AbiFunctionNames
+              | (TFunctionName extends AbiFunctionNames ? TFunctionName : never)
+              | (Abi extends TAbi ? string : never)
+        : never
+    : TFunctionName
 
 export type GetFunctionArgs<
     TAbi extends Abi | readonly unknown[],

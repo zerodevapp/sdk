@@ -50,9 +50,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@kerneljs/core": "^0.0.1-alpha.17",
+    "@kerneljs/core": "^0.0.1-alpha.19",
     "@kerneljs/ecdsa-validator": "^0.0.1-alpha.17",
-    "permissionless": "^0.0.20",
-    "viem": "^1.21.4"
+    "permissionless": "^0.0.30",
+    "viem": "^2.0.0"
   }
 }

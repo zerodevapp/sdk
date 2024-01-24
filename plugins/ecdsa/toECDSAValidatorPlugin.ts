@@ -1,6 +1,7 @@
 import { KERNEL_ADDRESSES } from "@kerneljs/core"
 import type { KernelValidator } from "@kerneljs/core/types"
 import { ValidatorMode } from "@kerneljs/core/types"
+import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -11,7 +12,8 @@ import {
     type Chain,
     type Client,
     type LocalAccount,
-    type Transport
+    type Transport,
+    type TypedDataDefinition
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
@@ -24,7 +26,7 @@ export async function signerToEcdsaValidator<
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
-    client: Client<TTransport, TChain>,
+    client: Client<TTransport, TChain, undefined>,
     {
         signer,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
@@ -55,8 +57,19 @@ export async function signerToEcdsaValidator<
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
-        async signTypedData(typedData) {
-            return signTypedData(client, { account: viemSigner, ...typedData })
+        async signTypedData<
+            const TTypedData extends TypedData | Record<string, unknown>,
+            TPrimaryType extends
+                | keyof TTypedData
+                | "EIP712Domain" = keyof TTypedData
+        >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
+            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
+                client,
+                {
+                    account: viemSigner,
+                    ...typedData
+                }
+            )
         }
     })
 
