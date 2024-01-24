@@ -187,7 +187,7 @@ const getAccountAddress = async <
     entryPoint,
     initCodeProvider
 }: {
-    client: Client<TTransport, TChain>
+    client: Client<TTransport, TChain, undefined>
     initCodeProvider: () => Promise<Hex>
     entryPoint: Address
 }): Promise<Address> => {
@@ -216,7 +216,7 @@ export async function createKernelAccount<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Client<TTransport, TChain>,
+    client: Client<TTransport, TChain, undefined>,
     {
         plugins,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,

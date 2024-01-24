@@ -8,11 +8,11 @@ import {
     decodeFunctionData,
     encodeAbiParameters,
     getAbiItem,
-    getFunctionSelector,
     hexToSignature,
     isHex,
     pad,
     signatureToHex,
+    toFunctionSelector,
     toHex,
     zeroAddress
 } from "viem"
@@ -49,10 +49,10 @@ export function getPermissionFromABI<
         args,
         name: functionName
     } as GetAbiItemParameters)
-    if (abiItem.type !== "function") {
+    if (abiItem?.type !== "function") {
         throw Error(`${functionName} not found in abi`)
     }
-    const functionSelector = getFunctionSelector(abiItem)
+    const functionSelector = toFunctionSelector(abiItem)
     let paramRules: ParamRules[] = []
     if (args && Array.isArray(args)) {
         paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)

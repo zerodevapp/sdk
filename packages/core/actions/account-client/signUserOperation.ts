@@ -4,6 +4,7 @@ import { prepareUserOperationRequest } from "permissionless/actions/smartAccount
 import type {
     GetAccountParameter,
     PartialBy,
+    Prettify,
     UserOperation
 } from "permissionless/types"
 import {
@@ -40,7 +41,7 @@ export async function signUserOperation<
     TAccount extends SmartAccount | undefined = SmartAccount | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: SignUserOperationParameters<TAccount>
+    args: Prettify<SignUserOperationParameters<TAccount>>
 ): Promise<SignUserOperationReturnType> {
     const { account: account_ = client.account } = args
     if (!account_) throw new AccountOrClientNotFoundError()

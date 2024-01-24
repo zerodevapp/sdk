@@ -74,5 +74,5 @@ export const kernelAccountClientActions =
             signUserOperation(client, {
                 ...args,
                 sponsorUserOperation
-            } as SignUserOperationParameters)
+            } as SignUserOperationParameters<TSmartAccount>)
     })

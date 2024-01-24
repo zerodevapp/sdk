@@ -1,3 +1,4 @@
+import type { TypedData } from "abitype"
 import {
     type Abi,
     type Address,
@@ -6,6 +7,7 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
+    type TypedDataDefinition,
     keccak256,
     pad,
     toHex,
@@ -68,7 +70,7 @@ export async function signerToSessionKeyValidator<
     TAddress extends Address = Address,
     TFunctionName extends string | undefined = string
 >(
-    client: Client<TTransport, TChain>,
+    client: Client<TTransport, TChain, undefined>,
     {
         signer,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
@@ -131,8 +133,19 @@ export async function signerToSessionKeyValidator<
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
-        async signTypedData(typedData) {
-            return signTypedData(client, { account: viemSigner, ...typedData })
+        async signTypedData<
+            const TTypedData extends TypedData | Record<string, unknown>,
+            TPrimaryType extends
+                | keyof TTypedData
+                | "EIP712Domain" = keyof TTypedData
+        >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
+            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
+                client,
+                {
+                    account: viemSigner,
+                    ...typedData
+                }
+            )
         }
     })
 
@@ -214,7 +227,7 @@ export async function signerToSessionKeyValidator<
                 abi: SessionKeyValidatorAbi,
                 address: validatorAddress,
                 functionName: "sessionData",
-                args: [signer.address, kernelAccountAddress]
+                args: [signer.address as Address, kernelAccountAddress]
             })
             const enableDataHex = concatHex([
                 signer.address,
