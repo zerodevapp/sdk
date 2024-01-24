@@ -102,7 +102,10 @@ export class RecoveryProvider extends ValidatorProvider<
         params.opts.validatorConfig.threshold === undefined)
     ) {
       const publicClient = createPublicClient({
-        transport: http(CHAIN_ID_TO_NODE[chain?.id ?? polygonMumbai.id]),
+        transport: http(
+          params.opts.providerConfig?.rpcUrl ??
+            CHAIN_ID_TO_NODE[chain?.id ?? polygonMumbai.id]
+        ),
         chain: chain ?? polygonMumbai,
       });
       recoveryConfig = await RecoveryValidator.fetchRecoveryConfigFromContract(

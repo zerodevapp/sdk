@@ -27,6 +27,7 @@ export class ERC165SessionKeyProvider extends ValidatorProvider<
       sessionKey: params.sessionKey,
       sessionKeyData: params.sessionKeyData,
       chain,
+      rpcUrl: params.opts?.providerConfig?.rpcUrl,
       validatorAddress:
         params.opts?.validatorConfig?.validatorAddress ??
         ERC165_SESSION_KEY_VALIDATOR_ADDRESS,

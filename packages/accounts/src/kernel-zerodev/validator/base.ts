@@ -20,7 +20,6 @@ import {
 } from "viem";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
 import {
-  BUNDLER_URL,
   CHAIN_ID_TO_NODE,
   ECDSA_VALIDATOR_ADDRESS,
   ENTRYPOINT_ADDRESS,
@@ -83,9 +82,11 @@ export abstract class KernelBaseValidator {
     this.executor = params.executor;
     this.selector = params.selector;
     this.chain = params.chain;
-    this.rpcUrl = params.rpcUrl ?? BUNDLER_URL;
+    this.rpcUrl = params.rpcUrl;
     this.publicClient = createPublicClient({
-      transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
+      transport: http(
+        params.rpcUrl ?? CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]
+      ),
       chain: this.chain ?? polygonMumbai,
     });
   }

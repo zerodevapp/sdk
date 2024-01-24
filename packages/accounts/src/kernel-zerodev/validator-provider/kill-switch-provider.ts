@@ -27,6 +27,7 @@ export class KillSwitchProvider extends ValidatorProvider<
       guardian: params.guardian,
       delaySeconds: params.delaySeconds,
       chain,
+      rpcUrl: params.opts?.providerConfig?.rpcUrl,
       validatorAddress:
         params.opts?.validatorConfig?.validatorAddress ??
         KILL_SWITCH_VALIDATOR_ADDRESS,

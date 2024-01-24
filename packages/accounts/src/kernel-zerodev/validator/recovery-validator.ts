@@ -112,7 +112,9 @@ export class RecoveryValidator extends KernelBaseValidator {
       this.walletClient = createWalletClient({
         account: params.localAccountOrProvider,
         chain: this.chain ?? polygonMumbai,
-        transport: http(CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]),
+        transport: http(
+          this.rpcUrl ?? CHAIN_ID_TO_NODE[this.chain?.id ?? polygonMumbai.id]
+        ),
       }).extend(publicActions);
     } else if (isEthereumProvider(params.localAccountOrProvider)) {
       this.walletClient = createWalletClient({

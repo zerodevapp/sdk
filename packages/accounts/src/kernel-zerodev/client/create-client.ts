@@ -45,7 +45,8 @@ export const createZeroDevPublicErc4337Client = ({
   const erc4337Transport = http(bundlerRpcUrl ?? BUNDLER_URL, {
     fetchOptions: {
       // @ts-ignore
-      headers: bundlerRpcUrl === BUNDLER_URL ? { projectId, bundlerProvider } : {},
+      headers:
+        bundlerRpcUrl === BUNDLER_URL ? { projectId, bundlerProvider } : {},
     },
     name: "Connected bundler network",
     key: "connected-bundler-network",
