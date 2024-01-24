@@ -46,6 +46,7 @@ export class SessionKeyProvider extends ValidatorProvider<
       sessionKey: params.sessionKey,
       sessionKeyData: params.sessionKeyData,
       chain,
+      rpcUrl: params.opts?.providerConfig?.rpcUrl,
       validatorAddress:
         params.opts?.validatorConfig?.validatorAddress ??
         SESSION_KEY_VALIDATOR_ADDRESS,

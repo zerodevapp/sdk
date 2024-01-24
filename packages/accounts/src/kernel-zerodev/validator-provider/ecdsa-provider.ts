@@ -23,6 +23,7 @@ export class ECDSAProvider extends ValidatorProvider<
       projectId: params.projectId,
       owner: params.owner,
       chain,
+      rpcUrl: params.opts?.providerConfig?.rpcUrl,
       ...params.opts?.validatorConfig,
     });
     super(
