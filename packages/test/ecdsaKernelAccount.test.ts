@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount
-} from "@kerneljs/core"
-import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
+} from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {

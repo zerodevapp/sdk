@@ -1,5 +1,5 @@
-import type { KernelValidator } from "@kerneljs/core"
-import type { ExecutorData, PluginValidityData } from "@kerneljs/core/types"
+import type { KernelValidator } from "@zerodev/sdk"
+import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -14,8 +14,7 @@ import {
     type AbiStateMutability,
     type Address,
     type Hex,
-    type Narrow,
-    encodeFunctionData
+    type Narrow
 } from "viem"
 import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
 

@@ -2,7 +2,7 @@
 
 > If you find yourself here, you've discovered a secret!  Kernel.js is an upcoming SDK by ZeroDev.  It's in alpha and not officially released, and the docs are still in the works.  Please proceed with caution.
 
-The [@kerneljs packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
+The [@zerodev packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
 
 [See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
 
@@ -15,15 +15,15 @@ For examples using Kernel.js, check out [the examples repo](https://github.com/z
 To use the SDK, install the core package along with any plugins you need:
 
 ```bash
-npm install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
+npm install viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
 ```
 
 ```bash
-yarn add viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
+yarn add viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
 ```
 
 ```bash
-bun install viem permissionless @kerneljs/core @kerneljs/ecdsa-validator
+bun install viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
 ```
 
 ## Building and Testing
@@ -53,7 +53,7 @@ Contributions are welcome! Please read our [contributing guidelines](./CONTRIBUT
 
 ## License
 
-The @kerneljs packages are released under the MIT License. See the [LICENSE](./LICENSE) file for more details.
+The @zerodev packages are released under the MIT License. See the [LICENSE](./LICENSE) file for more details.
 
 ## Contact
 

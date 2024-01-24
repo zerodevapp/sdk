@@ -1,10 +1,10 @@
-import type { KernelAccountClient, KernelSmartAccount } from "@kerneljs/core"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import {
     createKernelAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
-} from "@kerneljs/core"
-import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
+} from "@zerodev/sdk"
 import type { UserOperation } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { Address, Chain, HttpTransport } from "viem"

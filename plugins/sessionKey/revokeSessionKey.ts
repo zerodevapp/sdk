@@ -1,7 +1,4 @@
-import {
-    type KernelAccountClient,
-    type KernelSmartAccount
-} from "@kerneljs/core"
+import { type KernelAccountClient, type KernelSmartAccount } from "@zerodev/sdk"
 import {
     type Address,
     type Chain,

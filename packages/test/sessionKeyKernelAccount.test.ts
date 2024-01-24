@@ -5,7 +5,7 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     TokenActionsAbi
-} from "@kerneljs/core"
+} from "@zerodev/sdk"
 import {
     ParamOperator,
     type SessionKeyPlugin,
@@ -14,7 +14,7 @@ import {
     deserializeSessionKeyAccountParams,
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
-} from "@kerneljs/session-key"
+} from "@zerodev/session-key"
 import {
     http,
     Address,

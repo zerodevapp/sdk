@@ -23,10 +23,10 @@ import {
 import { concat, concatHex } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
-import { KernelAccountAbi } from "@kerneljs/core"
-import { KERNEL_ADDRESSES } from "@kerneljs/core"
-import { constants } from "@kerneljs/core"
-import { ValidatorMode } from "@kerneljs/core/types"
+import { KernelAccountAbi } from "@zerodev/sdk"
+import { KERNEL_ADDRESSES } from "@zerodev/sdk"
+import { constants } from "@zerodev/sdk"
+import { ValidatorMode } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
 import { getAction, getUserOperationHash } from "permissionless"
 import {

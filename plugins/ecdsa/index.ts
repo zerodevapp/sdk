@@ -1,4 +1,4 @@
-import type { KernelValidator } from "@kerneljs/core/types"
+import type { KernelValidator } from "@zerodev/sdk/types"
 import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin.js"
 
 export { signerToEcdsaValidator, type KernelValidator }

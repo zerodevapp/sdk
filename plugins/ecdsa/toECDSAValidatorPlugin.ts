@@ -1,6 +1,6 @@
-import { KERNEL_ADDRESSES } from "@kerneljs/core"
-import type { KernelValidator } from "@kerneljs/core/types"
-import { ValidatorMode } from "@kerneljs/core/types"
+import { KERNEL_ADDRESSES } from "@zerodev/sdk"
+import type { KernelValidator } from "@zerodev/sdk/types"
+import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import {

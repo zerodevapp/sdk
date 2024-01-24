@@ -1,6 +1,6 @@
 {
-  "name": "@kerneljs/core",
-  "version": "0.0.1-alpha.19",
+  "name": "@zerodev/sdk",
+  "version": "5.0.0-beta.0",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",

@@ -1,22 +1,22 @@
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
-} from "@kerneljs/core"
+} from "@zerodev/sdk"
 import {
     addressToEmptyAccount,
     createKernelAccount
-} from "@kerneljs/core/accounts"
-import type { ExecutorData } from "@kerneljs/core/types"
-import { signerToEcdsaValidator } from "@kerneljs/ecdsa-validator"
+} from "@zerodev/sdk/accounts"
+import type { ExecutorData } from "@zerodev/sdk/types"
 import {
     ParamOperator,
     SessionKeyPlugin,
     deserializeSessionKeyAccount,
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
-} from "@kerneljs/session-key"
+} from "@zerodev/session-key"
 import {
     BundlerClient,
     createBundlerClient,

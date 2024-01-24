@@ -1,6 +1,6 @@
 {
-  "name": "@kerneljs/presets",
-  "version": "0.0.1-alpha.11",
+  "name": "@zerodev/presets",
+  "version": "5.0.0-beta.0",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -50,8 +50,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@kerneljs/core": "^0.0.1-alpha.19",
-    "@kerneljs/ecdsa-validator": "^0.0.1-alpha.17",
+    "@zerodev/sdk": "^5.0.0-beta.0",
+    "@zerodev/ecdsa-validator": "^5.0.0-beta.0",
     "permissionless": "^0.0.30",
     "viem": "^2.0.0"
   }

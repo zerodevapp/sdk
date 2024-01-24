@@ -1,4 +1,4 @@
-import { KernelAccountAbi } from "@kerneljs/core"
+import { KernelAccountAbi } from "@zerodev/sdk"
 import type { AbiFunction } from "abitype"
 import {
     type Abi,

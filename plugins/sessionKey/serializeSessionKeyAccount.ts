@@ -1,4 +1,4 @@
-import type { KernelSmartAccount } from "@kerneljs/core"
+import type { KernelSmartAccount } from "@zerodev/sdk"
 import type { Hex } from "viem"
 import {
     isSessionKeyValidatorPlugin,
