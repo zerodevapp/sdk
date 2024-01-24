@@ -1,7 +1,5 @@
 # ZeroDev SDK
 
-The ZeroDev SDK is a set of TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
-
 [See here for detailed documentation.](https://docs.zerodev.app)
 
 ## Examples
@@ -10,7 +8,7 @@ For examples using ZeroDev, check out [the examples repo](https://github.com/zer
 
 ## Installation
 
-To use the SDK, install the core package along with any plugins you need:
+To use the SDK, install the core package and its peer dependencies (Viem & Permissionless), along with any plugins you need:
 
 ```bash
 npm install @zerodev/sdk @zerodev/ecdsa-validator viem permissionless
