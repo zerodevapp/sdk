@@ -8,18 +8,16 @@ For examples using ZeroDev, check out [the examples repo](https://github.com/zer
 
 ## Installation
 
-To use the SDK, install the core package and its peer dependencies (Viem & Permissionless), along with any plugins you need:
-
 ```bash
-npm install @zerodev/sdk @zerodev/ecdsa-validator
+npm install @zerodev/sdk
 ```
 
 ```bash
-yarn add @zerodev/sdk @zerodev/ecdsa-validator
+yarn add @zerodev/sdk
 ```
 
 ```bash
-bun install @zerodev/sdk @zerodev/ecdsa-validator
+bun install @zerodev/sdk
 ```
 
 ## Building and Testing
