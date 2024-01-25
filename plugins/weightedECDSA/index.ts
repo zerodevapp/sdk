@@ -7,4 +7,4 @@ import {
 export { createWeightedECDSAValidator, updateConfig, type KernelValidator }
 
 export const WEIGHTED_ECDSA_VALIDATOR_ADDRESS =
-    "0xa7e3Bc66086Ae51b20e59b6C84666635A0d0A16C"
+    "0x5D688bE9c6c577d35C1e8f819CE17A8bA8df756C"
