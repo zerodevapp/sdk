@@ -52,6 +52,7 @@ import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const getFactoryAddress = (): Address => {
@@ -118,6 +119,32 @@ export const getSignerToEcdsaKernelAccount =
             entryPoint: getEntryPoint(),
             plugins: {
                 validator: ecdsaValidatorPlugin
+            }
+        })
+    }
+
+// we only use two signers for testing
+export const getSignersToWeightedEcdsaKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+        const privateKey2 = process.env.TEST_PRIVATE_KEY_2 as Hex
+        if (!privateKey1 || !privateKey2) {
+            throw new Error(
+                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY_2 environment variables must be set"
+            )
+        }
+        const publicClient = await getPublicClient()
+        const signer1 = privateKeyToAccount(privateKey1)
+        const signer2 = privateKeyToAccount(privateKey2)
+        const weigthedECDSAPlugin = await createWeightedECDSAValidator(
+            publicClient,
+            { signers: [signer1, signer2] }
+        )
+
+        return createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                validator: weigthedECDSAPlugin
             }
         })
     }
