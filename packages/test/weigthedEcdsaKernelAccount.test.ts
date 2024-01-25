@@ -118,33 +118,34 @@ describe("Weighted ECDSA kernel Account", () => {
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
-    test(
-        "Client signMessage should return a valid signature",
-        async () => {
-            // to make sure kernel is deployed
-            await kernelClient.sendTransaction({
-                to: zeroAddress,
-                value: 0n,
-                data: "0x"
-            })
-            const message = "hello world"
-            const response = await kernelClient.signMessage({
-                message
-            })
+    // TODO: activate this test when the valdiateSignature function is implemented
+    // test(
+    //     "Client signMessage should return a valid signature",
+    //     async () => {
+    //         // to make sure kernel is deployed
+    //         await kernelClient.sendTransaction({
+    //             to: zeroAddress,
+    //             value: 0n,
+    //             data: "0x"
+    //         })
+    //         const message = "hello world"
+    //         const response = await kernelClient.signMessage({
+    //             message
+    //         })
 
-            const eip1271response = await publicClient.readContract({
-                address: account.address,
-                abi: EIP1271ABI,
-                functionName: "isValidSignature",
-                args: [keccak256(stringToHex(message)), response]
-            })
-            expect(eip1271response).toEqual("0x1626ba7e")
-            expect(response).toBeString()
-            expect(response).toHaveLength(SIGNATURE_LENGTH)
-            expect(response).toMatch(SIGNATURE_REGEX)
-        },
-        TEST_TIMEOUT
-    )
+    //         const eip1271response = await publicClient.readContract({
+    //             address: account.address,
+    //             abi: EIP1271ABI,
+    //             functionName: "isValidSignature",
+    //             args: [keccak256(stringToHex(message)), response]
+    //         })
+    //         expect(eip1271response).toEqual("0x1626ba7e")
+    //         expect(response).toBeString()
+    //         expect(response).toHaveLength(SIGNATURE_LENGTH)
+    //         expect(response).toMatch(SIGNATURE_REGEX)
+    //     },
+    //     TEST_TIMEOUT
+    // )
 
     test(
         "Client deploy contract",

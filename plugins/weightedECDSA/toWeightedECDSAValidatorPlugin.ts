@@ -15,14 +15,12 @@ import {
     type TypedDataDefinition,
     encodeAbiParameters,
     encodeFunctionData,
-    encodePacked,
     keccak256,
     parseAbiParameters
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { WeightedValidatorAbi } from "./abi"
+import { WeightedValidatorAbi } from "./abi.js"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {
@@ -44,7 +42,6 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
     }: {
         config?: WeightedECDSAValidatorConfig
@@ -74,11 +71,12 @@ export async function createWeightedECDSAValidator<
         async signMessage({ message }) {
             // Sign the hash with all signers and pack the signatures
             let signatures = ""
+
             for (const signer of signers) {
                 const signature = await signer.signMessage({
                     message
                 })
-                // Remove the '0x' prefix from subsequent signatures
+                // Remove the '0x' prefix
                 signatures += signature.startsWith("0x")
                     ? signature.substring(2)
                     : signature
@@ -116,11 +114,16 @@ export async function createWeightedECDSAValidator<
 
         async getEnableData() {
             if (!config) return "0x" // TODO: check if this is correct
-            return encodePacked(
-                ["address[]", "uint24[]", "uint24", "uint48"],
+            return encodeAbiParameters(
                 [
-                    config.signers.map((signer) => signer.address) ?? [],
-                    config.signers.map((signer) => signer.weight) ?? [],
+                    { name: "_guardians", type: "address[]" },
+                    { name: "_weights", type: "uint24[]" },
+                    { name: "_threshold", type: "uint24" },
+                    { name: "_delay", type: "uint48" }
+                ],
+                [
+                    config.signers.map((signer) => signer.address),
+                    config.signers.map((signer) => signer.weight),
                     config.threshold,
                     config.delay
                 ]
@@ -142,27 +145,73 @@ export async function createWeightedECDSAValidator<
                 )
             )
 
-            const hash = keccak256(
-                encodeAbiParameters(
-                    [
-                        { type: "bytes32" },
-                        { type: "address" },
-                        { type: "uint256" }
-                    ],
-                    [callDataAndNonceHash, entryPoint, BigInt(chainId)]
-                )
-            )
+            let signatures = ""
+            for (const signer of signers) {
+                const signature = await signer.signTypedData({
+                    domain: {
+                        name: "WeightedECDSAValidator",
+                        version: "0.0.1",
+                        chainId,
+                        verifyingContract: validatorAddress
+                    },
+                    types: {
+                        Approve: [
+                            { name: "callDataAndNonceHash", type: "bytes32" }
+                        ]
+                    },
+                    primaryType: "Approve",
+                    message: {
+                        callDataAndNonceHash
+                    }
+                })
+                // Remove the '0x' prefix
+                signatures += signature.startsWith("0x")
+                    ? signature.substring(2)
+                    : signature
+            }
 
-            const signature = await signMessage(client, {
-                account,
-                message: { raw: hash }
-            })
-            return signature
+            return signatures as `0x${string}`
         },
 
         // Get simple dummy signature
-        async getDummySignature() {
-            return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+        async getDummySignature(userOperation: UserOperation) {
+            const callDataAndNonceHash = keccak256(
+                encodeAbiParameters(
+                    parseAbiParameters("address, bytes, uint256"),
+                    [
+                        userOperation.sender,
+                        userOperation.callData,
+                        userOperation.nonce
+                    ]
+                )
+            )
+
+            let signatures = ""
+            for (const signer of signers) {
+                const signature = await signer.signTypedData({
+                    domain: {
+                        name: "WeightedECDSAValidator",
+                        version: "0.0.1",
+                        chainId,
+                        verifyingContract: validatorAddress
+                    },
+                    types: {
+                        Approve: [
+                            { name: "callDataAndNonceHash", type: "bytes32" }
+                        ]
+                    },
+                    primaryType: "Approve",
+                    message: {
+                        callDataAndNonceHash
+                    }
+                })
+                // Remove the '0x' prefix
+                signatures += signature.startsWith("0x")
+                    ? signature.substring(2)
+                    : signature
+            }
+
+            return signatures as `0x${string}`
         },
 
         async getValidatorMode() {

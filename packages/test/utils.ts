@@ -127,10 +127,10 @@ export const getSignerToEcdsaKernelAccount =
 export const getSignersToWeightedEcdsaKernelAccount =
     async (): Promise<SmartAccount> => {
         const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
-        const privateKey2 = process.env.TEST_PRIVATE_KEY_2 as Hex
+        const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
         if (!privateKey1 || !privateKey2) {
             throw new Error(
-                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY_2 environment variables must be set"
+                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
             )
         }
         const publicClient = await getPublicClient()
@@ -138,15 +138,25 @@ export const getSignersToWeightedEcdsaKernelAccount =
         const signer2 = privateKeyToAccount(privateKey2)
         const weigthedECDSAPlugin = await createWeightedECDSAValidator(
             publicClient,
-            { signers: [signer1, signer2] }
+            {
+                config: {
+                    threshold: 100,
+                    delay: 0,
+                    signers: [
+                        { address: signer1.address, weight: 50 },
+                        { address: signer2.address, weight: 50 }
+                    ]
+                },
+                signers: [signer1, signer2]
+            }
         )
-
-        return createKernelAccount(publicClient, {
+        const kernelAccount = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 validator: weigthedECDSAPlugin
             }
         })
+        return kernelAccount
     }
 
 export const getSignerToSessionKeyKernelAccount =

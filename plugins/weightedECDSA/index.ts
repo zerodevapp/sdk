@@ -2,7 +2,7 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import {
     createWeightedECDSAValidator,
     updateConfig
-} from "./toWeigthedECDSAValidatorPlugin.js"
+} from "./toWeightedECDSAValidatorPlugin.js"
 
 export { createWeightedECDSAValidator, updateConfig, type KernelValidator }
 
