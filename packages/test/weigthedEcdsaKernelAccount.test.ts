@@ -1,5 +1,4 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import {
     EIP1271ABI,
     KERNEL_ADDRESSES,
@@ -7,6 +6,7 @@ import {
     KernelSmartAccount,
     createKernelAccount
 } from "@zerodev/sdk"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {

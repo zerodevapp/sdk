@@ -17,6 +17,7 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import {
     BundlerClient,
     createBundlerClient,
@@ -52,7 +53,6 @@ import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const getFactoryAddress = (): Address => {
