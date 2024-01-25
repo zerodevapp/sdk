@@ -1,13 +1,9 @@
-import { KERNEL_ADDRESSES, KernelSmartAccount } from "@zerodev/sdk"
+import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { WeightedValidatorAbi } from "./abi"
-import {
-    type UserOperation,
-    getUserOperationHash,
-    SmartAccountClient
-} from "permissionless"
+import { type UserOperation, type SmartAccountClient } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -18,7 +14,6 @@ import {
     type Address,
     type Chain,
     type Client,
-    type LocalAccount,
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
@@ -26,7 +21,7 @@ import {
     keccak256
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { signMessage, signTypedData } from "viem/actions"
+import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
