@@ -6,6 +6,7 @@ import {
     KernelSmartAccount,
     createKernelAccount
 } from "@zerodev/sdk"
+import { signerToSessionKeyValidator } from "@zerodev/session-key"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
@@ -29,7 +30,7 @@ import {
     toHex,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import {
@@ -291,6 +292,54 @@ describe("Weighted ECDSA kernel Account", () => {
                 })
 
             expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test.only(
+        "Create a session key and send txn with it",
+        async () => {
+            const sessionPrivateKey = generatePrivateKey()
+            const sessionKeySigner = privateKeyToAccount(sessionPrivateKey)
+            const sessionKeyPlugin = await signerToSessionKeyValidator(
+                publicClient,
+                {
+                    signer: sessionKeySigner,
+                    validatorData: {
+                        permissions: []
+                    }
+                }
+            )
+
+            const sessionKeyAccount =
+                await getSignersToWeightedEcdsaKernelAccount(sessionKeyPlugin)
+            const sessionKeyClient = await getKernelAccountClient({
+                account: sessionKeyAccount,
+                sponsorUserOperation: async ({ userOperation }) => {
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    const entryPoint = getEntryPoint()
+                    return zerodevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
+            })
+
+            const userOpHash = await sessionKeyClient.sendUserOperation({
+                userOperation: {
+                    callData: await sessionKeyAccount.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    })
+                }
+            })
+
+            expect(userOpHash).toHaveLength(66)
+
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )
