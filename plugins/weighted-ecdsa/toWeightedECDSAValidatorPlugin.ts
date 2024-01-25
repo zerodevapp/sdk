@@ -1,4 +1,3 @@
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
@@ -90,8 +89,8 @@ export async function createWeightedECDSAValidator<
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
             TPrimaryType extends
-                | keyof TTypedData
-                | "EIP712Domain" = keyof TTypedData
+            | keyof TTypedData
+            | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
             let signatures = ""
             for (const signer of signers) {
