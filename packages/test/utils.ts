@@ -5,6 +5,7 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
+import { KernelValidator } from "@zerodev/sdk"
 import {
     addressToEmptyAccount,
     createKernelAccount
@@ -124,40 +125,51 @@ export const getSignerToEcdsaKernelAccount =
     }
 
 // we only use two signers for testing
-export const getSignersToWeightedEcdsaKernelAccount =
-    async (): Promise<SmartAccount> => {
-        const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
-        const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
-        if (!privateKey1 || !privateKey2) {
-            throw new Error(
-                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
-            )
-        }
-        const publicClient = await getPublicClient()
-        const signer1 = privateKeyToAccount(privateKey1)
-        const signer2 = privateKeyToAccount(privateKey2)
-        const weigthedECDSAPlugin = await createWeightedECDSAValidator(
-            publicClient,
-            {
-                config: {
-                    threshold: 100,
-                    delay: 0,
-                    signers: [
-                        { address: signer1.address, weight: 50 },
-                        { address: signer2.address, weight: 50 }
-                    ]
-                },
-                signers: [signer1, signer2]
-            }
+export const getSignersToWeightedEcdsaKernelAccount = async (
+    plugin?: KernelValidator
+): Promise<SmartAccount> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
+    if (!privateKey1 || !privateKey2) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
         )
-        const kernelAccount = await createKernelAccount(publicClient, {
+    }
+    const publicClient = await getPublicClient()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const signer2 = privateKeyToAccount(privateKey2)
+    const weigthedECDSAPlugin = await createWeightedECDSAValidator(
+        publicClient,
+        {
+            config: {
+                threshold: 100,
+                delay: 0,
+                signers: [
+                    { address: signer1.address, weight: 50 },
+                    { address: signer2.address, weight: 50 }
+                ]
+            },
+            signers: [signer1, signer2]
+        }
+    )
+
+    if (plugin) {
+        return await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                validator: plugin,
+                defaultValidator: weigthedECDSAPlugin
+            }
+        })
+    } else {
+        return await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 validator: weigthedECDSAPlugin
             }
         })
-        return kernelAccount
     }
+}
 
 export const getSignerToSessionKeyKernelAccount =
     async (): Promise<SmartAccount> => {
