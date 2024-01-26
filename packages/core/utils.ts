@@ -23,9 +23,15 @@ interface EIP1193Provider {
 }
 
 export const providerToSmartAccountSigner = async (
-    provider: EIP1193Provider
+    provider: EIP1193Provider,
+    signerAddress?: Hex
 ) => {
-    const [account] = await provider.request({ method: "eth_requestAccounts" })
+    let account: Hex
+    if (!signerAddress) {
+        ;[account] = await provider.request({ method: "eth_requestAccounts" })
+    } else {
+        account = signerAddress
+    }
     const walletClient = createWalletClient({
         account: account as Hex,
         transport: custom(provider)
