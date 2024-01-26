@@ -6,7 +6,7 @@ import {
     type Transport,
     encodeFunctionData
 } from "viem"
-import { SESSION_KEY_VALIDATOR_ADDRESS } from "."
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 
 const SessionKeyValidatorAbi = [
     {

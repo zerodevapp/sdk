@@ -20,14 +20,6 @@ export type ZeroDevPaymasterRpcSchema = [
                 entryPointAddress: Address
                 gasTokenData?: {
                     tokenAddress: Hex
-                    erc20UserOp: PartialBy<
-                        UserOperationWithBigIntAsHex,
-                        | "callGasLimit"
-                        | "preVerificationGas"
-                        | "verificationGasLimit"
-                        | "paymasterAndData"
-                    >
-                    erc20CallData: Hex
                 }
                 shouldOverrideFee?: boolean
                 manualGasEstimation?: boolean
@@ -42,6 +34,16 @@ export type ZeroDevPaymasterRpcSchema = [
             maxFeePerGas: Hex
             maxPriorityFeePerGas: Hex
         }
+    },
+    {
+        Method: "zd_pm_accounts"
+        Parameters: [
+            {
+                chainId: number
+                entryPointAddress: Address
+            }
+        ]
+        ReturnType: Address[]
     }
 ]
 
