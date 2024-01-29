@@ -1,29 +1,23 @@
-# Kernel.js
+# ZeroDev SDK
 
-> If you find yourself here, you've discovered a secret!  Kernel.js is an upcoming SDK by ZeroDev.  It's in alpha and not officially released, and the docs are still in the works.  Please proceed with caution.
-
-The [@zerodev packages](https://www.npmjs.com/org/kerneljs) are TypeScript libraries for interacting with the ERC-4337 compliant [Kernel smart account](https://github.com/zerodevapp/kernel) using various plugins, such as ECDSAValidator and SessionKeyValidator. It leverages `viem` and `permissionless` to provide a robust and permissionless interaction layer with Kernel.
-
-[See here for detailed documentation.](https://new-docs.zerodev.app/kerneljs/getting-started/intro)
+[See here for detailed documentation.](https://docs.zerodev.app)
 
 ## Examples
 
-For examples using Kernel.js, check out [the examples repo](https://github.com/zerodevapp/kernel.js-examples).
+For examples using ZeroDev, check out [the examples repo](https://github.com/zerodevapp/zerodev-examples).
 
 ## Installation
 
-To use the SDK, install the core package along with any plugins you need:
-
 ```bash
-npm install viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
+npm install @zerodev/sdk
 ```
 
 ```bash
-yarn add viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
+yarn add @zerodev/sdk
 ```
 
 ```bash
-bun install viem permissionless @zerodev/sdk@beta @zerodev/ecdsa-validator
+bun install @zerodev/sdk
 ```
 
 ## Building and Testing
