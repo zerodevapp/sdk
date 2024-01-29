@@ -413,7 +413,7 @@ describe("ECDSA kernel Account", () => {
                             userOperation?.userOperation.paymasterAndData
                         ).not.toBe("0x")
                     }
-                } catch {}
+                } catch { }
             }
 
             expect(eventFound).toBeTrue()
@@ -440,10 +440,7 @@ describe("ECDSA kernel Account", () => {
                     return zerodevPaymaster.sponsorUserOperation({
                         userOperation,
                         entryPoint: getEntryPoint(),
-                        gasTokenData: {
-                            tokenAddress:
-                                gasTokenChainAddresses[goerli.id]["6TEST"]
-                        }
+                        gasToken: gasTokenChainAddresses[goerli.id]["6TEST"],
                     })
                 }
             })
@@ -500,7 +497,7 @@ describe("ECDSA kernel Account", () => {
                     ) {
                         transferEventFound = true
                     }
-                } catch (error) {}
+                } catch (error) { }
             }
             let userOpEventFound = false
             for (const log of transactionReceipt.logs) {
@@ -524,7 +521,7 @@ describe("ECDSA kernel Account", () => {
                             userOperation?.userOperation.paymasterAndData
                         ).not.toBe("0x")
                     }
-                } catch {}
+                } catch { }
             }
 
             expect(transferEventFound).toBeTrue()

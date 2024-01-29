@@ -17,9 +17,7 @@ export type SponsorUserOperationParameters = {
         | "paymasterAndData"
     >
     entryPoint?: Address
-    gasTokenData?: {
-        tokenAddress: Hex
-    }
+    gasToken?: Hex
     shouldOverrideFee?: boolean
     shouldConsume?: boolean
 }
@@ -43,8 +41,8 @@ export const sponsorUserOperation = async (
                 ) as UserOperationWithBigIntAsHex,
                 entryPointAddress:
                     args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-                gasTokenData: args.gasTokenData && {
-                    tokenAddress: args.gasTokenData.tokenAddress
+                gasTokenData: args.gasToken && {
+                    tokenAddress: args.gasToken,
                 },
                 shouldOverrideFee: args.shouldOverrideFee ?? false,
                 shouldConsume: args.shouldConsume ?? true
