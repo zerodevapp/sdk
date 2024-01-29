@@ -5,8 +5,12 @@ import {
     type WalletClient,
     createWalletClient,
     custom,
+    encodeFunctionData,
+    erc20Abi,
     zeroAddress
 } from "viem"
+import { KERNEL_ADDRESSES } from "./accounts/index.js"
+import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import { KernelImplToVersionMap, LATEST_KERNEL_VERSION } from "./constants.js"
 
 export const getKernelVersion = (kernelImpl?: Address): string => {
@@ -44,4 +48,34 @@ export const walletClientToSmartAccountSigner = (
 ) => {
     // biome-ignore lint/suspicious/noExplicitAny: I believe this type error is because of a version mismatch between viem and permissionless
     return walletClientToCustomSigner(walletClient as any)
+}
+
+export const getERC20PaymasterApproveData = async (
+    client: ZeroDevPaymasterClient,
+    {
+        tokenAddress,
+        approveAmount
+    }: {
+        tokenAddress: Address
+        approveAmount: bigint
+    }
+): Promise<{ to: Address; value: bigint; data: Hex }> => {
+    const response = await client.request({
+        method: "zd_pm_accounts",
+        params: [
+            {
+                chainId: client.chain?.id as number,
+                entryPointAddress: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+            }
+        ]
+    })
+    return {
+        to: tokenAddress,
+        data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [response[0], approveAmount]
+        }),
+        value: 0n
+    }
 }

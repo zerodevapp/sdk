@@ -5,8 +5,10 @@ import {
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
-    createKernelAccount
+    createKernelAccount,
+    getERC20PaymasterApproveData
 } from "@zerodev/sdk"
+import { gasTokenChainAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {
@@ -22,16 +24,18 @@ import {
     Transport,
     decodeEventLog,
     encodeFunctionData,
+    erc20Abi,
     getContract,
     hashTypedData,
     keccak256,
     stringToHex,
-    toHex,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
+import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
@@ -40,7 +44,6 @@ import {
     getPublicClient,
     getSignerToEcdsaKernelAccount,
     getZeroDevPaymasterClient,
-    sleep,
     waitForNonceUpdate
 } from "./utils.js"
 
@@ -414,6 +417,118 @@ describe("ECDSA kernel Account", () => {
             }
 
             expect(eventFound).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client send transaction with ERC20 paymaster",
+        async () => {
+            const account = await getSignerToEcdsaKernelAccount()
+
+            const publicClient = await getPublicClient()
+
+            const bundlerClient = getKernelBundlerClient()
+
+            const kernelClient = await getKernelAccountClient({
+                account,
+                sponsorUserOperation: async ({
+                    entryPoint: _entryPoint,
+                    userOperation
+                }): Promise<UserOperation> => {
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint: getEntryPoint(),
+                        gasTokenData: {
+                            tokenAddress:
+                                gasTokenChainAddresses[goerli.id]["6TEST"]
+                        }
+                    })
+                }
+            })
+
+            const pmClient = await getZeroDevPaymasterClient()
+            const response = await kernelClient.sendTransactions({
+                transactions: [
+                    {
+                        to: gasTokenChainAddresses[goerli.id]["6TEST"],
+                        data: encodeFunctionData({
+                            abi: TEST_ERC20Abi,
+                            functionName: "mint",
+                            args: [account.address, 100000n]
+                        }),
+                        value: 0n
+                    },
+                    await getERC20PaymasterApproveData(pmClient, {
+                        tokenAddress:
+                            gasTokenChainAddresses[goerli.id]["6TEST"],
+                        approveAmount: 100000n
+                    }),
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }
+                ]
+            })
+
+            console.log(
+                "erc20PMTransaction:",
+                `https://mumbai.polygonscan.com/tx/${response}`
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(66)
+            expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: response
+                })
+
+            let transferEventFound = false
+            for (const log of transactionReceipt.logs) {
+                try {
+                    const event = decodeEventLog({
+                        abi: erc20Abi,
+                        ...log
+                    })
+                    if (
+                        event.eventName === "Transfer" &&
+                        event.args.from === account.address
+                    ) {
+                        transferEventFound = true
+                    }
+                } catch (error) {}
+            }
+            let userOpEventFound = false
+            for (const log of transactionReceipt.logs) {
+                // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
+                try {
+                    const event = decodeEventLog({
+                        abi: EntryPointAbi,
+                        ...log
+                    })
+                    if (event.eventName === "UserOperationEvent") {
+                        userOpEventFound = true
+                        console.log(
+                            "jiffyScanLink:",
+                            `https://jiffyscan.xyz/userOpHash/${event.args.userOpHash}?network=mumbai/`
+                        )
+                        const userOperation =
+                            await bundlerClient.getUserOperationByHash({
+                                hash: event.args.userOpHash
+                            })
+                        expect(
+                            userOperation?.userOperation.paymasterAndData
+                        ).not.toBe("0x")
+                    }
+                } catch {}
+            }
+
+            expect(transferEventFound).toBeTrue()
+            expect(userOpEventFound).toBeTrue()
         },
         TEST_TIMEOUT
     )
