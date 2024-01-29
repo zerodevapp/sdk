@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/presets",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
