@@ -42,7 +42,7 @@ export const sponsorUserOperation = async (
                 entryPointAddress:
                     args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
                 gasTokenData: args.gasToken && {
-                    tokenAddress: args.gasToken,
+                    tokenAddress: args.gasToken
                 },
                 shouldOverrideFee: args.shouldOverrideFee ?? false,
                 shouldConsume: args.shouldConsume ?? true

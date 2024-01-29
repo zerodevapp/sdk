@@ -50,13 +50,13 @@ export const walletClientToSmartAccountSigner = (
     return walletClientToCustomSigner(walletClient as any)
 }
 
-export const getERC20PaymasterApproveData = async (
+export const getERC20PaymasterApproveCall = async (
     client: ZeroDevPaymasterClient,
     {
-        tokenAddress,
+        gasToken,
         approveAmount
     }: {
-        tokenAddress: Address
+        gasToken: Address
         approveAmount: bigint
     }
 ): Promise<{ to: Address; value: bigint; data: Hex }> => {
@@ -70,7 +70,7 @@ export const getERC20PaymasterApproveData = async (
         ]
     })
     return {
-        to: tokenAddress,
+        to: gasToken,
         data: encodeFunctionData({
             abi: erc20Abi,
             functionName: "approve",

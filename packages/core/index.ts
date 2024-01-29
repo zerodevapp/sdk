@@ -35,6 +35,6 @@ export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"
 export {
-    gasTokenChainAddresses,
+    gasTokenAddresses,
     type TokenSymbolsMap
-} from "./gasTokenChainAddresses.js"
+} from "./gasTokenAddresses.js"

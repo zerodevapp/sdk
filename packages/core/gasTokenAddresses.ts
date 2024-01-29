@@ -310,7 +310,7 @@ export type TokenSymbolsMap = {
     11155420: "6TEST"
 }
 
-export const gasTokenChainAddresses: {
+export const gasTokenAddresses: {
     [chainId in keyof TokenSymbolsMap]: {
         [token in TokenSymbolsMap[chainId]]: Hex
     }

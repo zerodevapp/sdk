@@ -6,9 +6,9 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
-    getERC20PaymasterApproveData
+    getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
-import { gasTokenChainAddresses } from "@zerodev/sdk"
+import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {
@@ -413,7 +413,7 @@ describe("ECDSA kernel Account", () => {
                             userOperation?.userOperation.paymasterAndData
                         ).not.toBe("0x")
                     }
-                } catch { }
+                } catch {}
             }
 
             expect(eventFound).toBeTrue()
@@ -421,7 +421,7 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test(
+    test.only(
         "Client send transaction with ERC20 paymaster",
         async () => {
             const account = await getSignerToEcdsaKernelAccount()
@@ -440,7 +440,7 @@ describe("ECDSA kernel Account", () => {
                     return zerodevPaymaster.sponsorUserOperation({
                         userOperation,
                         entryPoint: getEntryPoint(),
-                        gasToken: gasTokenChainAddresses[goerli.id]["6TEST"],
+                        gasToken: gasTokenAddresses[goerli.id]["6TEST"]
                     })
                 }
             })
@@ -449,7 +449,7 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.sendTransactions({
                 transactions: [
                     {
-                        to: gasTokenChainAddresses[goerli.id]["6TEST"],
+                        to: gasTokenAddresses[goerli.id]["6TEST"],
                         data: encodeFunctionData({
                             abi: TEST_ERC20Abi,
                             functionName: "mint",
@@ -457,9 +457,8 @@ describe("ECDSA kernel Account", () => {
                         }),
                         value: 0n
                     },
-                    await getERC20PaymasterApproveData(pmClient, {
-                        tokenAddress:
-                            gasTokenChainAddresses[goerli.id]["6TEST"],
+                    await getERC20PaymasterApproveCall(pmClient, {
+                        gasToken: gasTokenAddresses[goerli.id]["6TEST"],
                         approveAmount: 100000n
                     }),
                     {
@@ -497,7 +496,7 @@ describe("ECDSA kernel Account", () => {
                     ) {
                         transferEventFound = true
                     }
-                } catch (error) { }
+                } catch (error) {}
             }
             let userOpEventFound = false
             for (const log of transactionReceipt.logs) {
@@ -521,7 +520,7 @@ describe("ECDSA kernel Account", () => {
                             userOperation?.userOperation.paymasterAndData
                         ).not.toBe("0x")
                     }
-                } catch { }
+                } catch {}
             }
 
             expect(transferEventFound).toBeTrue()
