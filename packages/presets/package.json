@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/presets",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -50,8 +50,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@zerodev/sdk": "^5.0.0-beta.0",
-    "@zerodev/ecdsa-validator": "^5.0.0-beta.0",
+    "@zerodev/sdk": "^5.0.2",
+    "@zerodev/ecdsa-validator": "^5.0.2",
     "permissionless": "^0.0.30",
     "viem": "^2.0.0"
   }
