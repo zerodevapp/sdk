@@ -1,10 +1,11 @@
+import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
-    getUserOperationHash,
     type SmartAccountClient,
-    type UserOperation
+    type UserOperation,
+    getUserOperationHash
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -18,15 +19,14 @@ import {
     type TypedDataDefinition,
     encodeAbiParameters,
     encodeFunctionData,
+    hashMessage,
     keccak256,
-    parseAbiParameters,
-    hashMessage
+    parseAbiParameters
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
