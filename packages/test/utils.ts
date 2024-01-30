@@ -261,7 +261,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     })
 }
 
-const DEFAULT_PROVIDER = "ALCHEMY"
+const DEFAULT_PROVIDER = "PIMLICO"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID

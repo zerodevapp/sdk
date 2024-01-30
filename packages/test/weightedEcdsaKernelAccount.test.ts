@@ -119,7 +119,6 @@ describe("Weighted ECDSA kernel Account", () => {
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
-    // TODO: activate this test when the valdiateSignature function is implemented
     // test(
     //     "Client signMessage should return a valid signature",
     //     async () => {
@@ -170,6 +169,7 @@ describe("Weighted ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
+    // TODO: it should send transactions without paymaster
     test(
         "Smart account client send multiple transactions",
         async () => {
@@ -296,7 +296,7 @@ describe("Weighted ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.only(
+    test(
         "Create a session key and send txn with it",
         async () => {
             const sessionPrivateKey = generatePrivateKey()

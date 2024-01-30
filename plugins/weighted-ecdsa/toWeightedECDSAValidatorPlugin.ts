@@ -19,7 +19,6 @@ import {
     type TypedDataDefinition,
     encodeAbiParameters,
     encodeFunctionData,
-    hashMessage,
     keccak256,
     parseAbiParameters
 } from "viem"
@@ -158,7 +157,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.1",
+                        version: "0.0.2",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -188,16 +187,18 @@ export async function createWeightedECDSAValidator<
                 chainId: chainId
             })
 
-            const signature = await signers[signers.length - 1].signMessage({
-                message: { raw: hashMessage(userOpHash) }
-            })
+            const lastSignature = await signers[signers.length - 1].signMessage(
+                {
+                    message: { raw: userOpHash }
+                }
+            )
 
             // Remove the '0x' prefix
-            signatures += signature.startsWith("0x")
-                ? signature.substring(2)
-                : signature
+            signatures += lastSignature.startsWith("0x")
+                ? lastSignature.substring(2)
+                : lastSignature
 
-            return signatures as `0x${string}`
+            return `0x${signatures}`
         },
 
         // Get simple dummy signature
@@ -221,7 +222,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.1",
+                        version: "0.0.2",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -241,25 +242,15 @@ export async function createWeightedECDSAValidator<
                     : signature
             }
             // last signer signs for userOpHash
-            const userOpHash = getUserOperationHash({
-                userOperation: {
-                    ...userOperation,
-                    signature: "0x"
-                },
-                entryPoint: entryPoint,
-                chainId: chainId
-            })
-
-            const signature = await signers[signers.length - 1].signMessage({
-                message: { raw: hashMessage(userOpHash) }
-            })
+            const signature =
+                "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
 
             // Remove the '0x' prefix
             signatures += signature.startsWith("0x")
                 ? signature.substring(2)
                 : signature
 
-            return signatures as `0x${string}`
+            return `0x${signatures}`
         },
 
         async getValidatorMode() {
