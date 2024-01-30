@@ -1,7 +1,11 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type SmartAccountClient, type UserOperation } from "permissionless"
+import {
+    getUserOperationHash,
+    type SmartAccountClient,
+    type UserOperation
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -15,12 +19,14 @@ import {
     encodeAbiParameters,
     encodeFunctionData,
     keccak256,
-    parseAbiParameters
+    parseAbiParameters,
+    hashMessage
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
+import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
@@ -41,6 +47,7 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers,
+        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
     }: {
         config?: WeightedECDSAValidatorConfig
@@ -145,7 +152,9 @@ export async function createWeightedECDSAValidator<
             )
 
             let signatures = ""
-            for (const signer of signers) {
+            // n - 1 signers sign for callDataAndNonceHash
+            for (let i = 0; i < signers.length - 1; i++) {
+                const signer = signers[i]
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
@@ -169,10 +178,30 @@ export async function createWeightedECDSAValidator<
                     : signature
             }
 
+            // last signer signs for userOpHash
+            const userOpHash = getUserOperationHash({
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                },
+                entryPoint: entryPoint,
+                chainId: chainId
+            })
+
+            const signature = await signers[signers.length - 1].signMessage({
+                message: { raw: hashMessage(userOpHash) }
+            })
+
+            // Remove the '0x' prefix
+            signatures += signature.startsWith("0x")
+                ? signature.substring(2)
+                : signature
+
             return signatures as `0x${string}`
         },
 
         // Get simple dummy signature
+        // Equivalent to signUserOperation for now
         async getDummySignature(userOperation: UserOperation) {
             const callDataAndNonceHash = keccak256(
                 encodeAbiParameters(
@@ -186,7 +215,9 @@ export async function createWeightedECDSAValidator<
             )
 
             let signatures = ""
-            for (const signer of signers) {
+            // n - 1 signers sign for callDataAndNonceHash
+            for (let i = 0; i < signers.length - 1; i++) {
+                const signer = signers[i]
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
@@ -209,6 +240,24 @@ export async function createWeightedECDSAValidator<
                     ? signature.substring(2)
                     : signature
             }
+            // last signer signs for userOpHash
+            const userOpHash = getUserOperationHash({
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                },
+                entryPoint: entryPoint,
+                chainId: chainId
+            })
+
+            const signature = await signers[signers.length - 1].signMessage({
+                message: { raw: hashMessage(userOpHash) }
+            })
+
+            // Remove the '0x' prefix
+            signatures += signature.startsWith("0x")
+                ? signature.substring(2)
+                : signature
 
             return signatures as `0x${string}`
         },

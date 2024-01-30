@@ -6,5 +6,6 @@ import {
 
 export { createWeightedECDSAValidator, updateConfig, type KernelValidator }
 
+/// @dev note that only deployed on polygon-mumbai now
 export const WEIGHTED_ECDSA_VALIDATOR_ADDRESS =
-    "0x4aF8d54FA0D551224a93168160992Fc2427f2BF0"
+    "0x30e5da962BB73ee52e105275C3a10D3F3DdFea0c"
