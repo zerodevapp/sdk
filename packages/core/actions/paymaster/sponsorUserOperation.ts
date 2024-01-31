@@ -17,17 +17,7 @@ export type SponsorUserOperationParameters = {
         | "paymasterAndData"
     >
     entryPoint?: Address
-    gasTokenData?: {
-        tokenAddress: Hex
-        erc20UserOp: PartialBy<
-            UserOperation,
-            | "callGasLimit"
-            | "preVerificationGas"
-            | "verificationGasLimit"
-            | "paymasterAndData"
-        >
-        erc20CallData: Hex
-    }
+    gasToken?: Hex
     shouldOverrideFee?: boolean
     shouldConsume?: boolean
 }
@@ -51,12 +41,8 @@ export const sponsorUserOperation = async (
                 ) as UserOperationWithBigIntAsHex,
                 entryPointAddress:
                     args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-                gasTokenData: args.gasTokenData && {
-                    tokenAddress: args.gasTokenData.tokenAddress,
-                    erc20UserOp: deepHexlify(
-                        args.gasTokenData.erc20UserOp
-                    ) as UserOperationWithBigIntAsHex,
-                    erc20CallData: args.gasTokenData.erc20CallData
+                gasTokenData: args.gasToken && {
+                    tokenAddress: args.gasToken
                 },
                 shouldOverrideFee: args.shouldOverrideFee ?? false,
                 shouldConsume: args.shouldConsume ?? true

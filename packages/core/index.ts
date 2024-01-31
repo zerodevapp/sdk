@@ -34,3 +34,7 @@ export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
 export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"
+export {
+    gasTokenAddresses,
+    type TokenSymbolsMap
+} from "./gasTokenAddresses.js"

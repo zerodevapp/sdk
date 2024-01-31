@@ -43,7 +43,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
     getZeroDevPaymasterClient
-} from "./utils"
+} from "./utils.js"
 
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient

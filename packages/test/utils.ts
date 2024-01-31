@@ -261,7 +261,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     })
 }
 
-const DEFAULT_PROVIDER = "PIMLICO"
+const DEFAULT_PROVIDER = "STACKUP"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
@@ -363,13 +363,31 @@ export const getZeroDevPaymasterClient = () => {
         )
     if (!process.env.ZERODEV_PROJECT_ID)
         throw new Error("ZERODEV_PROJECT_ID environment variable not set")
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
 
     const chain = getTestingChain()
 
     return createZeroDevPaymasterClient({
         chain: chain,
         transport: http(getPaymasterRpc())
+    })
+}
+
+export const getZeroDevERC20PaymasterClient = () => {
+    if (!process.env.ZERODEV_PAYMASTER_RPC_HOST)
+        throw new Error(
+            "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
+        )
+    if (!process.env.ZERODEV_PROJECT_ID)
+        throw new Error("ZERODEV_PROJECT_ID environment variable not set")
+
+    const chain = getTestingChain()
+
+    return createZeroDevPaymasterClient({
+        chain: chain,
+        transport: http(
+            // currently the ERC20 paymaster must be used with StackUp
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${process.env.ZERODEV_PROJECT_ID}?paymasterProvider=STACKUP`
+        )
     })
 }
 
