@@ -1,10 +1,6 @@
-import { walletClientToCustomSigner } from "permissionless"
 import {
     type Address,
     type Hex,
-    type WalletClient,
-    createWalletClient,
-    custom,
     encodeFunctionData,
     erc20Abi,
     zeroAddress
@@ -19,35 +15,6 @@ export const getKernelVersion = (kernelImpl?: Address): string => {
         if (addr.toLowerCase() === kernelImpl.toLowerCase()) return ver
     }
     return "0.2.1"
-}
-
-interface EIP1193Provider {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    request(args: { method: string; params?: Array<any> }): Promise<any>
-}
-
-export const providerToSmartAccountSigner = async (
-    provider: EIP1193Provider,
-    signerAddress?: Hex
-) => {
-    let account: Hex
-    if (!signerAddress) {
-        ;[account] = await provider.request({ method: "eth_requestAccounts" })
-    } else {
-        account = signerAddress
-    }
-    const walletClient = createWalletClient({
-        account: account as Hex,
-        transport: custom(provider)
-    })
-    return walletClientToCustomSigner(walletClient)
-}
-
-export const walletClientToSmartAccountSigner = (
-    walletClient: WalletClient
-) => {
-    // biome-ignore lint/suspicious/noExplicitAny: I believe this type error is because of a version mismatch between viem and permissionless
-    return walletClientToCustomSigner(walletClient as any)
 }
 
 export const getERC20PaymasterApproveCall = async (
