@@ -404,8 +404,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
-    const signer = await this.signer();
-    return await signer.signTypedData({
+    return await this.signTypedData({
       domain: {
         name: "WeightedECDSAValidator",
         version: "0.0.1",

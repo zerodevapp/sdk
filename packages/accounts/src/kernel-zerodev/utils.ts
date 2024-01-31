@@ -85,7 +85,9 @@ export const convertWalletClientToAccountSigner = (
               },
       })) as `0x${string}`,
     signTypedData: async (params: SignTypedDataParams) =>
-      await client.signTypedData({ ...params, account: client.account! }),
+      fixSignedData(
+        await client.signTypedData({ ...params, account: client.account! })
+      ),
   };
 };
 
@@ -104,11 +106,13 @@ export const convertEthersSignerToAccountSigner = (
       if (!isWallet(signer)) {
         throw Error("signTypedData method not implemented in signer");
       }
-      return (await signer._signTypedData(
-        params.domain!,
-        params.types as unknown as Record<string, TypedDataField[]>,
-        params.message
-      )) as Hex;
+      return fixSignedData(
+        (await signer._signTypedData(
+          params.domain!,
+          params.types as unknown as Record<string, TypedDataField[]>,
+          params.message
+        )) as Hex
+      );
     },
   };
 };
