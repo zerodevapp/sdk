@@ -17,12 +17,12 @@ import {
     encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
+    hashMessage,
     hashTypedData,
     keccak256,
     parseAbi,
     stringToHex,
-    validateTypedData,
-    hashMessage
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode } from "viem/actions"

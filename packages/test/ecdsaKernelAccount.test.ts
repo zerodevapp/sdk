@@ -26,11 +26,11 @@ import {
     encodeFunctionData,
     erc20Abi,
     getContract,
+    hashMessage,
     hashTypedData,
     keccak256,
     stringToHex,
-    zeroAddress,
-    hashMessage
+    zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { goerli } from "viem/chains"
