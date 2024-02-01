@@ -26,11 +26,11 @@ import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
-    delay: number // in seconds
     signers: Array<{
         address: Address
         weight: number
     }>
+    delay?: number // in seconds
 }
 
 export async function createWeightedECDSAValidator<
@@ -127,7 +127,7 @@ export async function createWeightedECDSAValidator<
                     config.signers.map((signer) => signer.address),
                     config.signers.map((signer) => signer.weight),
                     config.threshold,
-                    config.delay
+                    config.delay || 0
                 ]
             )
         },
@@ -271,7 +271,7 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
                 newConfig.signers.map((signer) => signer.address) ?? [],
                 newConfig.signers.map((signer) => signer.weight) ?? [],
                 newConfig.threshold,
-                newConfig.delay
+                newConfig.delay || 0
             ]
         })
     }
