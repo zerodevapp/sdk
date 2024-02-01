@@ -2,11 +2,7 @@ import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import {
-    type SmartAccountClient,
-    type UserOperation,
-    getUserOperationHash
-} from "permissionless"
+import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -15,6 +11,7 @@ import {
     type Address,
     type Chain,
     type Client,
+    type Hex,
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
@@ -259,31 +256,21 @@ export async function createWeightedECDSAValidator<
     }
 }
 
-export async function updateConfig(
-    kernelClient: SmartAccountClient,
+export async function getUpdateConfigCall(
     newConfig: WeightedECDSAValidatorConfig
-) {
-    if (!kernelClient.account) {
-        throw new Error("Kernel account is not initialized")
+): Promise<{ to: Address; value: bigint; data: Hex }> {
+    return {
+        to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
+        value: 0n,
+        data: encodeFunctionData({
+            abi: WeightedValidatorAbi,
+            functionName: "renew",
+            args: [
+                newConfig.signers.map((signer) => signer.address) ?? [],
+                newConfig.signers.map((signer) => signer.weight) ?? [],
+                newConfig.threshold,
+                newConfig.delay
+            ]
+        })
     }
-
-    await kernelClient.sendUserOperation({
-        account: kernelClient.account,
-        userOperation: {
-            callData: await kernelClient.account.encodeCallData({
-                to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
-                value: 0n,
-                data: encodeFunctionData({
-                    abi: WeightedValidatorAbi,
-                    functionName: "renew",
-                    args: [
-                        newConfig.signers.map((signer) => signer.address) ?? [],
-                        newConfig.signers.map((signer) => signer.weight) ?? [],
-                        newConfig.threshold,
-                        newConfig.delay
-                    ]
-                })
-            })
-        }
-    })
 }
