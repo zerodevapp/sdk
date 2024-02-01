@@ -256,9 +256,11 @@ export async function createWeightedECDSAValidator<
     }
 }
 
-export async function getUpdateConfigCall(
-    newConfig: WeightedECDSAValidatorConfig
-): Promise<{ to: Address; value: bigint; data: Hex }> {
+export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
+    to: Address
+    value: bigint
+    data: Hex
+} {
     return {
         to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
         value: 0n,
