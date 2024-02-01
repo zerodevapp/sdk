@@ -26,6 +26,7 @@ import {
     encodeFunctionData,
     erc20Abi,
     getContract,
+    hashMessage,
     hashTypedData,
     keccak256,
     stringToHex,
@@ -139,7 +140,7 @@ describe("ECDSA kernel Account", () => {
                 address: account.address,
                 abi: EIP1271ABI,
                 functionName: "isValidSignature",
-                args: [keccak256(stringToHex(message)), response]
+                args: [hashMessage(message), response]
             })
             expect(eip1271response).toEqual("0x1626ba7e")
             expect(response).toBeString()

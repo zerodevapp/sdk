@@ -17,6 +17,7 @@ import {
     encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
+    hashMessage,
     hashTypedData,
     keccak256,
     parseAbi,
@@ -322,11 +323,7 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            let messageHash: Hex
-            if (typeof message === "string")
-                messageHash = keccak256(stringToHex(message))
-            else messageHash = keccak256(message.raw)
-            return signHashedMessage(messageHash)
+            return signHashedMessage(hashMessage(message))
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
