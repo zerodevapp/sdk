@@ -54,45 +54,44 @@ export async function toKernelPluginManager<
         accountAddress: Address,
         selector: Hex
     ): Promise<Hex> => {
-        let mode: Hex
-        if (sudo && regular) {
+        if (regular) {
             if (await regular.isEnabled(accountAddress, selector)) {
-                mode = ValidatorMode.plugin
-            } else {
-                mode = ValidatorMode.enable
+                return ValidatorMode.plugin
             }
+
+            const enableSignature =
+                await getPluginEnableSignature(accountAddress)
+            const enableData = await regular.getEnableData(accountAddress)
+            const enableDataLength = enableData.length / 2 - 1
+            if (!enableSignature) {
+                throw new Error("Enable signature not set")
+            }
+
+            return concat([
+                ValidatorMode.enable,
+                pad(toHex(validUntil), { size: 6 }), // 6 bytes 4 - 10
+                pad(toHex(validAfter), { size: 6 }), // 6 bytes 10 - 16
+                pad(regular.address, { size: 20 }), // 20 bytes 16 - 36
+                pad(executorData.executor, { size: 20 }), // 20 bytes 36 - 56
+                pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
+                enableData, // 88 - 88 + enableData.length
+                pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
+                enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
+            ])
         } else if (sudo) {
             return ValidatorMode.sudo
-        } else if (regular) {
-            return ValidatorMode.plugin
         } else {
             throw new Error("One of `sudo` or `regular` validator must be set")
         }
-
-        const enableSignature = await getPluginEnableSignature(accountAddress)
-        const enableData = await regular.getEnableData(accountAddress)
-        const enableDataLength = enableData.length / 2 - 1
-        if (!enableSignature) {
-            throw new Error("Enable signature not set")
-        }
-
-        return concat([
-            mode, // 4 bytes 0 - 4
-            pad(toHex(validUntil), { size: 6 }), // 6 bytes 4 - 10
-            pad(toHex(validAfter), { size: 6 }), // 6 bytes 10 - 16
-            pad(regular.address, { size: 20 }), // 20 bytes 16 - 36
-            pad(executorData.executor, { size: 20 }), // 20 bytes 36 - 56
-            pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
-            enableData, // 88 - 88 + enableData.length
-            pad(toHex(enableSignature.length / 2 - 1), { size: 32 }), // 32 bytes 88 + enableData.length - 120 + enableData.length
-            enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
-        ])
     }
 
     const getPluginEnableSignature = async (accountAddress: Address) => {
         if (pluginEnableSignature) return pluginEnableSignature
-        if (!sudo) return "0x"
-        if (!regular) throw new Error("regular validators not set")
+        if (!sudo)
+            throw new Error(
+                "sudo validator not set -- need it to enable the validator"
+            )
+        if (!regular) throw new Error("regular validator not set")
         let kernelImplAddr: Address | undefined
         try {
             const strgAddr = await getAction(
