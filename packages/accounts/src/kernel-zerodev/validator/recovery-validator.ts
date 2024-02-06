@@ -1,4 +1,5 @@
 import {
+  getUserOperationHash,
   type Address,
   type Hex,
   type SmartAccountSigner,
@@ -27,6 +28,7 @@ import {
   publicActions,
   getFunctionSelector,
   type PublicClient,
+  toBytes,
 } from "viem";
 import { WeightedValidatorAbi } from "../abis/WeightedValidatorAbi.js";
 import { getChainId, getRecoveryData } from "../api/index.js";
@@ -422,10 +424,19 @@ export class RecoveryValidator extends KernelBaseValidator {
     });
   }
 
-  async signUserOp(_userOp: UserOperationRequest): Promise<Hex> {
+  async signUserOp(userOp: UserOperationRequest): Promise<Hex> {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
-    return this.signatures ?? DUMMY_ECDSA_SIG;
+    const hash = getUserOperationHash(
+      {
+        ...userOp,
+        signature: "0x",
+      },
+      this.entryPointAddress,
+      BigInt(this.chain.id)
+    );
+    const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
+    return await this.signMessage(formattedMessage);
   }
 }
