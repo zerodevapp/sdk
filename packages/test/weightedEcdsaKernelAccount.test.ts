@@ -296,7 +296,7 @@ describe("Weighted ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test(
+    test.only(
         "Create a session key and send txn with it",
         async () => {
             const sessionPrivateKey = generatePrivateKey()

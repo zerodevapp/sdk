@@ -237,8 +237,8 @@ export async function createKernelAccount<
     const kernelPluginManager = isKernelPluginManager(plugins)
         ? plugins
         : await toKernelPluginManager(client, {
-              validator: plugins.validator,
-              defaultValidator: plugins.defaultValidator,
+              sudo: plugins.sudo,
+              regular: plugins.regular,
               executorData: plugins.executorData,
               pluginEnableSignature: plugins.pluginEnableSignature
           })

@@ -28,8 +28,6 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    keccak256,
-    stringToHex,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
@@ -293,7 +291,6 @@ describe("ECDSA kernel Account", () => {
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const bundlerClient = kernelClient.extend(bundlerActions)
             const userOpHash = await bundlerClient.sendUserOperation({
                 userOperation: userOp,
                 entryPoint: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
@@ -578,7 +575,7 @@ describe("ECDSA kernel Account", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        validator: ecdsaValidatorPlugin
+                        sudo: ecdsaValidatorPlugin
                     },
                     deployedAccountAddress
                 }

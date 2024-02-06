@@ -35,8 +35,8 @@ export async function toKernelPluginManager<
 >(
     client: Client<TTransport, TChain>,
     {
-        validator,
-        defaultValidator,
+        sudo,
+        regular,
         pluginEnableSignature,
         validatorInitData,
         executorData = {
@@ -54,22 +54,33 @@ export async function toKernelPluginManager<
         accountAddress: Address,
         selector: Hex
     ): Promise<Hex> => {
-        const enableSignature = await getPluginEnableSignature(accountAddress)
-        const mode = await validator.getValidatorMode(accountAddress, selector)
-
-        if (mode === ValidatorMode.plugin || mode === ValidatorMode.sudo) {
-            return mode
+        let mode: Hex
+        if (sudo && regular) {
+            if (await regular.isEnabled(accountAddress, selector)) {
+                mode = ValidatorMode.plugin
+            } else {
+                mode = ValidatorMode.enable
+            }
+        } else if (sudo) {
+            return ValidatorMode.sudo
+        } else if (regular) {
+            return ValidatorMode.plugin
+        } else {
+            throw new Error("One of `sudo` or `regular` validator must be set")
         }
-        const enableData = await validator.getEnableData(accountAddress)
+
+        const enableSignature = await getPluginEnableSignature(accountAddress)
+        const enableData = await regular.getEnableData(accountAddress)
         const enableDataLength = enableData.length / 2 - 1
         if (!enableSignature) {
             throw new Error("Enable signature not set")
         }
+
         return concat([
             mode, // 4 bytes 0 - 4
             pad(toHex(validUntil), { size: 6 }), // 6 bytes 4 - 10
             pad(toHex(validAfter), { size: 6 }), // 6 bytes 10 - 16
-            pad(validator.address, { size: 20 }), // 20 bytes 16 - 36
+            pad(regular.address, { size: 20 }), // 20 bytes 16 - 36
             pad(executorData.executor, { size: 20 }), // 20 bytes 36 - 56
             pad(toHex(enableDataLength), { size: 32 }), // 32 bytes 56 - 88
             enableData, // 88 - 88 + enableData.length
@@ -77,12 +88,11 @@ export async function toKernelPluginManager<
             enableSignature // 120 + enableData.length - 120 + enableData.length + enableSignature.length
         ])
     }
+
     const getPluginEnableSignature = async (accountAddress: Address) => {
         if (pluginEnableSignature) return pluginEnableSignature
-        if (!defaultValidator) return "0x"
-        // if (!executorData.selector || !executorData.executor) {
-        //     throw new Error("Invalid executor data")
-        // }
+        if (!sudo) return "0x"
+        if (!regular) throw new Error("regular validators not set")
         let kernelImplAddr: Address | undefined
         try {
             const strgAddr = await getAction(
@@ -94,7 +104,7 @@ export async function toKernelPluginManager<
             })
             if (strgAddr) kernelImplAddr = `0x${strgAddr.slice(26)}` as Hex
         } catch (error) {}
-        const ownerSig = await defaultValidator.signTypedData({
+        const ownerSig = await sudo.signTypedData({
             domain: {
                 name: "Kernel",
                 version: kernelImplAddr
@@ -121,27 +131,32 @@ export async function toKernelPluginManager<
                         pad(toHex(validAfter ?? 0), {
                             size: 6
                         }),
-                        validator.address
+                        regular.address
                     ]),
                     { size: 32 }
                 ),
                 executor: executorData.executor as Address,
-                enableData: await validator.getEnableData(accountAddress)
+                enableData: await regular.getEnableData(accountAddress)
             },
             primaryType: "ValidatorApproved"
         })
         return ownerSig
     }
 
+    const activeValidator = regular || sudo
+    if (!activeValidator) {
+        throw new Error("One of `sudo` or `regular` validator must be set")
+    }
+
     return {
-        ...validator,
+        ...activeValidator,
         signUserOperation: async (userOperation) => {
             return concatHex([
                 await getValidatorSignature(
                     userOperation.sender,
                     userOperation.callData.toString().slice(0, 10) as Hex
                 ),
-                await validator.signUserOperation(userOperation)
+                await activeValidator.signUserOperation(userOperation)
             ])
         },
         getExecutorData: () => executorData,
@@ -155,18 +170,18 @@ export async function toKernelPluginManager<
                     userOperation.sender,
                     userOperation.callData.toString().slice(0, 10) as Hex
                 ),
-                await validator.getDummySignature(userOperation)
+                await activeValidator.getDummySignature(userOperation)
             ])
         },
         getPluginEnableSignature,
         getValidatorInitData: async () => {
             if (validatorInitData) return validatorInitData
             return {
-                validatorAddress:
-                    defaultValidator?.address ?? validator.address,
+                validatorAddress: sudo?.address ?? activeValidator.address,
+
                 enableData:
-                    (await defaultValidator?.getEnableData()) ??
-                    (await validator.getEnableData())
+                    (await sudo?.getEnableData()) ??
+                    (await activeValidator.getEnableData())
             }
         }
     }

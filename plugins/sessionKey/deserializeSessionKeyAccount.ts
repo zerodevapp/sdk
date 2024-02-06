@@ -33,7 +33,7 @@ export const deserializeSessionKeyAccount = async <
     )
 
     const kernelPluginManager = await toKernelPluginManager(client, {
-        validator: sessionKeyPlugin,
+        regular: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
         executorData: params.executorData,

@@ -1,8 +1,11 @@
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
+import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
-import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    type UserOperation,
+    getAction,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -20,7 +23,7 @@ import {
     parseAbiParameters
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getChainId } from "viem/actions"
+import { getChainId, readContract } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
@@ -250,8 +253,27 @@ export async function createWeightedECDSAValidator<
             return `0x${signatures}`
         },
 
-        async getValidatorMode() {
-            return ValidatorMode.sudo
+        async isEnabled(
+            kernelAccountAddress: Address,
+            selector: Hex
+        ): Promise<boolean> {
+            try {
+                const execDetail = await getAction(
+                    client,
+                    readContract
+                )({
+                    abi: KernelAccountAbi,
+                    address: kernelAccountAddress,
+                    functionName: "getExecution",
+                    args: [selector]
+                })
+                return (
+                    execDetail.validator.toLowerCase() ===
+                    validatorAddress.toLowerCase()
+                )
+            } catch (error) {
+                return false
+            }
         }
     }
 }
