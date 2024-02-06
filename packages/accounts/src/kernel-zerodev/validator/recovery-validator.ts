@@ -282,8 +282,9 @@ export class RecoveryValidator extends KernelBaseValidator {
       const guardians: WeightedGuardians = {};
 
       let nextGuardian = firstGuardian;
+      const sentinelValue = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"; 
       while (
-        nextGuardian.toLowerCase() !== kernelAccountAddress.toLowerCase()
+        nextGuardian.toLowerCase() !== sentinelValue.toLowerCase()
       ) {
         const guardianStorage = await publicClient.readContract({
           abi: WeightedValidatorAbi,

@@ -1,442 +1,268 @@
 export const WeightedValidatorAbi = [
   {
-    inputs: [],
-    name: "NotImplemented",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "bytes32",
-        name: "_callDataAndNonceHash",
-        type: "bytes32",
-      },
-      {
-        internalType: "address",
-        name: "_kernel",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "approve",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [
       {
-        internalType: "bytes32",
         name: "_callDataAndNonceHash",
         type: "bytes32",
+        internalType: "bytes32",
       },
-      {
-        internalType: "address",
-        name: "_kernel",
-        type: "address",
-      },
-      {
-        internalType: "bytes",
-        name: "sigs",
-        type: "bytes",
-      },
+      { name: "_kernel", type: "address", internalType: "address" },
     ],
-    name: "approveWithSig",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "approveWithSig",
     inputs: [
       {
-        internalType: "bytes",
-        name: "",
-        type: "bytes",
+        name: "_callDataAndNonceHash",
+        type: "bytes32",
+        internalType: "bytes32",
       },
+      { name: "_kernel", type: "address", internalType: "address" },
+      { name: "sigs", type: "bytes", internalType: "bytes" },
     ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "disable",
+    inputs: [{ name: "", type: "bytes", internalType: "bytes" }],
     outputs: [],
     stateMutability: "payable",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "eip712Domain",
+    inputs: [],
     outputs: [
-      {
-        internalType: "bytes1",
-        name: "fields",
-        type: "bytes1",
-      },
-      {
-        internalType: "string",
-        name: "name",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "version",
-        type: "string",
-      },
-      {
-        internalType: "uint256",
-        name: "chainId",
-        type: "uint256",
-      },
-      {
-        internalType: "address",
-        name: "verifyingContract",
-        type: "address",
-      },
-      {
-        internalType: "bytes32",
-        name: "salt",
-        type: "bytes32",
-      },
-      {
-        internalType: "uint256[]",
-        name: "extensions",
-        type: "uint256[]",
-      },
+      { name: "fields", type: "bytes1", internalType: "bytes1" },
+      { name: "name", type: "string", internalType: "string" },
+      { name: "version", type: "string", internalType: "string" },
+      { name: "chainId", type: "uint256", internalType: "uint256" },
+      { name: "verifyingContract", type: "address", internalType: "address" },
+      { name: "salt", type: "bytes32", internalType: "bytes32" },
+      { name: "extensions", type: "uint256[]", internalType: "uint256[]" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
-      },
-    ],
+    type: "function",
     name: "enable",
+    inputs: [{ name: "_data", type: "bytes", internalType: "bytes" }],
     outputs: [],
     stateMutability: "payable",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
-      {
-        internalType: "bytes32",
-        name: "hash",
-        type: "bytes32",
-      },
-    ],
+    type: "function",
     name: "getApproval",
+    inputs: [
+      { name: "kernel", type: "address", internalType: "address" },
+      { name: "hash", type: "bytes32", internalType: "bytes32" },
+    ],
     outputs: [
-      {
-        internalType: "uint256",
-        name: "approvals",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "passed",
-        type: "bool",
-      },
+      { name: "approvals", type: "uint256", internalType: "uint256" },
+      { name: "passed", type: "bool", internalType: "bool" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "guardian",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "guardian",
+    inputs: [
+      { name: "guardian", type: "address", internalType: "address" },
+      { name: "kernel", type: "address", internalType: "address" },
+    ],
     outputs: [
-      {
-        internalType: "uint24",
-        name: "weight",
-        type: "uint24",
-      },
-      {
-        internalType: "address",
-        name: "nextGuardian",
-        type: "address",
-      },
+      { name: "weight", type: "uint24", internalType: "uint24" },
+      { name: "nextGuardian", type: "address", internalType: "address" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
+    type: "function",
+    name: "proposalStatus",
     inputs: [
       {
-        internalType: "bytes32",
         name: "callDataAndNonceHash",
         type: "bytes32",
+        internalType: "bytes32",
       },
-      {
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
+      { name: "kernel", type: "address", internalType: "address" },
     ],
-    name: "proposalStatus",
     outputs: [
-      {
-        internalType: "enum ProposalStatus",
-        name: "status",
-        type: "uint8",
-      },
-      {
-        internalType: "ValidAfter",
-        name: "validAfter",
-        type: "uint48",
-      },
+      { name: "status", type: "uint8", internalType: "enum ProposalStatus" },
+      { name: "validAfter", type: "uint48", internalType: "ValidAfter" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address[]",
-        name: "_guardians",
-        type: "address[]",
-      },
-      {
-        internalType: "uint24[]",
-        name: "_weights",
-        type: "uint24[]",
-      },
-      {
-        internalType: "uint24",
-        name: "_threshold",
-        type: "uint24",
-      },
-      {
-        internalType: "uint48",
-        name: "_delay",
-        type: "uint48",
-      },
-    ],
+    type: "function",
     name: "renew",
+    inputs: [
+      { name: "_guardians", type: "address[]", internalType: "address[]" },
+      { name: "_weights", type: "uint24[]", internalType: "uint24[]" },
+      { name: "_threshold", type: "uint24", internalType: "uint24" },
+      { name: "_delay", type: "uint48", internalType: "uint48" },
+    ],
     outputs: [],
     stateMutability: "payable",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-      {
-        internalType: "bytes",
-        name: "",
-        type: "bytes",
-      },
-    ],
+    type: "function",
     name: "validCaller",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+    inputs: [
+      { name: "", type: "address", internalType: "address" },
+      { name: "", type: "bytes", internalType: "bytes" },
     ],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
     stateMutability: "pure",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-      {
-        internalType: "bytes",
-        name: "",
-        type: "bytes",
-      },
-    ],
+    type: "function",
     name: "validateSignature",
-    outputs: [
-      {
-        internalType: "ValidationData",
-        name: "",
-        type: "uint256",
-      },
+    inputs: [
+      { name: "hash", type: "bytes32", internalType: "bytes32" },
+      { name: "signature", type: "bytes", internalType: "bytes" },
     ],
-    stateMutability: "pure",
-    type: "function",
+    outputs: [{ name: "", type: "uint256", internalType: "ValidationData" }],
+    stateMutability: "view",
   },
   {
+    type: "function",
+    name: "validateUserOp",
     inputs: [
       {
-        components: [
-          {
-            internalType: "address",
-            name: "sender",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "nonce",
-            type: "uint256",
-          },
-          {
-            internalType: "bytes",
-            name: "initCode",
-            type: "bytes",
-          },
-          {
-            internalType: "bytes",
-            name: "callData",
-            type: "bytes",
-          },
-          {
-            internalType: "uint256",
-            name: "callGasLimit",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "verificationGasLimit",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "preVerificationGas",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "maxFeePerGas",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "maxPriorityFeePerGas",
-            type: "uint256",
-          },
-          {
-            internalType: "bytes",
-            name: "paymasterAndData",
-            type: "bytes",
-          },
-          {
-            internalType: "bytes",
-            name: "signature",
-            type: "bytes",
-          },
-        ],
-        internalType: "struct UserOperation",
         name: "userOp",
         type: "tuple",
+        internalType: "struct UserOperation",
+        components: [
+          { name: "sender", type: "address", internalType: "address" },
+          { name: "nonce", type: "uint256", internalType: "uint256" },
+          { name: "initCode", type: "bytes", internalType: "bytes" },
+          { name: "callData", type: "bytes", internalType: "bytes" },
+          { name: "callGasLimit", type: "uint256", internalType: "uint256" },
+          {
+            name: "verificationGasLimit",
+            type: "uint256",
+            internalType: "uint256",
+          },
+          {
+            name: "preVerificationGas",
+            type: "uint256",
+            internalType: "uint256",
+          },
+          { name: "maxFeePerGas", type: "uint256", internalType: "uint256" },
+          {
+            name: "maxPriorityFeePerGas",
+            type: "uint256",
+            internalType: "uint256",
+          },
+          { name: "paymasterAndData", type: "bytes", internalType: "bytes" },
+          { name: "signature", type: "bytes", internalType: "bytes" },
+        ],
       },
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+      { name: "userOpHash", type: "bytes32", internalType: "bytes32" },
+      { name: "", type: "uint256", internalType: "uint256" },
     ],
-    name: "validateUserOp",
     outputs: [
       {
-        internalType: "ValidationData",
         name: "validationData",
         type: "uint256",
+        internalType: "ValidationData",
       },
     ],
     stateMutability: "payable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "veto",
     inputs: [
       {
-        internalType: "bytes32",
         name: "_callDataAndNonceHash",
         type: "bytes32",
+        internalType: "bytes32",
       },
     ],
-    name: "veto",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
   },
   {
+    type: "function",
+    name: "voteStatus",
     inputs: [
       {
-        internalType: "bytes32",
         name: "callDataAndNonceHash",
         type: "bytes32",
+        internalType: "bytes32",
       },
-      {
-        internalType: "address",
-        name: "guardian",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
+      { name: "guardian", type: "address", internalType: "address" },
+      { name: "kernel", type: "address", internalType: "address" },
     ],
-    name: "voteStatus",
     outputs: [
-      {
-        internalType: "enum VoteStatus",
-        name: "status",
-        type: "uint8",
-      },
+      { name: "status", type: "uint8", internalType: "enum VoteStatus" },
     ],
     stateMutability: "view",
-    type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "kernel",
-        type: "address",
-      },
-    ],
+    type: "function",
     name: "weightedStorage",
+    inputs: [{ name: "kernel", type: "address", internalType: "address" }],
     outputs: [
-      {
-        internalType: "uint24",
-        name: "totalWeight",
-        type: "uint24",
-      },
-      {
-        internalType: "uint24",
-        name: "threshold",
-        type: "uint24",
-      },
-      {
-        internalType: "uint48",
-        name: "delay",
-        type: "uint48",
-      },
-      {
-        internalType: "address",
-        name: "firstGuardian",
-        type: "address",
-      },
+      { name: "totalWeight", type: "uint24", internalType: "uint24" },
+      { name: "threshold", type: "uint24", internalType: "uint24" },
+      { name: "delay", type: "uint48", internalType: "uint48" },
+      { name: "firstGuardian", type: "address", internalType: "address" },
     ],
     stateMutability: "view",
-    type: "function",
   },
+  {
+    type: "event",
+    name: "GuardianAdded",
+    inputs: [
+      {
+        name: "guardian",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "kernel",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "weight",
+        type: "uint24",
+        indexed: false,
+        internalType: "uint24",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "GuardianRemoved",
+    inputs: [
+      {
+        name: "guardian",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "kernel",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  { type: "error", name: "NotImplemented", inputs: [] },
 ] as const;
