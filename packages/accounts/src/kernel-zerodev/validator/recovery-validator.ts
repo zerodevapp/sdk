@@ -408,7 +408,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     return await this.signTypedData({
       domain: {
         name: "WeightedECDSAValidator",
-        version: "0.0.1",
+        version: "0.0.3",
         chainId: this.chain.id,
         verifyingContract: this.validatorAddress,
       },
