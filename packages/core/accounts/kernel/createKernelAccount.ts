@@ -17,12 +17,12 @@ import {
     encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
-    hashMessage,
     hashTypedData,
     keccak256,
     parseAbi,
     stringToHex,
-    validateTypedData
+    validateTypedData,
+    hashMessage
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode } from "viem/actions"
@@ -272,7 +272,7 @@ export async function createKernelAccount<
             method: "eth_call",
             params: [
                 {
-                    to: accountLogicAddress,
+                    to: accountAddress,
                     data: encodeFunctionData({
                         abi: EIP1271ABI,
                         functionName: "eip712Domain"
@@ -323,7 +323,8 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            return signHashedMessage(hashMessage(message))
+            const messageHash = hashMessage(message)
+            return signHashedMessage(messageHash)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
