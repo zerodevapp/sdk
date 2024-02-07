@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271ABI,
@@ -10,6 +11,7 @@ import {
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
+import { ethers } from "ethers"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -133,6 +135,15 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.signMessage({
                 message
             })
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                message,
+                signature: response,
+                provider: new ethers.providers.JsonRpcProvider(
+                    process.env.RPC_URL as string
+                )
+            })
+            expect(ambireResult).toBeTrue()
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
@@ -420,7 +431,7 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    test.only(
+    test(
         "Client send transaction with ERC20 paymaster",
         async () => {
             const account = await getSignerToEcdsaKernelAccount()
