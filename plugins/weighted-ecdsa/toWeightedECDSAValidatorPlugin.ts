@@ -36,6 +36,11 @@ export interface WeightedECDSAValidatorConfig {
     delay?: number // in seconds
 }
 
+// Sort addresses in descending order
+const sortByAddress = (a: { address: Address }, b: { address: Address }) => {
+    return a.address.toLowerCase() < b.address.toLowerCase() ? 1 : -1
+}
+
 export async function createWeightedECDSAValidator<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
@@ -45,7 +50,7 @@ export async function createWeightedECDSAValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         config,
-        signers,
+        signers: _signers,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
     }: {
@@ -67,6 +72,12 @@ export async function createWeightedECDSAValidator<
             )
         }
     }
+
+    // sort signers by address in descending order
+    const configSigners = config ? [...config.signers].sort(sortByAddress) : []
+
+    // sort signers by address in descending order
+    const signers = _signers.sort(sortByAddress)
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -127,8 +138,8 @@ export async function createWeightedECDSAValidator<
                     { name: "_delay", type: "uint48" }
                 ],
                 [
-                    config.signers.map((signer) => signer.address),
-                    config.signers.map((signer) => signer.weight),
+                    configSigners.map((signer) => signer.address),
+                    configSigners.map((signer) => signer.weight),
                     config.threshold,
                     config.delay || 0
                 ]
@@ -157,7 +168,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.2",
+                        version: "0.0.3",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -222,7 +233,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.2",
+                        version: "0.0.3",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -283,6 +294,8 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
     value: bigint
     data: Hex
 } {
+    const signers = [...newConfig.signers].sort(sortByAddress)
+
     return {
         to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
         value: 0n,
@@ -290,8 +303,8 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
             abi: WeightedValidatorAbi,
             functionName: "renew",
             args: [
-                newConfig.signers.map((signer) => signer.address) ?? [],
-                newConfig.signers.map((signer) => signer.weight) ?? [],
+                signers.map((signer) => signer.address) ?? [],
+                signers.map((signer) => signer.weight) ?? [],
                 newConfig.threshold,
                 newConfig.delay || 0
             ]
