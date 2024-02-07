@@ -56,6 +56,7 @@ export interface RecoveryValidatorParams extends KernelBaseValidatorParams {
   walletClient?: WalletClient<Transport, Chain>;
   signatures?: Hex;
   recoveryId?: string;
+  isSignerSmartContract?: boolean;
 }
 
 export type RecoveryConfig = Required<
@@ -90,6 +91,7 @@ export class RecoveryValidator extends KernelBaseValidator {
   protected localAccountOrProvider?: LocalAccount<string> | EthereumProvider;
   protected signatures?: Hex;
   protected recoveryId?: string;
+  protected isSignerSmartContract?: boolean;
   walletClient?: WalletClient<
     Transport,
     Chain,
@@ -110,6 +112,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     this.executor = params.executor ?? RECOVERY_ACTION;
     this.selector = params.selector ?? recoverySelector;
     this.recoveryId = params.recoveryId;
+    this.isSignerSmartContract = params.isSignerSmartContract;
     if (isLocalAccount(params.localAccountOrProvider)) {
       this.walletClient = createWalletClient({
         account: params.localAccountOrProvider,
@@ -428,6 +431,10 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (!this.chain) {
       throw new Error("Validator uninitialized");
     }
+    if (this.isSignerSmartContract) {
+      return this.signatures ?? DUMMY_ECDSA_SIG;
+    }
+    
     const hash = getUserOperationHash(
       {
         ...userOp,
