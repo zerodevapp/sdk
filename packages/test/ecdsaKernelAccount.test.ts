@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271ABI,
@@ -10,6 +11,7 @@ import {
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
+import { ethers } from "ethers"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -46,8 +48,6 @@ import {
     getZeroDevPaymasterClient,
     waitForNonceUpdate
 } from "./utils.js"
-import { verifyMessage } from "@ambire/signature-validator"
-import { ethers } from "ethers"
 
 dotenv.config()
 
