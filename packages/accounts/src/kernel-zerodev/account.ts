@@ -188,6 +188,8 @@ export class KernelSmartContractAccount<
       kernelImplAddr?.toLowerCase() !== KERNEL_IMPL_ADDRESS.toLowerCase() &&
       kernelImplAddr?.toLowerCase() !==
         "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C".toLowerCase() &&
+      kernelImplAddr?.toLowerCase() !==
+        "0xd3f582f6b4814e989ee8e96bc3175320b5a540ab".toLowerCase() &&
       initCode === "0x";
     if (shouldUseMultiSend) {
       const multiSendCalldata = encodeFunctionData({
