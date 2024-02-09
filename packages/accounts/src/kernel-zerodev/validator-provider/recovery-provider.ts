@@ -262,7 +262,10 @@ export class RecoveryProvider extends ValidatorProvider<
         kernelAccountAddress!
       ),
     });
-    return await walletClient.waitForTransactionReceipt({ hash });
+    return await walletClient.waitForTransactionReceipt({
+      hash,
+      timeout: 180000 // 3 minutes
+    });
   }
 
   async signRecovery(enableData?: Hex) {
