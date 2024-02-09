@@ -52,6 +52,9 @@ import {
 } from "viem/accounts"
 import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
+import { toGasPolicy } from "../../plugins/modularPermission/policies/toGasPolicy.js"
+import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
+import { signerToModularPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
@@ -230,6 +233,47 @@ export const getSignerToSessionKeyKernelAccount =
             serializedSessionKeyAccountParams,
             sessionKey
         )
+    }
+
+export const getSignerToModularPermissionKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
+
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const sessionPrivateKey = generatePrivateKey()
+        const sessionKey = privateKeyToAccount(sessionPrivateKey)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" }
+            }
+        )
+
+        const ecdsaModularSigner = toECDSASigner({ signer: sessionKey })
+        const modularPermissionPlugin =
+            await signerToModularPermissionValidator(publicClient, {
+                signer: ecdsaModularSigner,
+                validatorData: {
+                    policies: [
+                        await toGasPolicy({
+                            maxGasAllowedInWei: 1000000000000000000n
+                        })
+                    ]
+                }
+            })
+
+        return await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                regular: modularPermissionPlugin,
+                sudo: ecdsaValidatorPlugin
+            }
+        })
     }
 
 export const getSessionKeyToSessionKeyKernelAccount = async <
