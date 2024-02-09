@@ -1,20 +1,20 @@
 import { Buffer } from "buffer"
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
-    encodeAbiParameters,
-    maxUint256,
-    LocalAccount,
     type Address,
     type Chain,
     type Client,
+    LocalAccount,
     type Transport,
-    type TypedDataDefinition
+    type TypedDataDefinition,
+    encodeAbiParameters,
+    maxUint256
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"

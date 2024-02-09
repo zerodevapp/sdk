@@ -18,8 +18,8 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import { createPasskeyValidator } from "@zerodev/webauthn-validator"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import {
     BundlerClient,
     createBundlerClient,
