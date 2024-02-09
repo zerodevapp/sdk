@@ -59,10 +59,7 @@ export type KernelValidator<Name extends string = string> =
             pluginEnableSignature?: Hex
         ) => Promise<Hex>
         getEnableData(accountAddress?: Address): Promise<Hex>
-        getValidatorMode(
-            accountAddress: Address,
-            selector: Hex
-        ): Promise<ValidatorMode>
+        isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
     }
 
 export type ValidatorInitData = {
@@ -78,8 +75,8 @@ export type KernelPluginManager = KernelValidator & {
 }
 
 export type KernelPluginManagerParams = {
-    validator: KernelValidator
-    defaultValidator?: KernelValidator
+    sudo?: KernelValidator
+    regular?: KernelValidator
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData

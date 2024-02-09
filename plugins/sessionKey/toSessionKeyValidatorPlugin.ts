@@ -26,7 +26,6 @@ import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 import { KernelAccountAbi } from "@zerodev/sdk"
 import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
-import { ValidatorMode } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
 import { getAction, getUserOperationHash } from "permissionless"
 import {
@@ -206,51 +205,6 @@ export async function signerToSessionKeyValidator<
         return { lastNonce: nonce[0], invalidNonce: nonce[1] }
     }
 
-    const isPluginEnabled = async (
-        kernelAccountAddress: Address,
-        selector: Hex
-    ): Promise<boolean> => {
-        try {
-            const execDetail = await getAction(
-                client,
-                readContract
-            )({
-                abi: KernelAccountAbi,
-                address: kernelAccountAddress,
-                functionName: "getExecution",
-                args: [selector]
-            })
-            const enableData = await getAction(
-                client,
-                readContract
-            )({
-                abi: SessionKeyValidatorAbi,
-                address: validatorAddress,
-                functionName: "sessionData",
-                args: [signer.address as Address, kernelAccountAddress]
-            })
-            const enableDataHex = concatHex([
-                signer.address,
-                pad(enableData[0], { size: 32 }),
-                pad(toHex(enableData[1]), { size: 6 }),
-                pad(toHex(enableData[2]), { size: 6 }),
-                enableData[3],
-                pad(toHex(enableData[4]), { size: 32 })
-            ])
-            return (
-                execDetail.validator.toLowerCase() ===
-                    validatorAddress.toLowerCase() &&
-                enableData[4] !== 0n &&
-                enableDataHex.toLowerCase() ===
-                    (
-                        await getEnableData(kernelAccountAddress, enableData[4])
-                    ).toLowerCase()
-            )
-        } catch (error) {
-            return false
-        }
-    }
-
     const getEncodedPermissionProofData = (callData: Hex): Hex => {
         const matchingPermission = findMatchingPermissions(
             callData,
@@ -328,10 +282,52 @@ export async function signerToSessionKeyValidator<
         },
         getPluginSerializationParams: (): SessionKeyData<Abi, string> =>
             sessionKeyData as SessionKeyData<Abi, string>,
-        getValidatorMode: async (accountAddress, selector) => {
-            return (await isPluginEnabled(accountAddress, selector))
-                ? ValidatorMode.plugin
-                : ValidatorMode.enable
+        isEnabled: async (
+            kernelAccountAddress: Address,
+            selector: Hex
+        ): Promise<boolean> => {
+            try {
+                const execDetail = await getAction(
+                    client,
+                    readContract
+                )({
+                    abi: KernelAccountAbi,
+                    address: kernelAccountAddress,
+                    functionName: "getExecution",
+                    args: [selector]
+                })
+                const enableData = await getAction(
+                    client,
+                    readContract
+                )({
+                    abi: SessionKeyValidatorAbi,
+                    address: validatorAddress,
+                    functionName: "sessionData",
+                    args: [signer.address as Address, kernelAccountAddress]
+                })
+                const enableDataHex = concatHex([
+                    signer.address,
+                    pad(enableData[0], { size: 32 }),
+                    pad(toHex(enableData[1]), { size: 6 }),
+                    pad(toHex(enableData[2]), { size: 6 }),
+                    enableData[3],
+                    pad(toHex(enableData[4]), { size: 32 })
+                ])
+                return (
+                    execDetail.validator.toLowerCase() ===
+                        validatorAddress.toLowerCase() &&
+                    enableData[4] !== 0n &&
+                    enableDataHex.toLowerCase() ===
+                        (
+                            await getEnableData(
+                                kernelAccountAddress,
+                                enableData[4]
+                            )
+                        ).toLowerCase()
+                )
+            } catch (error) {
+                return false
+            }
         }
     }
 }

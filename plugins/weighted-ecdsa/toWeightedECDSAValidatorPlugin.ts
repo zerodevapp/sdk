@@ -1,8 +1,11 @@
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
+import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
-import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    type UserOperation,
+    getAction,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -20,17 +23,22 @@ import {
     parseAbiParameters
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getChainId } from "viem/actions"
+import { getChainId, readContract } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
-    delay: number // in seconds
     signers: Array<{
         address: Address
         weight: number
     }>
+    delay?: number // in seconds
+}
+
+// Sort addresses in descending order
+const sortByAddress = (a: { address: Address }, b: { address: Address }) => {
+    return a.address.toLowerCase() < b.address.toLowerCase() ? 1 : -1
 }
 
 export async function createWeightedECDSAValidator<
@@ -42,7 +50,7 @@ export async function createWeightedECDSAValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         config,
-        signers,
+        signers: _signers,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
     }: {
@@ -64,6 +72,12 @@ export async function createWeightedECDSAValidator<
             )
         }
     }
+
+    // sort signers by address in descending order
+    const configSigners = config ? [...config.signers].sort(sortByAddress) : []
+
+    // sort signers by address in descending order
+    const signers = _signers.sort(sortByAddress)
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -124,10 +138,10 @@ export async function createWeightedECDSAValidator<
                     { name: "_delay", type: "uint48" }
                 ],
                 [
-                    config.signers.map((signer) => signer.address),
-                    config.signers.map((signer) => signer.weight),
+                    configSigners.map((signer) => signer.address),
+                    configSigners.map((signer) => signer.weight),
                     config.threshold,
-                    config.delay
+                    config.delay || 0
                 ]
             )
         },
@@ -154,7 +168,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.2",
+                        version: "0.0.3",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -219,7 +233,7 @@ export async function createWeightedECDSAValidator<
                 const signature = await signer.signTypedData({
                     domain: {
                         name: "WeightedECDSAValidator",
-                        version: "0.0.2",
+                        version: "0.0.3",
                         chainId,
                         verifyingContract: validatorAddress
                     },
@@ -250,8 +264,27 @@ export async function createWeightedECDSAValidator<
             return `0x${signatures}`
         },
 
-        async getValidatorMode() {
-            return ValidatorMode.sudo
+        async isEnabled(
+            kernelAccountAddress: Address,
+            selector: Hex
+        ): Promise<boolean> {
+            try {
+                const execDetail = await getAction(
+                    client,
+                    readContract
+                )({
+                    abi: KernelAccountAbi,
+                    address: kernelAccountAddress,
+                    functionName: "getExecution",
+                    args: [selector]
+                })
+                return (
+                    execDetail.validator.toLowerCase() ===
+                    validatorAddress.toLowerCase()
+                )
+            } catch (error) {
+                return false
+            }
         }
     }
 }
@@ -261,6 +294,8 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
     value: bigint
     data: Hex
 } {
+    const signers = [...newConfig.signers].sort(sortByAddress)
+
     return {
         to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
         value: 0n,
@@ -268,10 +303,10 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
             abi: WeightedValidatorAbi,
             functionName: "renew",
             args: [
-                newConfig.signers.map((signer) => signer.address) ?? [],
-                newConfig.signers.map((signer) => signer.weight) ?? [],
+                signers.map((signer) => signer.address) ?? [],
+                signers.map((signer) => signer.weight) ?? [],
                 newConfig.threshold,
-                newConfig.delay
+                newConfig.delay || 0
             ]
         })
     }

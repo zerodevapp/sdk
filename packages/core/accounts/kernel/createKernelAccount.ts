@@ -17,6 +17,7 @@ import {
     encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
+    hashMessage,
     hashTypedData,
     keccak256,
     parseAbi,
@@ -236,8 +237,8 @@ export async function createKernelAccount<
     const kernelPluginManager = isKernelPluginManager(plugins)
         ? plugins
         : await toKernelPluginManager(client, {
-              validator: plugins.validator,
-              defaultValidator: plugins.defaultValidator,
+              sudo: plugins.sudo,
+              regular: plugins.regular,
               executorData: plugins.executorData,
               pluginEnableSignature: plugins.pluginEnableSignature
           })
@@ -271,7 +272,7 @@ export async function createKernelAccount<
             method: "eth_call",
             params: [
                 {
-                    to: accountLogicAddress,
+                    to: accountAddress,
                     data: encodeFunctionData({
                         abi: EIP1271ABI,
                         functionName: "eip712Domain"
@@ -322,10 +323,7 @@ export async function createKernelAccount<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            let messageHash: Hex
-            if (typeof message === "string")
-                messageHash = keccak256(stringToHex(message))
-            else messageHash = keccak256(message.raw)
+            const messageHash = hashMessage(message)
             return signHashedMessage(messageHash)
         },
         async signTransaction(_, __) {

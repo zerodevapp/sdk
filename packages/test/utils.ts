@@ -120,7 +120,7 @@ export const getSignerToEcdsaKernelAccount =
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                validator: ecdsaValidatorPlugin
+                sudo: ecdsaValidatorPlugin
             }
         })
     }
@@ -158,15 +158,15 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
         return await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                validator: plugin,
-                defaultValidator: weigthedECDSAPlugin
+                regular: plugin,
+                sudo: weigthedECDSAPlugin
             }
         })
     } else {
         return await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                validator: weigthedECDSAPlugin
+                sudo: weigthedECDSAPlugin
             }
         })
     }
@@ -236,8 +236,8 @@ export const getSignerToSessionKeyKernelAccount =
         const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                validator: sessionKeyPlugin,
-                defaultValidator: ecdsaValidatorPlugin
+                regular: sessionKeyPlugin,
+                sudo: ecdsaValidatorPlugin
             }
         })
 
@@ -273,8 +273,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     return await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
-            validator: sessionKeyPlugin,
-            defaultValidator: ecdsaValidatorPlugin,
+            regular: sessionKeyPlugin,
+            sudo: ecdsaValidatorPlugin,
             executorData
         }
     })
