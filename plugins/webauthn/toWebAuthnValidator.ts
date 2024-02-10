@@ -2,7 +2,6 @@ import { Buffer } from "buffer"
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
-import { ValidatorMode } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -10,7 +9,8 @@ import {
     type Address,
     type Chain,
     type Client,
-    LocalAccount,
+    type Hex,
+    type LocalAccount,
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
@@ -288,8 +288,12 @@ export async function createPasskeyValidator<
             )
             return encodedSignature
         },
-        async getValidatorMode() {
-            return ValidatorMode.sudo
+
+        async isEnabled(
+            _kernelAccountAddress: Address,
+            _selector: Hex
+        ): Promise<boolean> {
+            return false
         }
     }
 }
@@ -548,8 +552,12 @@ export async function getPasskeyValidator<
             )
             return encodedSignature
         },
-        async getValidatorMode() {
-            return ValidatorMode.sudo
+
+        async isEnabled(
+            _kernelAccountAddress: Address,
+            _selector: Hex
+        ): Promise<boolean> {
+            return false
         }
     }
 }

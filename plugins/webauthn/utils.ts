@@ -1,5 +1,5 @@
 import { p256 } from "@noble/curves/p256"
-import { Hex, bytesToBigInt, hexToBytes } from "viem"
+import { type Hex, bytesToBigInt, hexToBytes } from "viem"
 
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     return `0x${Array.from(array, (byte) =>

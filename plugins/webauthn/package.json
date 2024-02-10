@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/webauthn-validator",
-  "version": "5.0.3",
+  "version": "5.1.0-beta.0",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -40,7 +40,7 @@
   },
   "peerDependencies": {
     "viem": "^2.0.0",
-    "@zerodev/sdk": "^5.0.2",
+    "@zerodev/sdk": "^5.1.0",
     "permissionless": "^0.0.34"
   }
 }
