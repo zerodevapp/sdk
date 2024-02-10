@@ -7,4 +7,4 @@ import {
 export { createPasskeyValidator, getPasskeyValidator, type KernelValidator }
 
 export const WEBAUTHN_VALIDATOR_ADDRESS =
-    "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390"
+    "0x640E8971889fAC073e6F5DC948C4ff25872d3543"
