@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/webauthn-validator",
-  "version": "5.1.0-beta.0",
+  "version": "5.1.0-beta.2",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
