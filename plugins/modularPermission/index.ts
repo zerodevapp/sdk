@@ -1,11 +1,4 @@
-export const MODULAR_PERMISSION_VALIDATOR_ADDRESS =
-    "0x965Bea0f8b65aABD1F5148F64654BbAAfB9d2Efa"
-export const MAX_FLAG = "0xffffffffffffffffffffffff"
-export const ECDSA_SIGNER_CONTRACT =
-    "0xF9E712F44A360ED8820aD624e41164f74a5a7456"
-export const GAS_POLICY_CONTRACT = "0x62868E950Efbb336DCFf033598Ee5E602f0a93cD"
-export enum PolicyFlags {
-    FOR_ALL_VALIDATION = "0x000000000000000000000000",
-    NOT_FOR_VALIDATE_USEROP = "0x000000000000000000000001",
-    NOT_FOR_VALIDATE_SIG = "0x000000000000000000000002"
-}
+export { signerToModularPermissionValidator } from "./toModularPermissionValidatorPlugin.js"
+export * as constants from "./constants.js"
+export type * from "./types.js"
+export { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"

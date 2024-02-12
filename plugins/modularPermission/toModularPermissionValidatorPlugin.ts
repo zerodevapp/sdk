@@ -19,8 +19,8 @@ import {
     ECDSA_SIGNER_CONTRACT,
     MAX_FLAG,
     MODULAR_PERMISSION_VALIDATOR_ADDRESS
-} from "./index.js"
-import { type ModularSigner } from "./signers/toECDSASigner.js"
+} from "./constants.js"
+import { type ModularSigner } from "./signers/types.js"
 import {
     type ModularPermissionData,
     type ModularPermissionPlugin,
@@ -138,15 +138,27 @@ export async function signerToModularPermissionValidator<
                 message: { raw: userOpHash }
             })
             const fixedSignature = fixSignedData(signature)
-            return concat([getPermissionId(), fixedSignature])
+            return concat([
+                getPermissionId(),
+                ...validatorData.policies.map((policy) =>
+                    policy.getSignaturePolicyData(userOperation)
+                ),
+                fixedSignature
+            ])
         },
 
         getNonceKey: async () => {
             return BigInt(signer.account.address)
         },
 
-        async getDummySignature(_userOperation) {
-            return concat([getPermissionId(), constants.DUMMY_ECDSA_SIG])
+        async getDummySignature(userOperation) {
+            return concat([
+                getPermissionId(),
+                ...validatorData.policies.map((policy) =>
+                    policy.getSignaturePolicyData(userOperation)
+                ),
+                constants.DUMMY_ECDSA_SIG
+            ])
         },
         isEnabled: async (
             kernelAccountAddress: Address,

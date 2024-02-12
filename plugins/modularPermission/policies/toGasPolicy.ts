@@ -1,27 +1,12 @@
-import {
-    type Address,
-    type Hex,
-    concatHex,
-    encodeAbiParameters,
-    zeroAddress
-} from "viem"
-import { PolicyFlags } from "../index.js"
-import { GAS_POLICY_CONTRACT } from "../index.js"
-
-export type PolicyParams = {
-    policyAddress?: Address
-    policyFlag?: PolicyFlags
-}
+import { type Address, concatHex, encodeAbiParameters, zeroAddress } from "viem"
+import { PolicyFlags } from "../constants.js"
+import { GAS_POLICY_CONTRACT } from "../constants.js"
+import type { Policy, PolicyParams } from "./types.js"
 
 export type GasPolicyParams = PolicyParams & {
     maxGasAllowedInWei: bigint
     enforcePaymaster?: boolean
     paymasterAddress?: Address
-}
-
-export type Policy = {
-    getPolicyData: () => Hex
-    getPolicyInfoInBytes: () => Hex
 }
 
 export async function toGasPolicy({
@@ -41,6 +26,9 @@ export async function toGasPolicy({
                 ],
                 [maxGasAllowedInWei, enforcePaymaster, paymasterAddress]
             )
+        },
+        getSignaturePolicyData: () => {
+            return "0x"
         },
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])

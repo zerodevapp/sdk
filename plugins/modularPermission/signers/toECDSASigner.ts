@@ -5,23 +5,14 @@ import {
 } from "permissionless/accounts"
 import { type Address, type LocalAccount, type TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
-import { ECDSA_SIGNER_CONTRACT } from "../index.js"
-
-export type ModularSignerParams = {
-    signerContractAddress?: Address
-}
+import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
+import type { ModularSigner, ModularSignerParams } from "./types.js"
 
 export type ECDSAModularSignerParams<
     TSource extends string = "custom",
     TAddress extends Address = Address
 > = ModularSignerParams & {
     signer: SmartAccountSigner<TSource, TAddress>
-}
-
-export type ModularSigner = {
-    account: LocalAccount
-    signerContractAddress: Address
-    getSignerData: () => string
 }
 
 export function toECDSASigner<

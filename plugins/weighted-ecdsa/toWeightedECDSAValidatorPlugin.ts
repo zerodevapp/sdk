@@ -24,7 +24,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
-import { WeightedValidatorAbi } from "./abi"
+import { WeightedValidatorAbi } from "./abi.js"
 import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {

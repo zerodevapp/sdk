@@ -34,6 +34,23 @@
         "lint": "biome check .",
         "lint:fix": "bun run lint --apply"
     },
+    "exports": {
+        ".": {
+            "types": "./_types/index.d.ts",
+            "import": "./_esm/index.js",
+            "default": "./_cjs/index.js"
+        },
+        "./policies": {
+            "types": "./_types/policies/index.d.ts",
+            "import": "./_esm/policies/index.js",
+            "default": "./_cjs/policies/index.js"
+        },
+        "./signers": {
+            "types": "./_types/signers/index.d.ts",
+            "import": "./_esm/signers/index.js",
+            "default": "./_cjs/signers/index.js"
+        }
+    },
     "dependencies": {
         "merkletreejs": "^0.3.11"
     },
