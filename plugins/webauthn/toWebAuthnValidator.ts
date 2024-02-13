@@ -1,10 +1,13 @@
-import { Buffer } from "buffer"
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
-import type { KernelValidator } from "@zerodev/sdk/types"
-import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import { Buffer } from "buffer";
+import {
+    startAuthentication,
+    startRegistration,
+} from "@simplewebauthn/browser";
+import { KERNEL_ADDRESSES } from "@zerodev/sdk";
+import type { KernelValidator } from "@zerodev/sdk/types";
+import type { TypedData } from "abitype";
+import { type UserOperation, getUserOperationHash } from "permissionless";
+import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts";
 import {
     type Address,
     type Chain,
@@ -14,18 +17,22 @@ import {
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
-    maxUint256
-} from "viem"
-import { toAccount } from "viem/accounts"
-import { signMessage, signTypedData } from "viem/actions"
-import { getChainId } from "viem/actions"
-import { WEBAUTHN_VALIDATOR_ADDRESS } from "./index.js"
+    maxUint256,
+    getTypesForEIP712Domain,
+    validateTypedData,
+    hashTypedData,
+    SignTypedDataParameters,
+} from "viem";
+import { toAccount } from "viem/accounts";
+import { signMessage } from "viem/actions";
+import { getChainId } from "viem/actions";
+import { WEBAUTHN_VALIDATOR_ADDRESS } from "./index.js";
 import {
     b64ToBytes,
     findQuoteIndices,
     parseAndNormalizeSig,
-    uint8ArrayToHexString
-} from "./utils.js"
+    uint8ArrayToHexString,
+} from "./utils.js";
 
 export async function createPasskeyValidator<
     TTransport extends Transport = Transport,
@@ -39,71 +46,71 @@ export async function createPasskeyValidator<
         signInitiateUrl,
         signVerifyUrl,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
+        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS,
     }: {
-        passkeyName: string
-        registerOptionUrl: string
-        registerVerifyUrl: string
-        signInitiateUrl: string
-        signVerifyUrl: string
-        entryPoint?: Address
-        validatorAddress?: Address
+        passkeyName: string;
+        registerOptionUrl: string;
+        registerVerifyUrl: string;
+        signInitiateUrl: string;
+        signVerifyUrl: string;
+        entryPoint?: Address;
+        validatorAddress?: Address;
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
     // Get registration options
     const registerOptionsResponse = await fetch(registerOptionUrl, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({ username: passkeyName }),
-        credentials: "include"
-    })
-    const registerOptions = await registerOptionsResponse.json()
+        credentials: "include",
+    });
+    const registerOptions = await registerOptionsResponse.json();
 
     // Start registration
-    const registerCred = await startRegistration(registerOptions)
+    const registerCred = await startRegistration(registerOptions);
 
     // Verify registration
     const registerVerifyResponse = await fetch(registerVerifyUrl, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({ username: passkeyName, cred: registerCred }),
-        credentials: "include"
-    })
+        credentials: "include",
+    });
 
-    const registerVerifyResult = await registerVerifyResponse.json()
+    const registerVerifyResult = await registerVerifyResponse.json();
     if (!registerVerifyResult.verified) {
-        throw new Error("Registration not verified")
+        throw new Error("Registration not verified");
     }
 
     // Import the key
-    const pubKey = registerCred.response.publicKey
+    const pubKey = registerCred.response.publicKey;
     if (!pubKey) {
-        throw new Error("No public key returned from registration credential")
+        throw new Error("No public key returned from registration credential");
     }
 
-    const spkiDer = Buffer.from(pubKey, "base64")
+    const spkiDer = Buffer.from(pubKey, "base64");
     const key = await crypto.subtle.importKey(
         "spki",
         spkiDer,
         {
             name: "ECDSA",
-            namedCurve: "P-256"
+            namedCurve: "P-256",
         },
         true,
         ["verify"]
-    )
+    );
 
     // Export the key to the raw format
-    const rawKey = await crypto.subtle.exportKey("raw", key)
-    const rawKeyBuffer = Buffer.from(rawKey)
+    const rawKey = await crypto.subtle.exportKey("raw", key);
+    const rawKeyBuffer = Buffer.from(rawKey);
 
     // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
-    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
-    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
+    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex");
+    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex");
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -111,74 +118,74 @@ export async function createPasskeyValidator<
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
             // convert SignMessage to string
-            let messageContent: string
+            let messageContent: string;
             if (typeof message === "string") {
                 // message is a string
-                messageContent = message
+                messageContent = message;
             } else if ("raw" in message && typeof message.raw === "string") {
                 // message.raw is a Hex string
-                messageContent = message.raw
+                messageContent = message.raw;
             } else if ("raw" in message && message.raw instanceof Uint8Array) {
                 // message.raw is a ByteArray
-                messageContent = message.raw.toString()
+                messageContent = message.raw.toString();
             } else {
-                throw new Error("Unsupported message format")
+                throw new Error("Unsupported message format");
             }
 
             // remove 0x prefix if present
             const formattedMessage = messageContent.startsWith("0x")
                 ? messageContent.slice(2)
-                : messageContent
+                : messageContent;
 
             // initiate signing
             const signInitiateResponse = await fetch(signInitiateUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: formattedMessage }),
-                credentials: "include"
-            })
-            const signInitiateResult = await signInitiateResponse.json()
+                credentials: "include",
+            });
+            const signInitiateResult = await signInitiateResponse.json();
 
             // prepare assertion options
             const assertionOptions = {
                 challenge: signInitiateResult.challenge,
-                allowCredentials: signInitiateResult.allowCredentials
-            }
+                allowCredentials: signInitiateResult.allowCredentials,
+            };
 
             // start authentication (signing)
-            const cred = await startAuthentication(assertionOptions)
+            const cred = await startAuthentication(assertionOptions);
 
             // verify signature from server
             const verifyResponse = await fetch(signVerifyUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cred }),
-                credentials: "include"
-            })
+                credentials: "include",
+            });
 
-            const verifyResult = await verifyResponse.json()
+            const verifyResult = await verifyResponse.json();
 
             if (!verifyResult.success) {
-                throw new Error("Signature not verified")
+                throw new Error("Signature not verified");
             }
 
             // get authenticator data
-            const authenticatorData = verifyResult.authenticatorData
+            const authenticatorData = verifyResult.authenticatorData;
             const authenticatorDataHex = uint8ArrayToHexString(
                 b64ToBytes(authenticatorData)
-            )
+            );
 
             // get client data JSON
-            const clientDataJSON = atob(cred.response.clientDataJSON)
+            const clientDataJSON = atob(cred.response.clientDataJSON);
 
             // get challenge and response type location
             const { beforeType, beforeChallenge } =
-                findQuoteIndices(clientDataJSON)
+                findQuoteIndices(clientDataJSON);
 
             // get signature r,s
-            const signature = verifyResult.signature
-            const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
-            const { r, s } = parseAndNormalizeSig(signatureHex)
+            const signature = verifyResult.signature;
+            const signatureHex = uint8ArrayToHexString(b64ToBytes(signature));
+            const { r, s } = parseAndNormalizeSig(signatureHex);
 
             // encode signature
             const encodedSignature = encodeAbiParameters(
@@ -188,7 +195,7 @@ export async function createPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
                 ],
                 [
                     authenticatorDataHex,
@@ -196,13 +203,13 @@ export async function createPasskeyValidator<
                     beforeChallenge,
                     beforeType,
                     BigInt(r),
-                    BigInt(s)
+                    BigInt(s),
                 ]
-            )
-            return encodedSignature
+            );
+            return encodedSignature;
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccount();
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -210,18 +217,27 @@ export async function createPasskeyValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account,
-                    ...typedData
-                }
-            )
-        }
-    })
+            const { domain, message, primaryType } =
+                typedData as unknown as SignTypedDataParameters;
+
+            const types = {
+                EIP712Domain: getTypesForEIP712Domain({ domain }),
+                ...typedData.types,
+            };
+
+            validateTypedData({ domain, message, primaryType, types });
+
+            const hash = hashTypedData(typedData);
+            const signature = await signMessage(client, {
+                account,
+                message: hash,
+            });
+            return signature;
+        },
+    });
 
     // Fetch chain id
-    const chainId = await getChainId(client)
+    const chainId = await getChainId(client);
 
     return {
         ...account,
@@ -234,38 +250,38 @@ export async function createPasskeyValidator<
                         components: [
                             {
                                 name: "x",
-                                type: "uint256"
+                                type: "uint256",
                             },
                             {
                                 name: "y",
-                                type: "uint256"
-                            }
+                                type: "uint256",
+                            },
                         ],
                         name: "pubKey",
-                        type: "tuple"
-                    }
+                        type: "tuple",
+                    },
                 ],
                 [{ x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) }]
-            )
+            );
         },
         async getNonceKey() {
-            return 0n
+            return 0n;
         },
         async signUserOperation(userOperation: UserOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
-                    signature: "0x"
+                    signature: "0x",
                 },
                 entryPoint: entryPoint,
-                chainId: chainId
-            })
+                chainId: chainId,
+            });
 
             const signature = await signMessage(client, {
                 account,
-                message: { raw: hash }
-            })
-            return signature
+                message: { raw: hash },
+            });
+            return signature;
         },
         async getDummySignature() {
             const encodedSignature = encodeAbiParameters(
@@ -275,7 +291,7 @@ export async function createPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -283,19 +299,19 @@ export async function createPasskeyValidator<
                     maxUint256,
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
                 ]
-            )
-            return encodedSignature
+            );
+            return encodedSignature;
         },
 
         async isEnabled(
             _kernelAccountAddress: Address,
             _selector: Hex
         ): Promise<boolean> {
-            return false
-        }
-    }
+            return false;
+        },
+    };
 }
 
 export async function getPasskeyValidator<
@@ -309,65 +325,65 @@ export async function getPasskeyValidator<
         signInitiateUrl,
         signVerifyUrl,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
+        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS,
     }: {
-        loginOptionUrl: string
-        loginVerifyUrl: string
-        signInitiateUrl: string
-        signVerifyUrl: string
-        entryPoint?: Address
-        validatorAddress?: Address
+        loginOptionUrl: string;
+        loginVerifyUrl: string;
+        signInitiateUrl: string;
+        signVerifyUrl: string;
+        entryPoint?: Address;
+        validatorAddress?: Address;
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
     // Get login options
     const loginOptionsResponse = await fetch(loginOptionUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include"
-    })
-    const loginOptions = await loginOptionsResponse.json()
+        credentials: "include",
+    });
+    const loginOptions = await loginOptionsResponse.json();
 
     // Start authentication (login)
-    const loginCred = await startAuthentication(loginOptions)
+    const loginCred = await startAuthentication(loginOptions);
 
     // Verify authentication
     const loginVerifyResponse = await fetch(loginVerifyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cred: loginCred }),
-        credentials: "include"
-    })
+        credentials: "include",
+    });
 
-    const loginVerifyResult = await loginVerifyResponse.json()
+    const loginVerifyResult = await loginVerifyResponse.json();
     if (!loginVerifyResult.verification.verified) {
-        throw new Error("Login not verified")
+        throw new Error("Login not verified");
     }
 
     // Import the key
-    const pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
+    const pubKey = loginVerifyResult.pubkey; // Uint8Array pubkey
     if (!pubKey) {
-        throw new Error("No public key returned from login verify credential")
+        throw new Error("No public key returned from login verify credential");
     }
 
-    const spkiDer = Buffer.from(pubKey, "base64")
+    const spkiDer = Buffer.from(pubKey, "base64");
     const key = await crypto.subtle.importKey(
         "spki",
         spkiDer,
         {
             name: "ECDSA",
-            namedCurve: "P-256"
+            namedCurve: "P-256",
         },
         true,
         ["verify"]
-    )
+    );
 
     // Export the key to the raw format
-    const rawKey = await crypto.subtle.exportKey("raw", key)
-    const rawKeyBuffer = Buffer.from(rawKey)
+    const rawKey = await crypto.subtle.exportKey("raw", key);
+    const rawKeyBuffer = Buffer.from(rawKey);
 
     // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
-    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
-    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
+    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex");
+    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex");
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -375,74 +391,74 @@ export async function getPasskeyValidator<
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
             // convert SignMessage to string
-            let messageContent: string
+            let messageContent: string;
             if (typeof message === "string") {
                 // message is a string
-                messageContent = message
+                messageContent = message;
             } else if ("raw" in message && typeof message.raw === "string") {
                 // message.raw is a Hex string
-                messageContent = message.raw
+                messageContent = message.raw;
             } else if ("raw" in message && message.raw instanceof Uint8Array) {
                 // message.raw is a ByteArray
-                messageContent = message.raw.toString()
+                messageContent = message.raw.toString();
             } else {
-                throw new Error("Unsupported message format")
+                throw new Error("Unsupported message format");
             }
 
             // remove 0x prefix if present
             const formattedMessage = messageContent.startsWith("0x")
                 ? messageContent.slice(2)
-                : messageContent
+                : messageContent;
 
             // initiate signing
             const signInitiateResponse = await fetch(signInitiateUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: formattedMessage }),
-                credentials: "include"
-            })
-            const signInitiateResult = await signInitiateResponse.json()
+                credentials: "include",
+            });
+            const signInitiateResult = await signInitiateResponse.json();
 
             // prepare assertion options
             const assertionOptions = {
                 challenge: signInitiateResult.challenge,
-                allowCredentials: signInitiateResult.allowCredentials
-            }
+                allowCredentials: signInitiateResult.allowCredentials,
+            };
 
             // start authentication (signing)
-            const cred = await startAuthentication(assertionOptions)
+            const cred = await startAuthentication(assertionOptions);
 
             // verify signature from server
             const verifyResponse = await fetch(signVerifyUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cred }),
-                credentials: "include"
-            })
+                credentials: "include",
+            });
 
-            const verifyResult = await verifyResponse.json()
+            const verifyResult = await verifyResponse.json();
 
             if (!verifyResult.success) {
-                throw new Error("Signature not verified")
+                throw new Error("Signature not verified");
             }
 
             // get authenticator data
-            const authenticatorData = verifyResult.authenticatorData
+            const authenticatorData = verifyResult.authenticatorData;
             const authenticatorDataHex = uint8ArrayToHexString(
                 b64ToBytes(authenticatorData)
-            )
+            );
 
             // get client data JSON
-            const clientDataJSON = atob(cred.response.clientDataJSON)
+            const clientDataJSON = atob(cred.response.clientDataJSON);
 
             // get challenge and response type location
             const { beforeType, beforeChallenge } =
-                findQuoteIndices(clientDataJSON)
+                findQuoteIndices(clientDataJSON);
 
             // get signature r,s
-            const signature = verifyResult.signature
-            const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
-            const { r, s } = parseAndNormalizeSig(signatureHex)
+            const signature = verifyResult.signature;
+            const signatureHex = uint8ArrayToHexString(b64ToBytes(signature));
+            const { r, s } = parseAndNormalizeSig(signatureHex);
 
             // encode signature
             const encodedSignature = encodeAbiParameters(
@@ -452,7 +468,7 @@ export async function getPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
                 ],
                 [
                     authenticatorDataHex,
@@ -460,13 +476,13 @@ export async function getPasskeyValidator<
                     beforeChallenge,
                     beforeType,
                     BigInt(r),
-                    BigInt(s)
+                    BigInt(s),
                 ]
-            )
-            return encodedSignature
+            );
+            return encodedSignature;
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccount();
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -474,18 +490,27 @@ export async function getPasskeyValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account,
-                    ...typedData
-                }
-            )
-        }
-    })
+            const { domain, message, primaryType } =
+                typedData as unknown as SignTypedDataParameters;
+
+            const types = {
+                EIP712Domain: getTypesForEIP712Domain({ domain }),
+                ...typedData.types,
+            };
+
+            validateTypedData({ domain, message, primaryType, types });
+
+            const hash = hashTypedData(typedData);
+            const signature = await signMessage(client, {
+                account,
+                message: hash,
+            });
+            return signature;
+        },
+    });
 
     // Fetch chain id
-    const chainId = await getChainId(client)
+    const chainId = await getChainId(client);
 
     return {
         ...account,
@@ -498,38 +523,38 @@ export async function getPasskeyValidator<
                         components: [
                             {
                                 name: "x",
-                                type: "uint256"
+                                type: "uint256",
                             },
                             {
                                 name: "y",
-                                type: "uint256"
-                            }
+                                type: "uint256",
+                            },
                         ],
                         name: "pubKey",
-                        type: "tuple"
-                    }
+                        type: "tuple",
+                    },
                 ],
                 [{ x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) }]
-            )
+            );
         },
         async getNonceKey() {
-            return 0n
+            return 0n;
         },
         async signUserOperation(userOperation: UserOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
-                    signature: "0x"
+                    signature: "0x",
                 },
                 entryPoint: entryPoint,
-                chainId: chainId
-            })
+                chainId: chainId,
+            });
 
             const signature = await signMessage(client, {
                 account,
-                message: { raw: hash }
-            })
-            return signature
+                message: { raw: hash },
+            });
+            return signature;
         },
         async getDummySignature() {
             const encodedSignature = encodeAbiParameters(
@@ -539,7 +564,7 @@ export async function getPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -547,17 +572,17 @@ export async function getPasskeyValidator<
                     maxUint256,
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
                 ]
-            )
-            return encodedSignature
+            );
+            return encodedSignature;
         },
 
         async isEnabled(
             _kernelAccountAddress: Address,
             _selector: Hex
         ): Promise<boolean> {
-            return false
-        }
-    }
+            return false;
+        },
+    };
 }
