@@ -11,7 +11,7 @@ import {
     type Client,
     type Hex,
     type LocalAccount,
-    SignTypedDataParameters,
+    type SignTypedDataParameters,
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
