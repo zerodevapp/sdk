@@ -42,6 +42,7 @@ export async function createPasskeyValidator<
         registerVerifyUrl,
         signInitiateUrl,
         signVerifyUrl,
+        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
@@ -50,6 +51,7 @@ export async function createPasskeyValidator<
         registerVerifyUrl: string
         signInitiateUrl: string
         signVerifyUrl: string
+        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
@@ -192,7 +194,8 @@ export async function createPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     authenticatorDataHex,
@@ -200,7 +203,8 @@ export async function createPasskeyValidator<
                     beforeChallenge,
                     beforeType,
                     BigInt(r),
-                    BigInt(s)
+                    BigInt(s),
+                    usePrecompiled
                 ]
             )
             return encodedSignature
@@ -288,7 +292,8 @@ export async function createPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -296,7 +301,8 @@ export async function createPasskeyValidator<
                     maxUint256,
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
+                    false
                 ]
             )
             return encodedSignature
@@ -321,6 +327,7 @@ export async function getPasskeyValidator<
         loginVerifyUrl,
         signInitiateUrl,
         signVerifyUrl,
+        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
@@ -328,6 +335,7 @@ export async function getPasskeyValidator<
         loginVerifyUrl: string
         signInitiateUrl: string
         signVerifyUrl: string
+        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
@@ -465,7 +473,8 @@ export async function getPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     authenticatorDataHex,
@@ -473,7 +482,8 @@ export async function getPasskeyValidator<
                     beforeChallenge,
                     beforeType,
                     BigInt(r),
-                    BigInt(s)
+                    BigInt(s),
+                    usePrecompiled
                 ]
             )
             return encodedSignature
@@ -561,7 +571,8 @@ export async function getPasskeyValidator<
                     { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -569,7 +580,8 @@ export async function getPasskeyValidator<
                     maxUint256,
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
+                    false
                 ]
             )
             return encodedSignature
