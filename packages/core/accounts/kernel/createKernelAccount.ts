@@ -8,6 +8,7 @@ import {
     type Chain,
     type Client,
     type EncodeDeployDataParameters,
+    type Hash,
     type Hex,
     type Transport,
     type TypedDataDefinition,
@@ -21,16 +22,19 @@ import {
     hashTypedData,
     keccak256,
     parseAbi,
+    publicActions,
     stringToHex,
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode } from "viem/actions"
+import { KERNEL_NAME, LATEST_KERNEL_VERSION } from "../../constants.js"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
+import { wrapSignatureWith6492 } from "../utils/6492.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
@@ -202,6 +206,14 @@ const getAccountAddress = async <
     })
 }
 
+const parseFactoryAddressAndCallDataFromAccountInitCode = (
+    initCode: Hex
+): [Address, Hex] => {
+    const factoryAddress = `0x${initCode.substring(2, 42)}` as Address
+    const factoryCalldata = `0x${initCode.substring(42)}` as Hex
+    return [factoryAddress, factoryCalldata]
+}
+
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -256,14 +268,13 @@ export async function createKernelAccount<
     }
 
     // Fetch account address and chain id
-    const [accountAddress] = await Promise.all([
+    const accountAddress =
         deployedAccountAddress ??
-            getAccountAddress<TTransport, TChain>({
-                client,
-                entryPoint,
-                initCodeProvider: generateInitCode
-            })
-    ])
+        (await getAccountAddress<TTransport, TChain>({
+            client,
+            entryPoint,
+            initCodeProvider: generateInitCode
+        }))
 
     if (!accountAddress) throw new Error("Account address not found")
 
@@ -281,11 +292,28 @@ export async function createKernelAccount<
                 "latest"
             ]
         })
-        const decoded = decodeFunctionResult({
-            abi: [...EIP1271ABI],
-            functionName: "eip712Domain",
-            data: domain
-        })
+
+        let name: string
+        let version: string
+        let chainId: bigint
+
+        if (domain !== "0x") {
+            const decoded = decodeFunctionResult({
+                abi: [...EIP1271ABI],
+                functionName: "eip712Domain",
+                data: domain
+            })
+
+            name = decoded[1]
+            version = decoded[2]
+            chainId = decoded[3]
+        } else {
+            name = KERNEL_NAME
+            version = LATEST_KERNEL_VERSION
+            chainId = client.chain
+                ? client.chain.id
+                : await client.extend(publicActions).getChainId()
+        }
 
         const encoded = encodeAbiParameters(
             [
@@ -301,9 +329,9 @@ export async function createKernelAccount<
                         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                     )
                 ),
-                keccak256(stringToHex(decoded[1])),
-                keccak256(stringToHex(decoded[2])),
-                decoded[3],
+                keccak256(stringToHex(name)),
+                keccak256(stringToHex(version)),
+                BigInt(chainId),
                 accountAddress
             ]
         )
@@ -324,7 +352,11 @@ export async function createKernelAccount<
         address: accountAddress,
         async signMessage({ message }) {
             const messageHash = hashMessage(message)
-            return signHashedMessage(messageHash)
+            const [isDeployed, signature] = await Promise.all([
+                isAccountDeployed(),
+                signHashedMessage(messageHash)
+            ])
+            return create6492Signature(isDeployed, signature)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -347,9 +379,41 @@ export async function createKernelAccount<
             } as TypedDataDefinition)
 
             const typedHash = hashTypedData(typedData)
-            return await signHashedMessage(typedHash)
+            const [isDeployed, signature] = await Promise.all([
+                isAccountDeployed(),
+                signHashedMessage(typedHash)
+            ])
+            return create6492Signature(isDeployed, signature)
         }
     })
+
+    const isAccountDeployed = async (): Promise<boolean> => {
+        const contractCode = await getBytecode(client, {
+            address: accountAddress
+        })
+
+        return (contractCode?.length ?? 0) > 2
+    }
+
+    const create6492Signature = async (
+        isDeployed: boolean,
+        signature: Hash
+    ): Promise<Hash> => {
+        if (isDeployed) {
+            return signature
+        }
+
+        const [factoryAddress, factoryCalldata] =
+            parseFactoryAddressAndCallDataFromAccountInitCode(
+                await generateInitCode()
+            )
+
+        return wrapSignatureWith6492({
+            factoryAddress,
+            factoryCalldata,
+            signature
+        })
+    }
 
     return {
         ...account,
@@ -357,6 +421,8 @@ export async function createKernelAccount<
         publicKey: accountAddress,
         entryPoint: entryPoint,
         source: "kernelSmartAccount",
+        kernelPluginManager,
+        generateInitCode,
 
         // Get the nonce of the smart account
         async getNonce() {
@@ -367,23 +433,19 @@ export async function createKernelAccount<
                 key
             })
         },
-        kernelPluginManager,
 
         // Sign a user operation
         async signUserOperation(userOperation) {
             return kernelPluginManager.signUserOperation(userOperation)
         },
-        generateInitCode,
 
         // Encode the init code
         async getInitCode() {
-            const contractCode = await getBytecode(client, {
-                address: accountAddress
-            })
-
-            if ((contractCode?.length ?? 0) > 2) return "0x"
-
-            return generateInitCode()
+            if (await isAccountDeployed()) {
+                return "0x"
+            } else {
+                return generateInitCode()
+            }
         },
 
         // Encode the deploy call data
