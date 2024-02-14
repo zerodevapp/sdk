@@ -1,5 +1,5 @@
 {
-  "name": "@zerodev/webauthn-validator",
+  "name": "@zerodev/passkey-validator",
   "version": "5.1.0-beta.3",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
