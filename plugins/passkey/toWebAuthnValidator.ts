@@ -1,6 +1,5 @@
 import { Buffer } from "buffer"
-import { startAuthentication } from "@simplewebauthn/browser"
-import { generateAuthenticationOptions } from "@simplewebauthn/server"
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
@@ -28,8 +27,6 @@ import { WEBAUTHN_VALIDATOR_ADDRESS } from "./index.js"
 import {
     b64ToBytes,
     findQuoteIndices,
-    hexStringToUint8Array,
-    isRip7212SupportedNetwork,
     parseAndNormalizeSig,
     uint8ArrayToHexString
 } from "./utils.js"
@@ -40,20 +37,60 @@ export async function createPasskeyValidator<
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        rpID,
-        pubKey,
-        authenticatorId,
+        passkeyName,
+        registerOptionUrl,
+        registerVerifyUrl,
+        signInitiateUrl,
+        signVerifyUrl,
+        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
-        rpID: string
-        pubKey: string // Base64URLString from the registration response
-        authenticatorId: string
+        passkeyName: string
+        registerOptionUrl: string
+        registerVerifyUrl: string
+        signInitiateUrl: string
+        signVerifyUrl: string
+        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
-    // Import the public key
+    // Get registration options
+    const registerOptionsResponse = await fetch(registerOptionUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: passkeyName }),
+        credentials: "include"
+    })
+    const registerOptions = await registerOptionsResponse.json()
+
+    // Start registration
+    const registerCred = await startRegistration(registerOptions)
+
+    // Verify registration
+    const registerVerifyResponse = await fetch(registerVerifyUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: passkeyName, cred: registerCred }),
+        credentials: "include"
+    })
+
+    const registerVerifyResult = await registerVerifyResponse.json()
+    if (!registerVerifyResult.verified) {
+        throw new Error("Registration not verified")
+    }
+
+    // Import the key
+    const pubKey = registerCred.response.publicKey
+    if (!pubKey) {
+        throw new Error("No public key returned from registration credential")
+    }
+
     const spkiDer = Buffer.from(pubKey, "base64")
     const key = await crypto.subtle.importKey(
         "spki",
@@ -73,9 +110,6 @@ export async function createPasskeyValidator<
     // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
     const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
     const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
-
-    // Fetch chain id
-    const chainId = await getChainId(client)
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -102,27 +136,40 @@ export async function createPasskeyValidator<
                 ? messageContent.slice(2)
                 : messageContent
 
-            // Convert data (hex string) to Uint8Array
-            const dataUint8Array = hexStringToUint8Array(formattedMessage)
+            // initiate signing
+            const signInitiateResponse = await fetch(signInitiateUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: formattedMessage }),
+                credentials: "include"
+            })
+            const signInitiateResult = await signInitiateResponse.json()
 
             // prepare assertion options
-            const authOptions = await generateAuthenticationOptions({
-                challenge: dataUint8Array,
-                userVerification: "required",
-                rpID,
-                allowCredentials: [
-                    {
-                        id: b64ToBytes(authenticatorId),
-                        type: "public-key"
-                    }
-                ]
-            })
+            const assertionOptions = {
+                challenge: signInitiateResult.challenge,
+                allowCredentials: signInitiateResult.allowCredentials
+            }
 
             // start authentication (signing)
-            const cred = await startAuthentication(authOptions)
+            const cred = await startAuthentication(assertionOptions)
+
+            // verify signature from server
+            const verifyResponse = await fetch(signVerifyUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cred }),
+                credentials: "include"
+            })
+
+            const verifyResult = await verifyResponse.json()
+
+            if (!verifyResult.success) {
+                throw new Error("Signature not verified")
+            }
 
             // get authenticator data
-            const authenticatorData = cred.response.authenticatorData
+            const authenticatorData = verifyResult.authenticatorData
             const authenticatorDataHex = uint8ArrayToHexString(
                 b64ToBytes(authenticatorData)
             )
@@ -135,7 +182,7 @@ export async function createPasskeyValidator<
                 findQuoteIndices(clientDataJSON)
 
             // get signature r,s
-            const signature = cred.response.signature
+            const signature = verifyResult.signature
             const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
             const { r, s } = parseAndNormalizeSig(signatureHex)
 
@@ -157,7 +204,7 @@ export async function createPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    isRip7212SupportedNetwork(chainId)
+                    usePrecompiled
                 ]
             )
             return encodedSignature
@@ -189,6 +236,9 @@ export async function createPasskeyValidator<
             return signature
         }
     })
+
+    // Fetch chain id
+    const chainId = await getChainId(client)
 
     return {
         ...account,
@@ -273,23 +323,72 @@ export async function getPasskeyValidator<
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        rpID,
-        pubKeyX,
-        pubKeyY,
-        authenticatorId,
+        loginOptionUrl,
+        loginVerifyUrl,
+        signInitiateUrl,
+        signVerifyUrl,
+        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
-        rpID: string
-        pubKeyX: bigint // pubKeyX arg from the event log
-        pubKeyY: bigint // pubKeyY arg from the event log
-        authenticatorId: string
+        loginOptionUrl: string
+        loginVerifyUrl: string
+        signInitiateUrl: string
+        signVerifyUrl: string
+        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
-    // Fetch chain id
-    const chainId = await getChainId(client)
+    // Get login options
+    const loginOptionsResponse = await fetch(loginOptionUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include"
+    })
+    const loginOptions = await loginOptionsResponse.json()
+
+    // Start authentication (login)
+    const loginCred = await startAuthentication(loginOptions)
+
+    // Verify authentication
+    const loginVerifyResponse = await fetch(loginVerifyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cred: loginCred }),
+        credentials: "include"
+    })
+
+    const loginVerifyResult = await loginVerifyResponse.json()
+    if (!loginVerifyResult.verification.verified) {
+        throw new Error("Login not verified")
+    }
+
+    // Import the key
+    const pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
+    if (!pubKey) {
+        throw new Error("No public key returned from login verify credential")
+    }
+
+    const spkiDer = Buffer.from(pubKey, "base64")
+    const key = await crypto.subtle.importKey(
+        "spki",
+        spkiDer,
+        {
+            name: "ECDSA",
+            namedCurve: "P-256"
+        },
+        true,
+        ["verify"]
+    )
+
+    // Export the key to the raw format
+    const rawKey = await crypto.subtle.exportKey("raw", key)
+    const rawKeyBuffer = Buffer.from(rawKey)
+
+    // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
+    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
+    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -316,26 +415,40 @@ export async function getPasskeyValidator<
                 ? messageContent.slice(2)
                 : messageContent
 
-            // Convert data (hex string) to Uint8Array
-            const dataUint8Array = hexStringToUint8Array(formattedMessage)
-
-            const authOptions = await generateAuthenticationOptions({
-                challenge: dataUint8Array,
-                userVerification: "required",
-                rpID,
-                allowCredentials: [
-                    {
-                        id: b64ToBytes(authenticatorId),
-                        type: "public-key"
-                    }
-                ]
+            // initiate signing
+            const signInitiateResponse = await fetch(signInitiateUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: formattedMessage }),
+                credentials: "include"
             })
+            const signInitiateResult = await signInitiateResponse.json()
+
+            // prepare assertion options
+            const assertionOptions = {
+                challenge: signInitiateResult.challenge,
+                allowCredentials: signInitiateResult.allowCredentials
+            }
 
             // start authentication (signing)
-            const cred = await startAuthentication(authOptions)
+            const cred = await startAuthentication(assertionOptions)
+
+            // verify signature from server
+            const verifyResponse = await fetch(signVerifyUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cred }),
+                credentials: "include"
+            })
+
+            const verifyResult = await verifyResponse.json()
+
+            if (!verifyResult.success) {
+                throw new Error("Signature not verified")
+            }
 
             // get authenticator data
-            const authenticatorData = cred.response.authenticatorData
+            const authenticatorData = verifyResult.authenticatorData
             const authenticatorDataHex = uint8ArrayToHexString(
                 b64ToBytes(authenticatorData)
             )
@@ -348,7 +461,7 @@ export async function getPasskeyValidator<
                 findQuoteIndices(clientDataJSON)
 
             // get signature r,s
-            const signature = cred.response.signature
+            const signature = verifyResult.signature
             const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
             const { r, s } = parseAndNormalizeSig(signatureHex)
 
@@ -370,7 +483,7 @@ export async function getPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    isRip7212SupportedNetwork(chainId)
+                    usePrecompiled
                 ]
             )
             return encodedSignature
@@ -403,6 +516,9 @@ export async function getPasskeyValidator<
         }
     })
 
+    // Fetch chain id
+    const chainId = await getChainId(client)
+
     return {
         ...account,
         address: validatorAddress,
@@ -425,7 +541,7 @@ export async function getPasskeyValidator<
                         type: "tuple"
                     }
                 ],
-                [{ x: pubKeyX, y: pubKeyY }]
+                [{ x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) }]
             )
         },
         async getNonceKey() {
