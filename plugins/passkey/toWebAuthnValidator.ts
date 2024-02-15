@@ -27,6 +27,7 @@ import { WEBAUTHN_VALIDATOR_ADDRESS } from "./index.js"
 import {
     b64ToBytes,
     findQuoteIndices,
+    isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
     uint8ArrayToHexString
 } from "./utils.js"
@@ -42,7 +43,6 @@ export async function createPasskeyValidator<
         registerVerifyUrl,
         signInitiateUrl,
         signVerifyUrl,
-        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
@@ -51,7 +51,6 @@ export async function createPasskeyValidator<
         registerVerifyUrl: string
         signInitiateUrl: string
         signVerifyUrl: string
-        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
@@ -110,6 +109,9 @@ export async function createPasskeyValidator<
     // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
     const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
     const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
+
+    // Fetch chain id
+    const chainId = await getChainId(client)
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -204,7 +206,7 @@ export async function createPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    usePrecompiled
+                    isRIP7212SupportedNetwork(chainId)
                 ]
             )
             return encodedSignature
@@ -236,9 +238,6 @@ export async function createPasskeyValidator<
             return signature
         }
     })
-
-    // Fetch chain id
-    const chainId = await getChainId(client)
 
     return {
         ...account,
@@ -327,7 +326,6 @@ export async function getPasskeyValidator<
         loginVerifyUrl,
         signInitiateUrl,
         signVerifyUrl,
-        usePrecompiled = false,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
@@ -335,7 +333,6 @@ export async function getPasskeyValidator<
         loginVerifyUrl: string
         signInitiateUrl: string
         signVerifyUrl: string
-        usePrecompiled?: boolean
         entryPoint?: Address
         validatorAddress?: Address
     }
@@ -389,6 +386,9 @@ export async function getPasskeyValidator<
     // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
     const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
     const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
+
+    // Fetch chain id
+    const chainId = await getChainId(client)
 
     // build account with passkey
     const account: LocalAccount = toAccount({
@@ -483,7 +483,7 @@ export async function getPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    usePrecompiled
+                    isRIP7212SupportedNetwork(chainId)
                 ]
             )
             return encodedSignature
@@ -515,9 +515,6 @@ export async function getPasskeyValidator<
             return signature
         }
     })
-
-    // Fetch chain id
-    const chainId = await getChainId(client)
 
     return {
         ...account,

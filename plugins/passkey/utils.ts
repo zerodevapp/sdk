@@ -1,6 +1,11 @@
 import { p256 } from "@noble/curves/p256"
 import { type Hex, bytesToBigInt, hexToBytes } from "viem"
 
+const RIP7212_SUPPORTED_NETWORKS = [80001]
+
+export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
+    RIP7212_SUPPORTED_NETWORKS.includes(chainId)
+
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     return `0x${Array.from(array, (byte) =>
         byte.toString(16).padStart(2, "0")
