@@ -311,8 +311,8 @@ export async function createKernelAccount<
             name = KERNEL_NAME
             version = LATEST_KERNEL_VERSION
             chainId = client.chain
-                ? client.chain.id
-                : await client.extend(publicActions).getChainId()
+                ? BigInt(client.chain.id)
+                : BigInt(await client.extend(publicActions).getChainId())
         }
 
         const encoded = encodeAbiParameters(
