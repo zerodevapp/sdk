@@ -1,6 +1,14 @@
 import { p256 } from "@noble/curves/p256"
 import { type Hex, bytesToBigInt, hexToBytes } from "viem"
 
+const rip7212supportedNetworks = [
+    80001 // polygon mumbai
+]
+
+export const isRip7212SupportedNetwork = (networkId: number): boolean => {
+    return rip7212supportedNetworks.includes(networkId)
+}
+
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     return `0x${Array.from(array, (byte) =>
         byte.toString(16).padStart(2, "0")
@@ -46,4 +54,13 @@ export function parseAndNormalizeSig(derSig: Hex): { r: bigint; s: bigint } {
         s = n - s
     }
     return { r, s }
+}
+
+export function hexStringToUint8Array(string: string): Uint8Array {
+    const hexString = string.startsWith("0x") ? string.slice(2) : string
+    const byteArray = new Uint8Array(hexString.length / 2)
+    for (let i = 0; i < hexString.length; i += 2) {
+        byteArray[i / 2] = parseInt(hexString.substring(i, i + 2), 16)
+    }
+    return byteArray
 }
