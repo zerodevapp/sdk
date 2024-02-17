@@ -284,7 +284,7 @@ const filterPermissions = (
     dataArray: Hex[],
     values: bigint[],
     permissionsList?: PermissionCore[],
-    operation: Operation = Operation.Call,
+    operation: Operation = Operation.Call
 ): PermissionCore[] | undefined => {
     if (
         targets.length !== dataArray.length ||
