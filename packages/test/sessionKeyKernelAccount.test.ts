@@ -7,6 +7,7 @@ import {
     TokenActionsAbi
 } from "@zerodev/sdk"
 import {
+    Operation,
     ParamOperator,
     type SessionKeyPlugin,
     anyPaymaster,
@@ -29,6 +30,7 @@ import {
     getFunctionSelector,
     pad,
     parseEther,
+    toFunctionSelector,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
@@ -38,6 +40,7 @@ import {
     Test_ERC20Address,
     getEntryPoint,
     getKernelAccountClient,
+    getKernelBundlerClient,
     getPublicClient,
     getSessionKeyToSessionKeyKernelAccount,
     getSignerToEcdsaKernelAccount,
@@ -94,6 +97,7 @@ describe("Session Key kernel Account", async () => {
         })
 
         if (amountToMint > 0n) {
+            console.log("Minting to account")
             const mintTransactionHash =
                 await ecdsaSmartAccountClient.sendTransaction({
                     to: Test_ERC20Address,
@@ -668,5 +672,111 @@ describe("Session Key kernel Account", async () => {
         )
 
         expect(params.sessionKeyParams.permissions?.[0].valueLimit === bigInt)
+    }, 1000000)
+
+    test("should execute the erc20 token transfer action via delegate call using SessionKey and Token Action executor", async () => {
+        await mintToAccount(100000000n)
+        const sessionKeyPlugin = await signerToSessionKeyValidator(
+            publicClient,
+            {
+                signer: privateKeyToAccount(generatePrivateKey()),
+                validatorData: {
+                    permissions: [
+                        {
+                            target: constants.TOKEN_ACTION,
+                            abi: TokenActionsAbi,
+                            functionName: "transfer20Action",
+                            args: [
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: Test_ERC20Address
+                                },
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: 10000n
+                                },
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: owner.address
+                                }
+                            ],
+                            operation: Operation.DelegateCall
+                        }
+                    ]
+                }
+            }
+        )
+
+        const _sessionKeySmartAccountClient = await getKernelAccountClient({
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin,
+                {
+                    executor: zeroAddress,
+                    selector: toFunctionSelector(
+                        "executeDelegateCall(address, bytes)"
+                    )
+                }
+            ),
+            sponsorUserOperation: async ({ userOperation }) => {
+                const kernelPaymaster = getZeroDevPaymasterClient()
+                const entryPoint = getEntryPoint()
+                return kernelPaymaster.sponsorUserOperation({
+                    userOperation,
+                    entryPoint
+                })
+            }
+        })
+
+        const amountToTransfer = 10000n
+        const transferData = encodeFunctionData({
+            abi: TokenActionsAbi,
+            functionName: "transfer20Action",
+            args: [Test_ERC20Address, amountToTransfer, owner.address]
+        })
+
+        const balanceOfReceipientBefore = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
+        const userOpHash =
+            await _sessionKeySmartAccountClient.sendUserOperation({
+                userOperation: {
+                    callData:
+                        await _sessionKeySmartAccountClient.account.encodeCallData(
+                            {
+                                to: constants.TOKEN_ACTION,
+                                data: transferData,
+                                value: 0n,
+                                callType: "delegatecall"
+                            }
+                        )
+                }
+            })
+        console.log(
+            "jiffyScanLink:",
+            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=mumbai/`
+        )
+        const bundlerClient = getKernelBundlerClient()
+        const {
+            receipt: { transactionHash: transferTransactionHash }
+        } = await bundlerClient.waitForUserOperationReceipt({
+            hash: userOpHash
+        })
+
+        console.log(
+            "transferTransactionHash",
+            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+        )
+        const balanceOfReceipientAfter = await client.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [owner.address]
+        })
+        expect(balanceOfReceipientAfter).toBe(
+            balanceOfReceipientBefore + amountToTransfer
+        )
     }, 1000000)
 })
