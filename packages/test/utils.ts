@@ -107,23 +107,35 @@ export const getSignerToEcdsaKernelAccount =
             throw new Error("TEST_PRIVATE_KEY environment variable not set")
         }
 
-        const publicClient = await getPublicClient()
-        const signer = privateKeyToAccount(privateKey)
-        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
-            publicClient,
-            {
-                entryPoint: getEntryPoint(),
-                signer: { ...signer, source: "local" as "local" | "external" }
-            }
-        )
-
-        return createKernelAccount(publicClient, {
-            entryPoint: getEntryPoint(),
-            plugins: {
-                sudo: ecdsaValidatorPlugin
-            }
-        })
+        return getEcdsaKernelAccountWithPrivateKey(privateKey)
     }
+
+export const getEcdsaKernelAccountWithRandomSigner =
+    async (): Promise<SmartAccount> => {
+        return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
+    }
+
+const getEcdsaKernelAccountWithPrivateKey = async (
+    privateKey: Hex
+): Promise<SmartAccount> => {
+    if (!privateKey) {
+        throw new Error("privateKey cannot be empty")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin
+        }
+    })
+}
 
 // we only use two signers for testing
 export const getSignersToWeightedEcdsaKernelAccount = async (

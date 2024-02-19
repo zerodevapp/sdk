@@ -38,3 +38,4 @@ export {
     gasTokenAddresses,
     type TokenSymbolsMap
 } from "./gasTokenAddresses.js"
+export { verifyEIP6492Signature } from "./accounts/utils/index.js"
