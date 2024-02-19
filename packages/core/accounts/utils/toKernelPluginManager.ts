@@ -139,6 +139,7 @@ export async function toKernelPluginManager<
             },
             primaryType: "ValidatorApproved"
         })
+        pluginEnableSignature = ownerSig
         return ownerSig
     }
 
