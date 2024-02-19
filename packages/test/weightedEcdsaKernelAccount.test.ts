@@ -1,37 +1,26 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
-    EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
-    KernelSmartAccount,
-    createKernelAccount
+    KernelSmartAccount
 } from "@zerodev/sdk"
 import { signerToSessionKeyValidator } from "@zerodev/session-key"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import dotenv from "dotenv"
 import { BundlerClient, bundlerActions } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
-import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
     Address,
     Chain,
-    Hex,
     type PublicClient,
     Transport,
-    decodeEventLog,
     encodeFunctionData,
     getContract,
-    hashTypedData,
-    keccak256,
-    stringToHex,
-    toHex,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import {
     findUserOperationEvent,
@@ -39,10 +28,8 @@ import {
     getKernelAccountClient,
     getKernelBundlerClient,
     getPublicClient,
-    getSignerToEcdsaKernelAccount,
     getSignersToWeightedEcdsaKernelAccount,
     getZeroDevPaymasterClient,
-    sleep,
     waitForNonceUpdate
 } from "./utils.js"
 

@@ -18,6 +18,7 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
+import { createPasskeyValidator } from "@zerodev/webauthn-validator"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import {
     BundlerClient,
@@ -183,6 +184,24 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
     }
 }
 
+export const getSignerToWebAuthnKernelAccount =
+    async (): Promise<SmartAccount> => {
+        const publicClient = await getPublicClient()
+        const webAuthnValidatorPlugin = await createPasskeyValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint()
+            }
+        )
+
+        return createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                validator: webAuthnValidatorPlugin
+            }
+        })
+    }
+
 export const getSignerToSessionKeyKernelAccount =
     async (): Promise<SmartAccount> => {
         const privateKey = process.env.TEST_PRIVATE_KEY as Hex
@@ -273,7 +292,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     })
 }
 
-const DEFAULT_PROVIDER = "STACKUP"
+const DEFAULT_PROVIDER = "PIMLICO"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
