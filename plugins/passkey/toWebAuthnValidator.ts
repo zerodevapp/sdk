@@ -39,45 +39,45 @@ export async function createPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         passkeyName,
-        registerOptionUrl,
-        registerVerifyUrl,
-        signInitiateUrl,
-        signVerifyUrl,
+        passkeyServerUrl,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
         passkeyName: string
-        registerOptionUrl: string
-        registerVerifyUrl: string
-        signInitiateUrl: string
-        signVerifyUrl: string
+        passkeyServerUrl: string
         entryPoint?: Address
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
     // Get registration options
-    const registerOptionsResponse = await fetch(registerOptionUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username: passkeyName }),
-        credentials: "include"
-    })
+    const registerOptionsResponse = await fetch(
+        `${passkeyServerUrl}/register/options`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username: passkeyName }),
+            credentials: "include"
+        }
+    )
     const registerOptions = await registerOptionsResponse.json()
 
     // Start registration
     const registerCred = await startRegistration(registerOptions)
 
     // Verify registration
-    const registerVerifyResponse = await fetch(registerVerifyUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username: passkeyName, cred: registerCred }),
-        credentials: "include"
-    })
+    const registerVerifyResponse = await fetch(
+        `${passkeyServerUrl}/register/verify`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username: passkeyName, cred: registerCred }),
+            credentials: "include"
+        }
+    )
 
     const registerVerifyResult = await registerVerifyResponse.json()
     if (!registerVerifyResult.verified) {
@@ -139,12 +139,15 @@ export async function createPasskeyValidator<
                 : messageContent
 
             // initiate signing
-            const signInitiateResponse = await fetch(signInitiateUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: formattedMessage }),
-                credentials: "include"
-            })
+            const signInitiateResponse = await fetch(
+                `${passkeyServerUrl}/sign-initiate`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: formattedMessage }),
+                    credentials: "include"
+                }
+            )
             const signInitiateResult = await signInitiateResponse.json()
 
             // prepare assertion options
@@ -157,12 +160,15 @@ export async function createPasskeyValidator<
             const cred = await startAuthentication(assertionOptions)
 
             // verify signature from server
-            const verifyResponse = await fetch(signVerifyUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cred }),
-                credentials: "include"
-            })
+            const verifyResponse = await fetch(
+                `${passkeyServerUrl}/sign-verify`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cred }),
+                    credentials: "include"
+                }
+            )
 
             const verifyResult = await verifyResponse.json()
 
@@ -317,39 +323,39 @@ export async function getPasskeyValidator<
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        loginOptionUrl,
-        loginVerifyUrl,
-        signInitiateUrl,
-        signVerifyUrl,
+        passkeyServerUrl,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
-        loginOptionUrl: string
-        loginVerifyUrl: string
-        signInitiateUrl: string
-        signVerifyUrl: string
+        passkeyServerUrl: string
         entryPoint?: Address
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<"WebAuthnValidator">> {
     // Get login options
-    const loginOptionsResponse = await fetch(loginOptionUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include"
-    })
+    const loginOptionsResponse = await fetch(
+        `${passkeyServerUrl}/login/options`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include"
+        }
+    )
     const loginOptions = await loginOptionsResponse.json()
 
     // Start authentication (login)
     const loginCred = await startAuthentication(loginOptions)
 
     // Verify authentication
-    const loginVerifyResponse = await fetch(loginVerifyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cred: loginCred }),
-        credentials: "include"
-    })
+    const loginVerifyResponse = await fetch(
+        `${passkeyServerUrl}/login/verify`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cred: loginCred }),
+            credentials: "include"
+        }
+    )
 
     const loginVerifyResult = await loginVerifyResponse.json()
     if (!loginVerifyResult.verification.verified) {
@@ -411,12 +417,15 @@ export async function getPasskeyValidator<
                 : messageContent
 
             // initiate signing
-            const signInitiateResponse = await fetch(signInitiateUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: formattedMessage }),
-                credentials: "include"
-            })
+            const signInitiateResponse = await fetch(
+                `${passkeyServerUrl}/sign-initiate`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: formattedMessage }),
+                    credentials: "include"
+                }
+            )
             const signInitiateResult = await signInitiateResponse.json()
 
             // prepare assertion options
@@ -429,12 +438,15 @@ export async function getPasskeyValidator<
             const cred = await startAuthentication(assertionOptions)
 
             // verify signature from server
-            const verifyResponse = await fetch(signVerifyUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cred }),
-                credentials: "include"
-            })
+            const verifyResponse = await fetch(
+                `${passkeyServerUrl}/sign-verify`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cred }),
+                    credentials: "include"
+                }
+            )
 
             const verifyResult = await verifyResponse.json()
 
