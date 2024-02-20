@@ -86,6 +86,7 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
     "https://fittest-ultra-aura.ethereum-sepolia.quiknode.pro/3893d01b1dd411fdfa9b6dd372dd2b4f69fcf1ea/",
   137: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   80001: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
+  80002: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
   10: `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   420: `https://optimism-goerli.infura.io/v3/${INFURA_API_KEY}`,
   42161: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
