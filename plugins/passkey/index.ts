@@ -2,7 +2,7 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import {
     createPasskeyValidator,
     getPasskeyValidator
-} from "./toWebAuthnValidator.js"
+} from "./toPasskeyValidator.js"
 
 export { createPasskeyValidator, getPasskeyValidator, type KernelValidator }
 
