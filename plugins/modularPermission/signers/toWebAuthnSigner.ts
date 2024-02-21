@@ -34,12 +34,7 @@ export type WebAuthnKey = {
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
     passkeyName: string
-    registerOptionUrl: string
-    registerVerifyUrl: string
-    loginOptionUrl: string
-    loginVerifyUrl: string
-    signInitiateUrl: string
-    signVerifyUrl: string
+    passkeyServerUrl: string
     pubKey?: WebAuthnKey
     mode?: WebAuthnMode
 }
@@ -52,12 +47,7 @@ export const toWebAuthnSigner = async <
     {
         signerContractAddress = WEBAUTHN_SIGNER_CONTRACT,
         pubKey,
-        signInitiateUrl,
-        signVerifyUrl,
-        registerOptionUrl,
-        registerVerifyUrl,
-        loginOptionUrl,
-        loginVerifyUrl,
+        passkeyServerUrl,
         passkeyName,
         mode = WebAuthnMode.Register
     }: WebAuthnModularSignerParams
@@ -65,11 +55,8 @@ export const toWebAuthnSigner = async <
     pubKey =
         pubKey ??
         (await toWebAuthnPubKey({
-            loginOptionUrl,
-            loginVerifyUrl,
-            registerOptionUrl,
-            registerVerifyUrl,
             passkeyName,
+            passkeyServerUrl,
             mode
         }))
     if (!pubKey) {
@@ -99,12 +86,15 @@ export const toWebAuthnSigner = async <
             : messageContent
 
         // initiate signing
-        const signInitiateResponse = await fetch(signInitiateUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: formattedMessage }),
-            credentials: "include"
-        })
+        const signInitiateResponse = await fetch(
+            `${passkeyServerUrl}/sign-initiate`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: formattedMessage }),
+                credentials: "include"
+            }
+        )
         const signInitiateResult = await signInitiateResponse.json()
 
         // prepare assertion options
@@ -117,7 +107,7 @@ export const toWebAuthnSigner = async <
         const cred = await startAuthentication(assertionOptions)
 
         // verify signature from server
-        const verifyResponse = await fetch(signVerifyUrl, {
+        const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ cred }),

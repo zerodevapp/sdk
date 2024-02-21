@@ -9,39 +9,39 @@ export enum WebAuthnMode {
 
 export const toWebAuthnPubKey = async ({
     passkeyName,
-    registerOptionUrl,
-    registerVerifyUrl,
-    loginOptionUrl,
-    loginVerifyUrl,
+    passkeyServerUrl,
     mode = WebAuthnMode.Login
 }: {
     passkeyName: string
-    registerOptionUrl: string
-    registerVerifyUrl: string
-    loginOptionUrl: string
-    loginVerifyUrl: string
+    passkeyServerUrl: string
     mode: WebAuthnMode
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     if (mode === WebAuthnMode.Login) {
         // Get login options
-        const loginOptionsResponse = await fetch(loginOptionUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include"
-        })
+        const loginOptionsResponse = await fetch(
+            `${passkeyServerUrl}/login/options`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include"
+            }
+        )
         const loginOptions = await loginOptionsResponse.json()
 
         // Start authentication (login)
         const loginCred = await startAuthentication(loginOptions)
 
         // Verify authentication
-        const loginVerifyResponse = await fetch(loginVerifyUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cred: loginCred }),
-            credentials: "include"
-        })
+        const loginVerifyResponse = await fetch(
+            `${passkeyServerUrl}/login/verify`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cred: loginCred }),
+                credentials: "include"
+            }
+        )
 
         const loginVerifyResult = await loginVerifyResponse.json()
         if (!loginVerifyResult.verification.verified) {
@@ -54,28 +54,37 @@ export const toWebAuthnPubKey = async ({
             throw new Error("No passkey name provided")
         }
         // Get registration options
-        const registerOptionsResponse = await fetch(registerOptionUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: passkeyName }),
-            credentials: "include"
-        })
+        const registerOptionsResponse = await fetch(
+            `${passkeyServerUrl}/register/options`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username: passkeyName }),
+                credentials: "include"
+            }
+        )
         const registerOptions = await registerOptionsResponse.json()
 
         // Start registration
         const registerCred = await startRegistration(registerOptions)
 
         // Verify registration
-        const registerVerifyResponse = await fetch(registerVerifyUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: passkeyName, cred: registerCred }),
-            credentials: "include"
-        })
+        const registerVerifyResponse = await fetch(
+            `${passkeyServerUrl}/register/verify`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: passkeyName,
+                    cred: registerCred
+                }),
+                credentials: "include"
+            }
+        )
 
         const registerVerifyResult = await registerVerifyResponse.json()
         if (!registerVerifyResult.verified) {

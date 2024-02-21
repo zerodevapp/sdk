@@ -15,9 +15,9 @@ import {
 import { getChainId, readContract } from "viem/actions"
 import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"
 import { MAX_FLAG, MODULAR_PERMISSION_VALIDATOR_ADDRESS } from "./constants.js"
+import type { Policy } from "./policies/types.js"
 import { type ModularSigner } from "./signers/types.js"
 import { type ModularPermissionPlugin, type Nonces } from "./types.js"
-import type { Policy } from "./policies/types.js"
 
 export async function createPermissionValidator<
     TTransport extends Transport = Transport,
