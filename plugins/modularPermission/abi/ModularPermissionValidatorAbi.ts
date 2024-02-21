@@ -90,11 +90,6 @@ export const ModularPermissionValidatorAbi = [
     {
         inputs: [
             {
-                internalType: "uint128",
-                name: "nonce",
-                type: "uint128"
-            },
-            {
                 internalType: "bytes12",
                 name: "flag",
                 type: "bytes12"
@@ -182,7 +177,7 @@ export const ModularPermissionValidatorAbi = [
         outputs: [
             {
                 internalType: "uint128",
-                name: "next",
+                name: "lastNonce",
                 type: "uint128"
             },
             {

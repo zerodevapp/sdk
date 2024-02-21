@@ -52,7 +52,8 @@
         }
     },
     "dependencies": {
-        "merkletreejs": "^0.3.11"
+        "merkletreejs": "^0.3.11",
+        "@simplewebauthn/browser": "^9.0.1"
     },
     "peerDependencies": {
         "viem": "^2.0.0",

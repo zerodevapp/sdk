@@ -1,5 +1,4 @@
-import { constants, KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
-import { fixSignedData } from "@zerodev/sdk"
+import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
 import { getAction, getUserOperationHash } from "permissionless"
 import {
     type Address,
@@ -15,19 +14,12 @@ import {
 } from "viem"
 import { getChainId, readContract } from "viem/actions"
 import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"
-import {
-    ECDSA_SIGNER_CONTRACT,
-    MAX_FLAG,
-    MODULAR_PERMISSION_VALIDATOR_ADDRESS
-} from "./constants.js"
+import { MAX_FLAG, MODULAR_PERMISSION_VALIDATOR_ADDRESS } from "./constants.js"
 import { type ModularSigner } from "./signers/types.js"
-import {
-    type ModularPermissionData,
-    type ModularPermissionPlugin,
-    type Nonces
-} from "./types.js"
+import { type ModularPermissionPlugin, type Nonces } from "./types.js"
+import type { Policy } from "./policies/types.js"
 
-export async function signerToModularPermissionValidator<
+export async function createPermissionValidator<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -35,11 +27,15 @@ export async function signerToModularPermissionValidator<
     {
         signer,
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-        validatorData,
+        policies,
+        validUntil,
+        validAfter,
         validatorAddress = MODULAR_PERMISSION_VALIDATOR_ADDRESS
     }: {
         signer: ModularSigner
-        validatorData: ModularPermissionData
+        validUntil?: number
+        validAfter?: number
+        policies: Policy[]
         entryPoint?: Address
         validatorAddress?: Address
     }
@@ -59,22 +55,21 @@ export async function signerToModularPermissionValidator<
             args: [kernelAccountAddress]
         })
 
-        return { next: nonce[0], revoked: nonce[1] }
+        return { lastNonce: nonce[0], revoked: nonce[1] }
     }
 
     const getEnableData = async (
         kernelAccountAddress?: Address
     ): Promise<Hex> => {
-        if (!kernelAccountAddress) {
-            throw new Error("Kernel account address not provided")
-        }
-        const nonce = (await getNonces(kernelAccountAddress)).next
+        const nonce = kernelAccountAddress
+            ? (await getNonces(kernelAccountAddress)).lastNonce + 1n
+            : 0n
         const enableData = concat([
             pad(toHex(nonce), { size: 16 }),
             MAX_FLAG,
-            pad(toHex(validatorData?.validAfter ?? 0), { size: 6 }),
-            pad(toHex(validatorData?.validUntil ?? 0), { size: 6 }),
-            ECDSA_SIGNER_CONTRACT,
+            pad(toHex(validAfter ?? 0), { size: 6 }),
+            pad(toHex(validUntil ?? 0), { size: 6 }),
+            signer.signerContractAddress,
             encodeAbiParameters(
                 [
                     { name: "policies", type: "bytes32[]" },
@@ -82,13 +77,9 @@ export async function signerToModularPermissionValidator<
                     { name: "policyData", type: "bytes[]" }
                 ],
                 [
-                    validatorData.policies.map((policy) =>
-                        policy.getPolicyInfoInBytes()
-                    ),
-                    signer.account.address,
-                    validatorData.policies.map((policy) =>
-                        policy.getPolicyData()
-                    )
+                    policies.map((policy) => policy.getPolicyInfoInBytes()),
+                    signer.getSignerData(),
+                    policies.map((policy) => policy.getPolicyData())
                 ]
             )
         ])
@@ -108,14 +99,12 @@ export async function signerToModularPermissionValidator<
             ],
             [
                 MAX_FLAG,
-                ECDSA_SIGNER_CONTRACT,
-                validatorData?.validAfter ?? 0,
-                validatorData?.validUntil ?? 0,
-                validatorData.policies.map((policy) =>
-                    policy.getPolicyInfoInBytes()
-                ),
-                signer.account.address,
-                validatorData.policies.map((policy) => policy.getPolicyData())
+                signer.signerContractAddress,
+                validAfter ?? 0,
+                validUntil ?? 0,
+                policies.map((policy) => policy.getPolicyInfoInBytes()),
+                signer.getSignerData(),
+                policies.map((policy) => policy.getPolicyData())
             ]
         )
         return keccak256(pIdData)
@@ -126,6 +115,20 @@ export async function signerToModularPermissionValidator<
         address: validatorAddress,
         source: "ModularPermissionValidator",
         getEnableData,
+        getPermissionId,
+
+        signMessage: async ({ message }) => {
+            return concat([
+                getPermissionId(),
+                await signer.account.signMessage({ message })
+            ])
+        },
+        signTypedData: async (typedData) => {
+            return concat([
+                getPermissionId(),
+                await signer.account.signTypedData(typedData)
+            ])
+        },
 
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
@@ -137,27 +140,26 @@ export async function signerToModularPermissionValidator<
             const signature = await signer.account.signMessage({
                 message: { raw: userOpHash }
             })
-            const fixedSignature = fixSignedData(signature)
             return concat([
                 getPermissionId(),
-                ...validatorData.policies.map((policy) =>
+                ...policies.map((policy) =>
                     policy.getSignaturePolicyData(userOperation)
                 ),
-                fixedSignature
+                signature
             ])
         },
 
         getNonceKey: async () => {
-            return BigInt(signer.account.address)
+            return 0n
         },
 
         async getDummySignature(userOperation) {
             return concat([
                 getPermissionId(),
-                ...validatorData.policies.map((policy) =>
+                ...policies.map((policy) =>
                     policy.getSignaturePolicyData(userOperation)
                 ),
-                constants.DUMMY_ECDSA_SIG
+                signer.getDummySignature()
             ])
         },
         isEnabled: async (

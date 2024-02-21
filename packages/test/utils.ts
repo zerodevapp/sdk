@@ -19,11 +19,7 @@ import {
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
-import {
-    BundlerClient,
-    createBundlerClient,
-    createSmartAccountClient
-} from "permissionless"
+import { BundlerClient, createBundlerClient } from "permissionless"
 import {
     type SmartAccount,
     signerToSimpleSmartAccount
@@ -41,9 +37,7 @@ import {
     createPublicClient,
     createWalletClient,
     decodeEventLog,
-    encodeFunctionData,
-    getFunctionSelector,
-    zeroAddress
+    encodeFunctionData
 } from "viem"
 import {
     type Account,
@@ -52,10 +46,9 @@ import {
 } from "viem/accounts"
 import { type Chain, goerli } from "viem/chains"
 import * as allChains from "viem/chains"
-import { toGasPolicy } from "../../plugins/modularPermission/policies/toGasPolicy.js"
 import { Policy } from "../../plugins/modularPermission/policies/types.js"
 import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
-import { signerToModularPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
+import { createPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
@@ -254,13 +247,11 @@ export const getSignerToModularPermissionKernelAccount = async (
     })
 
     const ecdsaModularSigner = toECDSASigner({ signer: sessionKey })
-    const modularPermissionPlugin = await signerToModularPermissionValidator(
+    const modularPermissionPlugin = await createPermissionValidator(
         publicClient,
         {
             signer: ecdsaModularSigner,
-            validatorData: {
-                policies
-            }
+            policies
         }
     )
 

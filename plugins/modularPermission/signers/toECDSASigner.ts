@@ -1,3 +1,4 @@
+import { constants, fixSignedData } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -31,7 +32,7 @@ export function toECDSASigner<
     const account = toAccount({
         address: viemSigner.address,
         async signMessage({ message }) {
-            return viemSigner.signMessage({ message })
+            return fixSignedData(await viemSigner.signMessage({ message }))
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -42,9 +43,11 @@ export function toECDSASigner<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return viemSigner.signTypedData<TTypedData, TPrimaryType>({
-                ...typedData
-            })
+            return fixSignedData(
+                await viemSigner.signTypedData<TTypedData, TPrimaryType>({
+                    ...typedData
+                })
+            )
         }
     })
     return {
@@ -52,6 +55,7 @@ export function toECDSASigner<
         signerContractAddress,
         getSignerData: () => {
             return viemSigner.address
-        }
+        },
+        getDummySignature: () => constants.DUMMY_ECDSA_SIG
     }
 }
