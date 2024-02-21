@@ -7,9 +7,9 @@ import {
     type Transport,
     concat,
     concatHex,
-    getFunctionSelector,
     hexToBigInt,
     pad,
+    toFunctionSelector,
     toHex,
     zeroAddress
 } from "viem"
@@ -41,7 +41,7 @@ export async function toKernelPluginManager<
         validatorInitData,
         executorData = {
             executor: zeroAddress,
-            selector: getFunctionSelector(
+            selector: toFunctionSelector(
                 "execute(address, uint256, bytes, uint8)"
             )
         },

@@ -3,6 +3,9 @@ import {
     type Hex,
     encodeFunctionData,
     erc20Abi,
+    hexToSignature,
+    isHex,
+    signatureToHex,
     zeroAddress
 } from "viem"
 import { KERNEL_ADDRESSES } from "./accounts/index.js"
@@ -45,4 +48,19 @@ export const getERC20PaymasterApproveCall = async (
         }),
         value: 0n
     }
+}
+
+export const fixSignedData = (sig: Hex): Hex => {
+    let signature = sig
+    if (!isHex(signature)) {
+        signature = `0x${signature}`
+        if (!isHex(signature)) {
+            throw new Error(`Invalid signed data ${sig}`)
+        }
+    }
+
+    let { r, s, v } = hexToSignature(signature)
+    if (v === 0n || v === 1n) v += 27n
+    const joined = signatureToHex({ r, s, v })
+    return joined
 }
