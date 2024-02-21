@@ -18,7 +18,8 @@ import {
     getTypesForEIP712Domain,
     hashTypedData,
     maxUint256,
-    validateTypedData
+    validateTypedData,
+    keccak256
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
@@ -65,6 +66,11 @@ export async function createPasskeyValidator<
 
     // Start registration
     const registerCred = await startRegistration(registerOptions)
+
+    // get authenticatorIdHash
+    const authenticatorIdHash = keccak256(
+        uint8ArrayToHexString(b64ToBytes(registerCred.id))
+    )
 
     // Verify registration
     const registerVerifyResponse = await fetch(
@@ -262,9 +268,16 @@ export async function createPasskeyValidator<
                         ],
                         name: "pubKey",
                         type: "tuple"
+                    },
+                    {
+                        name: "authenticatorIdHash",
+                        type: "bytes32"
                     }
                 ],
-                [{ x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) }]
+                [
+                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) },
+                    authenticatorIdHash
+                ]
             )
         },
         async getNonceKey() {
@@ -345,6 +358,11 @@ export async function getPasskeyValidator<
 
     // Start authentication (login)
     const loginCred = await startAuthentication(loginOptions)
+
+    // get authenticatorIdHash
+    const authenticatorIdHash = keccak256(
+        uint8ArrayToHexString(b64ToBytes(loginCred.id))
+    )
 
     // Verify authentication
     const loginVerifyResponse = await fetch(
@@ -540,9 +558,16 @@ export async function getPasskeyValidator<
                         ],
                         name: "pubKey",
                         type: "tuple"
+                    },
+                    {
+                        name: "authenticatorIdHash",
+                        type: "bytes32"
                     }
                 ],
-                [{ x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) }]
+                [
+                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) },
+                    authenticatorIdHash
+                ]
             )
         },
         async getNonceKey() {
