@@ -17,9 +17,9 @@ import {
     encodeAbiParameters,
     getTypesForEIP712Domain,
     hashTypedData,
+    keccak256,
     maxUint256,
-    validateTypedData,
-    keccak256
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
