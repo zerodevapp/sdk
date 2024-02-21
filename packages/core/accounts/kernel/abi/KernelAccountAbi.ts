@@ -344,6 +344,24 @@ export const KernelAccountAbi = [
         type: "function"
     },
     {
+        inputs: [
+            {
+                internalType: "address",
+                name: "to",
+                type: "address"
+            },
+            {
+                internalType: "bytes",
+                name: "data",
+                type: "bytes"
+            }
+        ],
+        name: "executeDelegateCall",
+        outputs: [],
+        stateMutability: "payable",
+        type: "function"
+    },
+    {
         inputs: [],
         name: "getDefaultValidator",
         outputs: [

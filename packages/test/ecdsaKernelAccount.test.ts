@@ -7,7 +7,8 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
-    getERC20PaymasterApproveCall
+    getERC20PaymasterApproveCall,
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
@@ -32,13 +33,14 @@ import {
     hashTypedData,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
+import { privateKeyToAccount, sign } from "viem/accounts"
 import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import {
     findUserOperationEvent,
+    getEcdsaKernelAccountWithRandomSigner,
     getEntryPoint,
     getKernelAccountClient,
     getKernelBundlerClient,
@@ -120,6 +122,95 @@ describe("ECDSA kernel Account", () => {
                 data: "0x"
             })
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
+    })
+
+    test("Should validate message signatures for undeployed accounts (6492)", async () => {
+        const account = await getEcdsaKernelAccountWithRandomSigner()
+        const message = "hello world"
+        const signature = await account.signMessage({
+            message
+        })
+
+        expect(
+            await verifyEIP6492Signature({
+                signer: account.address,
+                hash: hashMessage(message),
+                signature: signature,
+                client: publicClient
+            })
+        ).toBeTrue()
+
+        // Try using Ambire as well
+        const ambireResult = await verifyMessage({
+            signer: account.address,
+            message,
+            signature: signature,
+            provider: new ethers.providers.JsonRpcProvider(
+                process.env.RPC_URL as string
+            )
+        })
+        expect(ambireResult).toBeTrue()
+    })
+
+    test("Should validate typed data signatures for undeployed accounts (6492)", async () => {
+        const domain = {
+            chainId: 1,
+            name: "Test",
+            verifyingContract: zeroAddress
+        }
+
+        const primaryType = "Test"
+
+        const types = {
+            Test: [
+                {
+                    name: "test",
+                    type: "string"
+                }
+            ]
+        }
+
+        const message = {
+            test: "hello world"
+        }
+        const typedHash = hashTypedData({
+            domain,
+            primaryType,
+            types,
+            message
+        })
+
+        const account = await getEcdsaKernelAccountWithRandomSigner()
+        const signature = await account.signTypedData({
+            domain,
+            primaryType,
+            types,
+            message
+        })
+
+        expect(
+            await verifyEIP6492Signature({
+                signer: account.address,
+                hash: typedHash,
+                signature: signature,
+                client: publicClient
+            })
+        ).toBeTrue()
+
+        // Try using Ambire as well
+        const ambireResult = await verifyMessage({
+            signer: account.address,
+            typedData: {
+                domain,
+                types,
+                message
+            },
+            signature: signature,
+            provider: new ethers.providers.JsonRpcProvider(
+                process.env.RPC_URL as string
+            )
+        })
+        expect(ambireResult).toBeTrue()
     })
 
     test(

@@ -234,7 +234,11 @@ export const findMatchingPermissions = (
             data: callData
         })
 
-        if (functionName !== "execute" && functionName !== "executeBatch")
+        if (
+            functionName !== "execute" &&
+            functionName !== "executeBatch" &&
+            functionName !== "executeDelegateCall"
+        )
             return undefined
         if (functionName === "execute") {
             const [to, value, data] = args
@@ -243,6 +247,15 @@ export const findMatchingPermissions = (
                 [data],
                 [value],
                 permissionsList
+            )?.[0]
+        } else if (functionName === "executeDelegateCall") {
+            const [to, data] = args
+            return filterPermissions(
+                [to],
+                [data],
+                [0n],
+                permissionsList,
+                Operation.DelegateCall
             )?.[0]
         } else if (functionName === "executeBatch") {
             const targets: Hex[] = []
@@ -270,7 +283,8 @@ const filterPermissions = (
     targets: Address[],
     dataArray: Hex[],
     values: bigint[],
-    permissionsList?: PermissionCore[]
+    permissionsList?: PermissionCore[],
+    operation: Operation = Operation.Call
 ): PermissionCore[] | undefined => {
     if (
         targets.length !== dataArray.length ||
@@ -295,7 +309,7 @@ const filterPermissions = (
         const operationPermissions = filterByOperation(
             targetPermissions,
             // [TODO]: Check if we need to pass operation from userOp after Kernel v2.3 in
-            Operation.Call
+            operation
         )
 
         if (!operationPermissions.length) return undefined
