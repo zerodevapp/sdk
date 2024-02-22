@@ -1,4 +1,4 @@
-import { getAccountNonce, getSenderAddress } from "permissionless"
+import { getAccountNonce, getAction, getSenderAddress } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount
@@ -27,13 +27,14 @@ import {
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode } from "viem/actions"
-import { KERNEL_NAME, LATEST_KERNEL_VERSION } from "../../constants.js"
+import { getBytecode, getStorageAt } from "viem/actions"
+import { KERNEL_NAME } from "../../constants.js"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
+import { getKernelVersion } from "../../utils.js"
 import { wrapSignatureWith6492 } from "../utils/6492.js"
 import {
     isKernelPluginManager,
@@ -131,11 +132,11 @@ export const EIP1271ABI = [
  * Default addresses for kernel smart account
  */
 export const KERNEL_ADDRESSES: {
-    ACCOUNT_V2_3_LOGIC: Address
+    ACCOUNT_LOGIC: Address
     FACTORY_ADDRESS: Address
     ENTRYPOINT_V0_6: Address
 } = {
-    ACCOUNT_V2_3_LOGIC: "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab",
+    ACCOUNT_LOGIC: "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
     FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
     ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
@@ -235,7 +236,7 @@ export async function createKernelAccount<
         entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
-        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_V2_3_LOGIC,
+        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC,
         deployedAccountAddress
     }: {
         plugins: KernelPluginManagerParams | KernelPluginManager
@@ -279,6 +280,26 @@ export async function createKernelAccount<
     if (!accountAddress) throw new Error("Account address not found")
 
     const signHashedMessage = async (messageHash: Hex): Promise<Hex> => {
+        let kernelImplAddr: Address | undefined
+        try {
+            const strgAddr = await getAction(
+                client,
+                getStorageAt
+            )({
+                address: accountAddress,
+                slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+            })
+            if (strgAddr) kernelImplAddr = `0x${strgAddr.slice(26)}` as Hex
+        } catch (error) {}
+        const kernelVersion = getKernelVersion(kernelImplAddr)
+        if (kernelVersion !== "0.2.3" && kernelVersion !== "0.2.4") {
+            return kernelPluginManager.signMessage({
+                message: {
+                    raw: messageHash
+                }
+            })
+        }
+
         const domain = await client.request({
             method: "eth_call",
             params: [
@@ -309,7 +330,7 @@ export async function createKernelAccount<
             chainId = decoded[3]
         } else {
             name = KERNEL_NAME
-            version = LATEST_KERNEL_VERSION
+            version = kernelVersion
             chainId = client.chain
                 ? BigInt(client.chain.id)
                 : BigInt(await client.extend(publicActions).getChainId())

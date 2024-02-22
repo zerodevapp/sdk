@@ -1,4 +1,5 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { createPasskeyValidator } from "@zerodev/passkey-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -18,7 +19,6 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
-import { createPasskeyValidator } from "@zerodev/passkey-validator"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import { BundlerClient, createBundlerClient } from "permissionless"
 import {
@@ -54,6 +54,7 @@ import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
+export const index = 0n
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -130,7 +131,8 @@ const getEcdsaKernelAccountWithPrivateKey = async (
         entryPoint: getEntryPoint(),
         plugins: {
             sudo: ecdsaValidatorPlugin
-        }
+        },
+        index
     })
 }
 
@@ -169,14 +171,16 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
             plugins: {
                 regular: plugin,
                 sudo: weigthedECDSAPlugin
-            }
+            },
+            index
         })
     } else {
         return await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: weigthedECDSAPlugin
-            }
+            },
+            index
         })
     }
 }
@@ -194,8 +198,9 @@ export const getSignerToWebAuthnKernelAccount =
         return createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                validator: webAuthnValidatorPlugin
-            }
+                sudo: webAuthnValidatorPlugin
+            },
+            index
         })
     }
 
@@ -247,7 +252,8 @@ export const getSignerToSessionKeyKernelAccount =
             plugins: {
                 regular: sessionKeyPlugin,
                 sudo: ecdsaValidatorPlugin
-            }
+            },
+            index
         })
 
         const serializedSessionKeyAccountParams =
@@ -291,7 +297,8 @@ export const getSignerToModularPermissionKernelAccount = async (
         plugins: {
             regular: modularPermissionPlugin,
             sudo: ecdsaValidatorPlugin
-        }
+        },
+        index
     })
 }
 
@@ -320,7 +327,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin,
             executorData
-        }
+        },
+        index
     })
 }
 

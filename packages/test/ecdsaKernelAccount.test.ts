@@ -48,6 +48,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getZeroDevERC20PaymasterClient,
     getZeroDevPaymasterClient,
+    index,
     waitForNonceUpdate
 } from "./utils.js"
 
@@ -124,94 +125,102 @@ describe("ECDSA kernel Account", () => {
         }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
-    test("Should validate message signatures for undeployed accounts (6492)", async () => {
-        const account = await getEcdsaKernelAccountWithRandomSigner()
-        const message = "hello world"
-        const signature = await account.signMessage({
-            message
-        })
-
-        expect(
-            await verifyEIP6492Signature({
-                signer: account.address,
-                hash: hashMessage(message),
-                signature: signature,
-                client: publicClient
+    test(
+        "Should validate message signatures for undeployed accounts (6492)",
+        async () => {
+            const account = await getEcdsaKernelAccountWithRandomSigner()
+            const message = "hello world"
+            const signature = await account.signMessage({
+                message
             })
-        ).toBeTrue()
 
-        // Try using Ambire as well
-        const ambireResult = await verifyMessage({
-            signer: account.address,
-            message,
-            signature: signature,
-            provider: new ethers.providers.JsonRpcProvider(
-                process.env.RPC_URL as string
-            )
-        })
-        expect(ambireResult).toBeTrue()
-    })
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: hashMessage(message),
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
 
-    test("Should validate typed data signatures for undeployed accounts (6492)", async () => {
-        const domain = {
-            chainId: 1,
-            name: "Test",
-            verifyingContract: zeroAddress
-        }
-
-        const primaryType = "Test"
-
-        const types = {
-            Test: [
-                {
-                    name: "test",
-                    type: "string"
-                }
-            ]
-        }
-
-        const message = {
-            test: "hello world"
-        }
-        const typedHash = hashTypedData({
-            domain,
-            primaryType,
-            types,
-            message
-        })
-
-        const account = await getEcdsaKernelAccountWithRandomSigner()
-        const signature = await account.signTypedData({
-            domain,
-            primaryType,
-            types,
-            message
-        })
-
-        expect(
-            await verifyEIP6492Signature({
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
                 signer: account.address,
-                hash: typedHash,
+                message,
                 signature: signature,
-                client: publicClient
+                provider: new ethers.providers.JsonRpcProvider(
+                    process.env.RPC_URL as string
+                )
             })
-        ).toBeTrue()
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 
-        // Try using Ambire as well
-        const ambireResult = await verifyMessage({
-            signer: account.address,
-            typedData: {
+    test(
+        "Should validate typed data signatures for undeployed accounts (6492)",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
+
+            const primaryType = "Test"
+
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
                 domain,
+                primaryType,
                 types,
                 message
-            },
-            signature: signature,
-            provider: new ethers.providers.JsonRpcProvider(
-                process.env.RPC_URL as string
-            )
-        })
-        expect(ambireResult).toBeTrue()
-    })
+            })
+
+            const account = await getEcdsaKernelAccountWithRandomSigner()
+            const signature = await account.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: typedHash,
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                typedData: {
+                    domain,
+                    types,
+                    message
+                },
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    process.env.RPC_URL as string
+                )
+            })
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Client signMessage should return a valid signature",
@@ -328,6 +337,11 @@ describe("ECDSA kernel Account", () => {
         async () => {
             const response = await kernelClient.sendTransactions({
                 transactions: [
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
                     {
                         to: zeroAddress,
                         value: 0n,
@@ -679,7 +693,8 @@ describe("ECDSA kernel Account", () => {
                     plugins: {
                         sudo: ecdsaValidatorPlugin
                     },
-                    deployedAccountAddress
+                    deployedAccountAddress,
+                    index
                 }
             )
 
