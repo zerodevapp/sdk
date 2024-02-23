@@ -1,5 +1,6 @@
 import { Buffer } from "buffer"
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
@@ -157,9 +158,10 @@ export async function createPasskeyValidator<
             const signInitiateResult = await signInitiateResponse.json()
 
             // prepare assertion options
-            const assertionOptions = {
+            const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
                 challenge: signInitiateResult.challenge,
-                allowCredentials: signInitiateResult.allowCredentials
+                allowCredentials: signInitiateResult.allowCredentials,
+                userVerification: "required"
             }
 
             // start authentication (signing)
@@ -447,9 +449,10 @@ export async function getPasskeyValidator<
             const signInitiateResult = await signInitiateResponse.json()
 
             // prepare assertion options
-            const assertionOptions = {
+            const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
                 challenge: signInitiateResult.challenge,
-                allowCredentials: signInitiateResult.allowCredentials
+                allowCredentials: signInitiateResult.allowCredentials,
+                userVerification: "required"
             }
 
             // start authentication (signing)
