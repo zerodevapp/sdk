@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/passkey-validator",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
