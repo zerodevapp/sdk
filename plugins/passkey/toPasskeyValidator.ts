@@ -208,14 +208,14 @@ export async function createPasskeyValidator<
                     { name: "clientDataJSON", type: "string" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
+                    { name: "s", type: "uint256" }
                 ],
                 [
                     authenticatorDataHex,
                     clientDataJSON,
                     beforeType,
                     BigInt(r),
-                    BigInt(s),
+                    BigInt(s)
                 ]
             )
             return encodedSignature
@@ -276,7 +276,11 @@ export async function createPasskeyValidator<
                     }
                 ],
                 [
-                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`), usePrecompiled: isRIP7212SupportedNetwork(chainId) },
+                    {
+                        x: BigInt(`0x${pubKeyX}`),
+                        y: BigInt(`0x${pubKeyY}`),
+                        usePrecompiled: isRIP7212SupportedNetwork(chainId)
+                    },
                     authenticatorIdHash
                 ]
             )
@@ -307,14 +311,14 @@ export async function createPasskeyValidator<
                     { name: "clientDataJSON", type: "string" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
+                    { name: "s", type: "uint256" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                     '{"type":"webauthn.get","challenge":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","origin":"https://example.com"}',
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
                 ]
             )
             return encodedSignature
@@ -496,14 +500,14 @@ export async function getPasskeyValidator<
                     { name: "clientDataJSON", type: "string" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
+                    { name: "s", type: "uint256" }
                 ],
                 [
                     authenticatorDataHex,
                     clientDataJSON,
                     beforeType,
                     BigInt(r),
-                    BigInt(s),
+                    BigInt(s)
                 ]
             )
             return encodedSignature
@@ -564,7 +568,11 @@ export async function getPasskeyValidator<
                     }
                 ],
                 [
-                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`), usePrecompiled: isRIP7212SupportedNetwork(chainId)},
+                    {
+                        x: BigInt(`0x${pubKeyX}`),
+                        y: BigInt(`0x${pubKeyY}`),
+                        usePrecompiled: isRIP7212SupportedNetwork(chainId)
+                    },
                     authenticatorIdHash
                 ]
             )
@@ -595,14 +603,14 @@ export async function getPasskeyValidator<
                     { name: "clientDataJSON", type: "string" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
+                    { name: "s", type: "uint256" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                     '{"type":"webauthn.get","challenge":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","origin":"https://example.com"}',
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
+                    22222222222222222222222222222222222222222222222222222222222222222222222222222n
                 ]
             )
             return encodedSignature
