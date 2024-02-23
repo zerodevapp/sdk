@@ -209,7 +209,6 @@ export async function createPasskeyValidator<
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
                     { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     authenticatorDataHex,
@@ -217,7 +216,6 @@ export async function createPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    isRIP7212SupportedNetwork(chainId)
                 ]
             )
             return encodedSignature
@@ -266,9 +264,10 @@ export async function createPasskeyValidator<
                             {
                                 name: "y",
                                 type: "uint256"
-                            }
+                            },
+                            { name: "usePrecompiled", type: "bool" }
                         ],
-                        name: "pubKey",
+                        name: "webAuthnData",
                         type: "tuple"
                     },
                     {
@@ -277,7 +276,7 @@ export async function createPasskeyValidator<
                     }
                 ],
                 [
-                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) },
+                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`), usePrecompiled: isRIP7212SupportedNetwork(chainId) },
                     authenticatorIdHash
                 ]
             )
@@ -309,7 +308,6 @@ export async function createPasskeyValidator<
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
                     { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -317,7 +315,6 @@ export async function createPasskeyValidator<
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
                     22222222222222222222222222222222222222222222222222222222222222222222222222222n,
-                    false
                 ]
             )
             return encodedSignature
@@ -500,7 +497,6 @@ export async function getPasskeyValidator<
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
                     { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     authenticatorDataHex,
@@ -508,7 +504,6 @@ export async function getPasskeyValidator<
                     beforeType,
                     BigInt(r),
                     BigInt(s),
-                    isRIP7212SupportedNetwork(chainId)
                 ]
             )
             return encodedSignature
@@ -557,9 +552,10 @@ export async function getPasskeyValidator<
                             {
                                 name: "y",
                                 type: "uint256"
-                            }
+                            },
+                            { name: "usePrecompiled", type: "bool" }
                         ],
-                        name: "pubKey",
+                        name: "webAuthnData",
                         type: "tuple"
                     },
                     {
@@ -568,7 +564,7 @@ export async function getPasskeyValidator<
                     }
                 ],
                 [
-                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`) },
+                    { x: BigInt(`0x${pubKeyX}`), y: BigInt(`0x${pubKeyY}`), usePrecompiled: isRIP7212SupportedNetwork(chainId)},
                     authenticatorIdHash
                 ]
             )
@@ -600,7 +596,6 @@ export async function getPasskeyValidator<
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
                     { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -608,7 +603,6 @@ export async function getPasskeyValidator<
                     maxUint256,
                     11111111111111111111111111111111111111111111111111111111111111111111111111111n,
                     22222222222222222222222222222222222222222222222222222222222222222222222222222n,
-                    false
                 ]
             )
             return encodedSignature
