@@ -287,10 +287,8 @@ export class RecoveryValidator extends KernelBaseValidator {
       const guardians: WeightedGuardians = {};
 
       let nextGuardian = firstGuardian;
-      const sentinelValue = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"; 
-      while (
-        nextGuardian.toLowerCase() !== sentinelValue.toLowerCase()
-      ) {
+      const sentinelValue = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+      while (nextGuardian.toLowerCase() !== sentinelValue.toLowerCase()) {
         const guardianStorage = await publicClient.readContract({
           abi: WeightedValidatorAbi,
           address: RECOVERY_VALIDATOR_ADDRESS,
@@ -434,7 +432,7 @@ export class RecoveryValidator extends KernelBaseValidator {
     if (this.isSignerSmartContract) {
       return this.signatures ?? DUMMY_ECDSA_SIG;
     }
-    
+
     const hash = getUserOperationHash(
       {
         ...userOp,

@@ -264,7 +264,7 @@ export class RecoveryProvider extends ValidatorProvider<
     });
     return await walletClient.waitForTransactionReceipt({
       hash,
-      timeout: 180000 // 3 minutes
+      timeout: 180000, // 3 minutes
     });
   }
 
