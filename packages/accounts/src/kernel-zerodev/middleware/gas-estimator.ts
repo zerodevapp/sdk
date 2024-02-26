@@ -87,11 +87,10 @@ export const withZeroDevGasEstimator = (
     const { preVerificationGas, verificationGasLimit, callGasLimit } =
       userOpGasEstimates;
     request.preVerificationGas =
-      (BigInt(preVerificationGas) * 12n) / 10n ?? request.preVerificationGas;
+      BigInt(preVerificationGas) ?? request.preVerificationGas;
     request.verificationGasLimit =
       BigInt(verificationGasLimit) ?? request.verificationGasLimit;
-    request.callGasLimit =
-      (BigInt(callGasLimit) * 12n) / 10n ?? request.callGasLimit;
+    request.callGasLimit = BigInt(callGasLimit) ?? request.callGasLimit;
 
     return {
       ...struct,
