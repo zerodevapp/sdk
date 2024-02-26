@@ -7,9 +7,18 @@ import {
   type BigNumberish,
   type UserOperationEstimateGasResponse,
 } from "@alchemy/aa-core";
+import { BaseError } from "viem";
 import { ENTRYPOINT_ADDRESS } from "../constants.js";
 import { calcPreVerificationGas } from "../utils/calc-pre-verification-gas.js";
 import { type PaymasterAndBundlerProviders } from "../paymaster/types.js";
+
+// @dev implement Eip1559FeesNotSupportedError message for compatibility with viem
+export class Eip1559FeesNotSupportedError extends BaseError {
+  override name = "Eip1559FeesNotSupportedError";
+  constructor() {
+    super("Chain does not support EIP-1559 fees.");
+  }
+}
 
 export const withZeroDevGasEstimator = (
   provider: ZeroDevProvider
@@ -151,22 +160,20 @@ export const eip1559GasPrice = async (provider: ZeroDevProvider) => {
     fee = fee.standard.maxPriorityFeePerGas;
   }
 
-  const tip = BigInt(fee);
-  const buffer =
-    (tip / 100n) *
-    BigInt(provider.feeOptions.maxPriorityFeePerGasBufferPercentage);
-  let maxPriorityFeePerGas = tip + buffer;
-  maxPriorityFeePerGas =
-    maxPriorityFeePerGas < provider.minPriorityFeePerBid
-      ? provider.minPriorityFeePerBid
-      : maxPriorityFeePerGas;
-  const maxFeePerGas =
-    ((block.baseFeePerGas
-      ? BigInt(block.baseFeePerGas) * 2n + maxPriorityFeePerGas
-      : maxPriorityFeePerGas) *
-      (BigInt(100) +
-        BigInt(provider.feeOptions.maxFeePerGasBufferPercentage))) /
-    100n;
+  if (typeof block.baseFeePerGas !== "bigint")
+    throw new Eip1559FeesNotSupportedError();
+
+  // use default values of viem
+  const baseFeeMultiplier = 1.2;
+  const decimals = baseFeeMultiplier.toString().split(".")[1].length;
+  const denominator = 10 ** decimals;
+  const multiply = (base: bigint) =>
+    (base * BigInt(baseFeeMultiplier * denominator)) / BigInt(denominator);
+
+  const maxPriorityFeePerGas = BigInt(fee);
+
+  const baseFeePerGas = multiply(block.baseFeePerGas);
+  const maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas;
 
   return { maxFeePerGas, maxPriorityFeePerGas };
 };
