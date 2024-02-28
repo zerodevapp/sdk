@@ -12,11 +12,11 @@ import { deserializeModularPermissionAccountParams } from "./utils"
 
 export const deserializeModularPermissionAccount = async (
     client: Parameters<typeof createKernelAccount>[0],
-    sessionKeyAccountParams: string,
+    modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
     const params = deserializeModularPermissionAccountParams(
-        sessionKeyAccountParams
+        modularPermissionAccountParams
     )
     let signer: ModularSigner
     if (params.privateKey)
