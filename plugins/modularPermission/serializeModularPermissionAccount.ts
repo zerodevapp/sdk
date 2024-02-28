@@ -1,9 +1,9 @@
 import type { KernelSmartAccount } from "@zerodev/sdk"
+import type { Hex } from "viem"
 import {
     isModularPermissionValidatorPlugin,
     serializeModularPermissionAccountParams
 } from "./utils"
-import type { Hex } from "viem"
 
 export const serializeModularPermissionAccount = async (
     account: KernelSmartAccount,

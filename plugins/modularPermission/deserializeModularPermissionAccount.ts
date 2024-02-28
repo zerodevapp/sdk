@@ -5,10 +5,10 @@ import type { ValidatorInitData } from "@zerodev/sdk/types"
 import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { toECDSASigner } from "./signers/toECDSASigner"
+import type { ModularSigner } from "./signers/types"
 import { createPermissionValidator } from "./toModularPermissionValidatorPlugin"
 import { deserializeModularPermissionAccountParams } from "./utils"
-import type { ModularSigner } from "./signers/types"
-import { toECDSASigner } from "./signers/toECDSASigner"
 
 export const deserializeModularPermissionAccount = async (
     client: Parameters<typeof createKernelAccount>[0],
