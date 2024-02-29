@@ -30,6 +30,7 @@ import {
 } from "viem";
 import { RecoveryActionAbi } from "../abis/RecoveryActionAbi.js";
 import { KernelAccountAbi } from "../abis/KernelAccountAbi.js";
+import { WeightedValidatorAbi } from "../abis/WeightedValidatorAbi.js";
 import { base64ToBytes, bytesToBase64, getChain } from "../utils.js";
 
 export interface RecoveryProviderParams
@@ -369,6 +370,26 @@ export class RecoveryProvider extends ValidatorProvider<
     return await this.sendUserOperation({
       target: await this.getAddress(),
       data: encodedRecoveryActionData,
+    });
+  }
+
+  async getApproval(enableData?: Hex): Promise<readonly [bigint, boolean]> {
+    const fetchedEnableData = enableData ?? this.enableData;
+    if (!fetchedEnableData) {
+      throw Error("Unable to fetch enable data for Recovery");
+    }
+
+    const callDataAndNonceHash = await this.encodeCalldataAndNonce(
+      fetchedEnableData
+    );
+
+    const publicClient = this.getValidator().getPublicClient();
+    const kernelAccountAddress = await this.getAddress();
+    return await publicClient.readContract({
+      abi: WeightedValidatorAbi,
+      address: RECOVERY_VALIDATOR_ADDRESS,
+      functionName: "getApproval",
+      args: [kernelAccountAddress, callDataAndNonceHash],
     });
   }
 
