@@ -1,10 +1,6 @@
-import { type Address, concatHex, encodeAbiParameters } from "viem"
+import { concatHex, encodeAbiParameters } from "viem"
 import { PolicyFlags, SIGNATURE_POLICY_CONTRACT } from "../constants.js"
-import type { Policy, PolicyParams } from "./types.js"
-
-export type SignaturePolicyParams = PolicyParams & {
-    allowedRequestors: Address[]
-}
+import type { Policy, SignaturePolicyParams } from "./types.js"
 
 export async function toSignaturePolicy({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
@@ -23,6 +19,11 @@ export async function toSignaturePolicy({
         },
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
-        }
+        },
+        policyParams: {
+            policyAddress,
+            policyFlag,
+            allowedRequestors
+        } as SignaturePolicyParams
     }
 }

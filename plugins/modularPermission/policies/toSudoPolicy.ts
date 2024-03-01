@@ -1,6 +1,6 @@
 import { concatHex } from "viem"
 import { PolicyFlags, SUDO_POLICY_CONTRACT } from "../constants.js"
-import type { Policy, PolicyParams } from "./types.js"
+import type { Policy, PolicyParams, SudoPolicyParams } from "./types.js"
 
 export async function toSudoPolicy({
     policyAddress = SUDO_POLICY_CONTRACT,
@@ -15,6 +15,10 @@ export async function toSudoPolicy({
         },
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
-        }
+        },
+        policyParams: {
+            policyAddress,
+            policyFlag
+        } as SudoPolicyParams
     }
 }

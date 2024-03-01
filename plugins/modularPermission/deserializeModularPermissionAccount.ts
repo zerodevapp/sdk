@@ -9,6 +9,13 @@ import { toECDSASigner } from "./signers/toECDSASigner"
 import type { ModularSigner } from "./signers/types"
 import { createPermissionValidator } from "./toModularPermissionValidatorPlugin"
 import { deserializeModularPermissionAccountParams } from "./utils"
+import { type Policy } from "./policies/types"
+import {
+    toGasPolicy,
+    toMerklePolicy,
+    toSignaturePolicy,
+    toSudoPolicy
+} from "./policies"
 
 export const deserializeModularPermissionAccount = async (
     client: Parameters<typeof createKernelAccount>[0],
@@ -20,7 +27,6 @@ export const deserializeModularPermissionAccount = async (
     )
     let signer: ModularSigner
     if (params.privateKey)
-        // TODO: check if this is the correct way to handle `privateKey` or do we need even private key here?
         signer = toECDSASigner({
             signer: privateKeyToAccount(params.privateKey)
         })
@@ -29,8 +35,11 @@ export const deserializeModularPermissionAccount = async (
 
     const modularPermissionPlugin = await createPermissionValidator(client, {
         signer,
-        // TODO: check how to handle `undefined` values
-        policies: params.modularPermissionParams.policies || [],
+        policies: await Promise.all(
+            params.modularPermissionParams.policies?.map((policy) =>
+                createPolicyFromParams(policy)
+            ) || []
+        ),
         validUntil: params.modularPermissionParams.validUntil || 0,
         validAfter: params.modularPermissionParams.validAfter || 0
     })
@@ -52,6 +61,21 @@ export const deserializeModularPermissionAccount = async (
         index,
         deployedAccountAddress: params.accountParams.accountAddress
     })
+}
+
+export const createPolicyFromParams = async (policy: Policy) => {
+    switch (policy.policyParams.type) {
+        case "sudo":
+            return await toSudoPolicy(policy.policyParams)
+        case "signature":
+            return await toSignaturePolicy(policy.policyParams)
+        case "merkle":
+            return await toMerklePolicy(policy.policyParams)
+        case "gas":
+            return await toGasPolicy(policy.policyParams)
+        default:
+            throw new Error("Unsupported policy type")
+    }
 }
 
 export const decodeParamsFromInitCode = (initCode: Hex) => {
