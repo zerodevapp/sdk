@@ -23,7 +23,14 @@ export function isModularPermissionValidatorPlugin(
 export const serializeModularPermissionAccountParams = (
     params: ModularPermissionAccountParams
 ) => {
-    const jsonString = JSON.stringify(params)
+    const replacer = (_: string, value: any) => {
+        if (typeof value === "bigint") {
+            return value.toString()
+        }
+        return value
+    }
+
+    const jsonString = JSON.stringify(params, replacer)
     const uint8Array = new TextEncoder().encode(jsonString)
     const base64String = bytesToBase64(uint8Array)
     return base64String

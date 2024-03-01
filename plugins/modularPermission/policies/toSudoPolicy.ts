@@ -17,6 +17,7 @@ export async function toSudoPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
+            type: "sudo",
             policyAddress,
             policyFlag
         } as SudoPolicyParams

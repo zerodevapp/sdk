@@ -127,6 +127,7 @@ export async function toMerklePolicy<
             ])
         },
         policyParams: {
+            type: "merkle",
             policyAddress,
             policyFlag,
             permissions

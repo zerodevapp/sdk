@@ -28,6 +28,7 @@ export async function toGasPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
+            type: "gas",
             policyAddress,
             policyFlag,
             maxGasAllowedInWei,

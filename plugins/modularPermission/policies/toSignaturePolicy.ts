@@ -21,6 +21,7 @@ export async function toSignaturePolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
+            type: "signature",
             policyAddress,
             policyFlag,
             allowedRequestors
