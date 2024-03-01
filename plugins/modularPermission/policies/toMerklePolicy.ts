@@ -36,7 +36,8 @@ export async function toMerklePolicy<
 >({
     policyAddress = MERKLE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    permissions = []
+    permissions = [],
+    type = "merkle"
 }: MerklePolicyParams<TAbi, TFunctionName>): Promise<Policy> {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
@@ -127,7 +128,7 @@ export async function toMerklePolicy<
             ])
         },
         policyParams: {
-            type: "merkle",
+            type,
             policyAddress,
             policyFlag,
             permissions

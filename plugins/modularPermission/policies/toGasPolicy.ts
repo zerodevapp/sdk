@@ -8,7 +8,8 @@ export async function toGasPolicy({
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     maxGasAllowedInWei,
     enforcePaymaster = false,
-    paymasterAddress = zeroAddress
+    paymasterAddress = zeroAddress,
+    type = "gas"
 }: GasPolicyParams): Promise<Policy> {
     return {
         getPolicyData: () => {
@@ -28,7 +29,7 @@ export async function toGasPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type: "gas",
+            type,
             policyAddress,
             policyFlag,
             maxGasAllowedInWei,
