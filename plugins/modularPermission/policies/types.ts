@@ -9,11 +9,11 @@ export type PolicyParams = {
 }
 
 export type SudoPolicyParams = PolicyParams & {
-    type: "sudo"
+    type?: "sudo"
 }
 
 export type SignaturePolicyParams = PolicyParams & {
-    type: "signature"
+    type?: "signature"
     allowedRequestors: Address[]
 }
 
@@ -21,12 +21,12 @@ export type MerklePolicyParams<
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string
 > = PolicyParams & {
-    type: "merkle"
+    type?: "merkle"
     permissions?: Permission<TAbi, TFunctionName>[]
 }
 
 export type GasPolicyParams = PolicyParams & {
-    type: "gas"
+    type?: "gas"
     maxGasAllowedInWei: bigint
     enforcePaymaster?: boolean
     paymasterAddress?: Address
