@@ -1,5 +1,4 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
-import { createPasskeyValidator } from "@zerodev/passkey-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -20,12 +19,17 @@ import {
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
-import { BundlerClient, createBundlerClient } from "permissionless"
+import {
+    BundlerClient,
+    ENTRYPOINT_ADDRESS_V06,
+    createBundlerClient
+} from "permissionless"
 import {
     type SmartAccount,
     signerToSimpleSmartAccount
 } from "permissionless/accounts"
-import { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
+import { Middleware } from "permissionless/actions/smartAccount.js"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     http,
     AbiItem,
@@ -81,41 +85,46 @@ export const getTestingChain = (): Chain => {
     return chain
 }
 
-export const getSignerToSimpleSmartAccount =
-    async (): Promise<SmartAccount> => {
-        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
-        if (!privateKey) {
-            throw new Error("TEST_PRIVATE_KEY environment variable not set")
-        }
-
-        const publicClient = await getPublicClient()
-        const signer = privateKeyToAccount(privateKey)
-
-        return signerToSimpleSmartAccount(publicClient, {
-            entryPoint: getEntryPoint(),
-            factoryAddress: getFactoryAddress(),
-            signer: { ...signer, source: "local" as "local" | "external" }
-        })
+export const getSignerToSimpleSmartAccount = async (): Promise<
+    SmartAccount<EntryPoint>
+> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
     }
 
-export const getSignerToEcdsaKernelAccount =
-    async (): Promise<SmartAccount> => {
-        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
-        if (!privateKey) {
-            throw new Error("TEST_PRIVATE_KEY environment variable not set")
-        }
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
 
-        return getEcdsaKernelAccountWithPrivateKey(privateKey)
+    return signerToSimpleSmartAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        factoryAddress: getFactoryAddress(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+}
+
+export const getSignerToEcdsaKernelAccount = async <
+    entryPoint extends EntryPoint
+>(): Promise<KernelSmartAccount<entryPoint>> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
     }
 
-export const getEcdsaKernelAccountWithRandomSigner =
-    async (): Promise<SmartAccount> => {
-        return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
-    }
+    return getEcdsaKernelAccountWithPrivateKey(privateKey)
+}
 
-const getEcdsaKernelAccountWithPrivateKey = async (
+export const getEcdsaKernelAccountWithRandomSigner = async (): Promise<
+    SmartAccount<EntryPoint>
+> => {
+    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
+}
+
+const getEcdsaKernelAccountWithPrivateKey = async <
+    entryPoint extends EntryPoint
+>(
     privateKey: Hex
-): Promise<SmartAccount> => {
+): Promise<KernelSmartAccount<entryPoint>> => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
@@ -133,13 +142,13 @@ const getEcdsaKernelAccountWithPrivateKey = async (
             sudo: ecdsaValidatorPlugin
         },
         index
-    })
+    }) as unknown as KernelSmartAccount<entryPoint>
 }
 
 // we only use two signers for testing
 export const getSignersToWeightedEcdsaKernelAccount = async (
-    plugin?: KernelValidator
-): Promise<SmartAccount> => {
+    plugin?: KernelValidator<EntryPoint>
+): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
     if (!privateKey1 || !privateKey2) {
@@ -185,90 +194,66 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
     }
 }
 
-export const getSignerToWebAuthnKernelAccount =
-    async (): Promise<SmartAccount> => {
-        const publicClient = await getPublicClient()
-        const webAuthnValidatorPlugin = await createPasskeyValidator(
-            publicClient,
-            {
-                entryPoint: getEntryPoint()
-            }
-        )
-
-        return createKernelAccount(publicClient, {
-            entryPoint: getEntryPoint(),
-            plugins: {
-                sudo: webAuthnValidatorPlugin
-            },
-            index
-        })
+export const getSignerToSessionKeyKernelAccount = async (): Promise<
+    KernelSmartAccount<EntryPoint>
+> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
     }
 
-export const getSignerToSessionKeyKernelAccount =
-    async (): Promise<SmartAccount> => {
-        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
-        if (!privateKey) {
-            throw new Error("TEST_PRIVATE_KEY environment variable not set")
-        }
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
+    const sessionPrivateKey = generatePrivateKey()
+    const sessionKey = privateKeyToAccount(sessionPrivateKey)
+    const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
 
-        const publicClient = await getPublicClient()
-        const signer = privateKeyToAccount(privateKey)
-        const sessionPrivateKey = generatePrivateKey()
-        const sessionKey = privateKeyToAccount(sessionPrivateKey)
-        const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
-        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
-            publicClient,
-            {
-                entryPoint: getEntryPoint(),
-                signer: { ...signer, source: "local" as "local" | "external" }
-            }
-        )
-
-        const sessionKeyPlugin = await signerToSessionKeyValidator(
-            publicClient,
-            {
-                signer: sessionKeyEmptyAccount,
-                validatorData: {
-                    permissions: [
+    const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
+        signer: sessionKeyEmptyAccount,
+        validatorData: {
+            permissions: [
+                {
+                    target: Test_ERC20Address,
+                    abi: TEST_ERC20Abi,
+                    functionName: "transfer",
+                    args: [
                         {
-                            target: Test_ERC20Address,
-                            abi: TEST_ERC20Abi,
-                            functionName: "transfer",
-                            args: [
-                                {
-                                    operator: ParamOperator.EQUAL,
-                                    value: signer.address
-                                },
-                                null
-                            ]
-                        }
+                            operator: ParamOperator.EQUAL,
+                            value: signer.address
+                        },
+                        null
                     ]
                 }
-            }
-        )
+            ]
+        }
+    })
 
-        const account = await createKernelAccount(publicClient, {
-            entryPoint: getEntryPoint(),
-            plugins: {
-                regular: sessionKeyPlugin,
-                sudo: ecdsaValidatorPlugin
-            },
-            index
-        })
+    const account = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            regular: sessionKeyPlugin,
+            sudo: ecdsaValidatorPlugin
+        },
+        index
+    })
 
-        const serializedSessionKeyAccountParams =
-            await serializeSessionKeyAccount(account)
+    const serializedSessionKeyAccountParams =
+        await serializeSessionKeyAccount(account)
 
-        return await deserializeSessionKeyAccount(
-            publicClient,
-            serializedSessionKeyAccountParams,
-            sessionKey
-        )
-    }
+    return await deserializeSessionKeyAccount(
+        publicClient,
+        serializedSessionKeyAccountParams,
+        sessionKey
+    )
+}
 
 export const getSignerToModularPermissionKernelAccount = async (
-    policies: Policy[]
-): Promise<SmartAccount> => {
+    policies: Policy<EntryPoint>[]
+): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
         throw new Error("TEST_PRIVATE_KEY environment variable not set")
@@ -302,13 +287,10 @@ export const getSignerToModularPermissionKernelAccount = async (
     })
 }
 
-export const getSessionKeyToSessionKeyKernelAccount = async <
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    sessionKeyPlugin: SessionKeyPlugin,
+export const getSessionKeyToSessionKeyKernelAccount = async (
+    sessionKeyPlugin: SessionKeyPlugin<EntryPoint>,
     executorData?: ExecutorData
-): Promise<KernelSmartAccount> => {
+): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
         throw new Error("TEST_PRIVATE_KEY environment variable not set")
@@ -332,7 +314,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async <
     })
 }
 
-const DEFAULT_PROVIDER = "PIMLICO"
+const DEFAULT_PROVIDER = "STACKUP"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
@@ -358,21 +340,28 @@ const getPaymasterRpc = (): string => {
     return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?paymasterProvider=${DEFAULT_PROVIDER}`
 }
 
-export const getKernelAccountClient = async ({
+export const getKernelAccountClient = async <entryPoint extends EntryPoint>({
     account,
-    sponsorUserOperation
-}: SponsorUserOperationMiddleware & {
-    account?: SmartAccount
+    middleware
+}: Middleware<entryPoint> & {
+    account?: KernelSmartAccount<entryPoint>
 } = {}) => {
     const chain = getTestingChain()
-    const resolvedAccount = account ?? (await getSignerToSimpleSmartAccount())
+    const resolvedAccount =
+        account ?? (await getSignerToEcdsaKernelAccount<entryPoint>())
 
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
-        transport: http(getBundlerRpc()),
-        sponsorUserOperation
-    }) as KernelAccountClient<Transport, Chain, KernelSmartAccount>
+        bundlerTransport: http(getBundlerRpc()),
+        middleware,
+        entryPoint: getEntryPoint() as entryPoint
+    }) as unknown as KernelAccountClient<
+        entryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<entryPoint>
+    >
 }
 
 export const getEoaWalletClient = (): WalletClient => {
@@ -388,12 +377,8 @@ export const getEoaWalletClient = (): WalletClient => {
     })
 }
 
-export const getEntryPoint = (): Address => {
-    const entryPointAddress = process.env.ENTRYPOINT_ADDRESS as Address
-    if (!entryPointAddress) {
-        throw new Error("ENTRYPOINT_ADDRESS environment variable not set")
-    }
-    return entryPointAddress
+export const getEntryPoint = (): EntryPoint => {
+    return ENTRYPOINT_ADDRESS_V06
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
@@ -418,12 +403,13 @@ export const getPublicClient = async (): Promise<PublicClient> => {
     return publicClient
 }
 
-export const getKernelBundlerClient = (): BundlerClient => {
+export const getKernelBundlerClient = (): BundlerClient<EntryPoint> => {
     const chain = getTestingChain()
 
     return createBundlerClient({
         chain,
-        transport: http(getBundlerRpc())
+        transport: http(getBundlerRpc()),
+        entryPoint: getEntryPoint()
     })
 }
 
@@ -439,7 +425,8 @@ export const getZeroDevPaymasterClient = () => {
 
     return createZeroDevPaymasterClient({
         chain: chain,
-        transport: http(getPaymasterRpc())
+        transport: http(getPaymasterRpc()),
+        entryPoint: getEntryPoint()
     })
 }
 
@@ -458,7 +445,8 @@ export const getZeroDevERC20PaymasterClient = () => {
         transport: http(
             // currently the ERC20 paymaster must be used with StackUp
             `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${process.env.ZERODEV_PROJECT_ID}?paymasterProvider=STACKUP`
-        )
+        ),
+        entryPoint: getEntryPoint()
     })
 }
 

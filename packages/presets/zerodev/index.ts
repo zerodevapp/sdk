@@ -5,8 +5,9 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import type { UserOperation } from "permissionless"
+import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
+import type { EntryPoint } from "permissionless/types"
 import type { Address, Chain, HttpTransport } from "viem"
 import { http, createPublicClient, isAddress } from "viem"
 
@@ -45,7 +46,13 @@ function isERC20(value: PaymasterType): value is ERC20Paymaster {
     return isAddress(value)
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+function isValidPaymasterType(value: any): value is PaymasterType {
+    return value === "NONE" || value === "SPONSOR" || isERC20(value)
+}
+
 export async function createEcdsaKernelAccountClient<
+    entryPoint extends EntryPoint,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
     TAddress extends Address = Address
@@ -60,14 +67,15 @@ export async function createEcdsaKernelAccountClient<
     chain: TChain
     projectId: string
     signer: SmartAccountSigner<TSource, TAddress>
+    paymaster: PaymasterType
     provider?: Provider
     index?: bigint
-    paymaster?: PaymasterType
 }): Promise<
     KernelAccountClient<
+        entryPoint,
         HttpTransport,
         TChain,
-        KernelSmartAccount<HttpTransport, TChain>
+        KernelSmartAccount<entryPoint, HttpTransport, TChain>
     >
 > {
     const publicClient = createPublicClient({
@@ -82,54 +90,52 @@ export async function createEcdsaKernelAccountClient<
         plugins: {
             sudo: ecdsaValidator
         },
-        index
+        index,
+        entryPoint: ENTRYPOINT_ADDRESS_V06
     })
 
-    let sponsorUserOperation:
-        | ((args: {
-              userOperation: UserOperation
-              entryPoint: Address
-          }) => Promise<UserOperation>)
-        | undefined = undefined
-
-    if (paymaster !== undefined) {
-        const zerodevPaymaster = createZeroDevPaymasterClient({
-            chain: chain,
-            transport: http(getZeroDevPaymasterRPC(projectId, provider))
-        })
-
-        if (isERC20(paymaster)) {
-            sponsorUserOperation = async ({
-                userOperation
-            }): Promise<UserOperation> => {
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation,
-                    gasToken: paymaster
-                })
-            }
-        } else if (paymaster === "SPONSOR") {
-            sponsorUserOperation = async ({
-                userOperation
-            }): Promise<UserOperation> => {
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation
-                })
-            }
-        } else if (paymaster !== "NONE") {
-            throw new Error("Invalid paymaster type")
-        }
+    if (!isValidPaymasterType(paymaster)) {
+        throw new Error("Invalid paymaster type")
     }
+
+    const zerodevPaymaster = createZeroDevPaymasterClient({
+        chain: chain,
+        transport: http(getZeroDevPaymasterRPC(projectId, provider)),
+        entryPoint: ENTRYPOINT_ADDRESS_V06
+    })
 
     const kernelClient = createKernelAccountClient({
         account,
         chain,
-        transport: http(getZeroDevBundlerRPC(projectId, provider)),
-        sponsorUserOperation
+        entryPoint: ENTRYPOINT_ADDRESS_V06,
+        bundlerTransport: http(getZeroDevBundlerRPC(projectId, provider)),
+        middleware:
+            paymaster !== "NONE"
+                ? {
+                      sponsorUserOperation: async ({
+                          userOperation,
+                          entryPoint
+                      }) => {
+                          if (isERC20(paymaster)) {
+                              return zerodevPaymaster.sponsorUserOperation({
+                                  userOperation,
+                                  entryPoint,
+                                  gasToken: paymaster
+                              })
+                          }
+                          return zerodevPaymaster.sponsorUserOperation({
+                              userOperation,
+                              entryPoint
+                          })
+                      }
+                  }
+                : undefined
     })
 
     return kernelClient as unknown as KernelAccountClient<
+        entryPoint,
         HttpTransport,
         TChain,
-        KernelSmartAccount<HttpTransport, TChain>
+        KernelSmartAccount<entryPoint, HttpTransport, TChain>
     >
 }

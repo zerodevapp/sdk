@@ -1,6 +1,7 @@
 import { type KernelValidator } from "@zerodev/sdk"
 import { type ExtractAbiFunction, type ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import type {
     Abi,
     AbiFunction,
@@ -14,8 +15,8 @@ import type {
 } from "viem"
 import { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
 
-export type ModularPermissionPlugin =
-    KernelValidator<"ModularPermissionValidator"> & {
+export type ModularPermissionPlugin<entryPoint extends EntryPoint> =
+    KernelValidator<entryPoint, "ModularPermissionValidator"> & {
         getPermissionId: () => Hex
     }
 

@@ -1,4 +1,5 @@
 import { type KernelAccountClient, type KernelSmartAccount } from "@zerodev/sdk"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -287,13 +288,15 @@ const SessionKeyValidatorAbi = [
 ]
 
 export const revokeSessionKey = async <
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE,
     TChain extends Chain | undefined = Chain | undefined,
     TTransport extends Transport = Transport
 >(
     accountClient: KernelAccountClient<
+        entryPoint,
         TTransport,
         TChain,
-        KernelSmartAccount<TTransport, TChain>
+        KernelSmartAccount<entryPoint, TTransport, TChain>
     >,
     sessionKeyAddress: Address = "0x"
 ): Promise<Hex> => {

@@ -1,11 +1,18 @@
 import { Buffer } from "buffer"
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    ENTRYPOINT_ADDRESS_V06,
+    type UserOperation,
+    getUserOperationHash
+} from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    GetEntryPointVersion
+} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -35,6 +42,7 @@ import {
 } from "./utils.js"
 
 export async function createPasskeyValidator<
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -42,15 +50,15 @@ export async function createPasskeyValidator<
     {
         passkeyName,
         passkeyServerUrl,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
         passkeyName: string
         passkeyServerUrl: string
-        entryPoint?: Address
+        entryPoint?: entryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"WebAuthnValidator">> {
+): Promise<KernelValidator<entryPoint, "WebAuthnValidator">> {
     // Get registration options
     const registerOptionsResponse = await fetch(
         `${passkeyServerUrl}/register/options`,
@@ -288,13 +296,15 @@ export async function createPasskeyValidator<
         async getNonceKey() {
             return 0n
         },
-        async signUserOperation(userOperation: UserOperation) {
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 
@@ -334,20 +344,21 @@ export async function createPasskeyValidator<
 }
 
 export async function getPasskeyValidator<
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
         passkeyServerUrl,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
         validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS
     }: {
         passkeyServerUrl: string
-        entryPoint?: Address
+        entryPoint?: entryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"WebAuthnValidator">> {
+): Promise<KernelValidator<entryPoint, "WebAuthnValidator">> {
     // Get login options
     const loginOptionsResponse = await fetch(
         `${passkeyServerUrl}/login/options`,
@@ -580,13 +591,15 @@ export async function getPasskeyValidator<
         async getNonceKey() {
             return 0n
         },
-        async signUserOperation(userOperation: UserOperation) {
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 

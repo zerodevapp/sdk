@@ -1,8 +1,17 @@
-import { getAccountNonce, getAction, getSenderAddress } from "permissionless"
+import {
+    getAccountNonce,
+    getAction,
+    getSenderAddress,
+    isSmartAccountDeployed
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount
 } from "permissionless/accounts"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -43,12 +52,24 @@ import {
 import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
 
 export type KernelSmartAccount<
+    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<"kernelSmartAccount", transport, chain> & {
-    kernelPluginManager: KernelPluginManager
+> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
+    kernelPluginManager: KernelPluginManager<entryPoint>
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
+}
+
+export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
+    plugins:
+        | KernelPluginManagerParams<entryPoint>
+        | KernelPluginManager<entryPoint>
+    entryPoint: entryPoint
+    index?: bigint
+    factoryAddress?: Address
+    accountLogicAddress?: Address
+    deployedAccountAddress?: Address
 }
 
 /**
@@ -186,16 +207,17 @@ const getAccountInitCode = async ({
  * @param initCodeProvider
  */
 const getAccountAddress = async <
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >({
     client,
-    entryPoint,
+    entryPoint: entryPointAddress,
     initCodeProvider
 }: {
     client: Client<TTransport, TChain, undefined>
     initCodeProvider: () => Promise<Hex>
-    entryPoint: Address
+    entryPoint: entryPoint
 }): Promise<Address> => {
     // Find the init code for this account
     const initCode = await initCodeProvider()
@@ -203,7 +225,7 @@ const getAccountAddress = async <
     // Get the sender address based on the init code
     return getSenderAddress(client, {
         initCode,
-        entryPoint
+        entryPoint: entryPointAddress as ENTRYPOINT_ADDRESS_V06_TYPE
     })
 }
 
@@ -227,27 +249,21 @@ const parseFactoryAddressAndCallDataFromAccountInitCode = (
  * @param deployedAccountAddress
  */
 export async function createKernelAccount<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
         plugins,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC,
         deployedAccountAddress
-    }: {
-        plugins: KernelPluginManagerParams | KernelPluginManager
-        entryPoint?: Address
-        index?: bigint
-        factoryAddress?: Address
-        accountLogicAddress?: Address
-        deployedAccountAddress?: Address
-    }
-): Promise<KernelSmartAccount<TTransport, TChain>> {
-    const kernelPluginManager = isKernelPluginManager(plugins)
+    }: CreateKernelAccountParameters<entryPoint>
+): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
+    const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
         : await toKernelPluginManager(client, {
               sudo: plugins.sudo,
@@ -271,13 +287,18 @@ export async function createKernelAccount<
     // Fetch account address and chain id
     const accountAddress =
         deployedAccountAddress ??
-        (await getAccountAddress<TTransport, TChain>({
+        (await getAccountAddress<entryPoint, TTransport, TChain>({
             client,
-            entryPoint,
+            entryPoint: entryPointAddress,
             initCodeProvider: generateInitCode
         }))
 
     if (!accountAddress) throw new Error("Account address not found")
+
+    let smartAccountDeployed = await isSmartAccountDeployed(
+        client,
+        accountAddress
+    )
 
     const signHashedMessage = async (messageHash: Hex): Promise<Hex> => {
         let kernelImplAddr: Address | undefined
@@ -440,17 +461,43 @@ export async function createKernelAccount<
         ...account,
         client: client,
         publicKey: accountAddress,
-        entryPoint: entryPoint,
+        entryPoint: entryPointAddress,
         source: "kernelSmartAccount",
         kernelPluginManager,
         generateInitCode,
+
+        async getFactory() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return factoryAddress
+        },
+
+        async getFactoryData() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return generateInitCode()
+        },
 
         // Get the nonce of the smart account
         async getNonce() {
             const key = await kernelPluginManager.getNonceKey()
             return getAccountNonce(client, {
                 sender: accountAddress,
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 key
             })
         },

@@ -16,6 +16,7 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     http,
     Address,
@@ -54,13 +55,13 @@ describe("Session Key kernel Account", async () => {
         chain: polygonMumbai,
         transport: http(process.env.RPC_URL as string)
     })
-    const executeBatchSelector = getFunctionSelector(
+    const executeBatchSelector = toFunctionSelector(
         getAbiItem({
             abi: KernelAccountAbi,
             name: "executeBatch"
         })
     )
-    const transfer20ActionSelector = getFunctionSelector(
+    const transfer20ActionSelector = toFunctionSelector(
         getAbiItem({
             abi: TokenActionsAbi,
             name: "transfer20Action"
@@ -70,14 +71,16 @@ describe("Session Key kernel Account", async () => {
     let owner: PrivateKeyAccount
     let accountAddress: Address
     let ecdsaSmartAccountClient: KernelAccountClient<
+        EntryPoint,
         Transport,
         Chain,
-        KernelSmartAccount
+        KernelSmartAccount<EntryPoint>
     >
     let sessionKeySmartAccountClient: KernelAccountClient<
+        EntryPoint,
         Transport,
         Chain,
-        KernelSmartAccount
+        KernelSmartAccount<EntryPoint>
     >
 
     async function mintToAccount(amount: bigint) {
@@ -117,13 +120,14 @@ describe("Session Key kernel Account", async () => {
 
         sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
         accountAddress = (await sessionKeySmartAccountClient.account
@@ -131,13 +135,14 @@ describe("Session Key kernel Account", async () => {
 
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
     })
@@ -196,13 +201,14 @@ describe("Session Key kernel Account", async () => {
                     selector: transfer20ActionSelector
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -252,13 +258,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -327,13 +334,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -412,13 +420,14 @@ describe("Session Key kernel Account", async () => {
                     executor: zeroAddress
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -504,13 +513,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -564,13 +574,14 @@ describe("Session Key kernel Account", async () => {
                 publicClient,
                 serializedSessionKeyAccountParams
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -717,13 +728,14 @@ describe("Session Key kernel Account", async () => {
                     )
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 

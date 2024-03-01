@@ -50,9 +50,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@zerodev/sdk": "^5.1.0",
+    "@zerodev/sdk": "^5.1.6",
     "@zerodev/ecdsa-validator": "^5.1.0",
-    "permissionless": "^0.0.34",
+    "permissionless": "^0.1.4",
     "viem": "^2.0.0"
   }
 }
