@@ -1,22 +1,29 @@
-import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
+import {
+    KernelAccountAbi,
+    type KernelSmartAccount,
+    createKernelAccount
+} from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
+import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
-import type { Address, Hex } from "viem"
+import type { EntryPoint } from "permissionless/types/entrypoint"
+import type { Address, Chain, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
 
 export const deserializeSessionKeyAccount = async <
+    entryPoint extends EntryPoint,
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
     client: Parameters<typeof createKernelAccount>[0],
     sessionKeyAccountParams: string,
     sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
-) => {
+): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
     let signer: SmartAccountSigner<string, Hex>
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
@@ -43,8 +50,13 @@ export const deserializeSessionKeyAccount = async <
     return createKernelAccount(client, {
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress
-    })
+        deployedAccountAddress: params.accountParams.accountAddress,
+        entryPoint: ENTRYPOINT_ADDRESS_V06
+    }) as unknown as KernelSmartAccount<
+        entryPoint,
+        Transport,
+        Chain | undefined
+    >
 }
 
 export const decodeParamsFromInitCode = (initCode: Hex) => {

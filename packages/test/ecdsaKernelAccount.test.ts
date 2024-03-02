@@ -13,11 +13,19 @@ import {
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient, bundlerActions } from "permissionless"
+import {
+    BundlerClient,
+    ENTRYPOINT_ADDRESS_V06,
+    bundlerActions
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
+import {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint.js"
 import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
     Address,
@@ -87,10 +95,15 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
-    let account: SmartAccount
+    let account: KernelSmartAccount<EntryPoint>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient
-    let kernelClient: KernelAccountClient<Transport, Chain, KernelSmartAccount>
+    let bundlerClient: BundlerClient<EntryPoint>
+    let kernelClient: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
@@ -98,13 +111,14 @@ describe("ECDSA kernel Account", () => {
         bundlerClient = getKernelBundlerClient()
         kernelClient = await getKernelAccountClient({
             account,
-            sponsorUserOperation: async ({ userOperation }) => {
-                const zerodevPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
     })
@@ -408,8 +422,7 @@ describe("ECDSA kernel Account", () => {
             expect(userOp.signature).not.toBe("0x")
 
             const userOpHash = await bundlerClient.sendUserOperation({
-                userOperation: userOp,
-                entryPoint: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
 
@@ -473,15 +486,17 @@ describe("ECDSA kernel Account", () => {
 
             const kernelClient = await getKernelAccountClient({
                 account,
-                sponsorUserOperation: async ({
-                    entryPoint: _entryPoint,
-                    userOperation
-                }): Promise<UserOperation> => {
-                    const zerodevPaymaster = getZeroDevPaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
+                middleware: {
+                    sponsorUserOperation: async ({
+                        entryPoint: _entryPoint,
+                        userOperation
+                    }) => {
+                        const zerodevPaymaster = getZeroDevPaymasterClient()
+                        return zerodevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
                 }
             })
 
@@ -547,16 +562,19 @@ describe("ECDSA kernel Account", () => {
 
             const kernelClient = await getKernelAccountClient({
                 account,
-                sponsorUserOperation: async ({
-                    entryPoint: _entryPoint,
-                    userOperation
-                }): Promise<UserOperation> => {
-                    const zerodevPaymaster = getZeroDevERC20PaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint(),
-                        gasToken: gasTokenAddresses[goerli.id]["6TEST"]
-                    })
+                middleware: {
+                    sponsorUserOperation: async ({
+                        entryPoint,
+                        userOperation
+                    }) => {
+                        const zerodevPaymaster =
+                            getZeroDevERC20PaymasterClient()
+                        return zerodevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint,
+                            gasToken: gasTokenAddresses[goerli.id]["6TEST"]
+                        })
+                    }
                 }
             })
 
@@ -652,15 +670,17 @@ describe("ECDSA kernel Account", () => {
             const publicClient = await getPublicClient()
             const kernelClient = await getKernelAccountClient({
                 account: initialEcdsaSmartAccount,
-                sponsorUserOperation: async ({
-                    entryPoint: _entryPoint,
-                    userOperation
-                }): Promise<UserOperation> => {
-                    const zerodevPaymaster = getZeroDevPaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
+                middleware: {
+                    sponsorUserOperation: async ({
+                        entryPoint,
+                        userOperation
+                    }) => {
+                        const zerodevPaymaster = getZeroDevPaymasterClient()
+                        return zerodevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint
+                        })
+                    }
                 }
             })
 

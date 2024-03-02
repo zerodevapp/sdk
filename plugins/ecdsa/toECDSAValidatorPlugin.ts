@@ -1,11 +1,18 @@
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    ENTRYPOINT_ADDRESS_V06,
+    type UserOperation,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type {
+    EntryPoint,
+    GetEntryPointVersion
+} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -21,6 +28,7 @@ import { getChainId } from "viem/actions"
 import { ECDSA_VALIDATOR_ADDRESS } from "./index.js"
 
 export async function signerToEcdsaValidator<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
@@ -29,14 +37,14 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
         validatorAddress = ECDSA_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint?: Address
+        entryPoint?: entryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"ECDSAValidator">> {
+): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -85,13 +93,15 @@ export async function signerToEcdsaValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(userOperation: UserOperation) {
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
             const signature = await signMessage(client, {

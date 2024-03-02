@@ -1,3 +1,4 @@
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Hex,
@@ -21,7 +22,7 @@ export const getKernelVersion = (kernelImpl?: Address): string => {
 }
 
 export const getERC20PaymasterApproveCall = async (
-    client: ZeroDevPaymasterClient,
+    client: ZeroDevPaymasterClient<EntryPoint>,
     {
         gasToken,
         approveAmount

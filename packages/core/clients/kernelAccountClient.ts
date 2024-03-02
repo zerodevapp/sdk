@@ -1,12 +1,11 @@
 import type { SmartAccount } from "permissionless/accounts/types"
-import type { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
-import type { Prettify } from "permissionless/types"
+import type { Middleware } from "permissionless/actions/smartAccount"
+import type { EntryPoint, Prettify } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
 import {
     type Chain,
     type Client,
     type ClientConfig,
-    type ParseAccount,
     type Transport,
     createClient
 } from "viem"
@@ -17,62 +16,72 @@ import {
 } from "./decorators/kernel.js"
 
 export type KernelAccountClient<
+    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends KernelSmartAccount | undefined =
-        | KernelSmartAccount
+    account extends KernelSmartAccount<entryPoint> | undefined =
+        | KernelSmartAccount<entryPoint>
         | undefined
 > = Prettify<
     Client<
         transport,
         chain,
         account,
-        BundlerRpcSchema,
-        KernelAccountClientActions<chain, account>
+        BundlerRpcSchema<entryPoint>,
+        KernelAccountClientActions<entryPoint, chain, account>
     >
 >
 
 export type SmartAccountClientConfig<
+    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount | undefined = SmartAccount | undefined
+    account extends SmartAccount<entryPoint> | undefined =
+        | SmartAccount<entryPoint>
+        | undefined
 > = Prettify<
     Pick<
-        ClientConfig<transport, chain, TAccount>,
-        | "account"
-        | "cacheTime"
-        | "chain"
-        | "key"
-        | "name"
-        | "pollingInterval"
-        | "transport"
-    >
+        ClientConfig<transport, chain, account>,
+        "cacheTime" | "chain" | "key" | "name" | "pollingInterval"
+    > & {
+        account?: account
+        bundlerTransport: Transport
+    } & Middleware<entryPoint> & {
+            entryPoint: entryPoint
+        }
 >
 
 export const createKernelAccountClient = <
+    entryPoint extends EntryPoint,
     TTransport extends Transport,
     TChain extends Chain | undefined = undefined,
-    TSmartAccount extends KernelSmartAccount | undefined = undefined
+    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
+        | KernelSmartAccount<entryPoint>
+        | undefined
 >(
-    parameters: SmartAccountClientConfig<TTransport, TChain, TSmartAccount> &
-        SponsorUserOperationMiddleware
-): KernelAccountClient<TTransport, TChain, ParseAccount<TSmartAccount>> => {
+    parameters: SmartAccountClientConfig<
+        entryPoint,
+        TTransport,
+        TChain,
+        TSmartAccount
+    >
+): KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount> => {
     const {
         key = "Account",
         name = "Kernel Account Client",
-        transport
+        bundlerTransport
     } = parameters
     const client = createClient({
         ...parameters,
         key,
         name,
-        transport: (opts) => transport({ ...opts, retryCount: 0 }),
+        transport: (opts) => bundlerTransport({ ...opts, retryCount: 0 }),
         type: "kernelAccountClient"
     })
 
     return client.extend(
         kernelAccountClientActions({
-            sponsorUserOperation: parameters.sponsorUserOperation
+            middleware: parameters.middleware
         })
-    )
+    ) as KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount>
 }

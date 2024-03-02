@@ -1,7 +1,8 @@
-import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
+import { KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
+    ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
     getAction,
     getUserOperationHash
@@ -10,6 +11,10 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type {
+    EntryPoint,
+    GetEntryPointVersion
+} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -42,6 +47,7 @@ const sortByAddress = (a: { address: Address }, b: { address: Address }) => {
 }
 
 export async function createWeightedECDSAValidator<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
@@ -51,15 +57,15 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers: _signers,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06,
         validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
-        entryPoint?: Address
+        entryPoint?: EntryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"WeightedECDSAValidator">> {
+): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
     // Check if sum of weights is equal or greater than threshold
     if (config) {
         let sum = 0
@@ -149,7 +155,9 @@ export async function createWeightedECDSAValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(userOperation: UserOperation) {
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const callDataAndNonceHash = keccak256(
                 encodeAbiParameters(
                     parseAbiParameters("address, bytes, uint256"),
@@ -194,7 +202,7 @@ export async function createWeightedECDSAValidator<
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 
@@ -214,7 +222,9 @@ export async function createWeightedECDSAValidator<
 
         // Get simple dummy signature
         // Equivalent to signUserOperation for now
-        async getDummySignature(userOperation: UserOperation) {
+        async getDummySignature(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const callDataAndNonceHash = keccak256(
                 encodeAbiParameters(
                     parseAbiParameters("address, bytes, uint256"),

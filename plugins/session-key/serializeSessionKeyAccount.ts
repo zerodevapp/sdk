@@ -1,12 +1,13 @@
 import type { KernelSmartAccount } from "@zerodev/sdk"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Hex } from "viem"
 import {
     isSessionKeyValidatorPlugin,
     serializeSessionKeyAccountParams
 } from "./utils.js"
 
-export const serializeSessionKeyAccount = async (
-    account: KernelSmartAccount,
+export const serializeSessionKeyAccount = async <entryPoint extends EntryPoint>(
+    account: KernelSmartAccount<entryPoint>,
     privateKey?: Hex
 ): Promise<string> => {
     if (!isSessionKeyValidatorPlugin(account.kernelPluginManager))

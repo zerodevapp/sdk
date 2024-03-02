@@ -1,5 +1,6 @@
 import { EventEmitter } from "events"
 import { type KernelAccountClient } from "@zerodev/sdk"
+import type { EntryPoint } from "permissionless/types"
 import {
     type EIP1193Parameters,
     type EIP1193RequestFn,
@@ -7,10 +8,12 @@ import {
     type SendTransactionParameters
 } from "viem"
 
-export class KernelEIP1193Provider extends EventEmitter {
-    private kernelClient: KernelAccountClient
+export class KernelEIP1193Provider<
+    entryPoint extends EntryPoint
+> extends EventEmitter {
+    private kernelClient: KernelAccountClient<entryPoint>
 
-    constructor(kernelClient: KernelAccountClient) {
+    constructor(kernelClient: KernelAccountClient<entryPoint>) {
         super()
         this.kernelClient = kernelClient
     }

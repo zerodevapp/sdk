@@ -1,4 +1,5 @@
 import { getAction } from "permissionless"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -22,14 +23,15 @@ import {
 } from "../../types/kernel.js"
 import { getKernelVersion } from "../../utils.js"
 
-export function isKernelPluginManager(
+export function isKernelPluginManager<entryPoint extends EntryPoint>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
-): plugin is KernelPluginManager {
+): plugin is KernelPluginManager<entryPoint> {
     return plugin.getPluginEnableSignature !== undefined
 }
 
 export async function toKernelPluginManager<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -47,8 +49,8 @@ export async function toKernelPluginManager<
         },
         validAfter = 0,
         validUntil = 0
-    }: KernelPluginManagerParams
-): Promise<KernelPluginManager> {
+    }: KernelPluginManagerParams<entryPoint>
+): Promise<KernelPluginManager<entryPoint>> {
     const chainId = await getChainId(client)
     const getValidatorSignature = async (
         accountAddress: Address,

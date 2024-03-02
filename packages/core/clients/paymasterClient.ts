@@ -1,3 +1,4 @@
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Account,
     type Chain,
@@ -12,12 +13,12 @@ import {
     zerodevPaymasterActions
 } from "./decorators/kernel.js"
 
-export type ZeroDevPaymasterClient = Client<
+export type ZeroDevPaymasterClient<entryPoint extends EntryPoint> = Client<
     Transport,
     Chain | undefined,
     Account | undefined,
     ZeroDevPaymasterRpcSchema,
-    ZeroDevPaymasterClientActions
+    ZeroDevPaymasterClientActions<entryPoint>
 >
 /**
  * Creates a ZeroDev-specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/clients/chains.html).
@@ -37,11 +38,14 @@ export type ZeroDevPaymasterClient = Client<
  * })
  */
 export const createZeroDevPaymasterClient = <
+    entryPoint extends EntryPoint,
     transport extends Transport,
     chain extends Chain | undefined = undefined
 >(
-    parameters: PublicClientConfig<transport, chain>
-): ZeroDevPaymasterClient => {
+    parameters: PublicClientConfig<transport, chain> & {
+        entryPoint: entryPoint
+    }
+): ZeroDevPaymasterClient<entryPoint> => {
     const { key = "public", name = "ZeroDev Paymaster Client" } = parameters
     const client = createClient({
         ...parameters,
@@ -49,5 +53,5 @@ export const createZeroDevPaymasterClient = <
         name,
         type: "zerodevPaymasterClient"
     })
-    return client.extend(zerodevPaymasterActions)
+    return client.extend(zerodevPaymasterActions(parameters.entryPoint))
 }
