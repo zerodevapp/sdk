@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/sdk",
-  "version": "5.1.6",
+  "version": "5.1.7",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
@@ -82,6 +82,11 @@
       "types": "./_types/clients/kernel.d.ts",
       "import": "./_esm/clients/kernel.js",
       "default": "./_cjs/clients/kernel.js"
+    },
+    "./providers": {
+      "types": "./_types/providers/index.d.ts",
+      "import": "./_esm/providers/index.js",
+      "default": "./_cjs/provider/index.js"
     }
   },
   "peerDependencies": {
