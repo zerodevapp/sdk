@@ -1,7 +1,7 @@
 import { toKernelPluginManager } from "./toKernelPluginManager.js"
 export { toKernelPluginManager }
 
-import { Address, Hex } from "viem"
+import type { Address, Hex } from "viem"
 import { verifyEIP6492Signature } from "./6492.js"
 export { verifyEIP6492Signature }
 

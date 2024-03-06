@@ -5,16 +5,16 @@ import {
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
-    SmartAccountSigner
+    type SmartAccountSigner
 } from "permissionless/accounts"
 import {
-    Address,
-    Chain,
-    Client,
-    Hash,
-    Hex,
-    Transport,
-    TypedDataDefinition,
+    type Address,
+    type Chain,
+    type Client,
+    type Hash,
+    type Hex,
+    type Transport,
+    type TypedDataDefinition,
     concatHex,
     encodeFunctionData,
     getTypesForEIP712Domain,
@@ -24,15 +24,15 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, getChainId } from "viem/actions"
-import { KernelEncodeCallDataArgs } from "../../types/kernel.js"
-import { wrapSignatureWith6492 } from "../utils/6492.js"
-import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
-import { KernelSmartAccount } from "./createKernelAccount"
+import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
+import { wrapSignatureWith6492 } from "../../utils/6492.js"
+import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
+import { type KernelSmartAccount } from "../createKernelAccount.js"
 import {
     MULTISEND_ADDRESS,
     encodeMultiSend,
     multiSendAbi
-} from "./v1/multisend.js"
+} from "./multisend.js"
 
 export type KernelV1SmartAccount<
     transport extends Transport = Transport,
@@ -91,15 +91,11 @@ export async function createKernelV1Account<
     {
         signer,
         entrypoint = KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6,
-        index = 0n,
-        factoryAddress = KERNEL_V1_ADDRESSES.FACTORY_ADDRESS,
-        deployedAccountAddress
+        index = 0n
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entrypoint?: Address
         index?: bigint
-        factoryAddress?: Address
-        deployedAccountAddress?: Address
     }
 ): Promise<KernelV1SmartAccount<TTransport, TChain>> {
     if (entrypoint !== KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6) {
@@ -131,10 +127,9 @@ export async function createKernelV1Account<
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            const hash = hashMessage(message)
             const [isDeployed, signature] = await Promise.all([
                 isAccountDeployed(),
-                signer.signMessage({ message: hash })
+                signer.signMessage({ message })
             ])
             return create6492Signature(isDeployed, signature)
         },
