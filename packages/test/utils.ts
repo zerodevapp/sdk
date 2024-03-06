@@ -6,7 +6,7 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import { KernelValidator } from "@zerodev/sdk"
+import { KernelValidator, createKernelV1Account } from "@zerodev/sdk"
 import {
     addressToEmptyAccount,
     createKernelAccount
@@ -132,6 +132,21 @@ const getEcdsaKernelAccountWithPrivateKey = async (
         plugins: {
             sudo: ecdsaValidatorPlugin
         },
+        index
+    })
+}
+
+export const getKernelV1Account = async (): Promise<SmartAccount> => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(privateKey)
+
+    return createKernelV1Account(publicClient, {
+        signer,
         index
     })
 }

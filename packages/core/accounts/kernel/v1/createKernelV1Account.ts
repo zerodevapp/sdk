@@ -13,17 +13,20 @@ import {
     type Client,
     type Hash,
     type Hex,
+    type LocalAccount,
     type Transport,
     type TypedDataDefinition,
     concatHex,
     encodeFunctionData,
-    getTypesForEIP712Domain,
-    hashTypedData,
-    validateTypedData,
-    type LocalAccount
+    type TypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode, getChainId, signMessage } from "viem/actions"
+import {
+    getBytecode,
+    getChainId,
+    signMessage,
+    signTypedData
+} from "viem/actions"
 import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
@@ -143,29 +146,19 @@ export async function createKernelV1Account<
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
         },
-        async signTypedData(typedData) {
-            const types = {
-                EIP712Domain: getTypesForEIP712Domain({
-                    domain: typedData.domain
-                }),
-                ...typedData.types
-            }
-
-            // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
-            // as we can't statically check this with TypeScript.
-            validateTypedData({
-                domain: typedData.domain,
-                message: typedData.message,
-                primaryType: typedData.primaryType,
-                types: types
-            } as TypedDataDefinition)
-
-            const typedHash = hashTypedData(typedData)
-            const [isDeployed, signature] = await Promise.all([
-                isAccountDeployed(),
-                signer.signMessage({ message: typedHash })
-            ])
-            return create6492Signature(isDeployed, signature)
+        async signTypedData<
+            const TTypedData extends TypedData | Record<string, unknown>,
+            TPrimaryType extends
+                | keyof TTypedData
+                | "EIP712Domain" = keyof TTypedData
+        >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
+            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
+                client,
+                {
+                    account: viemSigner,
+                    ...typedData
+                }
+            )
         }
     })
 
