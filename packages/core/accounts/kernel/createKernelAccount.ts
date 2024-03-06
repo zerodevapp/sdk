@@ -36,6 +36,7 @@ import type {
 } from "../../types/kernel.js"
 import { getKernelVersion } from "../../utils.js"
 import { wrapSignatureWith6492 } from "../utils/6492.js"
+import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
@@ -205,14 +206,6 @@ const getAccountAddress = async <
         initCode,
         entryPoint
     })
-}
-
-const parseFactoryAddressAndCallDataFromAccountInitCode = (
-    initCode: Hex
-): [Address, Hex] => {
-    const factoryAddress = `0x${initCode.substring(2, 42)}` as Address
-    const factoryCalldata = `0x${initCode.substring(42)}` as Hex
-    return [factoryAddress, factoryCalldata]
 }
 
 /**
