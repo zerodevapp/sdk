@@ -24,10 +24,10 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, getChainId } from "viem/actions"
+import { KernelEncodeCallDataArgs } from "../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
 import { KernelSmartAccount } from "./createKernelAccount"
-import { KernelEncodeCallDataArgs } from "../../types/kernel.js"
 import {
     MULTISEND_ADDRESS,
     encodeMultiSend,
