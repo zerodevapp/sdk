@@ -15,10 +15,10 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
+    type TypedData,
     type TypedDataDefinition,
     concatHex,
-    encodeFunctionData,
-    type TypedData
+    encodeFunctionData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import {
