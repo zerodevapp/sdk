@@ -1,5 +1,6 @@
 export {
     createKernelAccount,
+    createKernelV1Account,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
@@ -34,8 +35,5 @@ export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
 export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"
-export {
-    gasTokenAddresses,
-    type TokenSymbolsMap
-} from "./gasTokenAddresses.js"
+export { gasTokenAddresses, type TokenSymbolsMap } from "./gasTokenAddresses.js"
 export { verifyEIP6492Signature } from "./accounts/utils/index.js"
