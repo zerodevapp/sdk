@@ -1,19 +1,16 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271ABI,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
-    createKernelAccount,
-    getERC20PaymasterApproveCall,
-    verifyEIP6492Signature
+    getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient, bundlerActions } from "permissionless"
+import { BundlerClient } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
@@ -33,14 +30,12 @@ import {
     hashTypedData,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount, sign } from "viem/accounts"
 import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import {
     findUserOperationEvent,
-    getEcdsaKernelAccountWithRandomSigner,
     getEntryPoint,
     getKernelAccountClient,
     getKernelBundlerClient,
@@ -49,7 +44,6 @@ import {
     getSignerToEcdsaKernelAccount,
     getZeroDevERC20PaymasterClient,
     getZeroDevPaymasterClient,
-    index,
     waitForNonceUpdate
 } from "./utils.js"
 

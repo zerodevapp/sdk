@@ -1,5 +1,8 @@
 import { type Address, type Hex, encodePacked, toBytes } from "viem"
-import { type CallType, type KernelEncodeCallDataArgs } from "../../../types"
+import {
+    type CallType,
+    type KernelEncodeCallDataArgs
+} from "../../../types/index.js"
 
 export const MULTISEND_ADDRESS = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c"
 
