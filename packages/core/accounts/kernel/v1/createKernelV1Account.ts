@@ -13,14 +13,14 @@ import {
     type Client,
     type Hash,
     type Hex,
+    type LocalAccount,
     type Transport,
     type TypedDataDefinition,
     concatHex,
     encodeFunctionData,
     getTypesForEIP712Domain,
     hashTypedData,
-    validateTypedData,
-    type LocalAccount
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getBytecode, getChainId, signMessage } from "viem/actions"
