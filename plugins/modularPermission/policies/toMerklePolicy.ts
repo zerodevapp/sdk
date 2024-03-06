@@ -9,19 +9,12 @@ import {
     toHex
 } from "viem"
 import { MERKLE_POLICY_CONTRACT, PolicyFlags } from "../constants.js"
-import type { Permission, PermissionCore } from "../types.js"
+import type { PermissionCore } from "../types.js"
 import {
     findMatchingPermissions,
     getPermissionFromABI
 } from "./merklePolicyUtils.js"
-import type { Policy, PolicyParams } from "./types.js"
-
-export type MerklePolicyParams<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
-> = PolicyParams & {
-    permissions?: Permission<TAbi, TFunctionName>[]
-}
+import type { MerklePolicyParams, Policy } from "./types.js"
 
 export enum ParamOperator {
     EQUAL = 0,
@@ -43,7 +36,8 @@ export async function toMerklePolicy<
 >({
     policyAddress = MERKLE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    permissions = []
+    permissions = [],
+    type = "merkle"
 }: MerklePolicyParams<TAbi, TFunctionName>): Promise<Policy> {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
@@ -132,7 +126,13 @@ export async function toMerklePolicy<
                 pad(toHex(proofData.length / 2 - 1), { size: 32 }),
                 proofData
             ])
-        }
+        },
+        policyParams: {
+            type,
+            policyAddress,
+            policyFlag,
+            permissions
+        } as unknown as MerklePolicyParams<Abi | readonly unknown[], string>
     }
 }
 
