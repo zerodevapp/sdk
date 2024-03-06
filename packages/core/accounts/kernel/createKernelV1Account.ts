@@ -27,6 +27,17 @@ import { getBytecode, getChainId } from "viem/actions"
 import { wrapSignatureWith6492 } from "../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
 import { KernelSmartAccount } from "./createKernelAccount"
+import { KernelEncodeCallDataArgs } from "../../types/kernel.js"
+import {
+    MULTISEND_ADDRESS,
+    encodeMultiSend,
+    multiSendAbi
+} from "./v1/multisend.js"
+
+export type KernelV1SmartAccount<
+    transport extends Transport = Transport,
+    chain extends Chain | undefined = Chain | undefined
+> = Omit<KernelSmartAccount<transport, chain>, "kernelPluginManager">
 
 const createAccountAbi = [
     {
@@ -42,6 +53,21 @@ const createAccountAbi = [
                 type: "address"
             }
         ],
+        stateMutability: "nonpayable",
+        type: "function"
+    }
+]
+
+const executeAndRevertAbi = [
+    {
+        inputs: [
+            { internalType: "address", name: "to", type: "address" },
+            { internalType: "uint256", name: "value", type: "uint256" },
+            { internalType: "bytes", name: "data", type: "bytes" },
+            { internalType: "enum Operation", name: "operation", type: "uint8" }
+        ],
+        name: "executeAndRevert",
+        outputs: [],
         stateMutability: "nonpayable",
         type: "function"
     }
@@ -75,7 +101,7 @@ export async function createKernelV1Account<
         factoryAddress?: Address
         deployedAccountAddress?: Address
     }
-): Promise<KernelSmartAccount<TTransport, TChain>> {
+): Promise<KernelV1SmartAccount<TTransport, TChain>> {
     if (entrypoint !== KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6) {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
@@ -83,7 +109,7 @@ export async function createKernelV1Account<
     // Fetch chain id
     const chainId = await getChainId(client)
 
-    const getAccountInitCode = async (): Promise<Hex> => {
+    const generateInitCode = async (): Promise<Hex> => {
         return concatHex([
             KERNEL_V1_ADDRESSES.FACTORY_ADDRESS,
             encodeFunctionData({
@@ -94,7 +120,7 @@ export async function createKernelV1Account<
         ]) as Hex
     }
 
-    const initCode = await getAccountInitCode()
+    const initCode = await generateInitCode()
     const accountAddress = await getSenderAddress(client, {
         initCode,
         entryPoint: entrypoint
@@ -159,7 +185,7 @@ export async function createKernelV1Account<
 
         const [factoryAddress, factoryCalldata] =
             parseFactoryAddressAndCallDataFromAccountInitCode(
-                await getAccountInitCode()
+                await generateInitCode()
             )
 
         return wrapSignatureWith6492({
@@ -171,6 +197,11 @@ export async function createKernelV1Account<
 
     return {
         ...account,
+        client: client,
+        publicKey: accountAddress,
+        entryPoint: entrypoint,
+        source: "kernelSmartAccount",
+        generateInitCode,
         async getNonce() {
             return getAccountNonce(client, {
                 sender: accountAddress,
@@ -193,13 +224,55 @@ export async function createKernelV1Account<
             if (await isAccountDeployed()) {
                 return "0x"
             } else {
-                return getAccountInitCode()
+                return generateInitCode()
             }
         },
-        async encodeCallData(_tx) {},
+        async encodeCallData(_tx) {
+            const tx = _tx as KernelEncodeCallDataArgs
+
+            if (Array.isArray(tx)) {
+                // Encode a batched call using multiSend
+                const multiSendCallData = encodeFunctionData({
+                    abi: multiSendAbi,
+                    functionName: "multiSend",
+                    args: [encodeMultiSend(tx)]
+                })
+
+                return encodeFunctionData({
+                    abi: executeAndRevertAbi,
+                    functionName: "executeAndRevert",
+                    args: [MULTISEND_ADDRESS, 0n, multiSendCallData, 1n]
+                })
+            }
+
+            // Default to `call`
+            if (!tx.callType || tx.callType === "call") {
+                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
+                    return tx.data
+                }
+
+                return encodeFunctionData({
+                    abi: executeAndRevertAbi,
+                    functionName: "executeAndRevert",
+                    args: [tx.to, tx.value || 0n, tx.data, 0n]
+                })
+            }
+
+            if (tx.callType === "delegatecall") {
+                return encodeFunctionData({
+                    abi: executeAndRevertAbi,
+                    functionName: "executeAndRevert",
+                    args: [tx.to, tx.value || 0n, tx.data, 1n]
+                })
+            }
+
+            throw new Error("Invalid call type")
+        },
+        async encodeDeployCallData() {
+            return "0x"
+        },
         async getDummySignature() {
             return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
-        },
-        async encodeDeployCallData() {}
+        }
     }
 }
