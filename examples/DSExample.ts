@@ -1,4 +1,4 @@
-import {} from "@zerodev/double-ecdsa-validator"
+import {enableDoubleEcdsaValidator, signerToDoubleEcdsaValidator, Bytes4} from "@zerodev/double-ecdsa-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -8,7 +8,7 @@ import {
 import * as dotenv from "dotenv"
 import { utils } from "ethers"
 import { bundlerActions } from "permissionless"
-import {} from "viem"
+import {createPublicClient, http, encodeFunctionData, type HttpTransport, type Chain } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import { simpleLendingAbi } from "./abi/simpleLendingAbi"
