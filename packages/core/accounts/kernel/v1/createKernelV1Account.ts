@@ -18,12 +18,12 @@ import {
     concatHex,
     encodeFunctionData,
     getTypesForEIP712Domain,
-    hashMessage,
     hashTypedData,
-    validateTypedData
+    validateTypedData,
+    type LocalAccount
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode, getChainId } from "viem/actions"
+import { getBytecode, getChainId, signMessage } from "viem/actions"
 import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
@@ -101,6 +101,13 @@ export async function createKernelV1Account<
     if (entrypoint !== KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6) {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
+
+    const viemSigner: LocalAccount = {
+        ...signer,
+        signTransaction: (_, __) => {
+            throw new SignTransactionNotSupportedBySmartAccount()
+        }
+    } as LocalAccount
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -212,7 +219,10 @@ export async function createKernelV1Account<
                 entryPoint: entrypoint,
                 chainId: chainId
             })
-            const signature = await account.signMessage({ message: hash })
+            const signature = await signMessage(client, {
+                account: viemSigner,
+                message: { raw: hash }
+            })
             return signature
         },
         async getInitCode() {
