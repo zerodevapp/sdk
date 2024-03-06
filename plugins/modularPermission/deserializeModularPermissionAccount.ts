@@ -11,11 +11,11 @@ import {
     toSignaturePolicy,
     toSudoPolicy
 } from "./policies"
-import { type Policy } from "./policies/types"
-import { toECDSASigner } from "./signers/toECDSASigner"
-import type { ModularSigner } from "./signers/types"
-import { createPermissionValidator } from "./toModularPermissionValidatorPlugin"
-import { deserializeModularPermissionAccountParams } from "./utils"
+import { type Policy } from "./policies/types.js"
+import { toECDSASigner } from "./signers/toECDSASigner.js"
+import type { ModularSigner } from "./signers/types.js"
+import { createPermissionValidator } from "./toModularPermissionValidatorPlugin.js"
+import { deserializeModularPermissionAccountParams } from "./utils.js"
 
 export const deserializeModularPermissionAccount = async (
     client: Parameters<typeof createKernelAccount>[0],

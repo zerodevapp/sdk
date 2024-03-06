@@ -1,7 +1,7 @@
 import type {
     ModularPermissionAccountParams,
     ModularPermissionPlugin
-} from "./types"
+} from "./types.js"
 
 export function base64ToBytes(base64: string) {
     const binString = atob(base64)

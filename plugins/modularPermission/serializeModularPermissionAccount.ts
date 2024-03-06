@@ -3,7 +3,7 @@ import type { Hex } from "viem"
 import {
     isModularPermissionValidatorPlugin,
     serializeModularPermissionAccountParams
-} from "./utils"
+} from "./utils.js"
 
 export const serializeModularPermissionAccount = async (
     account: KernelSmartAccount,
