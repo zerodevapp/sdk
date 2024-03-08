@@ -7,15 +7,15 @@ import {
     type Address,
     type Chain,
     type Client,
+    type ContractFunctionExecutionErrorType,
     type EncodeDeployDataParameters,
     type Hash,
     type Hex,
     type Transport,
     type TypedDataDefinition,
-    type ContractFunctionExecutionErrorType,
     concatHex,
-    decodeFunctionResult,
     decodeErrorResult,
+    decodeFunctionResult,
     encodeAbiParameters,
     encodeDeployData,
     encodeFunctionData,
@@ -210,7 +210,7 @@ const getAccountAddress = async <
             entryPoint
         })
     } catch (error) {
-        const err = error as ContractFunctionExecutionErrorType;
+        const err = error as ContractFunctionExecutionErrorType
         // Fuse returns a different error message (CallExecutionError) than the other chains
         if (err.cause.name === "CallExecutionError") {
             const value = decodeErrorResult({
@@ -232,7 +232,7 @@ const getAccountAddress = async <
             })
             return value.args[0] as Address
         }
-        throw err;
+        throw err
     }
 }
 
