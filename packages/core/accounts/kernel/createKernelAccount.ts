@@ -12,8 +12,10 @@ import {
     type Hex,
     type Transport,
     type TypedDataDefinition,
+    type ContractFunctionExecutionErrorType,
     concatHex,
     decodeFunctionResult,
+    decodeErrorResult,
     encodeAbiParameters,
     encodeDeployData,
     encodeFunctionData,
@@ -202,10 +204,36 @@ const getAccountAddress = async <
     const initCode = await initCodeProvider()
 
     // Get the sender address based on the init code
-    return getSenderAddress(client, {
-        initCode,
-        entryPoint
-    })
+    try {
+        return await getSenderAddress(client, {
+            initCode,
+            entryPoint
+        })
+    } catch (error) {
+        const err = error as ContractFunctionExecutionErrorType;
+        // Fuse returns a different error message (CallExecutionError) than the other chains
+        if (err.cause.name === "CallExecutionError") {
+            const value = decodeErrorResult({
+                abi: [
+                    {
+                        inputs: [
+                            {
+                                internalType: "address",
+                                name: "sender",
+                                type: "address"
+                            }
+                        ],
+                        name: "SenderAddressResult",
+                        type: "error"
+                    }
+                ],
+                // @ts-expect-error
+                data: err.cause.cause.cause.data.split(" ")[1]
+            })
+            return value.args[0] as Address
+        }
+        throw err;
+    }
 }
 
 /**
