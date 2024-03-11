@@ -77,7 +77,7 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
         getValidatorInitData(): Promise<ValidatorInitData>
         getExecutorData(): ExecutorData
         getValidityData(): PluginValidityData
-    }
+    } 
 
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     sudo?: KernelValidator<entryPoint>
@@ -85,6 +85,7 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData
+    entryPoint: entryPoint
 } & Partial<PluginValidityData>
 
 export type ExecutorData = {
@@ -118,3 +119,9 @@ export type KernelEncodeCallDataArgs =
           data: Hex
           callType: CallType | undefined
       }[]
+
+export type Execution = {
+    target: Address
+    value: bigint
+    callData: Hex
+}

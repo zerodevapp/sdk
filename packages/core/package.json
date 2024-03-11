@@ -1,96 +1,99 @@
 {
-  "name": "@zerodev/sdk",
-  "version": "5.1.7",
-  "author": "ZeroDev",
-  "main": "./_cjs/index.js",
-  "module": "./_esm/index.js",
-  "types": "./_types/index.d.ts",
-  "typings": "./_types/index.d.ts",
-  "type": "module",
-  "sideEffects": false,
-  "description": "A utility library for working with ERC-4337",
-  "keywords": [
-    "ethereum",
-    "erc-4337",
-    "eip-4337",
-    "paymaster",
-    "bundler"
-  ],
-  "license": "MIT",
-  "files": [
-    "_esm",
-    "_cjs",
-    "_types",
-    "./**/*.ts",
-    "!_esm/**/*.tsbuildinfo",
-    "!_cjs/**/*.tsbuildinfo",
-    "!_types/**/*.tsbuildinfo",
-    "!.env",
-    "!./**/*.test.ts",
-    "!.changeset"
-  ],
-  "scripts": {
-    "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
-    "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
-    "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
-    "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
-    "clean": "rimraf _esm _cjs _types",
-    "changeset": "changeset",
-    "changeset:release": "bun run build && changeset publish",
-    "changeset:version": "changeset version && bun install --lockfile-only",
-    "format": "biome format . --write",
-    "lint": "biome check .",
-    "lint:fix": "bun run lint --apply"
-  },
-  "exports": {
-    ".": {
-      "types": "./_types/index.d.ts",
-      "import": "./_esm/index.js",
-      "default": "./_cjs/index.js"
+    "name": "@zerodev/sdk",
+    "version": "5.1.7",
+    "author": "ZeroDev",
+    "main": "./_cjs/index.js",
+    "module": "./_esm/index.js",
+    "types": "./_types/index.d.ts",
+    "typings": "./_types/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "description": "A utility library for working with ERC-4337",
+    "keywords": [
+        "ethereum",
+        "erc-4337",
+        "eip-4337",
+        "paymaster",
+        "bundler"
+    ],
+    "license": "MIT",
+    "files": [
+        "_esm",
+        "_cjs",
+        "_types",
+        "./**/*.ts",
+        "!_esm/**/*.tsbuildinfo",
+        "!_cjs/**/*.tsbuildinfo",
+        "!_types/**/*.tsbuildinfo",
+        "!.env",
+        "!./**/*.test.ts",
+        "!.changeset"
+    ],
+    "scripts": {
+        "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
+        "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
+        "clean": "rimraf _esm _cjs _types",
+        "changeset": "changeset",
+        "changeset:release": "bun run build && changeset publish",
+        "changeset:version": "changeset version && bun install --lockfile-only",
+        "format": "biome format . --write",
+        "lint": "biome check .",
+        "lint:fix": "bun run lint --apply"
     },
-    "./accounts": {
-      "types": "./_types/accounts/index.d.ts",
-      "import": "./_esm/accounts/index.js",
-      "default": "./_cjs/accounts/index.js"
+    "exports": {
+        ".": {
+            "types": "./_types/index.d.ts",
+            "import": "./_esm/index.js",
+            "default": "./_cjs/index.js"
+        },
+        "./accounts": {
+            "types": "./_types/accounts/index.d.ts",
+            "import": "./_esm/accounts/index.js",
+            "default": "./_cjs/accounts/index.js"
+        },
+        "./plugins": {
+            "types": "./_types/plugins/index.d.ts",
+            "import": "./_esm/plugins/index.js",
+            "default": "./_cjs/plugins/index.js"
+        },
+        "./actions": {
+            "types": "./_types/actions/index.d.ts",
+            "import": "./_esm/actions/index.js",
+            "default": "./_cjs/actions/index.js"
+        },
+        "./types": {
+            "types": "./_types/types/index.d.ts",
+            "import": "./_esm/types/index.js",
+            "default": "./_cjs/types/index.js"
+        },
+        "./actions/kernel": {
+            "types": "./_types/actions/kernel.d.ts",
+            "import": "./_esm/actions/kernel.js",
+            "default": "./_cjs/actions/kernel.js"
+        },
+        "./clients": {
+            "types": "./_types/clients/index.d.ts",
+            "import": "./_esm/clients/index.js",
+            "default": "./_cjs/clients/index.js"
+        },
+        "./clients/kernel": {
+            "types": "./_types/clients/kernel.d.ts",
+            "import": "./_esm/clients/kernel.js",
+            "default": "./_cjs/clients/kernel.js"
+        },
+        "./providers": {
+            "types": "./_types/providers/index.d.ts",
+            "import": "./_esm/providers/index.js",
+            "default": "./_cjs/provider/index.js"
+        }
     },
-    "./plugins": {
-      "types": "./_types/plugins/index.d.ts",
-      "import": "./_esm/plugins/index.js",
-      "default": "./_cjs/plugins/index.js"
+    "peerDependencies": {
+        "viem": "^2.0.0",
+        "permissionless": "^0.1.4"
     },
-    "./actions": {
-      "types": "./_types/actions/index.d.ts",
-      "import": "./_esm/actions/index.js",
-      "default": "./_cjs/actions/index.js"
-    },
-    "./types": {
-      "types": "./_types/types/index.d.ts",
-      "import": "./_esm/types/index.js",
-      "default": "./_cjs/types/index.js"
-    },
-    "./actions/kernel": {
-      "types": "./_types/actions/kernel.d.ts",
-      "import": "./_esm/actions/kernel.js",
-      "default": "./_cjs/actions/kernel.js"
-    },
-    "./clients": {
-      "types": "./_types/clients/index.d.ts",
-      "import": "./_esm/clients/index.js",
-      "default": "./_cjs/clients/index.js"
-    },
-    "./clients/kernel": {
-      "types": "./_types/clients/kernel.d.ts",
-      "import": "./_esm/clients/kernel.js",
-      "default": "./_cjs/clients/kernel.js"
-    },
-    "./providers": {
-      "types": "./_types/providers/index.d.ts",
-      "import": "./_esm/providers/index.js",
-      "default": "./_cjs/provider/index.js"
+    "dependencies": {
+        "semver": "^7.6.0"
     }
-  },
-  "peerDependencies": {
-    "viem": "^2.0.0",
-    "permissionless": "^0.1.4"
-  }
 }

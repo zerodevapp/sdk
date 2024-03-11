@@ -96,7 +96,7 @@ export async function signerToEcdsaValidator<
         async signUserOperation(
             userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
         ) {
-            const hash = getUserOperationHash({
+            const hash = getUserOperationHash<entryPoint>({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"

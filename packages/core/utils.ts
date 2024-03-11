@@ -12,13 +12,37 @@ import {
 import { KERNEL_ADDRESSES } from "./accounts/index.js"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import { KernelImplToVersionMap, LATEST_KERNEL_VERSION } from "./constants.js"
+import { satisfies } from "semver"
+import { getEntryPointVersion } from "permissionless";
 
-export const getKernelVersion = (kernelImpl?: Address): string => {
-    if (!kernelImpl || kernelImpl === zeroAddress) return LATEST_KERNEL_VERSION
+export const getKernelVersion = <entryPoint extends EntryPoint>(entryPointAddress:entryPoint, kernelImpl?: Address): string => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    if (!kernelImpl || kernelImpl === zeroAddress) return  LATEST_KERNEL_VERSION[entryPointVersion]
     for (const [addr, ver] of Object.entries(KernelImplToVersionMap)) {
         if (addr.toLowerCase() === kernelImpl.toLowerCase()) return ver
     }
     return "0.2.1"
+}
+
+export enum KERNEL_FEATURES {
+    ERC1271_SIG_WRAPPER = "ERC1271_SIG_WRAPPER",
+    ERC1271_WITH_VALIDATOR = "ERC1271_WITH_VALIDATOR"
+}
+
+const KERNEL_FEATURES_BY_VERSION: Record<KERNEL_FEATURES, string> = {
+    [KERNEL_FEATURES.ERC1271_SIG_WRAPPER]: ">=0.2.3", // || >=3.0.0-beta
+    [KERNEL_FEATURES.ERC1271_WITH_VALIDATOR]: ">=3.0.0-beta"
+}
+
+export const hasKernelFeature = (
+    feature: KERNEL_FEATURES,
+    version: string
+): boolean => {
+    if (!(feature in KERNEL_FEATURES_BY_VERSION)) {
+        return false
+    }
+
+    return satisfies(version, KERNEL_FEATURES_BY_VERSION[feature])
 }
 
 export const getERC20PaymasterApproveCall = async (

@@ -1,3 +1,4 @@
+import type { EntryPointVersion } from "permissionless/types/entrypoint"
 import { type Address } from "viem"
 
 export const DUMMY_ECDSA_SIG =
@@ -8,8 +9,12 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5": "0.2.2",
     "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3",
     "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
-    "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4"
+    "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
+    "0x629B751556800155f4298d642038d79a8eb9Beda": "3.0.0-beta"
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const KERNEL_NAME = "Kernel"
-export const LATEST_KERNEL_VERSION = "0.2.4"
+export const LATEST_KERNEL_VERSION: { [key in EntryPointVersion]: string } = {
+    "v0.6": "0.2.4",
+    "v0.7": "3.0.0-beta"
+}

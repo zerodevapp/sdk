@@ -44,6 +44,7 @@ export const deserializeSessionKeyAccount = async <
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
         executorData: params.executorData,
+        entryPoint: ENTRYPOINT_ADDRESS_V06,
         ...params.validityData
     })
 
