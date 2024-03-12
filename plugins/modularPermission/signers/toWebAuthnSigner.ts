@@ -131,7 +131,7 @@ export const toWebAuthnSigner = async <
         const clientDataJSON = atob(cred.response.clientDataJSON)
 
         // get challenge and response type location
-        const { beforeType, beforeChallenge } = findQuoteIndices(clientDataJSON)
+        const { beforeType } = findQuoteIndices(clientDataJSON)
 
         // get signature r,s
         const signature = verifyResult.signature
@@ -143,20 +143,16 @@ export const toWebAuthnSigner = async <
             [
                 { name: "authenticatorData", type: "bytes" },
                 { name: "clientDataJSON", type: "string" },
-                { name: "challengeLocation", type: "uint256" },
                 { name: "responseTypeLocation", type: "uint256" },
                 { name: "r", type: "uint256" },
-                { name: "s", type: "uint256" },
-                { name: "usePrecompiled", type: "bool" }
+                { name: "s", type: "uint256" }
             ],
             [
                 authenticatorDataHex,
                 clientDataJSON,
-                beforeChallenge,
                 beforeType,
                 BigInt(r),
-                BigInt(s),
-                isRIP7212SupportedNetwork(chainId)
+                BigInt(s)
             ]
         )
         return encodedSignature
@@ -201,9 +197,10 @@ export const toWebAuthnSigner = async <
             return encodeAbiParameters(
                 [
                     { name: "pubX", type: "uint256" },
-                    { name: "pubY", type: "uint256" }
+                    { name: "pubY", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
-                [pubKey.pubX, pubKey.pubY]
+                [pubKey.pubX, pubKey.pubY, isRIP7212SupportedNetwork(chainId)]
             )
         },
         getDummySignature: () => {
@@ -211,20 +208,16 @@ export const toWebAuthnSigner = async <
                 [
                     { name: "authenticatorData", type: "bytes" },
                     { name: "clientDataJSON", type: "string" },
-                    { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
+                    { name: "s", type: "uint256" }
                 ],
                 [
                     "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
                     '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
-                    23n,
                     1n,
                     44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-                    false
+                    9910254599581058084911561569808925251374718953855182016200087235935345969636n
                 ]
             )
         }
