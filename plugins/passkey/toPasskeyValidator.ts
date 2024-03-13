@@ -27,12 +27,12 @@ import { getChainId } from "viem/actions"
 import { WEBAUTHN_VALIDATOR_ADDRESS } from "./index.js"
 import {
     b64ToBytes,
+    deserializePasskeyValidatorData,
     findQuoteIndices,
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
-    uint8ArrayToHexString,
     serializePasskeyValidatorData,
-    deserializePasskeyValidatorData,
+    uint8ArrayToHexString
 } from "./utils.js"
 
 export async function createPasskeyValidator<
@@ -898,4 +898,3 @@ export async function deserializePasskeyValidator<
         }
     }
 }
-
