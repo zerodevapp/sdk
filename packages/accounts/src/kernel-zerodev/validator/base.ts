@@ -59,7 +59,6 @@ export type ValidatorPluginData = Required<
 export abstract class KernelBaseValidator {
   readonly validatorAddress: Hex;
   mode: ValidatorMode;
-  resolvedMode?: ValidatorMode;
   protected projectId: string;
   protected chain?: Chain;
   protected entryPointAddress: Address;
@@ -138,9 +137,10 @@ export abstract class KernelBaseValidator {
   ): Promise<Hex> {
     const dummyECDSASig =
       "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
-    const validatorMode =
-      this.resolvedMode ??
-      (await this.resolveValidatorMode(kernelAccountAddress, calldata));
+    const validatorMode = await this.resolveValidatorMode(
+      kernelAccountAddress,
+      calldata
+    );
     if (validatorMode === ValidatorMode.enable) {
       const enableData = await this.getEnableData(kernelAccountAddress);
       const enableDataLength = enableData.length / 2 - 1;
@@ -287,14 +287,14 @@ export abstract class KernelBaseValidator {
         mode = this.mode;
       }
     }
-    this.resolvedMode = mode;
     return mode;
   }
 
   async getSignature(userOp: UserOperationRequest): Promise<Hex> {
-    const mode =
-      this.resolvedMode ??
-      (await this.resolveValidatorMode(userOp.sender, userOp.callData));
+    const mode = await this.resolveValidatorMode(
+      userOp.sender,
+      userOp.callData
+    );
     if (mode === ValidatorMode.sudo || mode === ValidatorMode.plugin) {
       return concatHex([this.mode, await this.signUserOp(userOp)]);
     } else {
