@@ -66,10 +66,16 @@ export async function createPasskeyValidator<
             credentials: "include"
         }
     )
-    const registerOptions = await registerOptionsResponse.json()
+    const registerOptionsResult = await registerOptionsResponse.json()
+
+    // save userId to sessionStorage
+    if (window.sessionStorage === undefined) {
+        throw new Error("sessionStorage is not available")
+    }
+    sessionStorage.setItem("userId", registerOptionsResult.userId)
 
     // Start registration
-    const registerCred = await startRegistration(registerOptions)
+    const registerCred = await startRegistration(registerOptionsResult.options)
 
     // get authenticatorIdHash
     const authenticatorIdHash = keccak256(
@@ -84,7 +90,11 @@ export async function createPasskeyValidator<
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ username: passkeyName, cred: registerCred }),
+            body: JSON.stringify({
+                userId: registerOptionsResult.userId,
+                username: passkeyName,
+                cred: registerCred
+            }),
             credentials: "include"
         }
     )
@@ -148,13 +158,18 @@ export async function createPasskeyValidator<
                 ? messageContent.slice(2)
                 : messageContent
 
+            if (window.sessionStorage === undefined) {
+                throw new Error("sessionStorage is not available")
+            }
+            const userId = sessionStorage.getItem("userId")
+
             // initiate signing
             const signInitiateResponse = await fetch(
                 `${passkeyServerUrl}/sign-initiate`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: formattedMessage }),
+                    body: JSON.stringify({ data: formattedMessage, userId }),
                     credentials: "include"
                 }
             )
@@ -399,6 +414,11 @@ export async function getPasskeyValidator<
         throw new Error("Login not verified")
     }
 
+    if (window.sessionStorage === undefined) {
+        throw new Error("sessionStorage is not available")
+    }
+    sessionStorage.setItem("userId", loginVerifyResult.userId)
+
     // Import the key
     const pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
     if (!pubKey) {
@@ -453,13 +473,18 @@ export async function getPasskeyValidator<
                 ? messageContent.slice(2)
                 : messageContent
 
+            if (window.sessionStorage === undefined) {
+                throw new Error("sessionStorage is not available")
+            }
+            const userId = sessionStorage.getItem("userId")
+
             // initiate signing
             const signInitiateResponse = await fetch(
                 `${passkeyServerUrl}/sign-initiate`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: formattedMessage }),
+                    body: JSON.stringify({ data: formattedMessage, userId }),
                     credentials: "include"
                 }
             )
@@ -701,13 +726,18 @@ export async function deserializePasskeyValidator<
                 ? messageContent.slice(2)
                 : messageContent
 
+            if (window.sessionStorage === undefined) {
+                throw new Error("sessionStorage is not available")
+            }
+            const userId = sessionStorage.getItem("userId")
+
             // initiate signing
             const signInitiateResponse = await fetch(
                 `${passkeyServerUrl}/sign-initiate`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: formattedMessage }),
+                    body: JSON.stringify({ data: formattedMessage, userId }),
                     credentials: "include"
                 }
             )

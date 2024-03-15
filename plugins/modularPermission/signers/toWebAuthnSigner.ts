@@ -85,13 +85,18 @@ export const toWebAuthnSigner = async <
             ? messageContent.slice(2)
             : messageContent
 
+        if (window.sessionStorage === undefined) {
+            throw new Error("sessionStorage is not available")
+        }
+        const userId = sessionStorage.getItem("userId")
+
         // initiate signing
         const signInitiateResponse = await fetch(
             `${passkeyServerUrl}/sign-initiate`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: formattedMessage }),
+                body: JSON.stringify({ data: formattedMessage, userId }),
                 credentials: "include"
             }
         )

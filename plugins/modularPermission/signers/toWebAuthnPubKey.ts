@@ -44,6 +44,12 @@ export const toWebAuthnPubKey = async ({
         )
 
         const loginVerifyResult = await loginVerifyResponse.json()
+
+        if (window.sessionStorage === undefined) {
+            throw new Error("sessionStorage is not available")
+        }
+        sessionStorage.setItem("userId", loginVerifyResult.userId)
+
         if (!loginVerifyResult.verification.verified) {
             throw new Error("Login not verified")
         }
@@ -67,8 +73,14 @@ export const toWebAuthnPubKey = async ({
         )
         const registerOptions = await registerOptionsResponse.json()
 
+        // save userId to sessionStorage
+        if (window.sessionStorage === undefined) {
+            throw new Error("sessionStorage is not available")
+        }
+        sessionStorage.setItem("userId", registerOptions.userId)
+
         // Start registration
-        const registerCred = await startRegistration(registerOptions)
+        const registerCred = await startRegistration(registerOptions.options)
 
         // Verify registration
         const registerVerifyResponse = await fetch(
@@ -79,6 +91,7 @@ export const toWebAuthnPubKey = async ({
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
+                    userId: registerOptions.userId,
                     username: passkeyName,
                     cred: registerCred
                 }),
