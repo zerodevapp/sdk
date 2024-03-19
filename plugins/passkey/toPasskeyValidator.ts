@@ -191,7 +191,7 @@ export async function createPasskeyValidator<
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cred }),
+                    body: JSON.stringify({ cred, userId }),
                     credentials: "include"
                 }
             )
@@ -506,7 +506,7 @@ export async function getPasskeyValidator<
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cred }),
+                    body: JSON.stringify({ cred, userId }),
                     credentials: "include"
                 }
             )
@@ -759,7 +759,7 @@ export async function deserializePasskeyValidator<
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cred }),
+                    body: JSON.stringify({ cred, userId }),
                     credentials: "include"
                 }
             )
