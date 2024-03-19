@@ -116,7 +116,7 @@ export const toWebAuthnSigner = async <
         const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cred }),
+            body: JSON.stringify({ cred, userId }),
             credentials: "include"
         })
 
