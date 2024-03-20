@@ -24,6 +24,7 @@ const main = async () => {
     const privateKey = generatePrivateKey()
     const signer = privateKeyToAccount(privateKey)
     const chain = sepolia
+    // .env breaking
     // const projectId = process.env.ZERODEV_PROJECT_ID as string;
     const projectId = "ccf05920-669e-4635-adf5-618d322389da"
 
@@ -31,6 +32,7 @@ const main = async () => {
         transport: http(getZeroDevBundlerRPC(projectId)),
         chain
     })
+    
     const proofHash =
         "0x5f35dce98ba4fba25530a026ed80b2cecdaa31091ba4958b99b52ea1d068adad"
     // TODO: What if the proofId is the hash of the proof + a nonce?
