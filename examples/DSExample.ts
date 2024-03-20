@@ -1,4 +1,8 @@
-import {enableDoubleEcdsaValidator, signerToDoubleEcdsaValidator, Bytes4} from "@zerodev/double-ecdsa-validator"
+import {
+    Bytes4,
+    enableDoubleEcdsaValidator,
+    signerToDoubleEcdsaValidator
+} from "@zerodev/double-ecdsa-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -8,7 +12,13 @@ import {
 import * as dotenv from "dotenv"
 import { utils } from "ethers"
 import { bundlerActions } from "permissionless"
-import {createPublicClient, http, encodeFunctionData, type HttpTransport, type Chain } from "viem"
+import {
+    http,
+    type Chain,
+    type HttpTransport,
+    createPublicClient,
+    encodeFunctionData
+} from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import { simpleLendingAbi } from "./abi/simpleLendingAbi"
@@ -17,8 +27,8 @@ dotenv.config()
 
 const main = async () => {
     const getZeroDevBundlerRPC = (projectId: string): string => {
-      const rpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}`;
-      return rpc;
+        const rpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
+        return rpc
     }
 
     const privateKey = generatePrivateKey()
@@ -32,7 +42,7 @@ const main = async () => {
         transport: http(getZeroDevBundlerRPC(projectId)),
         chain
     })
-    
+
     const proofHash =
         "0x5f35dce98ba4fba25530a026ed80b2cecdaa31091ba4958b99b52ea1d068adad"
     // TODO: What if the proofId is the hash of the proof + a nonce?
@@ -52,8 +62,8 @@ const main = async () => {
         }
     })
 
-    const model_id: Bytes4 = "0x00010002" as Bytes4;
-    const version_id: Bytes4 = "0x00010003" as Bytes4;
+    const model_id: Bytes4 = "0x00010002" as Bytes4
+    const version_id: Bytes4 = "0x00010003" as Bytes4
 
     const kernelClient = createKernelAccountClient({
         account,
@@ -70,10 +80,10 @@ const main = async () => {
         proofId,
         proofHash,
         kernelClient as KernelAccountClient<
-        HttpTransport,
-        Chain,
-        KernelSmartAccount
-      >
+            HttpTransport,
+            Chain,
+            KernelSmartAccount
+        >
     )
     console.log("Kernel Client: ", kernelClient)
 
