@@ -1,7 +1,7 @@
 import { p256 } from "@noble/curves/p256"
 import { type Hex, bytesToBigInt, hexToBytes } from "viem"
 
-const RIP7212_SUPPORTED_NETWORKS = [80001]
+const RIP7212_SUPPORTED_NETWORKS = [80001, 137]
 
 export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
     RIP7212_SUPPORTED_NETWORKS.includes(chainId)
