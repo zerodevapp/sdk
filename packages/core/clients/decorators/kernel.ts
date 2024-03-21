@@ -8,6 +8,11 @@ import type {
 } from "../../actions/index.js"
 import { signUserOperation } from "../../actions/index.js"
 import {
+    type EstimateGasInERC20Parameters,
+    type EstimateGasInERC20ReturnType,
+    estimateGasInERC20
+} from "../../actions/paymaster/estimateGasInERC20.js"
+import {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType,
     sponsorUserOperation
@@ -21,13 +26,18 @@ export type ZeroDevPaymasterClientActions = {
     sponsorUserOperation: (
         args: SponsorUserOperationParameters
     ) => Promise<SponsorUserOperationReturnType>
+    estimateGasInERC20: (
+        args: EstimateGasInERC20Parameters
+    ) => Promise<EstimateGasInERC20ReturnType>
 }
 
 export const zerodevPaymasterActions = (
     client: Client
 ): ZeroDevPaymasterClientActions => ({
     sponsorUserOperation: async (args: SponsorUserOperationParameters) =>
-        sponsorUserOperation(client as ZeroDevPaymasterClient, args)
+        sponsorUserOperation(client as ZeroDevPaymasterClient, args),
+    estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>
+        estimateGasInERC20(client as ZeroDevPaymasterClient, args)
 })
 
 // export type KernelAccountClientActions<
