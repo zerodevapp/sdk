@@ -7,17 +7,28 @@ import {
     hexToSignature,
     isHex,
     signatureToHex,
-    zeroAddress
+    zeroAddress,
+    concatHex,
+    pad
 } from "viem"
 import { KERNEL_ADDRESSES } from "./accounts/index.js"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
-import { KernelImplToVersionMap, LATEST_KERNEL_VERSION } from "./constants.js"
+import {
+    CALL_TYPE,
+    EXEC_TYPE,
+    KernelImplToVersionMap,
+    LATEST_KERNEL_VERSION
+} from "./constants.js"
 import { satisfies } from "semver"
-import { getEntryPointVersion } from "permissionless";
+import { getEntryPointVersion } from "permissionless"
 
-export const getKernelVersion = <entryPoint extends EntryPoint>(entryPointAddress:entryPoint, kernelImpl?: Address): string => {
+export const getKernelVersion = <entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    kernelImpl?: Address
+): string => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    if (!kernelImpl || kernelImpl === zeroAddress) return  LATEST_KERNEL_VERSION[entryPointVersion]
+    if (!kernelImpl || kernelImpl === zeroAddress)
+        return LATEST_KERNEL_VERSION[entryPointVersion]
     for (const [addr, ver] of Object.entries(KernelImplToVersionMap)) {
         if (addr.toLowerCase() === kernelImpl.toLowerCase()) return ver
     }
@@ -26,12 +37,14 @@ export const getKernelVersion = <entryPoint extends EntryPoint>(entryPointAddres
 
 export enum KERNEL_FEATURES {
     ERC1271_SIG_WRAPPER = "ERC1271_SIG_WRAPPER",
-    ERC1271_WITH_VALIDATOR = "ERC1271_WITH_VALIDATOR"
+    ERC1271_WITH_VALIDATOR = "ERC1271_WITH_VALIDATOR",
+    ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH = "ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH"
 }
 
 const KERNEL_FEATURES_BY_VERSION: Record<KERNEL_FEATURES, string> = {
-    [KERNEL_FEATURES.ERC1271_SIG_WRAPPER]: ">=0.2.3", // || >=3.0.0-beta
-    [KERNEL_FEATURES.ERC1271_WITH_VALIDATOR]: ">=3.0.0-beta"
+    [KERNEL_FEATURES.ERC1271_SIG_WRAPPER]: ">=0.2.3 || >=0.3.0-beta",
+    [KERNEL_FEATURES.ERC1271_WITH_VALIDATOR]: ">=0.3.0-beta",
+    [KERNEL_FEATURES.ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH]: ">=0.3.0-beta"
 }
 
 export const hasKernelFeature = (
@@ -88,4 +101,14 @@ export const fixSignedData = (sig: Hex): Hex => {
     if (v === 0n || v === 1n) v += 27n
     const joined = signatureToHex({ r, s, v })
     return joined
+}
+
+export const getExecMode = (callType: CALL_TYPE, execType: EXEC_TYPE): Hex => {
+    return concatHex([
+        callType, // 1 byte
+        execType, // 1 byte
+        "0x00000000", // 4 bytes
+        "0x00000000", // 4 bytes
+        pad("0x00000000", { size: 22 })
+    ])
 }

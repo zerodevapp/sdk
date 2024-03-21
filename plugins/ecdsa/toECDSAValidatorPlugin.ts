@@ -3,7 +3,8 @@ import type { TypedData } from "abitype"
 import {
     ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
-    getUserOperationHash
+    getUserOperationHash,
+    getEntryPointVersion
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -25,7 +26,17 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { ECDSA_VALIDATOR_ADDRESS } from "./index.js"
+import {
+    ECDSA_VALIDATOR_ADDRESS_V06,
+    ECDSA_VALIDATOR_ADDRESS_V07
+} from "./index.js"
+
+export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    return entryPointVersion === "v0.6"
+        ? ECDSA_VALIDATOR_ADDRESS_V06
+        : ECDSA_VALIDATOR_ADDRESS_V07
+}
 
 export async function signerToEcdsaValidator<
     entryPoint extends EntryPoint,
@@ -38,13 +49,15 @@ export async function signerToEcdsaValidator<
     {
         signer,
         entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
-        validatorAddress = ECDSA_VALIDATOR_ADDRESS
+        validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entryPoint?: entryPoint
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -85,6 +98,7 @@ export async function signerToEcdsaValidator<
         ...account,
         address: validatorAddress,
         source: "ECDSAValidator",
+        isPermissionValidator: false,
 
         async getEnableData() {
             return viemSigner.address

@@ -242,17 +242,6 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
-        name: "executionHook",
-        inputs: [
-            { name: "userOpHash", type: "bytes32", internalType: "bytes32" }
-        ],
-        outputs: [
-            { name: "", type: "address", internalType: "contract IHook" }
-        ],
-        stateMutability: "view"
-    },
-    {
-        type: "function",
         name: "executorConfig",
         inputs: [
             {
@@ -267,7 +256,6 @@ export const KernelV3AccountAbi = [
                 type: "tuple",
                 internalType: "struct ExecutorManager.ExecutorConfig",
                 components: [
-                    { name: "group", type: "bytes4", internalType: "bytes4" },
                     {
                         name: "hook",
                         type: "address",
@@ -275,6 +263,16 @@ export const KernelV3AccountAbi = [
                     }
                 ]
             }
+        ],
+        stateMutability: "view"
+    },
+    {
+        type: "function",
+        name: "fallbackConfig",
+        inputs: [],
+        outputs: [
+            { name: "", type: "address", internalType: "contract IFallback" },
+            { name: "", type: "address", internalType: "contract IHook" }
         ],
         stateMutability: "view"
     },
@@ -307,6 +305,23 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
+        name: "invalidateNonce",
+        inputs: [{ name: "nonce", type: "uint32", internalType: "uint32" }],
+        outputs: [],
+        stateMutability: "payable"
+    },
+    {
+        type: "function",
+        name: "isAllowedSelector",
+        inputs: [
+            { name: "vId", type: "bytes21", internalType: "ValidationId" },
+            { name: "selector", type: "bytes4", internalType: "bytes4" }
+        ],
+        outputs: [{ name: "", type: "bool", internalType: "bool" }],
+        stateMutability: "view"
+    },
+    {
+        type: "function",
         name: "isModuleInstalled",
         inputs: [
             { name: "moduleType", type: "uint256", internalType: "uint256" },
@@ -332,16 +347,33 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
-        name: "permissionData",
+        name: "permissionConfig",
         inputs: [
-            {
-                name: "validator",
-                type: "bytes21",
-                internalType: "ValidationId"
-            }
+            { name: "vId", type: "bytes21", internalType: "ValidationId" }
         ],
         outputs: [
-            { name: "", type: "bytes22[]", internalType: "PermissionData[]" }
+            {
+                name: "",
+                type: "tuple",
+                internalType: "struct ValidationManager.PermissionConfig",
+                components: [
+                    {
+                        name: "permissionFlag",
+                        type: "bytes2",
+                        internalType: "PassFlag"
+                    },
+                    {
+                        name: "signer",
+                        type: "address",
+                        internalType: "contract ISigner"
+                    },
+                    {
+                        name: "policyData",
+                        type: "bytes22[]",
+                        internalType: "PolicyData[]"
+                    }
+                ]
+            }
         ],
         stateMutability: "view"
     },
@@ -354,12 +386,31 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
-        name: "supportsAccountMode",
-        inputs: [
-            { name: "encodedMode", type: "bytes32", internalType: "ExecMode" }
+        name: "selectorConfig",
+        inputs: [{ name: "selector", type: "bytes4", internalType: "bytes4" }],
+        outputs: [
+            {
+                name: "",
+                type: "tuple",
+                internalType: "struct SelectorManager.SelectorConfig",
+                components: [
+                    {
+                        name: "hook",
+                        type: "address",
+                        internalType: "contract IHook"
+                    },
+                    { name: "target", type: "address", internalType: "address" }
+                ]
+            }
         ],
-        outputs: [{ name: "", type: "bool", internalType: "bool" }],
         stateMutability: "view"
+    },
+    {
+        type: "function",
+        name: "supportsExecutionMode",
+        inputs: [{ name: "", type: "bytes32", internalType: "ExecMode" }],
+        outputs: [{ name: "", type: "bool", internalType: "bool" }],
+        stateMutability: "pure"
     },
     {
         type: "function",
@@ -368,15 +419,25 @@ export const KernelV3AccountAbi = [
             { name: "moduleTypeId", type: "uint256", internalType: "uint256" }
         ],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
-        stateMutability: "view"
+        stateMutability: "pure"
     },
     {
         type: "function",
         name: "uninstallModule",
         inputs: [
-            { name: "moduleType", type: "uint256", internalType: "uint256" },
+            { name: "", type: "uint256", internalType: "uint256" },
             { name: "module", type: "address", internalType: "address" },
             { name: "deInitData", type: "bytes", internalType: "bytes" }
+        ],
+        outputs: [],
+        stateMutability: "payable"
+    },
+    {
+        type: "function",
+        name: "uninstallValidation",
+        inputs: [
+            { name: "vId", type: "bytes21", internalType: "ValidationId" },
+            { name: "deinitData", type: "bytes", internalType: "bytes" }
         ],
         outputs: [],
         stateMutability: "payable"
@@ -448,11 +509,7 @@ export const KernelV3AccountAbi = [
         type: "function",
         name: "validatorConfig",
         inputs: [
-            {
-                name: "validator",
-                type: "bytes21",
-                internalType: "ValidationId"
-            }
+            { name: "vId", type: "bytes21", internalType: "ValidationId" }
         ],
         outputs: [
             {
@@ -460,18 +517,7 @@ export const KernelV3AccountAbi = [
                 type: "tuple",
                 internalType: "struct ValidationManager.ValidationConfig",
                 components: [
-                    { name: "group", type: "bytes4", internalType: "bytes4" },
                     { name: "nonce", type: "uint32", internalType: "uint32" },
-                    {
-                        name: "validFrom",
-                        type: "uint48",
-                        internalType: "uint48"
-                    },
-                    {
-                        name: "validUntil",
-                        type: "uint48",
-                        internalType: "uint48"
-                    },
                     {
                         name: "hook",
                         type: "address",
@@ -544,12 +590,6 @@ export const KernelV3AccountAbi = [
                 internalType: "PermissionId"
             },
             {
-                name: "group",
-                type: "bytes4",
-                indexed: false,
-                internalType: "Group"
-            },
-            {
                 name: "nonce",
                 type: "uint32",
                 indexed: false,
@@ -592,6 +632,31 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "event",
+        name: "SelectorSet",
+        inputs: [
+            {
+                name: "selector",
+                type: "bytes4",
+                indexed: false,
+                internalType: "bytes4"
+            },
+            {
+                name: "vId",
+                type: "bytes21",
+                indexed: false,
+                internalType: "ValidationId"
+            },
+            {
+                name: "allowed",
+                type: "bool",
+                indexed: false,
+                internalType: "bool"
+            }
+        ],
+        anonymous: false
+    },
+    {
+        type: "event",
         name: "TryExecuteUnsuccessful",
         inputs: [
             {
@@ -620,12 +685,6 @@ export const KernelV3AccountAbi = [
                 internalType: "contract IValidator"
             },
             {
-                name: "group",
-                type: "bytes4",
-                indexed: false,
-                internalType: "Group"
-            },
-            {
                 name: "nonce",
                 type: "uint32",
                 indexed: false,
@@ -647,8 +706,10 @@ export const KernelV3AccountAbi = [
         ],
         anonymous: false
     },
+    { type: "error", name: "EnableNotApproved", inputs: [] },
     { type: "error", name: "ExecutionReverted", inputs: [] },
     { type: "error", name: "InvalidCallType", inputs: [] },
+    { type: "error", name: "InvalidCaller", inputs: [] },
     { type: "error", name: "InvalidExecutor", inputs: [] },
     { type: "error", name: "InvalidFallback", inputs: [] },
     { type: "error", name: "InvalidMode", inputs: [] },
@@ -658,5 +719,18 @@ export const KernelV3AccountAbi = [
     { type: "error", name: "InvalidValidationType", inputs: [] },
     { type: "error", name: "InvalidValidator", inputs: [] },
     { type: "error", name: "OnlyExecuteUserOp", inputs: [] },
-    { type: "error", name: "PermissionDataTooLarge", inputs: [] }
+    {
+        type: "error",
+        name: "PermissionNotAlllowedForSignature",
+        inputs: []
+    },
+    { type: "error", name: "PermissionNotAlllowedForUserOp", inputs: [] },
+    { type: "error", name: "PolicyDataTooLarge", inputs: [] },
+    {
+        type: "error",
+        name: "PolicyFailed",
+        inputs: [{ name: "i", type: "uint256", internalType: "uint256" }]
+    },
+    { type: "error", name: "PolicySignatureOrderError", inputs: [] },
+    { type: "error", name: "SignerPrefixNotPresent", inputs: [] }
 ] as const

@@ -56,6 +56,7 @@ import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASi
 import { createPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { weightedEcdsaValidatorV7 } from "./v0.7/utils.js";
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const index = 342432420n

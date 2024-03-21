@@ -5,7 +5,8 @@ import {
     ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
     getAction,
-    getUserOperationHash
+    getUserOperationHash,
+    getEntryPointVersion
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -30,7 +31,10 @@ import {
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi.js"
-import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
+import {
+    WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V06,
+    WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V07
+} from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
@@ -46,6 +50,13 @@ const sortByAddress = (a: { address: Address }, b: { address: Address }) => {
     return a.address.toLowerCase() < b.address.toLowerCase() ? 1 : -1
 }
 
+export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    return entryPointVersion === "v0.6"
+        ? WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V06
+        : WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V07
+}
+
 export async function createWeightedECDSAValidator<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
@@ -58,7 +69,7 @@ export async function createWeightedECDSAValidator<
         config,
         signers: _signers,
         entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06,
-        validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
+        validatorAddress
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
@@ -66,6 +77,11 @@ export async function createWeightedECDSAValidator<
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    if (!validatorAddress) {
+        throw new Error("Validator address not provided")
+    }
     // Check if sum of weights is equal or greater than threshold
     if (config) {
         let sum = 0
@@ -133,6 +149,7 @@ export async function createWeightedECDSAValidator<
         ...account,
         address: validatorAddress,
         source: "WeightedECDSAValidator",
+        isPermissionValidator: false,
 
         async getEnableData() {
             if (!config) return "0x" // TODO: check if this is correct
@@ -290,7 +307,7 @@ export async function createWeightedECDSAValidator<
                 })
                 return (
                     execDetail.validator.toLowerCase() ===
-                    validatorAddress.toLowerCase()
+                    validatorAddress?.toLowerCase()
                 )
             } catch (error) {
                 return false
@@ -299,15 +316,19 @@ export async function createWeightedECDSAValidator<
     }
 }
 
-export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
+export function getUpdateConfigCall<entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    newConfig: WeightedECDSAValidatorConfig
+): {
     to: Address
     value: bigint
     data: Hex
 } {
     const signers = [...newConfig.signers].sort(sortByAddress)
+    const validatorAddress = getValidatorAddress(entryPointAddress)
 
     return {
-        to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
+        to: validatorAddress,
         value: 0n,
         data: encodeFunctionData({
             abi: WeightedValidatorAbi,

@@ -17,7 +17,7 @@ export type ZeroDevPaymasterClient<entryPoint extends EntryPoint> = Client<
     Transport,
     Chain | undefined,
     Account | undefined,
-    ZeroDevPaymasterRpcSchema,
+    ZeroDevPaymasterRpcSchema<entryPoint>,
     ZeroDevPaymasterClientActions<entryPoint>
 >
 /**

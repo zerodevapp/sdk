@@ -1,4 +1,7 @@
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import {
+    KernelValidator,
+    signerToEcdsaValidator
+} from "@zerodev/ecdsa-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -27,16 +30,23 @@ import {
     createPublicClient,
     decodeEventLog,
     getAbiItem,
-    http
+    http,
+    toFunctionSelector,
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
+import { KernelV3ExecuteAbi } from "@zerodev/sdk"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
+import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
+import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
+import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy"
 
-export const index = 43247823423423n
-export const ecdsaValidatorV7 = "0x0b08DA444efC3888DAc413E975476cCbB345d214"
-export const kernelv3Impl = "0x629B751556800155f4298d642038d79a8eb9Beda"
+// export const index = 43244782332432423423n
+export const index = 4323343744387823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
 
 export const findUserOperationEvent = (logs: Log[]): boolean => {
@@ -84,8 +94,7 @@ const getEcdsaKernelAccountWithPrivateKey = async <
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" },
-        validatorAddress: ecdsaValidatorV7
+        signer: { ...signer, source: "local" as "local" | "external" }
     })
 
     return createKernelAccount(publicClient, {
@@ -94,8 +103,7 @@ const getEcdsaKernelAccountWithPrivateKey = async <
             sudo: ecdsaValidatorPlugin,
             entryPoint: getEntryPoint()
         },
-        index,
-        accountLogicAddress: kernelv3Impl
+        index
     }) as unknown as KernelSmartAccount<entryPoint>
 }
 
@@ -270,9 +278,11 @@ const getBundlerRpc = (provider?: string): string => {
     }`
 }
 
-export const waitForUserOperationTransaction = async (hash: Hash): Promise<Hash> => {
+export const waitForUserOperationTransaction = async (
+    hash: Hash
+): Promise<Hash> => {
     const pubicClient = await getPublicClient()
-    const blockNumber = await pubicClient.getBlockNumber();
+    const blockNumber = await pubicClient.getBlockNumber()
     for (let i = 0; i < 10; i++) {
         const logs = await pubicClient.getLogs({
             address: getEntryPoint(),
@@ -286,10 +296,106 @@ export const waitForUserOperationTransaction = async (hash: Hash): Promise<Hash>
         if (logs.length) {
             return logs[0].transactionHash
         }
-        await new Promise((resolve) =>
-            setTimeout(resolve, 1000)
-        )
+        await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
     throw new Error("Failed to find transaction for User Operation")
+}
+
+// WeightedECDSAValidator utils
+export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
+    KernelSmartAccount<EntryPoint>
+> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
+    if (!privateKey1 || !privateKey2) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+        )
+    }
+    const publicClient = await getPublicClient()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const signer2 = privateKeyToAccount(privateKey2)
+    const weightedECDSAPlugin = await createWeightedECDSAValidator(
+        publicClient,
+        {
+            entryPoint: getEntryPoint(),
+            config: {
+                threshold: 100,
+                delay: 0,
+                signers: [
+                    { address: signer1.address, weight: 50 },
+                    { address: signer2.address, weight: 50 }
+                ]
+            },
+            signers: [signer1, signer2]
+        }
+    )
+
+    const signer = privateKeyToAccount(privateKey1)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin,
+            regular: weightedECDSAPlugin,
+            entryPoint: getEntryPoint(),
+            executorData: {
+                executor: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+}
+
+export const getSignerToPermissionKernelAccount = async (): Promise<
+    KernelSmartAccount<EntryPoint>
+> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey1) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+        )
+    }
+    const publicClient = await getPublicClient()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+    const gasPolicy = await toGasPolicy({
+        maxGasAllowedInWei: 1000000000000000000n
+    })
+    const sudoPolicy = await toSudoPolicy({})
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaModularSigner,
+        policies: [sudoPolicy, gasPolicy]
+    })
+
+    const signer = privateKeyToAccount(privateKey1)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin,
+            regular: permissionPlugin,
+            entryPoint: getEntryPoint(),
+            executorData: {
+                executor: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
 }

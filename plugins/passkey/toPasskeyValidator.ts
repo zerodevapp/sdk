@@ -260,6 +260,7 @@ export async function createPasskeyValidator<
         ...account,
         address: validatorAddress,
         source: "WebAuthnValidator",
+        isPermissionValidator: false,
         async getEnableData() {
             return encodeAbiParameters(
                 [
@@ -555,6 +556,7 @@ export async function getPasskeyValidator<
         ...account,
         address: validatorAddress,
         source: "WebAuthnValidator",
+        isPermissionValidator: false,
         async getEnableData() {
             return encodeAbiParameters(
                 [

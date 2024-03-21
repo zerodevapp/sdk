@@ -111,9 +111,10 @@ describe("ECDSA kernel Account", () => {
             account,
             middleware: {
                 sponsorUserOperation: async ({ userOperation }) => {
-                    const pimlicoPaymaster = getPimlicoPaymasterClient()
-                    return pimlicoPaymaster.sponsorUserOperation({
-                        userOperation
+                    const zeroDevPaymaster = getZeroDevPaymasterClient()
+                    return zeroDevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint: getEntryPoint()
                     })
                 }
             }
@@ -237,25 +238,14 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client signMessage should return a valid signature",
         async () => {
-            const gasPriceResult =
-                await pimlicoBundlerClient.getUserOperationGasPrice()
             // to make sure kernel is deployed
-            const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
-                        value: 0n,
-                        data: "0x"
-                    }),
-                    maxFeePerGas: gasPriceResult.standard.maxFeePerGas,
-                    maxPriorityFeePerGas:
-                        gasPriceResult.standard.maxPriorityFeePerGas
-                }
+            const tx = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
             })
-            console.log("userOpHash", userOpHash)
-            console.log("account.address", kernelClient.account.address)
-            const rcpt = await waitForUserOperationTransaction(userOpHash)
-            console.log("rcpt", { rcpt })
+            console.log("tx", tx)
+
             const message = "hello world"
             const response = await kernelClient.signMessage({
                 message
@@ -355,10 +345,13 @@ describe("ECDSA kernel Account", () => {
             expect(response).toHaveLength(TX_HASH_LENGTH)
             expect(response).toMatch(TX_HASH_REGEX)
 
-            const txnHash = await waitForUserOperationTransaction(response)
-            console.log("txnHash", txnHash)
+            const rcpt = await bundlerClient.waitForUserOperationReceipt({
+                hash: response
+            })
             const transactionReceipt =
-                await publicClient.waitForTransactionReceipt({ hash: txnHash })
+                await publicClient.waitForTransactionReceipt({
+                    hash: rcpt.receipt.transactionHash
+                })
 
             expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
         },
@@ -368,28 +361,25 @@ describe("ECDSA kernel Account", () => {
     test(
         "Smart account client send multiple transactions",
         async () => {
-            const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData([
-                        {
-                            to: zeroAddress,
-                            value: 0n,
-                            data: "0x"
-                        },
-                        {
-                            to: zeroAddress,
-                            value: 0n,
-                            data: "0x"
-                        },
-                        {
-                            to: zeroAddress,
-                            value: 0n,
-                            data: "0x"
-                        }
-                    ])
-                }
+            const response = await kernelClient.sendTransactions({
+                transactions: [
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }
+                ]
             })
-            const response = await waitForUserOperationTransaction(userOpHash)
             expect(response).toBeString()
             expect(response).toHaveLength(TX_HASH_LENGTH)
             expect(response).toMatch(TX_HASH_REGEX)
@@ -433,13 +423,17 @@ describe("ECDSA kernel Account", () => {
             const userOp = await kernelClient.signUserOperation({
                 userOperation: {
                     callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress ?? process.env.GREETER_ADDRESS as Address,
+                        to:
+                            zeroAddress ??
+                            (process.env.GREETER_ADDRESS as Address),
                         value: 0n,
-                        data: "0x" ?? encodeFunctionData({
-                            abi: GreeterAbi,
-                            functionName: "setGreeting",
-                            args: ["hello world"]
-                        })
+                        data:
+                            "0x" ??
+                            encodeFunctionData({
+                                abi: GreeterAbi,
+                                functionName: "setGreeting",
+                                args: ["hello world"]
+                            })
                     })
                 }
             })
@@ -449,7 +443,9 @@ describe("ECDSA kernel Account", () => {
                 userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
-            await waitForUserOperationTransaction(userOpHash)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
 
             await waitForNonceUpdate()
         },
@@ -469,7 +465,9 @@ describe("ECDSA kernel Account", () => {
                     })
                 }
             })
-            const txHash = await waitForUserOperationTransaction(userOpHash)
+            const txHash = await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
             console.log("txHash", txHash)
 
             expect(userOpHash).toHaveLength(66)
@@ -482,21 +480,11 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send Transaction with paymaster",
         async () => {
-            const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
-                        value: 0n,
-                        data: "0x"
-                    })
-                }
+            const transactionHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
             })
-            console.log("userOpHash", userOpHash)
-
-
-            const transactionHash = await waitForUserOperationTransaction(
-                userOpHash
-            )
             console.log("transactionHash", transactionHash)
 
             expect(transactionHash).toBeString()
@@ -513,254 +501,245 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    //     test(
-    //         "Client send multiple Transactions with paymaster",
-    //         async () => {
-    //             const account = await getSignerToEcdsaKernelAccount()
+    test(
+        "Client send multiple Transactions with paymaster",
+        async () => {
+            const account = await getSignerToEcdsaKernelAccount()
 
-    //             const publicClient = await getPublicClient()
+            const kernelClient = await getKernelAccountClient({
+                account,
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //             const bundlerClient = getKernelBundlerClient()
+            const response = await kernelClient.sendTransactions({
+                transactions: [
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }
+                ]
+            })
 
-    //             const kernelClient = await getKernelAccountClient({
-    //                 account,
-    //                 middleware: {
-    //                     sponsorUserOperation: async ({
-    //                         entryPoint: _entryPoint,
-    //                         userOperation
-    //                     }) => {
-    //                         const zerodevPaymaster = getZeroDevPaymasterClient()
-    //                         return zerodevPaymaster.sponsorUserOperation({
-    //                             userOperation,
-    //                             entryPoint: getEntryPoint()
-    //                         })
-    //                     }
-    //                 }
-    //             })
+            expect(response).toBeString()
+            expect(response).toHaveLength(66)
+            expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
 
-    //             const response = await kernelClient.sendTransactions({
-    //                 transactions: [
-    //                     {
-    //                         to: zeroAddress,
-    //                         value: 0n,
-    //                         data: "0x"
-    //                     },
-    //                     {
-    //                         to: zeroAddress,
-    //                         value: 0n,
-    //                         data: "0x"
-    //                     }
-    //                 ]
-    //             })
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: response
+                })
 
-    //             expect(response).toBeString()
-    //             expect(response).toHaveLength(66)
-    //             expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+            let eventFound = false
 
-    //             const transactionReceipt =
-    //                 await publicClient.waitForTransactionReceipt({
-    //                     hash: response
-    //                 })
+            for (const log of transactionReceipt.logs) {
+                // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
+                try {
+                    const event = decodeEventLog({
+                        abi: EntryPointAbi,
+                        ...log
+                    })
+                    if (event.eventName === "UserOperationEvent") {
+                        eventFound = true
+                        const userOperation =
+                            await bundlerClient.getUserOperationByHash({
+                                hash: event.args.userOpHash
+                            })
+                        expect(
+                            userOperation?.userOperation.paymasterAndData
+                        ).not.toBe("0x")
+                    }
+                } catch {}
+            }
 
-    //             let eventFound = false
+            expect(eventFound).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 
-    //             for (const log of transactionReceipt.logs) {
-    //                 // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
-    //                 try {
-    //                     const event = decodeEventLog({
-    //                         abi: EntryPointAbi,
-    //                         ...log
-    //                     })
-    //                     if (event.eventName === "UserOperationEvent") {
-    //                         eventFound = true
-    //                         const userOperation =
-    //                             await bundlerClient.getUserOperationByHash({
-    //                                 hash: event.args.userOpHash
-    //                             })
-    //                         expect(
-    //                             userOperation?.userOperation.paymasterAndData
-    //                         ).not.toBe("0x")
-    //                     }
-    //                 } catch {}
-    //             }
+    // [TODO] - erc20 paymaster integration with EP v0.7
+    // test(
+    //     "Client send transaction with ERC20 paymaster",
+    //     async () => {
+    //         const account = await getSignerToEcdsaKernelAccount()
 
-    //             expect(eventFound).toBeTrue()
-    //         },
-    //         TEST_TIMEOUT
-    //     )
+    //         const publicClient = await getPublicClient()
 
-    //     test(
-    //         "Client send transaction with ERC20 paymaster",
-    //         async () => {
-    //             const account = await getSignerToEcdsaKernelAccount()
+    //         const bundlerClient = getKernelBundlerClient()
 
-    //             const publicClient = await getPublicClient()
-
-    //             const bundlerClient = getKernelBundlerClient()
-
-    //             const kernelClient = await getKernelAccountClient({
-    //                 account,
-    //                 middleware: {
-    //                     sponsorUserOperation: async ({
+    //         const kernelClient = await getKernelAccountClient({
+    //             account,
+    //             middleware: {
+    //                 sponsorUserOperation: async ({
+    //                     entryPoint,
+    //                     userOperation
+    //                 }) => {
+    //                     const zerodevPaymaster =
+    //                         getZeroDevERC20PaymasterClient()
+    //                     return zerodevPaymaster.sponsorUserOperation({
+    //                         userOperation,
     //                         entryPoint,
-    //                         userOperation
-    //                     }) => {
-    //                         const zerodevPaymaster =
-    //                             getZeroDevERC20PaymasterClient()
-    //                         return zerodevPaymaster.sponsorUserOperation({
-    //                             userOperation,
-    //                             entryPoint,
-    //                             gasToken: gasTokenAddresses[goerli.id]["6TEST"]
-    //                         })
-    //                     }
+    //                         gasToken: gasTokenAddresses[goerli.id]["6TEST"]
+    //                     })
     //                 }
-    //             })
+    //             }
+    //         })
 
-    //             const pmClient = await getZeroDevERC20PaymasterClient()
-    //             const response = await kernelClient.sendTransactions({
-    //                 transactions: [
-    //                     {
-    //                         to: gasTokenAddresses[goerli.id]["6TEST"],
-    //                         data: encodeFunctionData({
-    //                             abi: TEST_ERC20Abi,
-    //                             functionName: "mint",
-    //                             args: [account.address, 100000n]
-    //                         }),
-    //                         value: 0n
-    //                     },
-    //                     await getERC20PaymasterApproveCall(pmClient, {
-    //                         gasToken: gasTokenAddresses[goerli.id]["6TEST"],
-    //                         approveAmount: 100000n
+    //         const pmClient = await getZeroDevERC20PaymasterClient()
+    //         const response = await kernelClient.sendTransactions({
+    //             transactions: [
+    //                 {
+    //                     to: gasTokenAddresses[goerli.id]["6TEST"],
+    //                     data: encodeFunctionData({
+    //                         abi: TEST_ERC20Abi,
+    //                         functionName: "mint",
+    //                         args: [account.address, 100000n]
     //                     }),
-    //                     {
-    //                         to: zeroAddress,
-    //                         value: 0n,
-    //                         data: "0x"
-    //                     }
-    //                 ]
+    //                     value: 0n
+    //                 },
+    //                 await getERC20PaymasterApproveCall(pmClient, {
+    //                     gasToken: gasTokenAddresses[goerli.id]["6TEST"],
+    //                     approveAmount: 100000n
+    //                 }),
+    //                 {
+    //                     to: zeroAddress,
+    //                     value: 0n,
+    //                     data: "0x"
+    //                 }
+    //             ]
+    //         })
+
+    //         console.log(
+    //             "erc20PMTransaction:",
+    //             `https://mumbai.polygonscan.com/tx/${response}`
+    //         )
+
+    //         expect(response).toBeString()
+    //         expect(response).toHaveLength(66)
+    //         expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+
+    //         const transactionReceipt =
+    //             await publicClient.waitForTransactionReceipt({
+    //                 hash: response
     //             })
 
-    //             console.log(
-    //                 "erc20PMTransaction:",
-    //                 `https://mumbai.polygonscan.com/tx/${response}`
-    //             )
-
-    //             expect(response).toBeString()
-    //             expect(response).toHaveLength(66)
-    //             expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
-
-    //             const transactionReceipt =
-    //                 await publicClient.waitForTransactionReceipt({
-    //                     hash: response
+    //         let transferEventFound = false
+    //         for (const log of transactionReceipt.logs) {
+    //             try {
+    //                 const event = decodeEventLog({
+    //                     abi: erc20Abi,
+    //                     ...log
     //                 })
-
-    //             let transferEventFound = false
-    //             for (const log of transactionReceipt.logs) {
-    //                 try {
-    //                     const event = decodeEventLog({
-    //                         abi: erc20Abi,
-    //                         ...log
-    //                     })
-    //                     if (
-    //                         event.eventName === "Transfer" &&
-    //                         event.args.from === account.address
-    //                     ) {
-    //                         transferEventFound = true
-    //                     }
-    //                 } catch (error) {}
-    //             }
-    //             let userOpEventFound = false
-    //             for (const log of transactionReceipt.logs) {
-    //                 // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
-    //                 try {
-    //                     const event = decodeEventLog({
-    //                         abi: EntryPointAbi,
-    //                         ...log
-    //                     })
-    //                     if (event.eventName === "UserOperationEvent") {
-    //                         userOpEventFound = true
-    //                         console.log(
-    //                             "jiffyScanLink:",
-    //                             `https://jiffyscan.xyz/userOpHash/${event.args.userOpHash}?network=mumbai/`
-    //                         )
-    //                         const userOperation =
-    //                             await bundlerClient.getUserOperationByHash({
-    //                                 hash: event.args.userOpHash
-    //                             })
-    //                         expect(
-    //                             userOperation?.userOperation.paymasterAndData
-    //                         ).not.toBe("0x")
-    //                     }
-    //                 } catch {}
-    //             }
-
-    //             expect(transferEventFound).toBeTrue()
-    //             expect(userOpEventFound).toBeTrue()
-    //         },
-    //         TEST_TIMEOUT
-    //     )
-
-    //     test(
-    //         "Can use a deployed account",
-    //         async () => {
-    //             const initialEcdsaSmartAccount =
-    //                 await getSignerToEcdsaKernelAccount()
-    //             const publicClient = await getPublicClient()
-    //             const kernelClient = await getKernelAccountClient({
-    //                 account: initialEcdsaSmartAccount,
-    //                 middleware: {
-    //                     sponsorUserOperation: async ({
-    //                         entryPoint,
-    //                         userOperation
-    //                     }) => {
-    //                         const zerodevPaymaster = getZeroDevPaymasterClient()
-    //                         return zerodevPaymaster.sponsorUserOperation({
-    //                             userOperation,
-    //                             entryPoint
+    //                 if (
+    //                     event.eventName === "Transfer" &&
+    //                     event.args.from === account.address
+    //                 ) {
+    //                     transferEventFound = true
+    //                 }
+    //             } catch (error) {}
+    //         }
+    //         let userOpEventFound = false
+    //         for (const log of transactionReceipt.logs) {
+    //             // Encapsulated inside a try catch since if a log isn't wanted from this abi it will throw an error
+    //             try {
+    //                 const event = decodeEventLog({
+    //                     abi: EntryPointAbi,
+    //                     ...log
+    //                 })
+    //                 if (event.eventName === "UserOperationEvent") {
+    //                     userOpEventFound = true
+    //                     console.log(
+    //                         "jiffyScanLink:",
+    //                         `https://jiffyscan.xyz/userOpHash/${event.args.userOpHash}?network=mumbai/`
+    //                     )
+    //                     const userOperation =
+    //                         await bundlerClient.getUserOperationByHash({
+    //                             hash: event.args.userOpHash
     //                         })
-    //                     }
+    //                     expect(
+    //                         userOperation?.userOperation.paymasterAndData
+    //                     ).not.toBe("0x")
     //                 }
-    //             })
+    //             } catch {}
+    //         }
 
-    //             // Send an initial tx to deploy the account
-    //             const hash = await kernelClient.sendTransaction({
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             })
+    //         expect(transferEventFound).toBeTrue()
+    //         expect(userOpEventFound).toBeTrue()
+    //     },
+    //     TEST_TIMEOUT
+    // )
 
-    //             // Wait for the tx to be done (so we are sure that the account is deployed)
-    //             await publicClient.waitForTransactionReceipt({ hash })
-    //             const deployedAccountAddress = initialEcdsaSmartAccount.address
+    test(
+        "Can use a deployed account",
+        async () => {
+            const initialEcdsaSmartAccount =
+                await getSignerToEcdsaKernelAccount()
+            const kernelClient = await getKernelAccountClient({
+                account: initialEcdsaSmartAccount,
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //             // Build a new account with a valid owner
-    //             const signer = privateKeyToAccount(
-    //                 process.env.TEST_PRIVATE_KEY as Hex
-    //             )
-    //             const ecdsaValidatorPlugin = await signerToEcdsaValidator(
-    //                 publicClient,
-    //                 {
-    //                     entryPoint: getEntryPoint(),
-    //                     signer
-    //                 }
-    //             )
-    //             const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
-    //                 publicClient,
-    //                 {
-    //                     entryPoint: getEntryPoint(),
-    //                     plugins: {
-    //                         sudo: ecdsaValidatorPlugin
-    //                     },
-    //                     deployedAccountAddress,
-    //                     index
-    //                 }
-    //             )
+            // Send an initial tx to deploy the account
+            const hash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
 
-    //             // Ensure the two account have the same address
-    //             expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
-    //                 initialEcdsaSmartAccount.address
-    //             )
-    //         },
-    //         TEST_TIMEOUT
-    //     )
+            // Wait for the tx to be done (so we are sure that the account is deployed)
+            await publicClient.waitForTransactionReceipt({ hash })
+            const deployedAccountAddress = initialEcdsaSmartAccount.address
+
+            // Build a new account with a valid owner
+            const signer = privateKeyToAccount(
+                process.env.TEST_PRIVATE_KEY as Hex
+            )
+            const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    signer
+                }
+            )
+            const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    plugins: {
+                        sudo: ecdsaValidatorPlugin,
+                        entryPoint: getEntryPoint()
+                    },
+                    deployedAccountAddress,
+                    index
+                }
+            )
+
+            // Ensure the two account have the same address
+            expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
+                initialEcdsaSmartAccount.address
+            )
+        },
+        TEST_TIMEOUT
+    )
 })

@@ -15,7 +15,8 @@ import {
     signatureToHex,
     toFunctionSelector,
     toHex,
-    zeroAddress
+    zeroAddress,
+    padHex
 } from "viem"
 import { ParamOperator } from "./index.js"
 import { Operation } from "./toSessionKeyValidatorPlugin.js"
@@ -60,7 +61,7 @@ export function getPermissionFromABI<
             .map(
                 (arg, i) =>
                     arg && {
-                        param: pad(
+                        param: padHex(
                             isHex(arg.value)
                                 ? arg.value
                                 : toHex(

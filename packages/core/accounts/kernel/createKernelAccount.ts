@@ -40,7 +40,7 @@ import {
     pad
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { KERNEL_NAME } from "../../constants.js"
+import { CALL_TYPE, EXEC_TYPE, KERNEL_NAME } from "../../constants.js"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
@@ -48,6 +48,7 @@ import type {
 } from "../../types/kernel.js"
 import {
     KERNEL_FEATURES,
+    getExecMode,
     getKernelVersion,
     hasKernelFeature
 } from "../../utils.js"
@@ -167,11 +168,13 @@ export const EIP1271ABI = [
  * Default addresses for kernel smart account
  */
 export const KERNEL_ADDRESSES: {
-    ACCOUNT_LOGIC: Address
+    ACCOUNT_LOGIC_V0_6: Address
+    ACCOUNT_LOGIC_V0_7: Address
     FACTORY_ADDRESS: Address
     ENTRYPOINT_V0_6: Address
 } = {
-    ACCOUNT_LOGIC: "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
+    ACCOUNT_LOGIC_V0_6: "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
+    ACCOUNT_LOGIC_V0_7: "0x079D5D8A3275A230AF743cB59c341Ff74B82488D",
     FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
     ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
@@ -319,11 +322,15 @@ export async function createKernelAccount<
         entryPoint: entryPointAddress,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
-        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC,
+        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6,
         deployedAccountAddress
     }: CreateKernelAccountParameters<entryPoint>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    accountLogicAddress =
+        entryPointVersion === "v0.6"
+            ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
+            : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7
 
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
@@ -444,8 +451,27 @@ export async function createKernelAccount<
         )
 
         const domainSeparator = keccak256(encoded)
+
+        let finalMessageHash = messageHash
+        if (
+            hasKernelFeature(
+                KERNEL_FEATURES.ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH,
+                kernelVersion
+            )
+        ) {
+            finalMessageHash = keccak256(
+                encodeAbiParameters(
+                    [{ type: "bytes32" }, { type: "bytes32" }],
+                    [
+                        keccak256(stringToHex("Kernel(bytes32 hash)")),
+                        messageHash
+                    ]
+                )
+            )
+        }
+
         const digest = keccak256(
-            concatHex(["0x1901", domainSeparator, messageHash])
+            concatHex(["0x1901", domainSeparator, finalMessageHash])
         )
         return kernelPluginManager.signMessage({
             message: {
@@ -543,6 +569,7 @@ export async function createKernelAccount<
                 isDeployed,
                 concatHex([
                     pad(
+                        // [TODO] - Make the Validator type dynamic to support permission validators
                         concatHex(["0x1", validatorInitData.validatorAddress]),
                         {
                             size: 21,
@@ -614,7 +641,7 @@ export async function createKernelAccount<
 
         // Get the nonce of the smart account
         async getNonce() {
-            const key = await kernelPluginManager.getNonceKey()
+            const key = await kernelPluginManager.getNonceKey(accountAddress)
             return getAccountNonce(client, {
                 sender: accountAddress,
                 entryPoint: entryPointAddress,
@@ -670,13 +697,7 @@ export async function createKernelAccount<
                 abi: KernelV3ExecuteAbi,
                 functionName: "execute",
                 args: [
-                    concatHex([
-                        "0xFF",
-                        "0x00",
-                        "0x00000000",
-                        "0x00000000",
-                        pad("0x00000000", { size: 22 })
-                    ]),
+                    getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
                     encodeAbiParameters(
                         parseAbiParameters("address to, bytes data"),
                         [
@@ -726,14 +747,7 @@ export async function createKernelAccount<
                     abi: KernelV3ExecuteAbi,
                     functionName: "execute",
                     args: [
-                        concatHex([
-                            "0x01",
-                            "0x00",
-                            "0x00000000",
-                            "0x00000000",
-                            pad("0x00000000", { size: 22 })
-                        ]),
-
+                        getExecMode(CALL_TYPE.BATCH, EXEC_TYPE.DEFAULT),
                         encodeAbiParameters(
                             [
                                 {
@@ -790,13 +804,7 @@ export async function createKernelAccount<
                     abi: KernelV3ExecuteAbi,
                     functionName: "execute",
                     args: [
-                        concatHex([
-                            "0x00",
-                            "0x00",
-                            "0x00000000",
-                            "0x00000000",
-                            pad("0x00000000", { size: 22 })
-                        ]),
+                        getExecMode(CALL_TYPE.SINGLE, EXEC_TYPE.DEFAULT),
                         encodeAbiParameters(
                             parseAbiParameters(
                                 "address target, uint256 value, bytes calldata callData"
@@ -819,13 +827,7 @@ export async function createKernelAccount<
                     abi: KernelV3ExecuteAbi,
                     functionName: "execute",
                     args: [
-                        concatHex([
-                            "0xFF",
-                            "0x00",
-                            "0x00000000",
-                            "0x00000000",
-                            pad("0x00000000", { size: 22 })
-                        ]),
+                        getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
                         encodeAbiParameters(
                             parseAbiParameters(
                                 "address target, bytes calldata callData"

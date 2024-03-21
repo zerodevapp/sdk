@@ -120,6 +120,7 @@ export async function createPermissionValidator<
         ...signer.account,
         address: validatorAddress,
         source: "ModularPermissionValidator",
+        isPermissionValidator: false,
         getEnableData,
         getPermissionId,
 

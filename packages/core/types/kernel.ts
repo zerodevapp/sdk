@@ -6,19 +6,28 @@ import type {
 } from "permissionless/types/userOperation"
 import { type Address, type Hex, type LocalAccount } from "viem"
 import type { PartialBy } from "viem/types/utils"
-export type ZeroDevPaymasterRpcSchema = [
+import { VALIDATOR_TYPE } from "../constants.js"
+export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
     {
         Method: "zd_sponsorUserOperation"
         Parameters: [
             {
                 chainId: number
-                userOp: PartialBy<
-                    UserOperationWithBigIntAsHex<"v0.6">,
-                    | "callGasLimit"
-                    | "preVerificationGas"
-                    | "verificationGasLimit"
-                    | "paymasterAndData"
-                >
+                userOp: GetEntryPointVersion<entryPoint> extends "v0.6"
+                    ? PartialBy<
+                          UserOperationWithBigIntAsHex<"v0.6">,
+                          | "callGasLimit"
+                          | "preVerificationGas"
+                          | "verificationGasLimit"
+                      >
+                    : PartialBy<
+                          UserOperationWithBigIntAsHex<"v0.7">,
+                          | "callGasLimit"
+                          | "preVerificationGas"
+                          | "verificationGasLimit"
+                          | "paymasterVerificationGasLimit"
+                          | "paymasterPostOpGasLimit"
+                      >
                 entryPointAddress: Address
                 gasTokenData?: {
                     tokenAddress: Hex
@@ -28,14 +37,29 @@ export type ZeroDevPaymasterRpcSchema = [
                 shouldConsume?: boolean
             }
         ]
-        ReturnType: {
-            paymasterAndData: Hex
-            preVerificationGas: Hex
-            verificationGasLimit: Hex
-            callGasLimit: Hex
-            maxFeePerGas: Hex
-            maxPriorityFeePerGas: Hex
-        }
+        ReturnType: GetEntryPointVersion<entryPoint> extends "v0.6"
+            ? {
+                  paymasterAndData: Hex
+                  preVerificationGas: Hex
+                  verificationGasLimit: Hex
+                  callGasLimit: Hex
+                  maxFeePerGas: Hex
+                  maxPriorityFeePerGas: Hex
+                  paymaster?: never
+                  paymasterVerificationGasLimit?: never
+                  paymasterPostOpGasLimit?: never
+                  paymasterData?: never
+              }
+            : {
+                  preVerificationGas: Hex
+                  verificationGasLimit: Hex
+                  callGasLimit: Hex
+                  paymaster: Address
+                  paymasterVerificationGasLimit: Hex
+                  paymasterPostOpGasLimit: Hex
+                  paymasterData: Hex
+                  paymasterAndData?: never
+              }
     },
     {
         Method: "zd_pm_accounts"
@@ -49,22 +73,42 @@ export type ZeroDevPaymasterRpcSchema = [
     }
 ]
 
+export type ValidatorType = keyof typeof VALIDATOR_TYPE
+
 export type KernelValidator<
     entryPoint extends EntryPoint,
-    Name extends string = string
-> = LocalAccount<Name> & {
-    getNonceKey: () => Promise<bigint>
-    getDummySignature(
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        pluginEnableSignature?: Hex
-    ): Promise<Hex>
-    signUserOperation: (
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        pluginEnableSignature?: Hex
-    ) => Promise<Hex>
-    getEnableData(accountAddress?: Address): Promise<Hex>
-    isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
-}
+    Name extends string = string,
+    type extends ValidatorType = "SUDO"
+> = type extends "PERMISSION"
+    ? LocalAccount<Name> & {
+          getNonceKey: (accountAddress?: Address) => Promise<bigint>
+          getDummySignature(
+              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+              pluginEnableSignature?: Hex
+          ): Promise<Hex>
+          signUserOperation: (
+              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+              pluginEnableSignature?: Hex
+          ) => Promise<Hex>
+          getEnableData(accountAddress?: Address): Promise<Hex>
+          isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
+          isPermissionValidator: boolean
+          getPermissionId: () => Hex
+      }
+    : LocalAccount<Name> & {
+          getNonceKey: (accountAddress?: Address) => Promise<bigint>
+          getDummySignature(
+              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+              pluginEnableSignature?: Hex
+          ): Promise<Hex>
+          signUserOperation: (
+              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+              pluginEnableSignature?: Hex
+          ) => Promise<Hex>
+          getEnableData(accountAddress?: Address): Promise<Hex>
+          isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
+          isPermissionValidator: boolean
+      }
 
 export type ValidatorInitData = {
     validatorAddress: Address
@@ -77,7 +121,7 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
         getValidatorInitData(): Promise<ValidatorInitData>
         getExecutorData(): ExecutorData
         getValidityData(): PluginValidityData
-    } 
+    }
 
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     sudo?: KernelValidator<entryPoint>

@@ -10,11 +10,29 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3",
     "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
     "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
-    "0x629B751556800155f4298d642038d79a8eb9Beda": "3.0.0-beta"
+    "0x079D5D8A3275A230AF743cB59c341Ff74B82488D": "0.3.0-beta"
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const KERNEL_NAME = "Kernel"
 export const LATEST_KERNEL_VERSION: { [key in EntryPointVersion]: string } = {
     "v0.6": "0.2.4",
-    "v0.7": "3.0.0-beta"
+    "v0.7": "0.3.0-beta"
+}
+export const VALIDATOR_TYPE = {
+    SUDO: "0x00",
+    SECONDARY: "0x01",
+    PERMISSION: "0x02"
+} as const
+export enum VALIDATOR_MODE {
+    DEFAULT = "0x00",
+    ENABLE = "0x01"
+}
+export enum CALL_TYPE {
+    SINGLE = "0x00",
+    BATCH = "0x01",
+    DELEGATE_CALL = "0xFF"
+}
+export enum EXEC_TYPE {
+    DEFAULT = "0x00",
+    TRY_EXEC = "0x01"
 }
