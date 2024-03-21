@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/weighted-ecdsa-validator",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "author": "ZeroDev",
   "main": "./_cjs/index.js",
   "module": "./_esm/index.js",
