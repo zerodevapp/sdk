@@ -1,15 +1,17 @@
+import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
+import { satisfies } from "semver"
 import {
     type Address,
     type Hex,
+    concatHex,
     encodeFunctionData,
     erc20Abi,
     hexToSignature,
     isHex,
+    pad,
     signatureToHex,
-    zeroAddress,
-    concatHex,
-    pad
+    zeroAddress
 } from "viem"
 import { KERNEL_ADDRESSES } from "./accounts/index.js"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
@@ -19,8 +21,6 @@ import {
     KernelImplToVersionMap,
     LATEST_KERNEL_VERSION
 } from "./constants.js"
-import { satisfies } from "semver"
-import { getEntryPointVersion } from "permissionless"
 
 export const getKernelVersion = <entryPoint extends EntryPoint>(
     entryPointAddress: entryPoint,

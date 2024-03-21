@@ -1,22 +1,22 @@
+import { KernelV3AccountAbi } from "@zerodev/sdk"
+import { getAction, getUserOperationHash } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
-    type Client,
-    type Chain,
-    type Transport,
     type Address,
-    concat,
+    type Chain,
+    type Client,
     type Hex,
+    type Transport,
+    concat,
     encodeAbiParameters,
-    zeroAddress,
     keccak256,
+    pad,
     slice,
-    pad
+    zeroAddress
 } from "viem"
-import type { PermissionPlugin, PermissionPluginParams } from "./types.js"
 import { getChainId, readContract } from "viem/actions"
-import { getAction, getUserOperationHash } from "permissionless"
 import { PolicyFlags } from "./constants.js"
-import { KernelV3AccountAbi } from "@zerodev/sdk"
+import type { PermissionPlugin, PermissionPluginParams } from "./types.js"
 
 export async function toPermissionValidator<
     entryPoint extends EntryPoint,

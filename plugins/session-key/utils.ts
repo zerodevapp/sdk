@@ -12,11 +12,11 @@ import {
     hexToSignature,
     isHex,
     pad,
+    padHex,
     signatureToHex,
     toFunctionSelector,
     toHex,
-    zeroAddress,
-    padHex
+    zeroAddress
 } from "viem"
 import { ParamOperator } from "./index.js"
 import { Operation } from "./toSessionKeyValidatorPlugin.js"

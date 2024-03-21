@@ -3,15 +3,15 @@
 import { getAction } from "permissionless"
 import {
     type Address,
+    type Chain,
+    type Client,
     type Hash,
     type Hex,
     type PublicClient,
+    type Transport,
     concat,
     encodeAbiParameters,
-    parseAbiParameters,
-    type Transport,
-    type Chain,
-    type Client
+    parseAbiParameters
 } from "viem"
 import { getStorageAt } from "viem/actions"
 

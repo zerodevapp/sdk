@@ -10,6 +10,7 @@ import {
     addressToEmptyAccount,
     createKernelAccount
 } from "@zerodev/sdk/accounts"
+import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
 import type { ExecutorData } from "@zerodev/sdk/types"
 import {
     ParamOperator,
@@ -56,7 +57,6 @@ import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASi
 import { createPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
-import { weightedEcdsaValidatorV7 } from "./v0.7/utils.js";
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const index = 342432420n
@@ -147,7 +147,9 @@ const getEcdsaKernelAccountWithPrivateKey = async <
     }) as unknown as KernelSmartAccount<entryPoint>
 }
 
-export const getKernelV1Account = async (): Promise<SmartAccount> => {
+export const getKernelV1Account = async (): Promise<
+    KernelSmartAccount<EntryPoint>
+> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
         throw new Error("TEST_PRIVATE_KEY environment variable not set")
@@ -159,7 +161,7 @@ export const getKernelV1Account = async (): Promise<SmartAccount> => {
     return createKernelV1Account(publicClient, {
         signer,
         index
-    })
+    }) as unknown as KernelSmartAccount<EntryPoint>
 }
 
 // we only use two signers for testing
@@ -206,7 +208,7 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: weigthedECDSAPlugin,
-                entryPoint: getEntryPoint(),
+                entryPoint: getEntryPoint()
             },
             index
         })
@@ -256,14 +258,13 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
         plugins: {
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint(),
+            entryPoint: getEntryPoint()
         },
         index
     })
 
-    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
-        account
-    )
+    const serializedSessionKeyAccountParams =
+        await serializeSessionKeyAccount(account)
 
     return await deserializeSessionKeyAccount(
         publicClient,
@@ -303,7 +304,7 @@ export const getSignerToModularPermissionKernelAccount = async (
         plugins: {
             regular: modularPermissionPlugin,
             sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint(),
+            entryPoint: getEntryPoint()
         },
         index
     })
@@ -331,7 +332,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin,
             executorData,
-            entryPoint: getEntryPoint(),
+            entryPoint: getEntryPoint()
         },
         index
     })

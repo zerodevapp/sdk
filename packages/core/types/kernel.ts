@@ -76,7 +76,7 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
         Parameters: [
             {
                 chainId: number
-                userOp: UserOperationWithBigIntAsHex
+                userOp: UserOperationWithBigIntAsHex<"v0.6">
                 entryPointAddress: Address
                 tokenAddress: Address
             }

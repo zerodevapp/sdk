@@ -3,8 +3,8 @@ import type { TypedData } from "abitype"
 import {
     ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
-    getUserOperationHash,
-    getEntryPointVersion
+    getEntryPointVersion,
+    getUserOperationHash
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,

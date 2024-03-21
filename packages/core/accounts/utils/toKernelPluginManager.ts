@@ -8,25 +8,25 @@ import {
     type Transport,
     concat,
     concatHex,
+    encodeAbiParameters,
     hexToBigInt,
     pad,
+    parseAbiParameters,
     toFunctionSelector,
     toHex,
-    zeroAddress,
-    encodeAbiParameters,
-    parseAbiParameters
+    zeroAddress
 } from "viem"
 import { getChainId, readContract } from "viem/actions"
+import { VALIDATOR_MODE, VALIDATOR_TYPE } from "../../constants.js"
 import {
     type KernelPluginManager,
     type KernelPluginManagerParams,
     ValidatorMode
 } from "../../types/kernel.js"
 import { getKernelVersion } from "../../utils.js"
-import { getKernelImplementationAddress } from "./6492.js"
-import { KernelModuleIsInitializedAbi } from "../kernel/abi/kernel_v_3_0_0/KernelModuleAbi.js"
-import { VALIDATOR_MODE, VALIDATOR_TYPE } from "../../constants.js"
 import { KernelV3AccountAbi } from "../kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelModuleIsInitializedAbi } from "../kernel/abi/kernel_v_3_0_0/KernelModuleAbi.js"
+import { getKernelImplementationAddress } from "./6492.js"
 
 export function isKernelPluginManager<entryPoint extends EntryPoint>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -74,9 +74,8 @@ export async function toKernelPluginManager<
                     return ValidatorMode.plugin
                 }
 
-                const enableSignature = await getPluginEnableSignature(
-                    accountAddress
-                )
+                const enableSignature =
+                    await getPluginEnableSignature(accountAddress)
                 const enableData = await regular.getEnableData(accountAddress)
                 const enableDataLength = enableData.length / 2 - 1
                 if (!enableSignature) {
@@ -110,9 +109,8 @@ export async function toKernelPluginManager<
                 return sig ?? "0x"
             }
             const enableData = await regular.getEnableData(accountAddress)
-            const enableSignature = await getPluginEnableSignature(
-                accountAddress
-            )
+            const enableSignature =
+                await getPluginEnableSignature(accountAddress)
             return concat([
                 zeroAddress, // hook address 20 bytes
                 encodeAbiParameters(
@@ -281,9 +279,8 @@ export async function toKernelPluginManager<
     return {
         ...activeValidator,
         signUserOperation: async (userOperation) => {
-            const userOpSig = await activeValidator.signUserOperation(
-                userOperation
-            )
+            const userOpSig =
+                await activeValidator.signUserOperation(userOperation)
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getValidatorSignature(
@@ -305,9 +302,8 @@ export async function toKernelPluginManager<
             validUntil
         }),
         getDummySignature: async (userOperation) => {
-            const userOpSig = await activeValidator.getDummySignature(
-                userOperation
-            )
+            const userOpSig =
+                await activeValidator.getDummySignature(userOperation)
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getValidatorSignature(

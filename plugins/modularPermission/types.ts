@@ -17,10 +17,10 @@ import type {
 import { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
 import type { Policy } from "./policies/types.js"
 
-export interface ModularPermissionData {
+export interface ModularPermissionData<entryPoint extends EntryPoint> {
     validUntil?: number
     validAfter?: number
-    policies?: Policy[]
+    policies?: Policy<entryPoint>[]
 }
 
 export type ExportModularPermissionAccountParams = {
@@ -28,8 +28,8 @@ export type ExportModularPermissionAccountParams = {
     accountAddress: Address
 }
 
-export type ModularPermissionAccountParams = {
-    modularPermissionParams: ModularPermissionData
+export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
+    modularPermissionParams: ModularPermissionData<entryPoint>
     executorData: ExecutorData
     validityData: PluginValidityData
     accountParams: ExportModularPermissionAccountParams
@@ -40,7 +40,7 @@ export type ModularPermissionAccountParams = {
 export type ModularPermissionPlugin<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint, "ModularPermissionValidator"> & {
         getPermissionId: () => Hex
-        getPluginSerializationParams: () => ModularPermissionData
+        getPluginSerializationParams: () => ModularPermissionData<entryPoint>
     }
 
 export type Nonces = {

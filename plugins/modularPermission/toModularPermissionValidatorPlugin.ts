@@ -173,7 +173,7 @@ export async function createPermissionValidator<
                 signer.getDummySignature()
             ])
         },
-        getPluginSerializationParams: (): ModularPermissionData => {
+        getPluginSerializationParams: (): ModularPermissionData<entryPoint> => {
             return {
                 validAfter,
                 validUntil,

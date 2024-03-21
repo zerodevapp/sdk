@@ -31,13 +31,13 @@ import {
     hashMessage,
     hashTypedData,
     keccak256,
+    pad,
     parseAbi,
+    parseAbiParameters,
     publicActions,
     stringToHex,
     validateTypedData,
-    zeroAddress,
-    parseAbiParameters,
-    pad
+    zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { CALL_TYPE, EXEC_TYPE, KERNEL_NAME } from "../../constants.js"

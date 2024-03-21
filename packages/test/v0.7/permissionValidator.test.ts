@@ -1,9 +1,9 @@
+import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountClient,
     KernelSmartAccount,
     KernelV3AccountAbi
 } from "@zerodev/sdk"
-import { beforeAll, describe, expect, test } from "bun:test"
 import { BundlerClient } from "permissionless"
 import { EntryPoint } from "permissionless/types/entrypoint"
 import {
@@ -16,12 +16,12 @@ import {
     zeroAddress
 } from "viem"
 import {
+    getEntryPoint,
+    getKernelAccountClient,
     getKernelBundlerClient,
     getPublicClient,
-    getKernelAccountClient,
-    getZeroDevPaymasterClient,
-    getEntryPoint,
-    getSignerToPermissionKernelAccount
+    getSignerToPermissionKernelAccount,
+    getZeroDevPaymasterClient
 } from "./utils"
 
 const ETHEREUM_ADDRESS_LENGTH = 42

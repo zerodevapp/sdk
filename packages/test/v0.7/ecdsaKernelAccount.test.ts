@@ -10,10 +10,12 @@ import {
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
+import { universalValidatorByteCode } from "@zerodev/sdk/accounts"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { BundlerClient } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
 import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     Address,
@@ -21,16 +23,16 @@ import {
     Hex,
     type PublicClient,
     Transport,
+    concat,
     decodeEventLog,
+    encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress,
-    concat,
-    encodeAbiParameters,
-    parseAbiParameters
+    parseAbiParameters,
+    zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { goerli } from "viem/chains"
@@ -53,8 +55,6 @@ import {
     waitForNonceUpdate,
     waitForUserOperationTransaction
 } from "./utils.js"
-import { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import { universalValidatorByteCode } from "@zerodev/sdk/accounts"
 
 dotenv.config()
 
