@@ -22,7 +22,11 @@ import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorA
 import { MAX_FLAG, MODULAR_PERMISSION_VALIDATOR_ADDRESS } from "./constants.js"
 import type { Policy } from "./policies/types.js"
 import { type ModularSigner } from "./signers/types.js"
-import { type ModularPermissionPlugin, type Nonces } from "./types.js"
+import {
+    type ModularPermissionData,
+    type ModularPermissionPlugin,
+    type Nonces
+} from "./types.js"
 
 export async function createPermissionValidator<
     entryPoint extends EntryPoint,
@@ -168,6 +172,13 @@ export async function createPermissionValidator<
                 ),
                 signer.getDummySignature()
             ])
+        },
+        getPluginSerializationParams: (): ModularPermissionData => {
+            return {
+                validAfter,
+                validUntil,
+                policies
+            }
         },
         isEnabled: async (
             kernelAccountAddress: Address,

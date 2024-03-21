@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/sdk",
-    "version": "5.1.7",
+    "version": "5.1.12",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -86,14 +86,14 @@
         "./providers": {
             "types": "./_types/providers/index.d.ts",
             "import": "./_esm/providers/index.js",
-            "default": "./_cjs/provider/index.js"
+            "default": "./_cjs/providers/index.js"
         }
     },
     "peerDependencies": {
-        "viem": "^2.0.0",
-        "permissionless": "^0.1.4"
+        "viem": "^2.0.0"
     },
     "dependencies": {
-        "semver": "^7.6.0"
+        "semver": "^7.6.0",
+        "permissionless": "^0.1.4"
     }
 }

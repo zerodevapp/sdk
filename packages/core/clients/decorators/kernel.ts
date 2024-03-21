@@ -9,6 +9,11 @@ import type {
 } from "../../actions/index.js"
 import { signUserOperation } from "../../actions/index.js"
 import {
+    type EstimateGasInERC20Parameters,
+    type EstimateGasInERC20ReturnType,
+    estimateGasInERC20
+} from "../../actions/paymaster/estimateGasInERC20.js"
+import {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType,
     sponsorUserOperation
@@ -22,6 +27,9 @@ export type ZeroDevPaymasterClientActions<entryPoint extends EntryPoint> = {
     sponsorUserOperation: (
         args: SponsorUserOperationParameters<entryPoint>
     ) => Promise<SponsorUserOperationReturnType<entryPoint>>
+    estimateGasInERC20: (
+        args: EstimateGasInERC20Parameters
+    ) => Promise<EstimateGasInERC20ReturnType>
 }
 
 export const zerodevPaymasterActions =
@@ -33,19 +41,13 @@ export const zerodevPaymasterActions =
             sponsorUserOperation(client as ZeroDevPaymasterClient<entryPoint>, {
                 ...args,
                 entryPoint: entryPointAddress
-            })
+            }),
+        estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>
+            estimateGasInERC20(
+                client as ZeroDevPaymasterClient<entryPoint>,
+                args
+            )
     })
-
-// export type KernelAccountClientActions<
-//     TChain extends Chain | undefined = Chain | undefined,
-//     TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
-// > = {
-//     signUserOperation: <TTransport extends Transport>(
-//         args: Parameters<
-//             typeof signUserOperation<TTransport, TChain, TSmartAccount>
-//         >[1]
-//     ) => Promise<SignUserOperationReturnType>
-// }
 
 export type KernelAccountClientActions<
     entryPoint extends EntryPoint,

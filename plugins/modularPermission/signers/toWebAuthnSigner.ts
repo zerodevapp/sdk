@@ -11,7 +11,6 @@ import {
     type TypedDataDefinition,
     getTypesForEIP712Domain,
     hashTypedData,
-    maxUint256,
     validateTypedData
 } from "viem"
 import { type SignableMessage, encodeAbiParameters } from "viem"
@@ -86,13 +85,18 @@ export const toWebAuthnSigner = async <
             ? messageContent.slice(2)
             : messageContent
 
+        if (window.sessionStorage === undefined) {
+            throw new Error("sessionStorage is not available")
+        }
+        const userId = sessionStorage.getItem("userId")
+
         // initiate signing
         const signInitiateResponse = await fetch(
             `${passkeyServerUrl}/sign-initiate`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: formattedMessage }),
+                body: JSON.stringify({ data: formattedMessage, userId }),
                 credentials: "include"
             }
         )
@@ -112,7 +116,7 @@ export const toWebAuthnSigner = async <
         const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cred }),
+            body: JSON.stringify({ cred, userId }),
             credentials: "include"
         })
 
@@ -132,7 +136,7 @@ export const toWebAuthnSigner = async <
         const clientDataJSON = atob(cred.response.clientDataJSON)
 
         // get challenge and response type location
-        const { beforeType, beforeChallenge } = findQuoteIndices(clientDataJSON)
+        const { beforeType } = findQuoteIndices(clientDataJSON)
 
         // get signature r,s
         const signature = verifyResult.signature
@@ -144,20 +148,16 @@ export const toWebAuthnSigner = async <
             [
                 { name: "authenticatorData", type: "bytes" },
                 { name: "clientDataJSON", type: "string" },
-                { name: "challengeLocation", type: "uint256" },
                 { name: "responseTypeLocation", type: "uint256" },
                 { name: "r", type: "uint256" },
-                { name: "s", type: "uint256" },
-                { name: "usePrecompiled", type: "bool" }
+                { name: "s", type: "uint256" }
             ],
             [
                 authenticatorDataHex,
                 clientDataJSON,
-                beforeChallenge,
                 beforeType,
                 BigInt(r),
-                BigInt(s),
-                isRIP7212SupportedNetwork(chainId)
+                BigInt(s)
             ]
         )
         return encodedSignature
@@ -202,9 +202,10 @@ export const toWebAuthnSigner = async <
             return encodeAbiParameters(
                 [
                     { name: "pubX", type: "uint256" },
-                    { name: "pubY", type: "uint256" }
+                    { name: "pubY", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
-                [pubKey.pubX, pubKey.pubY]
+                [pubKey.pubX, pubKey.pubY, isRIP7212SupportedNetwork(chainId)]
             )
         },
         getDummySignature: () => {
@@ -212,20 +213,16 @@ export const toWebAuthnSigner = async <
                 [
                     { name: "authenticatorData", type: "bytes" },
                     { name: "clientDataJSON", type: "string" },
-                    { name: "challengeLocation", type: "uint256" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
+                    { name: "s", type: "uint256" }
                 ],
                 [
-                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                    '{"type":"webauthn.get","challenge":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","origin":"https://example.com"}',
-                    maxUint256,
-                    maxUint256,
-                    11111111111111111111111111111111111111111111111111111111111111111111111111111n,
-                    22222222222222222222222222222222222222222222222222222222222222222222222222222n,
-                    false
+                    "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
+                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
+                    1n,
+                    44941127272049826721201904734628716258498742255959991581049806490182030242267n,
+                    9910254599581058084911561569808925251374718953855182016200087235935345969636n
                 ]
             )
         }
