@@ -387,54 +387,60 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    // [TODO] - Debug
-    // test(
-    //     "Write contract",
-    //     async () => {
-    //         const greeterContract = getContract({
-    //             abi: GreeterAbi,
-    //             address: process.env.GREETER_ADDRESS as Address,
-    //             client: kernelClient
-    //         })
+    test(
+        "Write contract",
+        async () => {
+            const greeterContract = getContract({
+                abi: GreeterAbi,
+                address: process.env.GREETER_ADDRESS as Address,
+                client: kernelClient
+            })
 
-    //         const oldGreet = await greeterContract.read.greet()
-    //         console.log("oldGreet", oldGreet)
+            const oldGreet = await greeterContract.read.greet()
+            console.log("oldGreet", oldGreet)
 
-    //         expect(oldGreet).toBeString()
+            expect(oldGreet).toBeString()
 
-    //         const txHash = await greeterContract.write.setGreeting([
-    //             "hello world"
-    //         ])
+            const txHash = await greeterContract.write.setGreeting([
+                "hello world"
+            ])
 
-    //         expect(txHash).toBeString()
-    //         expect(txHash).toHaveLength(66)
+            expect(txHash).toBeString()
+            expect(txHash).toHaveLength(66)
 
-    //         const newGreet = await greeterContract.read.greet()
+            const newGreet = await greeterContract.read.greet()
 
-    //         expect(newGreet).toBeString()
-    //         expect(newGreet).toEqual("hello world")
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(newGreet).toBeString()
+            expect(newGreet).toEqual("hello world")
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
             const userOp = await kernelClient.signUserOperation({
                 userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to:
-                            zeroAddress ??
-                            (process.env.GREETER_ADDRESS as Address),
-                        value: 0n,
-                        data:
-                            "0x" ??
-                            encodeFunctionData({
+                    callData: await kernelClient.account.encodeCallData([
+                        {
+                            to: process.env.GREETER_ADDRESS as Address,
+                            value: 0n,
+                            data: encodeFunctionData({
                                 abi: GreeterAbi,
                                 functionName: "setGreeting",
                                 args: ["hello world"]
                             })
-                    })
+                        },
+                        {
+                            to: process.env.GREETER_ADDRESS as Address,
+                            value: 0n,
+                            data: encodeFunctionData({
+                                abi: GreeterAbi,
+                                functionName: "setGreeting",
+                                args: ["hello world 2"]
+                            })
+                        }
+                    ])
                 }
             })
             expect(userOp.signature).not.toBe("0x")
@@ -448,6 +454,15 @@ describe("ECDSA kernel Account", () => {
             })
 
             await waitForNonceUpdate()
+            const greeterContract = getContract({
+                abi: GreeterAbi,
+                address: process.env.GREETER_ADDRESS as Address,
+                client: kernelClient
+            })
+
+            const greet = await greeterContract.read.greet()
+            expect(greet).toBeString()
+            expect(greet).toEqual("hello world 2")
         },
         TEST_TIMEOUT
     )

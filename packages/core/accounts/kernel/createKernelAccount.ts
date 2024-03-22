@@ -33,9 +33,9 @@ import {
     keccak256,
     pad,
     parseAbi,
-    parseAbiParameters,
     publicActions,
     stringToHex,
+    toHex,
     validateTypedData,
     zeroAddress
 } from "viem"
@@ -691,24 +691,21 @@ export async function createKernelAccount<
                 functionName: "execute",
                 args: [
                     getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
-                    encodeAbiParameters(
-                        parseAbiParameters("address to, bytes data"),
-                        [
-                            createCallAddress,
-                            encodeFunctionData({
-                                abi: createCallAbi,
-                                functionName: "performCreate",
-                                args: [
-                                    0n,
-                                    encodeDeployData({
-                                        abi: _tx.abi,
-                                        bytecode: _tx.bytecode,
-                                        args: _tx.args
-                                    } as EncodeDeployDataParameters)
-                                ]
-                            })
-                        ]
-                    )
+                    concatHex([
+                        createCallAddress,
+                        encodeFunctionData({
+                            abi: createCallAbi,
+                            functionName: "performCreate",
+                            args: [
+                                0n,
+                                encodeDeployData({
+                                    abi: _tx.abi,
+                                    bytecode: _tx.bytecode,
+                                    args: _tx.args
+                                } as EncodeDeployDataParameters)
+                            ]
+                        })
+                    ])
                 ]
             })
         },
@@ -798,12 +795,11 @@ export async function createKernelAccount<
                     functionName: "execute",
                     args: [
                         getExecMode(CALL_TYPE.SINGLE, EXEC_TYPE.DEFAULT),
-                        encodeAbiParameters(
-                            parseAbiParameters(
-                                "address target, uint256 value, bytes calldata callData"
-                            ),
-                            [tx.to, tx.value, tx.data]
-                        )
+                        concatHex([
+                            tx.to,
+                            pad(toHex(tx.value), { size: 32 }),
+                            tx.data
+                        ])
                     ]
                 })
             }
@@ -821,12 +817,7 @@ export async function createKernelAccount<
                     functionName: "execute",
                     args: [
                         getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
-                        encodeAbiParameters(
-                            parseAbiParameters(
-                                "address target, bytes calldata callData"
-                            ),
-                            [tx.to, tx.data]
-                        )
+                        concatHex([tx.to, tx.data])
                     ]
                 })
             }
