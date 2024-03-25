@@ -54,7 +54,8 @@ export async function toKernelPluginManager<
         },
         validAfter = 0,
         validUntil = 0,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     }: KernelPluginManagerParams<entryPoint>
 ): Promise<KernelPluginManager<entryPoint>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
@@ -167,7 +168,7 @@ export async function toKernelPluginManager<
             client,
             accountAddress
         )
-        const kernelVersion = getKernelVersion(
+        const _kernelVersion = kernelVersion ?? getKernelVersion(
             entryPointAddress,
             kernelImplAddr
         )
@@ -176,7 +177,7 @@ export async function toKernelPluginManager<
             ownerSig = await sudo.signTypedData({
                 domain: {
                     name: "Kernel",
-                    version: kernelVersion,
+                    version: _kernelVersion,
                     chainId,
                     verifyingContract: accountAddress
                 },
@@ -213,7 +214,7 @@ export async function toKernelPluginManager<
         ownerSig = await sudo.signTypedData({
             domain: {
                 name: "Kernel",
-                version: kernelVersion,
+                version: _kernelVersion,
                 chainId,
                 verifyingContract: accountAddress
             },

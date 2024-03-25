@@ -145,6 +145,7 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData
     entryPoint: entryPoint
+    kernelVersion?: string
 } & Partial<PluginValidityData>
 
 export type ExecutorData = {
