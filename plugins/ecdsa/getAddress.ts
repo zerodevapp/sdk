@@ -1,6 +1,7 @@
 import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
 import {
     type Address,
+    type Hex,
     type PublicClient,
     concat,
     encodeFunctionData,
@@ -8,8 +9,7 @@ import {
     getContractAddress,
     keccak256,
     pad,
-    toHex,
-    type Hex
+    toHex
 } from "viem"
 import { ECDSA_VALIDATOR_ADDRESS } from "./constants.js"
 
