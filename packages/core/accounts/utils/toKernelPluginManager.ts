@@ -168,10 +168,8 @@ export async function toKernelPluginManager<
             client,
             accountAddress
         )
-        const _kernelVersion = kernelVersion ?? getKernelVersion(
-            entryPointAddress,
-            kernelImplAddr
-        )
+        const _kernelVersion =
+            kernelVersion ?? getKernelVersion(entryPointAddress, kernelImplAddr)
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {
             ownerSig = await sudo.signTypedData({

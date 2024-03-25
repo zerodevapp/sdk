@@ -4,6 +4,7 @@ import {
     createKernelV2Account
 } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
+import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { Address, Hex } from "viem"
 import { decodeFunctionData } from "viem"
@@ -40,6 +41,7 @@ export const deserializeSessionKeyAccountV2 = async <
         validatorInitData,
         executorData: params.executorData,
         kernelVersion: "0.0.2",
+        entryPoint: ENTRYPOINT_ADDRESS_V06,
         ...params.validityData
     })
 

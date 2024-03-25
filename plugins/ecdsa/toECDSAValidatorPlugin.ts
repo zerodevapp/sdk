@@ -29,7 +29,7 @@ import { getChainId } from "viem/actions"
 import {
     ECDSA_VALIDATOR_ADDRESS_V06,
     ECDSA_VALIDATOR_ADDRESS_V07
-} from "./index.js"
+} from "./constants.js"
 
 export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
