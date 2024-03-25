@@ -46,7 +46,8 @@ export async function toKernelPluginManager<
             )
         },
         validAfter = 0,
-        validUntil = 0
+        validUntil = 0,
+        kernelVersion
     }: KernelPluginManagerParams
 ): Promise<KernelPluginManager> {
     const chainId = await getChainId(client)
@@ -106,9 +107,11 @@ export async function toKernelPluginManager<
         const ownerSig = await sudo.signTypedData({
             domain: {
                 name: "Kernel",
-                version: kernelImplAddr
-                    ? getKernelVersion(kernelImplAddr)
-                    : LATEST_KERNEL_VERSION,
+                version:
+                    kernelVersion ??
+                    (kernelImplAddr
+                        ? getKernelVersion(kernelImplAddr)
+                        : LATEST_KERNEL_VERSION),
                 chainId,
                 verifyingContract: accountAddress
             },
