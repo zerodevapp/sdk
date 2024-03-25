@@ -95,6 +95,7 @@ export type KernelPluginManagerParams = {
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData
+    kernelVersion?: string
 } & Partial<PluginValidityData>
 
 export type ExecutorData = {

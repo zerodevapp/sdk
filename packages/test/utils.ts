@@ -11,11 +11,13 @@ import {
     addressToEmptyAccount,
     createKernelAccount
 } from "@zerodev/sdk/accounts"
+import { createKernelV2Account } from "@zerodev/sdk/accounts"
 import type { ExecutorData } from "@zerodev/sdk/types"
 import {
     ParamOperator,
     SessionKeyPlugin,
     deserializeSessionKeyAccount,
+    deserializeSessionKeyAccountV2,
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
@@ -150,6 +152,94 @@ export const getKernelV1Account = async (): Promise<SmartAccount> => {
         index
     })
 }
+
+export const getSignerToEcdsaKernelV2Account =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
+
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                signer,
+                validatorAddress: "0x417f5a41305ddc99d18b5e176521b468b2a31b86"
+            }
+        )
+
+        return createKernelV2Account(publicClient, {
+            plugins: {
+                sudo: ecdsaValidatorPlugin
+            },
+            index
+        })
+    }
+
+export const getSignerToSessionKeyKernelV2Account =
+    async (): Promise<SmartAccount> => {
+        const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey) {
+            throw new Error("TEST_PRIVATE_KEY environment variable not set")
+        }
+
+        const publicClient = await getPublicClient()
+        const signer = privateKeyToAccount(privateKey)
+        const sessionPrivateKey = generatePrivateKey()
+        const sessionKey = privateKeyToAccount(sessionPrivateKey)
+        const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" },
+                validatorAddress: "0x417f5a41305ddc99d18b5e176521b468b2a31b86"
+            }
+        )
+
+        const sessionKeyPlugin = await signerToSessionKeyValidator(
+            publicClient,
+            {
+                signer: sessionKeyEmptyAccount,
+                validatorData: {
+                    permissions: [
+                        {
+                            target: Test_ERC20Address,
+                            abi: TEST_ERC20Abi,
+                            functionName: "transfer",
+                            args: [
+                                {
+                                    operator: ParamOperator.EQUAL,
+                                    value: signer.address
+                                },
+                                null
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+
+        const account = await createKernelV2Account(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                regular: sessionKeyPlugin,
+                sudo: ecdsaValidatorPlugin
+            },
+            index
+        })
+
+        const serializedSessionKeyAccountParams =
+            await serializeSessionKeyAccount(account)
+
+        return await deserializeSessionKeyAccountV2(
+            publicClient,
+            serializedSessionKeyAccountParams,
+            sessionKey
+        )
+    }
 
 // we only use two signers for testing
 export const getSignersToWeightedEcdsaKernelAccount = async (

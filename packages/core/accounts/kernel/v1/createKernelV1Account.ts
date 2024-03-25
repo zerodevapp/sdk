@@ -30,12 +30,12 @@ import {
 import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
-import { type KernelSmartAccount } from "../createKernelAccount.js"
 import {
     MULTISEND_ADDRESS,
     encodeMultiSend,
     multiSendAbi
-} from "./multisend.js"
+} from "../../utils/multisend.js"
+import { type KernelSmartAccount } from "../createKernelAccount.js"
 
 export type KernelV1SmartAccount<
     transport extends Transport = Transport,
