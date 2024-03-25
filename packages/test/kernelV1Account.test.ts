@@ -8,6 +8,7 @@ import {
     getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
+import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { BundlerClient } from "permissionless"
@@ -15,6 +16,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
     Address,
@@ -82,10 +84,15 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
-    let account: SmartAccount
+    let account: KernelSmartAccount<EntryPoint>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient
-    let kernelClient: KernelAccountClient<Transport, Chain, KernelSmartAccount>
+    let bundlerClient: BundlerClient<EntryPoint>
+    let kernelClient: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >
 
     beforeAll(async () => {
         account = await getKernelV1Account()
@@ -93,13 +100,14 @@ describe("ECDSA kernel Account", () => {
         bundlerClient = getKernelBundlerClient()
         kernelClient = await getKernelAccountClient({
             account,
-            sponsorUserOperation: async ({ userOperation }) => {
-                const zerodevPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
     })
@@ -308,8 +316,7 @@ describe("ECDSA kernel Account", () => {
             expect(userOp.signature).not.toBe("0x")
 
             const userOpHash = await bundlerClient.sendUserOperation({
-                userOperation: userOp,
-                entryPoint: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
 
@@ -373,16 +380,17 @@ describe("ECDSA kernel Account", () => {
 
             const kernelClient = await getKernelAccountClient({
                 account,
-                sponsorUserOperation: async ({
-                    entryPoint: _entryPoint,
-                    userOperation
-                }): Promise<UserOperation> => {
-                    const zerodevPaymaster = getZeroDevERC20PaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
+                middleware: {
+                    sponsorUserOperation: async ({
                         userOperation,
-                        entryPoint: getEntryPoint(),
-                        gasToken: gasTokenAddresses[goerli.id]["6TEST"]
-                    })
+                        entryPoint
+                    }) => {
+                        const zerodevPaymaster = getZeroDevPaymasterClient()
+                        return zerodevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint
+                        })
+                    }
                 }
             })
 
