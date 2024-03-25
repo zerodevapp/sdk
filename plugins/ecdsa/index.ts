@@ -1,7 +1,11 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
+import { ECDSA_VALIDATOR_ADDRESS } from "./constants.js"
+import { getKernelAddressFromECDSA } from "./getAddress.js"
 import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin.js"
 
-export { signerToEcdsaValidator, type KernelValidator }
-
-export const ECDSA_VALIDATOR_ADDRESS =
-    "0xd9AB5096a832b9ce79914329DAEE236f8Eea0390"
+export {
+    type KernelValidator,
+    signerToEcdsaValidator,
+    getKernelAddressFromECDSA,
+    ECDSA_VALIDATOR_ADDRESS
+}
