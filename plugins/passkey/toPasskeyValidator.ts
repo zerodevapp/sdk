@@ -5,9 +5,9 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     ENTRYPOINT_ADDRESS_V06,
+    ENTRYPOINT_ADDRESS_V07,
     type UserOperation,
-    getUserOperationHash,
-    ENTRYPOINT_ADDRESS_V07
+    getUserOperationHash
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type {
