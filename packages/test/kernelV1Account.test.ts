@@ -388,7 +388,8 @@ describe("ECDSA kernel Account", () => {
                         const zerodevPaymaster = getZeroDevPaymasterClient()
                         return zerodevPaymaster.sponsorUserOperation({
                             userOperation,
-                            entryPoint
+                            entryPoint,
+                            gasToken: gasTokenAddresses[goerli.id]["6TEST"]
                         })
                     }
                 }
