@@ -32,7 +32,7 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
-describe("Weighted ECDSA kernel Account", () => {
+describe("Permission kernel Account", () => {
     let account: KernelSmartAccount<EntryPoint>
     let publicClient: PublicClient
     let bundlerClient: BundlerClient<EntryPoint>
