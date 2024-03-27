@@ -41,6 +41,7 @@ import { goerli } from "viem/chains"
 import * as allChains from "viem/chains"
 import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
 import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy"
+import { toSignaturePolicy } from "../../../plugins/permission/policies"
 import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
 import { EntryPointAbi } from "../abis/EntryPoint"
@@ -371,11 +372,14 @@ export const getSignerToPermissionKernelAccount = async (): Promise<
     const gasPolicy = await toGasPolicy({
         maxGasAllowedInWei: 1000000000000000000n
     })
+    const signaturePolicy = await toSignaturePolicy({
+        allowedCallers: [signer1.address]
+    })
     const sudoPolicy = await toSudoPolicy({})
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: ecdsaModularSigner,
-        policies: [sudoPolicy, gasPolicy]
+        policies: [sudoPolicy, gasPolicy, signaturePolicy]
     })
 
     const signer = privateKeyToAccount(privateKey1)
