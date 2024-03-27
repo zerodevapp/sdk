@@ -1,3 +1,4 @@
+import type { EntryPoint } from "permissionless/types"
 import type {
     ModularPermissionAccountParams,
     ModularPermissionPlugin
@@ -13,15 +14,19 @@ export function bytesToBase64(bytes: Uint8Array) {
     return btoa(binString)
 }
 
-export function isModularPermissionValidatorPlugin(
+export function isModularPermissionValidatorPlugin<
+    entryPoint extends EntryPoint
+>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
-): plugin is ModularPermissionPlugin {
+): plugin is ModularPermissionPlugin<entryPoint> {
     return plugin?.getPluginSerializationParams !== undefined
 }
 
-export const serializeModularPermissionAccountParams = (
-    params: ModularPermissionAccountParams
+export const serializeModularPermissionAccountParams = <
+    entryPoint extends EntryPoint
+>(
+    params: ModularPermissionAccountParams<entryPoint>
 ) => {
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     const replacer = (_: string, value: any) => {
@@ -37,8 +42,12 @@ export const serializeModularPermissionAccountParams = (
     return base64String
 }
 
-export const deserializeModularPermissionAccountParams = (params: string) => {
+export const deserializeModularPermissionAccountParams = <
+    entryPoint extends EntryPoint
+>(
+    params: string
+) => {
     const uint8Array = base64ToBytes(params)
     const jsonString = new TextDecoder().decode(uint8Array)
-    return JSON.parse(jsonString) as ModularPermissionAccountParams
+    return JSON.parse(jsonString) as ModularPermissionAccountParams<entryPoint>
 }

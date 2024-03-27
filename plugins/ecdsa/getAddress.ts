@@ -11,7 +11,7 @@ import {
     pad,
     toHex
 } from "viem"
-import { ECDSA_VALIDATOR_ADDRESS } from "./constants.js"
+import { ECDSA_VALIDATOR_ADDRESS_V06 } from "./constants.js"
 
 const getInitCodeHash = async (publicClient: PublicClient): Promise<Hex> => {
     const factoryContract = getContract({
@@ -60,7 +60,7 @@ export async function getKernelAddressFromECDSA(
     const initData = encodeFunctionData({
         abi: KernelAccountAbi,
         functionName: "initialize",
-        args: [ECDSA_VALIDATOR_ADDRESS, params.eoaAddress]
+        args: [ECDSA_VALIDATOR_ADDRESS_V06, params.eoaAddress]
     })
     const encodedSalt = concat([initData, encodedIndex])
     const salt = BigInt(keccak256(encodedSalt))

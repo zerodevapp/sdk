@@ -93,4 +93,4 @@ export const GreeterAbi = [
         stateMutability: "nonpayable",
         type: "function"
     }
-]
+] as const

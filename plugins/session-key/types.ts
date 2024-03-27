@@ -9,6 +9,7 @@ import {
 } from "abitype"
 import type { ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Abi,
     type AbiStateMutability,
@@ -84,7 +85,10 @@ export type SessionKeyAccountParams = {
     privateKey?: Hex
 }
 
-export type SessionKeyPlugin = KernelValidator<"SessionKeyValidator"> & {
+export type SessionKeyPlugin<entryPoint extends EntryPoint> = KernelValidator<
+    entryPoint,
+    "SessionKeyValidator"
+> & {
     getPluginSerializationParams(): SessionKeyData<Abi, string>
 }
 

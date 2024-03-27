@@ -1,11 +1,19 @@
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
+import {
+    ENTRYPOINT_ADDRESS_V06,
+    type UserOperation,
+    getEntryPointVersion,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type {
+    EntryPoint,
+    GetEntryPointVersion
+} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -18,9 +26,20 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { ECDSA_VALIDATOR_ADDRESS } from "./index.js"
+import {
+    ECDSA_VALIDATOR_ADDRESS_V06,
+    ECDSA_VALIDATOR_ADDRESS_V07
+} from "./constants.js"
+
+export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    return entryPointVersion === "v0.6"
+        ? ECDSA_VALIDATOR_ADDRESS_V06
+        : ECDSA_VALIDATOR_ADDRESS_V07
+}
 
 export async function signerToEcdsaValidator<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
@@ -29,14 +48,16 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-        validatorAddress = ECDSA_VALIDATOR_ADDRESS
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint?: Address
+        entryPoint?: entryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"ECDSAValidator">> {
+): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -77,6 +98,7 @@ export async function signerToEcdsaValidator<
         ...account,
         address: validatorAddress,
         source: "ECDSAValidator",
+        isPermissionValidator: false,
 
         async getEnableData() {
             return viemSigner.address
@@ -85,13 +107,15 @@ export async function signerToEcdsaValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(userOperation: UserOperation) {
-            const hash = getUserOperationHash({
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
+            const hash = getUserOperationHash<entryPoint>({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
             const signature = await signMessage(client, {

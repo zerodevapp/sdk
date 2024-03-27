@@ -1,8 +1,17 @@
-import { getAccountNonce, getSenderAddress } from "permissionless"
+import {
+    ENTRYPOINT_ADDRESS_V06,
+    getAccountNonce,
+    getSenderAddress,
+    isSmartAccountDeployed
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount
 } from "permissionless/accounts"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -22,7 +31,6 @@ import {
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getBytecode } from "viem/actions"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
@@ -43,10 +51,11 @@ import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
 
 export type KernelSmartAccount<
+    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<"kernelSmartAccount", transport, chain> & {
-    kernelPluginManager: KernelPluginManager
+> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
+    kernelPluginManager: KernelPluginManager<entryPoint>
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
@@ -106,16 +115,17 @@ const getAccountInitCode = async ({
  * @param initCodeProvider
  */
 const getAccountAddress = async <
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >({
     client,
-    entryPoint,
+    entryPoint: entryPointAddress,
     initCodeProvider
 }: {
     client: Client<TTransport, TChain, undefined>
     initCodeProvider: () => Promise<Hex>
-    entryPoint: Address
+    entryPoint: entryPoint
 }): Promise<Address> => {
     // Find the init code for this account
     const initCode = await initCodeProvider()
@@ -123,7 +133,7 @@ const getAccountAddress = async <
     // Get the sender address based on the init code
     return getSenderAddress(client, {
         initCode,
-        entryPoint
+        entryPoint: entryPointAddress as ENTRYPOINT_ADDRESS_V06_TYPE
     })
 }
 
@@ -138,32 +148,36 @@ const getAccountAddress = async <
  * @param deployedAccountAddress
  */
 export async function createKernelV2Account<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
         plugins,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         deployedAccountAddress
     }: {
-        plugins: KernelPluginManagerParams | KernelPluginManager
-        entryPoint?: Address
+        plugins:
+            | KernelPluginManagerParams<entryPoint>
+            | KernelPluginManager<entryPoint>
+        entryPoint?: entryPoint
         index?: bigint
         factoryAddress?: Address
         deployedAccountAddress?: Address
     }
-): Promise<KernelSmartAccount<TTransport, TChain>> {
-    const kernelPluginManager = isKernelPluginManager(plugins)
+): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
+    const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
         : await toKernelPluginManager(client, {
               sudo: plugins.sudo,
               regular: plugins.regular,
               executorData: plugins.executorData,
               pluginEnableSignature: plugins.pluginEnableSignature,
-              kernelVersion: "0.0.2" ?? plugins.kernelVersion
+              kernelVersion: "0.0.2" ?? plugins.kernelVersion,
+              entryPoint: entryPointAddress
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
@@ -180,9 +194,9 @@ export async function createKernelV2Account<
     // Fetch account address and chain id
     const accountAddress =
         deployedAccountAddress ??
-        (await getAccountAddress<TTransport, TChain>({
+        (await getAccountAddress<entryPoint, TTransport, TChain>({
             client,
-            entryPoint,
+            entryPoint: entryPointAddress,
             initCodeProvider: generateInitCode
         }))
 
@@ -194,7 +208,7 @@ export async function createKernelV2Account<
         async signMessage({ message }) {
             const messageHash = hashMessage(message)
             const [isDeployed, signature] = await Promise.all([
-                isAccountDeployed(),
+                isSmartAccountDeployed(client, accountAddress),
                 kernelPluginManager.signMessage({
                     message: {
                         raw: messageHash
@@ -225,7 +239,7 @@ export async function createKernelV2Account<
 
             const typedHash = hashTypedData(typedData)
             const [isDeployed, signature] = await Promise.all([
-                isAccountDeployed(),
+                isSmartAccountDeployed(client, accountAddress),
                 kernelPluginManager.signMessage({
                     message: {
                         raw: typedHash
@@ -236,13 +250,10 @@ export async function createKernelV2Account<
         }
     })
 
-    const isAccountDeployed = async (): Promise<boolean> => {
-        const contractCode = await getBytecode(client, {
-            address: accountAddress
-        })
-
-        return (contractCode?.length ?? 0) > 2
-    }
+    let smartAccountDeployed = await isSmartAccountDeployed(
+        client,
+        accountAddress
+    )
 
     const create6492Signature = async (
         isDeployed: boolean,
@@ -268,17 +279,44 @@ export async function createKernelV2Account<
         ...account,
         client: client,
         publicKey: accountAddress,
-        entryPoint: entryPoint,
+        entryPoint: entryPointAddress,
         source: "kernelSmartAccount",
         kernelPluginManager,
         generateInitCode,
+        async getFactory() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return factoryAddress
+        },
+
+        async getFactoryData() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return parseFactoryAddressAndCallDataFromAccountInitCode(
+                await generateInitCode()
+            )[1]
+        },
 
         // Get the nonce of the smart account
         async getNonce() {
             const key = await kernelPluginManager.getNonceKey()
             return getAccountNonce(client, {
                 sender: accountAddress,
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 key
             })
         },
@@ -290,11 +328,15 @@ export async function createKernelV2Account<
 
         // Encode the init code
         async getInitCode() {
-            if (await isAccountDeployed()) {
-                return "0x"
-            } else {
-                return generateInitCode()
-            }
+            if (smartAccountDeployed) return "0x"
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return "0x"
+            return generateInitCode()
         },
 
         // Encode the deploy call data
