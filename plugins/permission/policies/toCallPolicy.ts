@@ -43,11 +43,8 @@ export async function toCallPolicy<
             valueLimit: perm.valueLimit ?? 0n,
             rules: perm.rules ?? generatedPermissionParams?.[index]?.rules ?? []
         })) ?? []
-    console.log("permissions", permissions)
 
     const encodedPermissionData = encodePermissionData(permissions)
-
-    console.log("encodedPermissionData", encodedPermissionData)
 
     return {
         getPolicyData: () => {
