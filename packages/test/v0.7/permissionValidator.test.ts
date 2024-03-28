@@ -67,6 +67,8 @@ describe("Permission kernel Account", () => {
             args: [target]
         })
 
+        console.log("balanceBefore of account", balanceBefore)
+
         const amountToMint = balanceBefore > amount ? 0n : amount
 
         const mintData = encodeFunctionData({
@@ -81,6 +83,16 @@ describe("Permission kernel Account", () => {
                     to: Test_ERC20Address,
                     data: mintData
                 })
+
+            const balanceAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [target]
+            })
+
+            console.log("balanceAfter of account", balanceAfter)
+
             console.log(
                 "mintTransactionHash",
                 `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
@@ -258,12 +270,11 @@ describe("Permission kernel Account", () => {
                 }
             })
 
-            console.log("Call policy account")
-            // await mintToAccount(
-            //     permissionSmartAccountClient.account.address,
-            //     100000000n
-            // )
-            console.log("mintToAccount")
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
             const amountToTransfer = 10000n
             const transferData = encodeFunctionData({
                 abi: TEST_ERC20Abi,
@@ -277,6 +288,8 @@ describe("Permission kernel Account", () => {
                 functionName: "balanceOf",
                 args: [owner.address]
             })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
 
             const response = await permissionSmartAccountClient.sendTransaction(
                 {
@@ -293,6 +306,9 @@ describe("Permission kernel Account", () => {
                 functionName: "balanceOf",
                 args: [owner.address]
             })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
             expect(balanceOfReceipientAfter).toBe(
                 balanceOfReceipientBefore + amountToTransfer
             )
