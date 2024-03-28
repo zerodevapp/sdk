@@ -110,120 +110,120 @@ describe("Permission kernel Account", () => {
         })
     })
 
-    // test(
-    //     "Smart account client send transaction with GasPolicy",
-    //     async () => {
-    //         console.log("started")
-    //         const gasPolicy = await toGasPolicy({
-    //             allowed: 1000000000000000000n
-    //         })
+    test(
+        "Smart account client send transaction with GasPolicy",
+        async () => {
+            console.log("started")
+            const gasPolicy = await toGasPolicy({
+                allowed: 1000000000000000000n
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([gasPolicy]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([gasPolicy]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         console.log("Gas policy account")
+            console.log("Gas policy account")
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
 
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(TX_HASH_LENGTH)
-    //         expect(response).toMatch(TX_HASH_REGEX)
-    //         console.log("Transaction hash:", response)
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
 
-    // test(
-    //     "Smart account client send transaction with SignaturePolicy",
-    //     async () => {
-    //         const signaturePolicy = await toSignaturePolicy({
-    //             allowedCallers: [zeroAddress]
-    //         })
+    test(
+        "Smart account client send transaction with SignaturePolicy",
+        async () => {
+            const signaturePolicy = await toSignaturePolicy({
+                allowedCallers: [zeroAddress]
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([
-    //                 signaturePolicy
-    //             ]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([
+                    signaturePolicy
+                ]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
 
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(TX_HASH_LENGTH)
-    //         expect(response).toMatch(TX_HASH_REGEX)
-    //         console.log("Transaction hash:", response)
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
 
-    // test(
-    //     "Smart account client send transaction with RateLimitPolicy ",
-    //     async () => {
-    //         const rateLimitPolicy = await toRateLimitPolicy({
-    //             count: 1
-    //         })
+    test(
+        "Smart account client send transaction with RateLimitPolicy ",
+        async () => {
+            const rateLimitPolicy = await toRateLimitPolicy({
+                count: 1
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([
-    //                 rateLimitPolicy
-    //             ]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([
+                    rateLimitPolicy
+                ]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
 
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(TX_HASH_LENGTH)
-    //         expect(response).toMatch(TX_HASH_REGEX)
-    //         console.log("Transaction hash:", response)
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Smart account client send transaction with CallPolicy",
