@@ -45,6 +45,7 @@ import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { config } from "../config.js"
+import { toSignaturePolicy } from "../../../plugins/permission/policies/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 4323343744387823332432423423n
@@ -373,11 +374,14 @@ export const getSignerToPermissionKernelAccount = async (): Promise<
     const gasPolicy = await toGasPolicy({
         maxGasAllowedInWei: 1000000000000000000n
     })
+    const signaturePolicy = await toSignaturePolicy({
+        allowedCallers: [signer1.address]
+    })
     const sudoPolicy = await toSudoPolicy({})
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: ecdsaModularSigner,
-        policies: [sudoPolicy, gasPolicy]
+        policies: [sudoPolicy, gasPolicy, signaturePolicy]
     })
 
     const signer = privateKeyToAccount(privateKey1)
