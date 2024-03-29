@@ -123,82 +123,82 @@ describe("Permission kernel Account", () => {
         })
     })
 
-    // test(
-    //     "Smart account client send transaction with GasPolicy",
-    //     async () => {
-    //         console.log("started")
-    //         const gasPolicy = await toGasPolicy({
-    //             allowed: 1000000000000000000n
-    //         })
+    test(
+        "Smart account client send transaction with GasPolicy",
+        async () => {
+            console.log("started")
+            const gasPolicy = await toGasPolicy({
+                allowed: 1000000000000000000n
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([gasPolicy]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([gasPolicy]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         console.log("Gas policy account")
+            console.log("Gas policy account")
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
 
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(TX_HASH_LENGTH)
-    //         expect(response).toMatch(TX_HASH_REGEX)
-    //         console.log("Transaction hash:", response)
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
 
-    // test(
-    //     "Smart account client send transaction with SignaturePolicy",
-    //     async () => {
-    //         const signaturePolicy = await toSignaturePolicy({
-    //             allowedCallers: [zeroAddress]
-    //         })
+    test(
+        "Smart account client send transaction with SignaturePolicy",
+        async () => {
+            const signaturePolicy = await toSignaturePolicy({
+                allowedCallers: [zeroAddress]
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([
-    //                 signaturePolicy
-    //             ]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([
+                    signaturePolicy
+                ]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: zeroAddress,
-    //                 value: 0n,
-    //                 data: "0x"
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
 
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(TX_HASH_LENGTH)
-    //         expect(response).toMatch(TX_HASH_REGEX)
-    //         console.log("Transaction hash:", response)
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Smart account client send transaction with RateLimitPolicy ",
@@ -256,82 +256,82 @@ describe("Permission kernel Account", () => {
         TEST_TIMEOUT
     )
 
-    // test(
-    //     "Smart account client send transaction with CallPolicy",
-    //     async () => {
-    //         const callPolicy = await toCallPolicy({
-    //             permissions: [
-    //                 {
-    //                     abi: TEST_ERC20Abi,
-    //                     target: Test_ERC20Address,
-    //                     functionName: "transfer",
-    //                     args: [
-    //                         {
-    //                             condition: ParamCondition.EQUAL,
-    //                             value: owner.address
-    //                         },
-    //                         null
-    //                     ]
-    //                 }
-    //             ]
-    //         })
+    test(
+        "Smart account client send transaction with CallPolicy",
+        async () => {
+            const callPolicy = await toCallPolicy({
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
 
-    //         const permissionSmartAccountClient = await getKernelAccountClient({
-    //             account: await getSignerToPermissionKernelAccount([callPolicy]),
-    //             middleware: {
-    //                 sponsorUserOperation: async ({ userOperation }) => {
-    //                     const zeroDevPaymaster = getZeroDevPaymasterClient()
-    //                     return zeroDevPaymaster.sponsorUserOperation({
-    //                         userOperation,
-    //                         entryPoint: getEntryPoint()
-    //                     })
-    //                 }
-    //             }
-    //         })
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
 
-    //         await mintToAccount(
-    //             permissionSmartAccountClient.account.address,
-    //             100000000n
-    //         )
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
 
-    //         const amountToTransfer = 10000n
-    //         const transferData = encodeFunctionData({
-    //             abi: TEST_ERC20Abi,
-    //             functionName: "transfer",
-    //             args: [owner.address, amountToTransfer]
-    //         })
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
 
-    //         const balanceOfReceipientBefore = await publicClient.readContract({
-    //             abi: TEST_ERC20Abi,
-    //             address: Test_ERC20Address,
-    //             functionName: "balanceOf",
-    //             args: [owner.address]
-    //         })
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
 
-    //         console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
 
-    //         const response = await permissionSmartAccountClient.sendTransaction(
-    //             {
-    //                 to: Test_ERC20Address,
-    //                 data: transferData
-    //             }
-    //         )
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
 
-    //         console.log("Transaction hash:", response)
+            console.log("Transaction hash:", response)
 
-    //         const balanceOfReceipientAfter = await publicClient.readContract({
-    //             abi: TEST_ERC20Abi,
-    //             address: Test_ERC20Address,
-    //             functionName: "balanceOf",
-    //             args: [owner.address]
-    //         })
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
 
-    //         console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
 
-    //         expect(balanceOfReceipientAfter).toBe(
-    //             balanceOfReceipientBefore + amountToTransfer
-    //         )
-    //     },
-    //     TEST_TIMEOUT
-    // )
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
 })
