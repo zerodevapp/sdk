@@ -341,8 +341,8 @@ export async function getCurrentSigners<
 
     nextGuardian = weightedStorage[3]
 
-    // Loop until nextGuardian is the maxUint160 value (0xffffffff...)
-    while (nextGuardian !== "0xffffffffffffffffffffffffffffffffffffffff") {
+    // Loop until nextGuardian is the address(maxUint160) value
+    while (nextGuardian !== "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF") {
         const guardianStorage = await getAction(
             client,
             readContract
