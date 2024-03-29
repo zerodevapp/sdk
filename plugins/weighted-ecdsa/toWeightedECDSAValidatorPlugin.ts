@@ -325,7 +325,7 @@ export async function getCurrentSigners<
         validatorAddress?: Address
     }
 ): Promise<Array<{ address: Address; weight: number }>> {
-    let signers: Array<{ address: Address; weight: number }> = []
+    const signers: Array<{ address: Address; weight: number }> = []
     let nextGuardian: Address
 
     // Fetch first guardian info from weightedStorage
