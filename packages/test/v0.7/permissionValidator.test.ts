@@ -22,8 +22,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts"
 import {
     toGasPolicy,
-    toSignaturePolicy,
-    toSudoPolicy
+    toSignatureCallerPolicy
 } from "../../../plugins/permission/policies"
 import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
@@ -135,7 +134,6 @@ describe("Permission kernel Account", () => {
     test(
         "Smart account client send transaction with GasPolicy",
         async () => {
-            console.log("started")
             const gasPolicy = await toGasPolicy({
                 allowed: 1000000000000000000n
             })
@@ -174,7 +172,7 @@ describe("Permission kernel Account", () => {
     test(
         "Smart account client send transaction with SignaturePolicy",
         async () => {
-            const signaturePolicy = await toSignaturePolicy({
+            const signaturePolicy = await toSignatureCallerPolicy({
                 allowedCallers: [zeroAddress]
             })
 
