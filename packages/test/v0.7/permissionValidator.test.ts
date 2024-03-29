@@ -72,18 +72,6 @@ describe("Permission kernel Account", () => {
     test(
         "Smart account client send transaction",
         async () => {
-            // const response = await kernelClient.sendUserOperation({
-            //     userOperation: {
-            //         callData: await kernelClient.account.encodeCallData({
-            //             to: zeroAddress,
-            //             value: 0n,
-            //             data: "0x"
-            //         }),
-            //         preVerificationGas: 84700n,
-            //         callGasLimit: 1273781n,
-            //         verificationGasLimit: 726789n
-            //     }
-            // })
             const response = await kernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
@@ -97,3 +85,7 @@ describe("Permission kernel Account", () => {
         TEST_TIMEOUT
     )
 })
+
+//         preVerificationGas: 84700n,
+//         callGasLimit: 1273781n,
+//         verificationGasLimit: 726789n

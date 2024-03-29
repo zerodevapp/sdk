@@ -16,6 +16,8 @@ import {
 } from "viem"
 import { getChainId, readContract } from "viem/actions"
 import { PolicyFlags } from "./constants.js"
+import { toPolicyId } from "./policies/index.js"
+import { toSignerId } from "./signers/index.js"
 import type { PermissionPlugin, PermissionPluginParams } from "./types.js"
 
 export async function toPermissionValidator<
@@ -60,21 +62,7 @@ export async function toPermissionValidator<
     const getPermissionId = (): Hex => {
         const pIdData = encodeAbiParameters(
             [{ name: "policyAndSignerData", type: "bytes[]" }],
-            [
-                [
-                    ...policies.map((policy) =>
-                        concat([
-                            policy.getPolicyInfoInBytes(),
-                            policy.getPolicyData()
-                        ])
-                    ),
-                    concat([
-                        flag,
-                        signer.signerContractAddress,
-                        signer.getSignerData()
-                    ])
-                ]
-            ]
+            [[toPolicyId(policies), flag, toSignerId(signer)]]
         )
         return slice(keccak256(pIdData), 0, 2)
     }

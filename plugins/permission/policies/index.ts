@@ -4,3 +4,4 @@ export {
     toSignaturePolicy,
     type SignaturePolicyParams
 } from "./toSignaturePolicy.js"
+export { toPolicyId } from "./utils/toPolicyId.js"
