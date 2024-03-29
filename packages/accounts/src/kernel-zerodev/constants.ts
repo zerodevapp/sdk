@@ -119,4 +119,7 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
   3776: 'https://rpc.startale.com/astar-zkevm',
   122: 'https://rpc.fuse.io',
   42170: 'https://nova.arbitrum.io/rpc',
+  94204209: 'https://rpc.polygon-blackberry.gelato.digital',
+  88153591557: 'https://rpc.arb-blueberry.gelato.digital',
+  123420111: 'https://rpc.opcelestia-raspberry.gelato.digital',
 };

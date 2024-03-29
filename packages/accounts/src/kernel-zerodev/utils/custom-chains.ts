@@ -109,3 +109,60 @@ export const arbitrumNova = defineChain({
   },
   testnet: false,
 })
+
+export const arbitrumBlueberry = defineChain({
+  id: 88_153_591_557,
+  name: 'Arbitrum Blueberry',
+  network: 'arbitrum-blueberry',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.arb-blueberry.gelato.digital'] },
+    public: { http: ['https://rpc.arb-blueberry.gelato.digital'] },
+  },
+  blockExplorers: {
+    default: { name: 'Gelatoscout', url: 'https://arb-blueberry.gelatoscout.com' },
+  },
+  testnet: true,
+})
+
+export const opCelestiaRaspberry = defineChain({
+  id: 123_420_111,
+  name: 'OP Celestia Raspberry',
+  network: 'op-celestia-raspberry',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.opcelestia-raspberry.gelato.digital'] },
+    public: { http: ['https://rpc.opcelestia-raspberry.gelato.digital'] },
+  },
+  blockExplorers: {
+    default: { name: 'Gelatoscout', url: 'https://opcelestia-raspberry.gelatoscout.com' },
+  },
+  testnet: true,
+})
+
+export const polygonBlackberry = defineChain({
+  id: 94_204_209,
+  name: 'Polygon Blackberry',
+  network: 'polybon-blackberry',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.polygon-blackberry.gelato.digital'] },
+    public: { http: ['https://rpc.polygon-blackberry.gelato.digital'] },
+  },
+  blockExplorers: {
+    default: { name: 'Gelatoscout', url: 'https://polygon-blackberry.gelatoscout.com' },
+  },
+  testnet: true,
+})
