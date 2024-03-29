@@ -1,12 +1,14 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import {
     createWeightedECDSAValidator,
-    getUpdateConfigCall
+    getUpdateConfigCall,
+    getCurrentSigners
 } from "./toWeightedECDSAValidatorPlugin.js"
 
 export {
     createWeightedECDSAValidator,
     getUpdateConfigCall,
+    getCurrentSigners,
     type KernelValidator
 }
 
