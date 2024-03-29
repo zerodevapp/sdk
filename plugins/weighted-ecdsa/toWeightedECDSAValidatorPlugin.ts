@@ -311,3 +311,53 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
         })
     }
 }
+
+export async function getCurrentSigners<
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
+>(
+    client: Client<TTransport, TChain, undefined>,
+    {
+        multiSigAccountAddress,
+        validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
+    }: {
+        multiSigAccountAddress: Address
+        validatorAddress?: Address
+    }
+): Promise<Array<{ address: Address; weight: number }>> {
+    const signers: Array<{ address: Address; weight: number }> = []
+    let nextGuardian: Address
+
+    // Fetch first guardian info from weightedStorage
+    const weightedStorage = await getAction(
+        client,
+        readContract
+    )({
+        abi: WeightedValidatorAbi,
+        address: validatorAddress,
+        functionName: "weightedStorage",
+        args: [multiSigAccountAddress]
+    })
+
+    nextGuardian = weightedStorage[3]
+
+    // Loop until nextGuardian is the address(maxUint160) value
+    while (nextGuardian !== "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF") {
+        const guardianStorage = await getAction(
+            client,
+            readContract
+        )({
+            abi: WeightedValidatorAbi,
+            address: validatorAddress,
+            functionName: "guardian",
+            args: [nextGuardian, multiSigAccountAddress]
+        })
+
+        const guardianWeight = guardianStorage[0]
+        signers.push({ address: nextGuardian, weight: guardianWeight })
+
+        nextGuardian = guardianStorage[1]
+    }
+
+    return signers
+}

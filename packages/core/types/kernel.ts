@@ -44,6 +44,21 @@ export type ZeroDevPaymasterRpcSchema = [
             }
         ]
         ReturnType: Address[]
+    },
+    {
+        Method: "stackup_getERC20TokenQuotes"
+        Parameters: [
+            {
+                chainId: number
+                userOp: UserOperationWithBigIntAsHex
+                entryPointAddress: Address
+                tokenAddress: Address
+            }
+        ]
+        ReturnType: {
+            maxGasCostToken: string
+            tokenDecimals: string
+        }
     }
 ]
 
@@ -80,6 +95,7 @@ export type KernelPluginManagerParams = {
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     executorData?: ExecutorData
+    kernelVersion?: string
 } & Partial<PluginValidityData>
 
 export type ExecutorData = {

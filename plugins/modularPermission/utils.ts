@@ -23,6 +23,7 @@ export function isModularPermissionValidatorPlugin(
 export const serializeModularPermissionAccountParams = (
     params: ModularPermissionAccountParams
 ) => {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     const replacer = (_: string, value: any) => {
         if (typeof value === "bigint") {
             return value.toString()
