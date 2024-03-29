@@ -36,6 +36,7 @@ import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { config } from "./config.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
@@ -147,7 +148,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    process.env.RPC_URL as string
+                    config["v0.6"].polygonMumbai.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

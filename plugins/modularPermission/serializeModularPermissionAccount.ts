@@ -23,7 +23,7 @@ export const serializeModularPermissionAccount = async <
             account.address
         )
     const accountParams = {
-        initCode: await account.generateInitCode(),
+        initCode: await account.getInitCode(),
         accountAddress: account.address
     }
 

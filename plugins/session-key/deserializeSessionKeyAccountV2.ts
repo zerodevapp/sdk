@@ -55,11 +55,11 @@ export const deserializeSessionKeyAccountV2 = async <
 export const decodeParamsFromInitCodeV2 = (initCode: Hex) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
+    if (initCode === "0x") return { index, validatorInitData }
     const createAccountFunctionData = decodeFunctionData({
         abi: KernelFactoryV2Abi,
         data: `0x${initCode.slice(42)}`
     })
-    if (!createAccountFunctionData) throw new Error("Invalid initCode")
     if (createAccountFunctionData.functionName === "createAccount") {
         index = createAccountFunctionData.args[2]
         validatorInitData = {
@@ -67,7 +67,5 @@ export const decodeParamsFromInitCodeV2 = (initCode: Hex) => {
             enableData: createAccountFunctionData.args[1]
         }
     }
-    if (index === undefined || validatorInitData === undefined)
-        throw new Error("Invalid initCode")
     return { index, validatorInitData }
 }

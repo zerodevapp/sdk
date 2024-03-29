@@ -52,16 +52,18 @@ import {
     generatePrivateKey,
     privateKeyToAccount
 } from "viem/accounts"
-import { type Chain, goerli } from "viem/chains"
+import { type Chain, goerli, polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
 import { Policy } from "../../plugins/modularPermission/policies/types.js"
 import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
 import { createPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { config } from "./config.js"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
-export const index = 0n
+export const index = 5435340n
+const projectId = config["v0.6"].polygonMumbai.projectId
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -79,8 +81,8 @@ export const getPrivateKeyAccount = (): Account => {
 }
 
 export const getTestingChain = (): Chain => {
-    const testChainId = process.env.TEST_CHAIN_ID
-    const chainId = testChainId ? parseInt(testChainId, 10) : goerli.id
+    const testChainId = config["v0.6"].polygonMumbai.chainId
+    const chainId = testChainId ?? polygonMumbai.id
     const chain = Object.values(allChains).find((c) => c.id === chainId)
     if (!chain) {
         throw new Error(`Chain with id ${chainId} not found`)
@@ -429,7 +431,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
 const DEFAULT_PROVIDER = "PIMLICO"
 
 const getBundlerRpc = (): string => {
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevProjectId = projectId
     const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
@@ -441,7 +443,7 @@ const getBundlerRpc = (): string => {
 }
 
 const getPaymasterRpc = (): string => {
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevProjectId = projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
         throw new Error(
@@ -477,7 +479,7 @@ export const getKernelAccountClient = async <entryPoint extends EntryPoint>({
 }
 
 export const getEoaWalletClient = (): WalletClient => {
-    const rpcUrl = process.env.RPC_URL
+    const rpcUrl = config["v0.6"].polygonMumbai.rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -494,7 +496,7 @@ export const getEntryPoint = (): EntryPoint => {
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = process.env.RPC_URL
+    const rpcUrl = config["v0.6"].polygonMumbai.rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -530,7 +532,7 @@ export const getZeroDevPaymasterClient = () => {
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
         )
-    if (!process.env.ZERODEV_PROJECT_ID)
+    if (!projectId)
         throw new Error("ZERODEV_PROJECT_ID environment variable not set")
 
     const chain = getTestingChain()
@@ -547,7 +549,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
         )
-    if (!process.env.ZERODEV_PROJECT_ID)
+    if (!projectId)
         throw new Error("ZERODEV_PROJECT_ID environment variable not set")
 
     const chain = getTestingChain()
@@ -556,7 +558,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         chain: chain,
         transport: http(
             // currently the ERC20 paymaster must be used with StackUp
-            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${process.env.ZERODEV_PROJECT_ID}?paymasterProvider=STACKUP`
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?paymasterProvider=STACKUP`
         ),
         entryPoint: getEntryPoint()
     })

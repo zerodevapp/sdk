@@ -37,17 +37,19 @@ import {
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { goerli } from "viem/chains"
+import { goerli, polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
-import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
-import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy"
-import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
-import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
-import { EntryPointAbi } from "../abis/EntryPoint"
+import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy.js"
+import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
+import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
+import { EntryPointAbi } from "../abis/EntryPoint.js"
+import { config } from "../config.js"
 
 // export const index = 43244782332432423423n
 export const index = 4323343744387823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
+const projectId = config["v0.7"].sepolia.projectId
 
 export const findUserOperationEvent = (logs: Log[]): boolean => {
     return logs.some((log) => {
@@ -125,7 +127,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
         )
-    if (!process.env.ZERODEV_PROJECT_ID)
+    if (!projectId)
         throw new Error("ZERODEV_PROJECT_ID environment variable not set")
 
     const chain = getTestingChain()
@@ -134,7 +136,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         chain: chain,
         transport: http(
             // currently the ERC20 paymaster must be used with StackUp
-            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${process.env.ZERODEV_PROJECT_ID}?paymasterProvider=${DEFAULT_PROVIDER}`
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?paymasterProvider=${DEFAULT_PROVIDER}`
         ),
         entryPoint: getEntryPoint()
     })
@@ -145,7 +147,7 @@ export const getZeroDevPaymasterClient = () => {
         throw new Error(
             "ZERODEV_PAYMASTER_RPC_HOST environment variable not set"
         )
-    if (!process.env.ZERODEV_PROJECT_ID)
+    if (!projectId)
         throw new Error("ZERODEV_PROJECT_ID environment variable not set")
 
     const chain = getTestingChain()
@@ -158,7 +160,7 @@ export const getZeroDevPaymasterClient = () => {
 }
 
 const getPaymasterRpc = (): string => {
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevProjectId = projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
         throw new Error(
@@ -170,7 +172,7 @@ const getPaymasterRpc = (): string => {
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = process.env.RPC_URL
+    const rpcUrl = config["v0.7"].sepolia.rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -221,8 +223,8 @@ export const getPimlicoBundlerClient = () => {
 }
 
 export const getTestingChain = (): Chain => {
-    const testChainId = process.env.TEST_CHAIN_ID
-    const chainId = testChainId ? parseInt(testChainId, 10) : goerli.id
+    const testChainId = config["v0.7"].sepolia.chainId
+    const chainId = testChainId ?? polygonMumbai.id
     const chain = Object.values(allChains).find((c) => c.id === chainId)
     if (!chain) {
         throw new Error(`Chain with id ${chainId} not found`)
@@ -266,7 +268,7 @@ export const getSignerToEcdsaKernelAccount = async <
 }
 
 const getBundlerRpc = (provider?: string): string => {
-    const zeroDevProjectId = process.env.ZERODEV_PROJECT_ID
+    const zeroDevProjectId = projectId
     const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
@@ -366,7 +368,7 @@ export const getSignerToPermissionKernelAccount = async (): Promise<
         )
     }
     const publicClient = await getPublicClient()
-    const signer1 = privateKeyToAccount(privateKey1)
+    const signer1 = privateKeyToAccount(generatePrivateKey())
     const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
     const gasPolicy = await toGasPolicy({
         maxGasAllowedInWei: 1000000000000000000n

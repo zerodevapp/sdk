@@ -21,7 +21,7 @@ export const serializeSessionKeyAccount = async <entryPoint extends EntryPoint>(
             account.address
         )
     const accountParams = {
-        initCode: await account.generateInitCode(),
+        initCode: await account.getInitCode(),
         accountAddress: account.address
     }
 

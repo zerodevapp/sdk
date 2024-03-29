@@ -103,7 +103,13 @@ export const fixSignedData = (sig: Hex): Hex => {
     return joined
 }
 
-export const getExecMode = (callType: CALL_TYPE, execType: EXEC_TYPE): Hex => {
+export const getExecMode = ({
+    callType,
+    execType
+}: {
+    callType: CALL_TYPE
+    execType: EXEC_TYPE
+}): Hex => {
     return concatHex([
         callType, // 1 byte
         execType, // 1 byte
