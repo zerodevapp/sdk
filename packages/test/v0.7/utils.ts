@@ -39,13 +39,13 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { goerli, polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
+import { toSignaturePolicy } from "../../../plugins/permission/policies/index.js"
 import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
 import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { config } from "../config.js"
-import { toSignaturePolicy } from "../../../plugins/permission/policies/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 4323343744387823332432423423n
