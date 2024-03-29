@@ -211,7 +211,7 @@ const getAccountAddress = async <
         })
     } catch (error) {
         const err = error as ContractFunctionExecutionErrorType
-        // Fuse returns a different error message (CallExecutionError) than the other chains
+        // Fuse, Gnosis returns a different error message (CallExecutionError) than the other chains
         if (err.cause.name === "CallExecutionError") {
             const value = decodeErrorResult({
                 abi: [
