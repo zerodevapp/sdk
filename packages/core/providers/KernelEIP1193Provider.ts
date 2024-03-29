@@ -83,7 +83,7 @@ export class KernelEIP1193Provider extends EventEmitter {
             throw new Error("account not connected!")
         }
         const [address, typedDataJSON] = params
-        const typedData = JSON.parse(typedDataJSON);
+        const typedData = JSON.parse(typedDataJSON)
         if (
             address.toLowerCase() !==
             this.kernelClient.account.address.toLowerCase()
@@ -94,11 +94,11 @@ export class KernelEIP1193Provider extends EventEmitter {
         }
 
         return this.kernelClient.signTypedData({
-          account: this.kernelClient.account,
-          domain: typedData.domain,
-          types: typedData.types,
-          message: typedData.message,
-          primaryType: typedData.primaryType
+            account: this.kernelClient.account,
+            domain: typedData.domain,
+            types: typedData.types,
+            message: typedData.message,
+            primaryType: typedData.primaryType
         })
     }
 }
