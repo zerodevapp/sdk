@@ -36,3 +36,8 @@ export enum EXEC_TYPE {
     DEFAULT = "0x00",
     TRY_EXEC = "0x01"
 }
+
+// Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
+// Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
+export const safeCreateCallAddress =
+    "0x9b35Af71d77eaf8d7e40252370304687390A1A52"

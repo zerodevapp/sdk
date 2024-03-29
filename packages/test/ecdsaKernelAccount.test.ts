@@ -46,6 +46,7 @@ import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { config } from "./config.js"
 import {
     findUserOperationEvent,
     getEcdsaKernelAccountWithRandomSigner,
@@ -104,6 +105,11 @@ describe("ECDSA kernel Account", () => {
         Chain,
         KernelSmartAccount<EntryPoint>
     >
+    let greeterContract: GetContractReturnType<
+        typeof GreeterAbi,
+        typeof kernelClient,
+        Address
+    >
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
@@ -120,6 +126,11 @@ describe("ECDSA kernel Account", () => {
                     })
                 }
             }
+        })
+        greeterContract = getContract({
+            abi: GreeterAbi,
+            address: process.env.GREETER_ADDRESS as Address,
+            client: kernelClient
         })
     })
 
@@ -163,7 +174,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    process.env.RPC_URL as string
+                    config["v0.6"].polygonMumbai.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -228,7 +239,7 @@ describe("ECDSA kernel Account", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    process.env.RPC_URL as string
+                    config["v0.6"].polygonMumbai.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -254,7 +265,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    process.env.RPC_URL as string
+                    config["v0.6"].polygonMumbai.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -362,12 +373,20 @@ describe("ECDSA kernel Account", () => {
                         data: "0x"
                     },
                     {
-                        to: zeroAddress,
+                        to: process.env.GREETER_ADDRESS as Address,
                         value: 0n,
-                        data: "0x"
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world batched"]
+                        })
                     }
                 ]
             })
+            const newGreet = await greeterContract.read.greet()
+
+            expect(newGreet).toBeString()
+            expect(newGreet).toEqual("hello world batched")
             expect(response).toBeString()
             expect(response).toHaveLength(TX_HASH_LENGTH)
             expect(response).toMatch(TX_HASH_REGEX)
@@ -378,12 +397,6 @@ describe("ECDSA kernel Account", () => {
     test(
         "Write contract",
         async () => {
-            const greeterContract = getContract({
-                abi: GreeterAbi,
-                address: process.env.GREETER_ADDRESS as Address,
-                client: kernelClient
-            })
-
             const oldGreet = await greeterContract.read.greet()
 
             expect(oldGreet).toBeString()

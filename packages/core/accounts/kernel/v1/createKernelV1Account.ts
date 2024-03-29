@@ -204,7 +204,6 @@ export async function createKernelV1Account<
         publicKey: accountAddress,
         entryPoint: entryPointAddress,
         source: "kernelSmartAccount",
-        generateInitCode,
         async getFactory() {
             if (smartAccountDeployed) return undefined
 

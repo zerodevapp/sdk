@@ -6,7 +6,8 @@ import {
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
-    type SmartAccount
+    type SmartAccount,
+    toSmartAccount
 } from "permissionless/accounts"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
@@ -17,55 +18,37 @@ import {
     type Address,
     type Chain,
     type Client,
-    type EncodeDeployDataParameters,
-    type Hash,
     type Hex,
     type Transport,
     type TypedDataDefinition,
     concatHex,
-    decodeFunctionResult,
-    encodeAbiParameters,
-    encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
-    keccak256,
     pad,
-    parseAbi,
-    publicActions,
-    stringToHex,
-    toHex,
     validateTypedData,
     zeroAddress
 } from "viem"
-import { toAccount } from "viem/accounts"
-import { CALL_TYPE, EXEC_TYPE, KERNEL_NAME } from "../../constants.js"
 import type {
     KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
-import {
-    KERNEL_FEATURES,
-    getExecMode,
-    getKernelVersion,
-    hasKernelFeature
-} from "../../utils.js"
-import {
-    getKernelImplementationAddress,
-    wrapSignatureWith6492
-} from "../utils/6492.js"
+import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
-import { KernelExecuteAbi, KernelInitAbi } from "./abi/KernelAccountAbi.js"
-import {
-    KernelV3ExecuteAbi,
-    KernelV3InitAbi
-} from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
+import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
+import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
+import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
+import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
+import { accountMetadata } from "./utils/common/accountMetadata.js"
+import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
@@ -73,7 +56,6 @@ export type KernelSmartAccount<
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
     kernelPluginManager: KernelPluginManager<entryPoint>
-    generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
 
@@ -123,48 +105,6 @@ const createAccountAbi = [
     }
 ] as const
 
-// Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
-// Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
-const createCallAddress = "0x9b35Af71d77eaf8d7e40252370304687390A1A52"
-
-const createCallAbi = parseAbi([
-    "function performCreate(uint256 value, bytes memory deploymentData) public returns (address newContract)",
-    "function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt) public returns (address newContract)"
-])
-
-export const EIP1271ABI = [
-    {
-        type: "function",
-        name: "eip712Domain",
-        inputs: [],
-        outputs: [
-            { name: "fields", type: "bytes1", internalType: "bytes1" },
-            { name: "name", type: "string", internalType: "string" },
-            { name: "version", type: "string", internalType: "string" },
-            { name: "chainId", type: "uint256", internalType: "uint256" },
-            {
-                name: "verifyingContract",
-                type: "address",
-                internalType: "address"
-            },
-            { name: "salt", type: "bytes32", internalType: "bytes32" },
-            { name: "extensions", type: "uint256[]", internalType: "uint256[]" }
-        ],
-        stateMutability: "view"
-    },
-    {
-        type: "function",
-        name: "isValidSignature",
-        inputs: [
-            { name: "data", type: "bytes32", internalType: "bytes32" },
-            { name: "signature", type: "bytes", internalType: "bytes" }
-        ],
-        outputs: [
-            { name: "magicValue", type: "bytes4", internalType: "bytes4" }
-        ],
-        stateMutability: "view"
-    }
-] as const
 /**
  * Default addresses for kernel smart account
  */
@@ -364,146 +304,91 @@ export async function createKernelAccount<
         accountAddress
     )
 
-    const signHashedMessage = async (messageHash: Hex): Promise<Hex> => {
-        const kernelImplAddr = await getKernelImplementationAddress(
+    return {
+        kernelPluginManager,
+        ...toSmartAccount({
+            address: accountAddress,
+            publicKey: accountAddress,
+            source: "kernelSmartAccount",
             client,
-            accountAddress
-        )
-        const kernelVersion = getKernelVersion(
-            entryPointAddress,
-            kernelImplAddr
-        )
-        if (
-            !hasKernelFeature(
-                KERNEL_FEATURES.ERC1271_SIG_WRAPPER,
-                kernelVersion
-            )
-        ) {
-            return kernelPluginManager.signMessage({
-                message: {
-                    raw: messageHash
+            entryPoint: entryPointAddress,
+            // Encode the deploy call data
+            async encodeDeployCallData(_tx) {
+                if (entryPointVersion === "v0.6") {
+                    return encodeDeployCallDataV06(_tx)
                 }
-            })
-        }
+                return encodeDeployCallDataV07(_tx)
+            },
+            async encodeCallData(_tx) {
+                const tx = _tx as KernelEncodeCallDataArgs
+                if (
+                    !Array.isArray(tx) &&
+                    tx.callType === "call" &&
+                    tx.to.toLowerCase() === accountAddress.toLowerCase()
+                ) {
+                    return tx.data
+                }
+                if (entryPointVersion === "v0.6") {
+                    return encodeCallDataEpV06(tx)
+                }
+                return encodeCallDataEpV07(tx)
+            },
+            async getFactory() {
+                if (smartAccountDeployed) return undefined
 
-        const domain = await client.request({
-            method: "eth_call",
-            params: [
-                {
-                    to: accountAddress,
-                    data: encodeFunctionData({
-                        abi: EIP1271ABI,
-                        functionName: "eip712Domain"
-                    })
-                },
-                "latest"
-            ]
-        })
+                smartAccountDeployed = await isSmartAccountDeployed(
+                    client,
+                    accountAddress
+                )
 
-        let name: string
-        let version: string
-        let chainId: bigint
+                if (smartAccountDeployed) return undefined
 
-        if (domain !== "0x") {
-            const decoded = decodeFunctionResult({
-                abi: [...EIP1271ABI],
-                functionName: "eip712Domain",
-                data: domain
-            })
+                return factoryAddress
+            },
 
-            name = decoded[1]
-            version = decoded[2]
-            chainId = decoded[3]
-        } else {
-            name = KERNEL_NAME
-            version = kernelVersion
-            chainId = client.chain
-                ? BigInt(client.chain.id)
-                : BigInt(await client.extend(publicActions).getChainId())
-        }
+            async getFactoryData() {
+                if (smartAccountDeployed) return undefined
 
-        const encoded = encodeAbiParameters(
-            [
-                { type: "bytes32" },
-                { type: "bytes32" },
-                { type: "bytes32" },
-                { type: "uint256" },
-                { type: "address" }
-            ],
-            [
-                keccak256(
-                    stringToHex(
-                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                smartAccountDeployed = await isSmartAccountDeployed(
+                    client,
+                    accountAddress
+                )
+
+                if (smartAccountDeployed) return undefined
+
+                return parseFactoryAddressAndCallDataFromAccountInitCode(
+                    await generateInitCode()
+                )[1]
+            },
+            async signMessage({ message }) {
+                const messageHash = hashMessage(message)
+                const { name, chainId, version } = await accountMetadata(
+                    client,
+                    accountAddress,
+                    entryPointAddress
+                )
+                const wrappedMessageHash = await eip712WrapHash(messageHash, {
+                    name,
+                    chainId: Number(chainId),
+                    version,
+                    verifyingContract: accountAddress
+                })
+                const signature = await kernelPluginManager.signMessage({
+                    message: { raw: wrappedMessageHash }
+                })
+
+                if (
+                    !hasKernelFeature(
+                        KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
+                        version
                     )
-                ),
-                keccak256(stringToHex(name)),
-                keccak256(stringToHex(version)),
-                BigInt(chainId),
-                accountAddress
-            ]
-        )
+                ) {
+                    return signature
+                }
 
-        const domainSeparator = keccak256(encoded)
-
-        let finalMessageHash = messageHash
-        if (
-            hasKernelFeature(
-                KERNEL_FEATURES.ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH,
-                kernelVersion
-            )
-        ) {
-            finalMessageHash = keccak256(
-                encodeAbiParameters(
-                    [{ type: "bytes32" }, { type: "bytes32" }],
-                    [
-                        keccak256(stringToHex("Kernel(bytes32 hash)")),
-                        messageHash
-                    ]
-                )
-            )
-        }
-
-        const digest = keccak256(
-            concatHex(["0x1901", domainSeparator, finalMessageHash])
-        )
-        return kernelPluginManager.signMessage({
-            message: {
-                raw: digest
-            }
-        })
-    }
-
-    // Build the EOA Signer
-    const account = toAccount({
-        address: accountAddress,
-        async signMessage({ message }) {
-            const messageHash = hashMessage(message)
-            const [isDeployed, signature] = await Promise.all([
-                isSmartAccountDeployed(client, accountAddress),
-                signHashedMessage(messageHash)
-            ])
-            const kernelImplAddr = await getKernelImplementationAddress(
-                client,
-                accountAddress
-            )
-            const kernelVersion = getKernelVersion(
-                entryPointAddress,
-                kernelImplAddr
-            )
-            if (
-                !hasKernelFeature(
-                    KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
-                    kernelVersion
-                )
-            ) {
-                return create6492Signature(isDeployed, signature)
-            }
-
-            const validatorInitData =
-                await kernelPluginManager.getValidatorInitData()
-            return create6492Signature(
-                isDeployed,
-                concatHex([
+                const validatorInitData =
+                    await kernelPluginManager.getValidatorInitData()
+                return concatHex([
                     pad(
                         concatHex(["0x1", validatorInitData.validatorAddress]),
                         {
@@ -513,54 +398,54 @@ export async function createKernelAccount<
                     ),
                     signature
                 ])
-            )
-        },
-        async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
-        },
-        async signTypedData(typedData) {
-            const kernelImplAddr = await getKernelImplementationAddress(
-                client,
-                accountAddress
-            )
-            const kernelVersion = getKernelVersion(
-                entryPointAddress,
-                kernelImplAddr
-            )
-            const types = {
-                EIP712Domain: getTypesForEIP712Domain({
-                    domain: typedData.domain
-                }),
-                ...typedData.types
-            }
+            },
+            async signTransaction(_, __) {
+                throw new SignTransactionNotSupportedBySmartAccount()
+            },
+            async signTypedData(typedData) {
+                const types = {
+                    EIP712Domain: getTypesForEIP712Domain({
+                        domain: typedData.domain
+                    }),
+                    ...typedData.types
+                }
 
-            // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
-            // as we can't statically check this with TypeScript.
-            validateTypedData({
-                domain: typedData.domain,
-                message: typedData.message,
-                primaryType: typedData.primaryType,
-                types: types
-            } as TypedDataDefinition)
+                // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
+                // as we can't statically check this with TypeScript.
+                validateTypedData({
+                    domain: typedData.domain,
+                    message: typedData.message,
+                    primaryType: typedData.primaryType,
+                    types: types
+                } as TypedDataDefinition)
 
-            const typedHash = hashTypedData(typedData)
-            const [isDeployed, signature] = await Promise.all([
-                isSmartAccountDeployed(client, accountAddress),
-                signHashedMessage(typedHash)
-            ])
-            if (
-                !hasKernelFeature(
-                    KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
-                    kernelVersion
+                const typedHash = hashTypedData(typedData)
+
+                const { name, chainId, version } = await accountMetadata(
+                    client,
+                    accountAddress,
+                    entryPointAddress
                 )
-            ) {
-                return create6492Signature(isDeployed, signature)
-            }
-            const validatorInitData =
-                await kernelPluginManager.getValidatorInitData()
-            return create6492Signature(
-                isDeployed,
-                concatHex([
+                const wrappedMessageHash = await eip712WrapHash(typedHash, {
+                    name,
+                    chainId: Number(chainId),
+                    version,
+                    verifyingContract: accountAddress
+                })
+                const signature = await kernelPluginManager.signMessage({
+                    message: { raw: wrappedMessageHash }
+                })
+                if (
+                    !hasKernelFeature(
+                        KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
+                        version
+                    )
+                ) {
+                    return signature
+                }
+                const validatorInitData =
+                    await kernelPluginManager.getValidatorInitData()
+                return concatHex([
                     pad(
                         // [TODO] - Make the Validator type dynamic to support permission validators
                         concatHex(["0x1", validatorInitData.validatorAddress]),
@@ -571,263 +456,40 @@ export async function createKernelAccount<
                     ),
                     signature
                 ])
-            )
-        }
-    })
+            },
+            // Get the nonce of the smart account
+            async getNonce() {
+                const key =
+                    await kernelPluginManager.getNonceKey(accountAddress)
+                return getAccountNonce(client, {
+                    sender: accountAddress,
+                    entryPoint: entryPointAddress,
+                    key
+                })
+            },
 
-    const create6492Signature = async (
-        isDeployed: boolean,
-        signature: Hash
-    ): Promise<Hash> => {
-        if (isDeployed) {
-            return signature
-        }
+            // Sign a user operation
+            async signUserOperation(userOperation) {
+                return kernelPluginManager.signUserOperation(userOperation)
+            },
 
-        const [factoryAddress, factoryCalldata] =
-            parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )
+            // Get simple dummy signature
+            async getDummySignature(userOperation) {
+                return kernelPluginManager.getDummySignature(userOperation)
+            },
 
-        return wrapSignatureWith6492({
-            factoryAddress,
-            factoryCalldata,
-            signature
+            // Encode the init code
+            async getInitCode() {
+                if (smartAccountDeployed) return "0x"
+
+                smartAccountDeployed = await isSmartAccountDeployed(
+                    client,
+                    accountAddress
+                )
+
+                if (smartAccountDeployed) return "0x"
+                return generateInitCode()
+            }
         })
-    }
-
-    return {
-        ...account,
-        client: client,
-        publicKey: accountAddress,
-        entryPoint: entryPointAddress,
-        source: "kernelSmartAccount",
-        kernelPluginManager,
-        generateInitCode,
-
-        async getFactory() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return factoryAddress
-        },
-
-        async getFactoryData() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )[1]
-        },
-
-        // Get the nonce of the smart account
-        async getNonce() {
-            const key = await kernelPluginManager.getNonceKey(accountAddress)
-            return getAccountNonce(client, {
-                sender: accountAddress,
-                entryPoint: entryPointAddress,
-                key
-            })
-        },
-
-        // Sign a user operation
-        async signUserOperation(userOperation) {
-            return kernelPluginManager.signUserOperation(userOperation)
-        },
-
-        // Encode the init code
-        async getInitCode() {
-            if (smartAccountDeployed) return "0x"
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return "0x"
-            return generateInitCode()
-        },
-
-        // [TODO] - CLeanup the encoding functions
-
-        // Encode the deploy call data
-        async encodeDeployCallData(_tx) {
-            if (entryPointVersion === "v0.6") {
-                return encodeFunctionData({
-                    abi: KernelExecuteAbi,
-                    functionName: "executeDelegateCall",
-                    args: [
-                        createCallAddress,
-                        encodeFunctionData({
-                            abi: createCallAbi,
-                            functionName: "performCreate",
-                            args: [
-                                0n,
-                                encodeDeployData({
-                                    abi: _tx.abi,
-                                    bytecode: _tx.bytecode,
-                                    args: _tx.args
-                                } as EncodeDeployDataParameters)
-                            ]
-                        })
-                    ]
-                })
-            }
-
-            return encodeFunctionData({
-                abi: KernelV3ExecuteAbi,
-                functionName: "execute",
-                args: [
-                    getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
-                    concatHex([
-                        createCallAddress,
-                        encodeFunctionData({
-                            abi: createCallAbi,
-                            functionName: "performCreate",
-                            args: [
-                                0n,
-                                encodeDeployData({
-                                    abi: _tx.abi,
-                                    bytecode: _tx.bytecode,
-                                    args: _tx.args
-                                } as EncodeDeployDataParameters)
-                            ]
-                        })
-                    ])
-                ]
-            })
-        },
-
-        // Encode a call
-        async encodeCallData(_tx) {
-            const tx = _tx as KernelEncodeCallDataArgs
-            if (Array.isArray(tx)) {
-                // Encode a batched call
-                if (entryPointVersion === "v0.6") {
-                    return encodeFunctionData({
-                        abi: KernelExecuteAbi,
-                        functionName: "executeBatch",
-                        args: [
-                            tx.map((txn) => {
-                                if (txn.callType === "delegatecall") {
-                                    throw new Error("Cannot batch delegatecall")
-                                }
-                                return {
-                                    to: txn.to,
-                                    value: txn.value,
-                                    data: txn.data
-                                }
-                            })
-                        ]
-                    })
-                }
-                return encodeFunctionData({
-                    abi: KernelV3ExecuteAbi,
-                    functionName: "execute",
-                    args: [
-                        getExecMode(CALL_TYPE.BATCH, EXEC_TYPE.DEFAULT),
-                        encodeAbiParameters(
-                            [
-                                {
-                                    name: "executionBatch",
-                                    type: "tuple[]",
-                                    components: [
-                                        {
-                                            name: "target",
-                                            type: "address"
-                                        },
-                                        {
-                                            name: "value",
-                                            type: "uint256"
-                                        },
-                                        {
-                                            name: "callData",
-                                            type: "bytes"
-                                        }
-                                    ]
-                                }
-                            ],
-                            [
-                                tx.map((txn) => {
-                                    if (txn.callType === "delegatecall") {
-                                        throw new Error(
-                                            "Cannot batch delegatecall"
-                                        )
-                                    }
-                                    return {
-                                        target: txn.to,
-                                        value: txn.value,
-                                        callData: txn.data
-                                    }
-                                })
-                            ]
-                        )
-                    ]
-                })
-            }
-
-            // Default to `call`
-            if (!tx.callType || tx.callType === "call") {
-                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
-                    return tx.data
-                }
-                if (entryPointVersion === "v0.6") {
-                    return encodeFunctionData({
-                        abi: KernelExecuteAbi,
-                        functionName: "execute",
-                        args: [tx.to, tx.value, tx.data, 0]
-                    })
-                }
-                return encodeFunctionData({
-                    abi: KernelV3ExecuteAbi,
-                    functionName: "execute",
-                    args: [
-                        getExecMode(CALL_TYPE.SINGLE, EXEC_TYPE.DEFAULT),
-                        concatHex([
-                            tx.to,
-                            pad(toHex(tx.value), { size: 32 }),
-                            tx.data
-                        ])
-                    ]
-                })
-            }
-
-            if (tx.callType === "delegatecall") {
-                if (entryPointVersion === "v0.6") {
-                    return encodeFunctionData({
-                        abi: KernelExecuteAbi,
-                        functionName: "executeDelegateCall",
-                        args: [tx.to, tx.data]
-                    })
-                }
-                return encodeFunctionData({
-                    abi: KernelV3ExecuteAbi,
-                    functionName: "execute",
-                    args: [
-                        getExecMode(CALL_TYPE.DELEGATE_CALL, EXEC_TYPE.DEFAULT),
-                        concatHex([tx.to, tx.data])
-                    ]
-                })
-            }
-
-            throw new Error("Invalid call type")
-        },
-
-        // Get simple dummy signature
-        async getDummySignature(userOperation) {
-            return kernelPluginManager.getDummySignature(userOperation)
-        }
     }
 }

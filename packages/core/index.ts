@@ -5,7 +5,7 @@ export {
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
-    EIP1271ABI
+    EIP1271Abi
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,

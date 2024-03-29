@@ -123,6 +123,15 @@ describe("Permission kernel Account", () => {
         })
     })
 
+    test("Account address should be a valid Ethereum address", async () => {
+        const account = ecdsaSmartAccountClient.account
+        console.log("Account address:", account.address)
+        expect(account.address).toBeString()
+        expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
+        expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
+        expect(account.address).not.toEqual(zeroAddress)
+    })
+
     test(
         "Smart account client send transaction with GasPolicy",
         async () => {
