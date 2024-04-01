@@ -8,15 +8,15 @@ import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import {
-    toGasPolicy,
     toCallPolicy,
-    toSignatureCallerPolicy,
-    toRateLimitPolicy
+    toGasPolicy,
+    toRateLimitPolicy,
+    toSignatureCallerPolicy
 } from "./policies/index.js"
-import { type Policy } from "./types.js"
 import { toECDSASigner } from "./signers/toECDSASigner.js"
-import type { ModularSigner } from "./types.js"
 import { toPermissionValidator } from "./toPermissionValidator.js"
+import { type Policy } from "./types.js"
+import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 
 export const deserializeModularPermissionAccount = async <
