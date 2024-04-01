@@ -28,6 +28,7 @@ import {
     Hash,
     Hex,
     Log,
+    PrivateKeyAccount,
     PublicClient,
     Transport,
     createPublicClient,
@@ -39,12 +40,19 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { goerli, polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
-import { toSignaturePolicy } from "../../../plugins/permission/policies/index.js"
-import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy.js"
-import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
-import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
-import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
-import { EntryPointAbi } from "../abis/EntryPoint.js"
+
+import { toSignatureCallerPolicy } from "../../../plugins/permission/policies"
+import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
+import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
+import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
+import { ParamCondition } from "../../../plugins/permission/policies/types"
+import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
+import { Policy } from "../../../plugins/permission/types"
+import { EntryPointAbi } from "../abis/EntryPoint"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
+import { Test_ERC20Address } from "../utils"
+
 import { config } from "../config.js"
 
 // export const index = 43244782332432423423n
@@ -359,9 +367,9 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
     })
 }
 
-export const getSignerToPermissionKernelAccount = async (): Promise<
-    KernelSmartAccount<EntryPoint>
-> => {
+export const getSignerToPermissionKernelAccount = async (
+    policies: Policy[]
+): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey1) {
         throw new Error(
@@ -371,17 +379,11 @@ export const getSignerToPermissionKernelAccount = async (): Promise<
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
     const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
-    const gasPolicy = await toGasPolicy({
-        maxGasAllowedInWei: 1000000000000000000n
-    })
-    const signaturePolicy = await toSignaturePolicy({
-        allowedCallers: [signer1.address]
-    })
-    const sudoPolicy = await toSudoPolicy({})
+
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: ecdsaModularSigner,
-        policies: [sudoPolicy, gasPolicy, signaturePolicy]
+        policies
     })
 
     const signer = privateKeyToAccount(privateKey1)

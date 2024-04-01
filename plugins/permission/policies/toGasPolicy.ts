@@ -4,27 +4,27 @@ import { GAS_POLICY_CONTRACT } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 
 export type GasPolicyParams = PolicyParams & {
-    maxGasAllowedInWei: bigint
+    allowed: bigint
     enforcePaymaster?: boolean
-    paymasterAddress?: Address
+    allowedPaymaster?: Address
 }
 
 export async function toGasPolicy({
     policyAddress = GAS_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    maxGasAllowedInWei,
+    allowed,
     enforcePaymaster = false,
-    paymasterAddress = zeroAddress
+    allowedPaymaster = zeroAddress
 }: GasPolicyParams): Promise<Policy> {
     return {
         getPolicyData: () => {
             return encodeAbiParameters(
                 [
-                    { name: "maxGasAllowedInWei", type: "uint128" },
+                    { name: "allowed", type: "uint128" },
                     { name: "enforcePaymaster", type: "bool" },
-                    { name: "paymasterAddress", type: "address" }
+                    { name: "allowedPaymaster", type: "address" }
                 ],
-                [maxGasAllowedInWei, enforcePaymaster, paymasterAddress]
+                [allowed, enforcePaymaster, allowedPaymaster]
             )
         },
         getPolicyInfoInBytes: () => {

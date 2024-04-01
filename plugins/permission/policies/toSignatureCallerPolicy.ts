@@ -7,7 +7,7 @@ export type SignaturePolicyParams = PolicyParams & {
     allowedCallers: Address[]
 }
 
-export async function toSignaturePolicy({
+export async function toSignatureCallerPolicy({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     allowedCallers
