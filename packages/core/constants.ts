@@ -1,4 +1,4 @@
-import { type Address } from "viem"
+import { type Hex, type Address } from "viem"
 
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
@@ -13,3 +13,7 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const KERNEL_NAME = "Kernel"
 export const LATEST_KERNEL_VERSION = "0.2.4"
+export const KernelFactoryToInitCodeHashMap: { [key: Address]: Hex } = {
+    "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3":
+        "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73"
+}
