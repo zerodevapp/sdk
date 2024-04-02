@@ -277,6 +277,21 @@ export async function toKernelPluginManager<
 
     return {
         ...activeValidator,
+        getValidationId: (isSudo = false) => {
+            const validator = (isSudo ? sudo : regular) ?? activeValidator
+            return concat([
+                validator.isPermissionValidator
+                    ? VALIDATOR_TYPE.PERMISSION
+                    : VALIDATOR_TYPE.SECONDARY,
+                validator?.isPermissionValidator
+                    ? // @ts-ignore
+                      pad(validator.getPermissionId() as Hex, {
+                          size: 20,
+                          dir: "right"
+                      })
+                    : validator.address
+            ])
+        },
         signUserOperation: async (userOperation) => {
             const userOpSig =
                 await activeValidator.signUserOperation(userOperation)

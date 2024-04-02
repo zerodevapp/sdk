@@ -56,7 +56,7 @@ import { Test_ERC20Address } from "../utils"
 import { config } from "../config.js"
 
 // export const index = 43244782332432423423n
-export const index = 4323343744387823332432423423n
+export const index = 4323343756544387823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
 const projectId = config["v0.7"].sepolia.projectId
 
@@ -397,6 +397,41 @@ export const getSignerToPermissionKernelAccount = async (
         plugins: {
             sudo: ecdsaValidatorPlugin,
             regular: permissionPlugin,
+            entryPoint: getEntryPoint(),
+            executorData: {
+                executor: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+}
+
+export const getSignerToRootPermissionKernelAccount = async (
+    policies: Policy[]
+): Promise<KernelSmartAccount<EntryPoint>> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey1) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+        )
+    }
+    const publicClient = await getPublicClient()
+    const signer1 = privateKeyToAccount(generatePrivateKey())
+    const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaModularSigner,
+        policies
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: permissionPlugin,
             entryPoint: getEntryPoint(),
             executorData: {
                 executor: zeroAddress,

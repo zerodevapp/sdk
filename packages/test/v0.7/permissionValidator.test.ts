@@ -5,6 +5,7 @@ import {
     KernelV3AccountAbi
 } from "@zerodev/sdk"
 import { BundlerClient } from "permissionless"
+import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
 import { EntryPoint } from "permissionless/types/entrypoint"
 import {
     Address,
@@ -33,9 +34,11 @@ import {
     getEntryPoint,
     getKernelAccountClient,
     getKernelBundlerClient,
+    getPimlicoBundlerClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
     getSignerToPermissionKernelAccount,
+    getSignerToRootPermissionKernelAccount,
     getZeroDevPaymasterClient,
     sleep
 } from "./utils"
@@ -57,6 +60,7 @@ describe("Permission kernel Account", () => {
         Chain,
         KernelSmartAccount<EntryPoint>
     >
+    let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
     let owner: PrivateKeyAccount
 
     async function mintToAccount(target: Address, amount: bigint) {
@@ -105,12 +109,16 @@ describe("Permission kernel Account", () => {
         owner = privateKeyToAccount(testPrivateKey)
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
+        pimlicoBundlerClient = getPimlicoBundlerClient()
 
         const ecdsaAccount = await getSignerToEcdsaKernelAccount()
 
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: ecdsaAccount,
             middleware: {
+                gasPrice: async () =>
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -132,6 +140,49 @@ describe("Permission kernel Account", () => {
     })
 
     test(
+        "Smart account client send transaction with GasPolicy and PermissionValidator as root",
+        async () => {
+            const gasPolicy = await toGasPolicy({
+                allowed: 1000000000000000000n
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToRootPermissionKernelAccount([
+                    gasPolicy
+                ]),
+                middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            console.log("Gas policy account")
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Smart account client send transaction with GasPolicy",
         async () => {
             const gasPolicy = await toGasPolicy({
@@ -141,6 +192,9 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([gasPolicy]),
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -181,6 +235,9 @@ describe("Permission kernel Account", () => {
                     signaturePolicy
                 ]),
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -223,6 +280,9 @@ describe("Permission kernel Account", () => {
                     rateLimitPolicy
                 ]),
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -286,6 +346,9 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

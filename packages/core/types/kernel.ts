@@ -136,6 +136,7 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
         getValidatorInitData(): Promise<ValidatorInitData>
         getExecutorData(): ExecutorData
         getValidityData(): PluginValidityData
+        getValidationId(isSudo?: boolean): Hex
     }
 
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {

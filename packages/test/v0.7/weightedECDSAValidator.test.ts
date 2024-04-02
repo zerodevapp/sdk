@@ -1,12 +1,14 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import { BundlerClient } from "permissionless"
+import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
 import { EntryPoint } from "permissionless/types/entrypoint"
 import { Chain, PublicClient, Transport, zeroAddress } from "viem"
 import {
     getEntryPoint,
     getKernelAccountClient,
     getKernelBundlerClient,
+    getPimlicoBundlerClient,
     getPublicClient,
     getSignersToWeightedEcdsaKernelAccount,
     getZeroDevPaymasterClient
@@ -30,14 +32,19 @@ describe("Weighted ECDSA kernel Account", () => {
         Chain,
         KernelSmartAccount<EntryPoint>
     >
+    let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
 
     beforeAll(async () => {
         account = await getSignersToWeightedEcdsaKernelAccount()
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
+        pimlicoBundlerClient = getPimlicoBundlerClient()
         kernelClient = await getKernelAccountClient({
             account,
             middleware: {
+                gasPrice: async () =>
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({

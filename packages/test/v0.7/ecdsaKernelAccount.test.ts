@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
-    EIP1271ABI,
+    EIP1271Abi,
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
@@ -118,6 +118,9 @@ describe("ECDSA kernel Account", () => {
         kernelClient = await getKernelAccountClient({
             account,
             middleware: {
+                gasPrice: async () =>
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -277,7 +280,7 @@ describe("ECDSA kernel Account", () => {
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [hashMessage(message), response]
             })
@@ -330,7 +333,7 @@ describe("ECDSA kernel Account", () => {
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [typedHash, response]
             })
@@ -534,6 +537,9 @@ describe("ECDSA kernel Account", () => {
             const kernelClient = await getKernelAccountClient({
                 account,
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -715,6 +721,9 @@ describe("ECDSA kernel Account", () => {
             const kernelClient = await getKernelAccountClient({
                 account: initialEcdsaSmartAccount,
                 middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

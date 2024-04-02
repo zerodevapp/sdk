@@ -26,7 +26,6 @@ import {
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
-    pad,
     validateTypedData,
     zeroAddress
 } from "viem"
@@ -120,16 +119,16 @@ export const KERNEL_ADDRESSES: {
     ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
 
-const getKernelInitData = <entryPoint extends EntryPoint>({
-    validatorAddress,
-    enableData,
-    entryPoint: entryPointAddress
+const getKernelInitData = async <entryPoint extends EntryPoint>({
+    entryPoint: entryPointAddress,
+    kernelPluginManager
 }: {
-    validatorAddress: Address
-    enableData: Hex
     entryPoint: entryPoint
+    kernelPluginManager: KernelPluginManager<entryPoint>
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    const { enableData, validatorAddress } =
+        await kernelPluginManager.getValidatorInitData()
 
     if (entryPointVersion === "v0.6") {
         return encodeFunctionData({
@@ -143,10 +142,7 @@ const getKernelInitData = <entryPoint extends EntryPoint>({
         abi: KernelV3InitAbi,
         functionName: "initialize",
         args: [
-            pad(concatHex(["0x1", validatorAddress]), {
-                size: 21,
-                dir: "left"
-            }),
+            kernelPluginManager.getValidationId(true),
             zeroAddress,
             enableData,
             "0x"
@@ -165,22 +161,19 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     index,
     factoryAddress,
     accountLogicAddress,
-    validatorAddress,
-    enableData,
-    entryPoint: entryPointAddress
+    entryPoint: entryPointAddress,
+    kernelPluginManager
 }: {
     index: bigint
     factoryAddress: Address
     accountLogicAddress: Address
-    validatorAddress: Address
-    enableData: Hex
     entryPoint: entryPoint
+    kernelPluginManager: KernelPluginManager<entryPoint>
 }): Promise<Hex> => {
     // Build the account initialization data
-    const initialisationData = getKernelInitData<entryPoint>({
-        validatorAddress,
-        enableData,
-        entryPoint: entryPointAddress
+    const initialisationData = await getKernelInitData<entryPoint>({
+        entryPoint: entryPointAddress,
+        kernelPluginManager
     })
 
     // Build the account init code
@@ -276,15 +269,12 @@ export async function createKernelAccount<
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
-        const validatorInitData =
-            await kernelPluginManager.getValidatorInitData()
         return getAccountInitCode<entryPoint>({
             index,
             factoryAddress,
             accountLogicAddress,
-            validatorAddress: validatorInitData.validatorAddress,
-            enableData: validatorInitData.enableData,
-            entryPoint: entryPointAddress
+            entryPoint: entryPointAddress,
+            kernelPluginManager
         })
     }
 
@@ -386,16 +376,8 @@ export async function createKernelAccount<
                     return signature
                 }
 
-                const validatorInitData =
-                    await kernelPluginManager.getValidatorInitData()
                 return concatHex([
-                    pad(
-                        concatHex(["0x1", validatorInitData.validatorAddress]),
-                        {
-                            size: 21,
-                            dir: "left"
-                        }
-                    ),
+                    kernelPluginManager.getValidationId(),
                     signature
                 ])
             },
@@ -443,17 +425,8 @@ export async function createKernelAccount<
                 ) {
                     return signature
                 }
-                const validatorInitData =
-                    await kernelPluginManager.getValidatorInitData()
                 return concatHex([
-                    pad(
-                        // [TODO] - Make the Validator type dynamic to support permission validators
-                        concatHex(["0x1", validatorInitData.validatorAddress]),
-                        {
-                            size: 21,
-                            dir: "left"
-                        }
-                    ),
+                    kernelPluginManager.getValidationId(),
                     signature
                 ])
             },

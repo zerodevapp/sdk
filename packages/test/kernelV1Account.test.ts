@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
-    EIP1271ABI,
+    EIP1271Abi,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
@@ -155,7 +155,7 @@ describe("ECDSA kernel Account", () => {
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [hashMessage(message), response]
             })
@@ -206,7 +206,7 @@ describe("ECDSA kernel Account", () => {
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [typedHash, response]
             })
