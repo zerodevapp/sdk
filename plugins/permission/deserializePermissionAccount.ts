@@ -19,7 +19,7 @@ import { type Policy } from "./types.js"
 import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 
-export const deserializeModularPermissionAccount = async <
+export const deserializePermissionAccount = async <
     entryPoint extends EntryPoint
 >(
     client: Parameters<typeof createKernelAccount>[0],
