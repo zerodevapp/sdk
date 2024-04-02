@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/permission-validator",
-    "version": "5.0.0-alpha.8",
+    "version": "5.0.0-alpha.9",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
