@@ -1,7 +1,7 @@
 export { toGasPolicy, type GasPolicyParams } from "./toGasPolicy.js"
 export {
     toSignatureCallerPolicy,
-    type SignaturePolicyParams
+    type SignatureCallerPolicyParams
 } from "./toSignatureCallerPolicy.js"
 export {
     toRateLimitPolicy,

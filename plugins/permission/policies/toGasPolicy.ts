@@ -7,6 +7,7 @@ export type GasPolicyParams = PolicyParams & {
     allowed: bigint
     enforcePaymaster?: boolean
     allowedPaymaster?: Address
+    type?: "gas"
 }
 
 export async function toGasPolicy({
@@ -14,7 +15,8 @@ export async function toGasPolicy({
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     allowed,
     enforcePaymaster = false,
-    allowedPaymaster = zeroAddress
+    allowedPaymaster = zeroAddress,
+    type = "gas"
 }: GasPolicyParams): Promise<Policy> {
     return {
         getPolicyData: () => {
@@ -29,6 +31,14 @@ export async function toGasPolicy({
         },
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
+        },
+        policyParams: {
+            type,
+            policyAddress,
+            policyFlag,
+            allowed,
+            enforcePaymaster,
+            allowedPaymaster
         }
     }
 }

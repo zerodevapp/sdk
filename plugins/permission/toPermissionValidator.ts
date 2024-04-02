@@ -18,7 +18,11 @@ import { getChainId, readContract } from "viem/actions"
 import { PolicyFlags } from "./constants.js"
 import { toPolicyId } from "./policies/index.js"
 import { toSignerId } from "./signers/index.js"
-import type { PermissionPlugin, PermissionPluginParams } from "./types.js"
+import type {
+    PermissionData,
+    PermissionPlugin,
+    PermissionPluginParams
+} from "./types.js"
 
 export async function toPermissionValidator<
     entryPoint extends EntryPoint,
@@ -107,6 +111,11 @@ export async function toPermissionValidator<
 
         async getDummySignature(_userOperation) {
             return concat(["0xff", signer.getDummySignature()])
+        },
+        getPluginSerializationParams: (): PermissionData => {
+            return {
+                policies
+            }
         },
         isEnabled: async (
             kernelAccountAddress: Address,

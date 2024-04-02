@@ -7,6 +7,7 @@ export type RateLimitPolicyParams = PolicyParams & {
     interval?: number
     count: number
     startAt?: number
+    type?: "rate-limit"
 }
 
 export async function toRateLimitPolicy({
@@ -14,7 +15,8 @@ export async function toRateLimitPolicy({
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     interval = 0,
     count,
-    startAt = 0
+    startAt = 0,
+    type = "rate-limit"
 }: RateLimitPolicyParams): Promise<Policy> {
     return {
         getPolicyData: () => {
@@ -28,6 +30,14 @@ export async function toRateLimitPolicy({
         },
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
+        },
+        policyParams: {
+            type,
+            policyAddress,
+            policyFlag,
+            interval,
+            count,
+            startAt
         }
     }
 }
