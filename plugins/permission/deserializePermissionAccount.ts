@@ -11,7 +11,8 @@ import {
     toCallPolicy,
     toGasPolicy,
     toRateLimitPolicy,
-    toSignatureCallerPolicy
+    toSignatureCallerPolicy,
+    toSudoPolicy
 } from "./policies/index.js"
 import { toECDSASigner } from "./signers/toECDSASigner.js"
 import { toPermissionValidator } from "./toPermissionValidator.js"
@@ -82,6 +83,8 @@ export const createPolicyFromParams = async (policy: Policy) => {
             return await toRateLimitPolicy(policy.policyParams)
         case "signature-caller":
             return await toSignatureCallerPolicy(policy.policyParams)
+        case "sudo":
+            return await toSudoPolicy(policy.policyParams)
         default:
             throw new Error("Unsupported policy type")
     }
