@@ -56,6 +56,8 @@ import { EntryPointAbi } from "../abis/EntryPoint"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { Test_ERC20Address } from "../utils"
 
+import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
+import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { config } from "../config.js"
 
 // export const index = 43244782332432423423n
@@ -465,21 +467,23 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             policies
         })
 
-        const signer2 = privateKeyToAccount(generatePrivateKey())
-
-        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+        const privateKey2 = generatePrivateKey()
+        const signer2 = privateKeyToAccount(privateKey2)
+        const ecdsaModularSigner2 = toECDSASigner({ signer: signer2 })
+        const permissionSessionKeyPlugin = await toPermissionValidator(
             publicClient,
             {
                 entryPoint: getEntryPoint(),
-                signer: signer2
+                signer: ecdsaModularSigner2,
+                policies
             }
         )
 
-        return await createKernelAccount(publicClient, {
+        let account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: permissionPlugin,
-                regular: ecdsaValidatorPlugin,
+                regular: permissionSessionKeyPlugin,
                 entryPoint: getEntryPoint(),
                 action: {
                     address: zeroAddress,
@@ -490,4 +494,15 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             },
             index
         })
+        const serializedData = await serializePermissionAccount(
+            account,
+            privateKey2
+        )
+        account = await deserializePermissionAccount(
+            publicClient,
+            serializedData,
+            undefined,
+            getEntryPoint()
+        )
+        return account
     }
