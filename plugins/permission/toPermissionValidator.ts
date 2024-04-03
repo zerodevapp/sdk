@@ -81,13 +81,13 @@ export async function toPermissionValidator<
 
         signMessage: async ({ message }) => {
             return concat([
-                getPermissionId(),
+                "0xff",
                 await signer.account.signMessage({ message })
             ])
         },
         signTypedData: async (typedData) => {
             return concat([
-                getPermissionId(),
+                "0xff",
                 await signer.account.signTypedData(typedData)
             ])
         },
