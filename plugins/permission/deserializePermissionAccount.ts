@@ -1,4 +1,8 @@
-import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
+import {
+    KernelAccountAbi,
+    KernelV3AccountAbi,
+    createKernelAccount
+} from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
@@ -101,7 +105,7 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
     if (createAccountFunctionData.functionName === "createAccount") {
         index = createAccountFunctionData.args[2]
         const initializeFunctionData = decodeFunctionData({
-            abi: KernelAccountAbi,
+            abi: KernelV3AccountAbi,
             data: createAccountFunctionData.args[1]
         })
         if (!initializeFunctionData) throw new Error("Invalid initCode")
