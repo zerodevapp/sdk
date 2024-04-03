@@ -434,9 +434,8 @@ export async function createKernelAccount<
             },
             // Get the nonce of the smart account
             async getNonce() {
-                const key = await kernelPluginManager.getNonceKey(
-                    accountAddress
-                )
+                const key =
+                    await kernelPluginManager.getNonceKey(accountAddress)
                 return getAccountNonce(client, {
                     sender: accountAddress,
                     entryPoint: entryPointAddress,
