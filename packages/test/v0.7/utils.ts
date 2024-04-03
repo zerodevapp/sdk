@@ -431,20 +431,10 @@ export const getSignerToRootPermissionKernelAccount = async (
         policies
     })
 
-    const sessionKeySigner = privateKeyToAccount(generatePrivateKey())
-    const sessionKeyModularSigner = toECDSASigner({ signer: sessionKeySigner })
-
-    const secondPermissionPlugin = await toPermissionValidator(publicClient, {
-        entryPoint: getEntryPoint(),
-        signer: sessionKeyModularSigner,
-        policies: [await toSudoPolicy({})]
-    })
-
     return await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
             sudo: permissionPlugin,
-            regular: secondPermissionPlugin,
             entryPoint: getEntryPoint(),
             executorData: {
                 executor: zeroAddress,
@@ -456,3 +446,48 @@ export const getSignerToRootPermissionKernelAccount = async (
         index
     })
 }
+
+export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
+    async (policies: Policy[]): Promise<KernelSmartAccount<EntryPoint>> => {
+        const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+        if (!privateKey1) {
+            throw new Error(
+                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+            )
+        }
+        const publicClient = await getPublicClient()
+        const signer1 = privateKeyToAccount(generatePrivateKey())
+        const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+
+        const permissionPlugin = await toPermissionValidator(publicClient, {
+            entryPoint: getEntryPoint(),
+            signer: ecdsaModularSigner,
+            policies
+        })
+
+        const signer2 = privateKeyToAccount(generatePrivateKey())
+
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: signer2
+            }
+        )
+
+        return await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                sudo: permissionPlugin,
+                regular: ecdsaValidatorPlugin,
+                entryPoint: getEntryPoint(),
+                executorData: {
+                    executor: zeroAddress,
+                    selector: toFunctionSelector(
+                        getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                    )
+                }
+            },
+            index
+        })
+    }
