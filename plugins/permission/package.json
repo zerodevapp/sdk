@@ -1,5 +1,5 @@
 {
-    "name": "@zerodev/permission-validator",
+    "name": "@zerodev/permissions",
     "version": "5.2.1-alpha.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
