@@ -1,7 +1,7 @@
 import { Buffer } from "buffer"
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
-import { type WebAuthnKey } from "./toWebAuthnSigner.js"
 import { type Hex, keccak256 } from "viem"
+import { type WebAuthnKey } from "./toWebAuthnSigner.js"
 import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
 
 export enum WebAuthnMode {
