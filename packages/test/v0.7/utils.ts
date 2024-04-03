@@ -41,7 +41,10 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { goerli, polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
 
-import { toSignatureCallerPolicy } from "../../../plugins/permission/policies"
+import {
+    toSignatureCallerPolicy,
+    toSudoPolicy
+} from "../../../plugins/permission/policies"
 import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
@@ -428,10 +431,20 @@ export const getSignerToRootPermissionKernelAccount = async (
         policies
     })
 
+    const sessionKeySigner = privateKeyToAccount(generatePrivateKey())
+    const sessionKeyModularSigner = toECDSASigner({ signer: sessionKeySigner })
+
+    const secondPermissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: sessionKeyModularSigner,
+        policies: [await toSudoPolicy({})]
+    })
+
     return await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
             sudo: permissionPlugin,
+            regular: secondPermissionPlugin,
             entryPoint: getEntryPoint(),
             executorData: {
                 executor: zeroAddress,
