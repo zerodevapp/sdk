@@ -264,7 +264,7 @@ export async function createKernelAccount<
         : await toKernelPluginManager<entryPoint>(client, {
               sudo: plugins.sudo,
               regular: plugins.regular,
-              executorData: plugins.executorData,
+              action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               entryPoint: entryPointAddress
           })

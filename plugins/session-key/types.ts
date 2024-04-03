@@ -78,7 +78,7 @@ export type ExportSessionKeyAccountParams = {
 
 export type SessionKeyAccountParams = {
     sessionKeyParams: SessionKeyData<Abi, string>
-    executorData: Action
+    action: Action
     validityData: PluginValidityData
     accountParams: ExportSessionKeyAccountParams
     enableSignature?: Hex

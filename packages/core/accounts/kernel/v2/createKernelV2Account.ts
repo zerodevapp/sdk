@@ -174,7 +174,7 @@ export async function createKernelV2Account<
         : await toKernelPluginManager(client, {
               sudo: plugins.sudo,
               regular: plugins.regular,
-              executorData: plugins.executorData,
+              action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               kernelVersion: "0.0.2" ?? plugins.kernelVersion,
               entryPoint: entryPointAddress

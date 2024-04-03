@@ -402,7 +402,7 @@ export const getSignerToModularPermissionKernelAccount = async (
 
 export const getSessionKeyToSessionKeyKernelAccount = async (
     sessionKeyPlugin: SessionKeyPlugin<EntryPoint>,
-    executorData?: Action
+    action?: Action
 ): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
@@ -421,7 +421,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
         plugins: {
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin,
-            executorData,
+            action,
             entryPoint: getEntryPoint()
         },
         index

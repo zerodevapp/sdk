@@ -43,7 +43,7 @@ export const deserializeSessionKeyAccount = async <
         regular: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
-        executorData: params.executorData,
+        action: params.action,
         entryPoint: ENTRYPOINT_ADDRESS_V06,
         ...params.validityData
     })

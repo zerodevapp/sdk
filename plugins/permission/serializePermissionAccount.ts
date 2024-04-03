@@ -14,7 +14,7 @@ export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
         throw new Error("Account plugin is not a permission validator")
     const permissionParams =
         account.kernelPluginManager.getPluginSerializationParams()
-    const executorData = account.kernelPluginManager.getExecutorData()
+    const action = account.kernelPluginManager.getAction()
     const validityData = account.kernelPluginManager.getValidityData()
     const enableSignature =
         await account.kernelPluginManager.getPluginEnableSignature(
@@ -27,7 +27,7 @@ export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
 
     const paramsToBeSerialized = {
         permissionParams,
-        executorData,
+        action,
         validityData,
         accountParams,
         enableSignature,

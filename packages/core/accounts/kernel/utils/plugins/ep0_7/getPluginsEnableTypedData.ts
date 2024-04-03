@@ -51,7 +51,7 @@ export const getPluginsEnableTypedData = async <
             hookData: "0x",
             selectorData: concat([
                 action.selector,
-                action.executor,
+                action.address,
                 zeroAddress,
                 "0x"
             ])

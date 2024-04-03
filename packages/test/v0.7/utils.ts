@@ -359,8 +359,8 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
             sudo: ecdsaValidatorPlugin,
             regular: weightedECDSAPlugin,
             entryPoint: getEntryPoint(),
-            executorData: {
-                executor: zeroAddress,
+            action: {
+                address: zeroAddress,
                 selector: toFunctionSelector(
                     getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
                 )
@@ -401,8 +401,8 @@ export const getSignerToPermissionKernelAccount = async (
             sudo: ecdsaValidatorPlugin,
             regular: permissionPlugin,
             entryPoint: getEntryPoint(),
-            executorData: {
-                executor: zeroAddress,
+            action: {
+                address: zeroAddress,
                 selector: toFunctionSelector(
                     getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
                 )
@@ -436,8 +436,8 @@ export const getSignerToRootPermissionKernelAccount = async (
         plugins: {
             sudo: permissionPlugin,
             entryPoint: getEntryPoint(),
-            executorData: {
-                executor: zeroAddress,
+            action: {
+                address: zeroAddress,
                 selector: toFunctionSelector(
                     getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
                 )
@@ -481,8 +481,8 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
                 sudo: permissionPlugin,
                 regular: ecdsaValidatorPlugin,
                 entryPoint: getEntryPoint(),
-                executorData: {
-                    executor: zeroAddress,
+                action: {
+                    address: zeroAddress,
                     selector: toFunctionSelector(
                         getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
                     )

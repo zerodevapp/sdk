@@ -199,7 +199,7 @@ describe("Session Key kernel Account", async () => {
             account: await getSessionKeyToSessionKeyKernelAccount(
                 sessionKeyPlugin,
                 {
-                    executor: constants.TOKEN_ACTION,
+                    address: constants.TOKEN_ACTION,
                     selector: transfer20ActionSelector
                 }
             ),
@@ -431,7 +431,7 @@ describe("Session Key kernel Account", async () => {
                 sessionKeyPlugin,
                 {
                     selector: executeBatchSelector,
-                    executor: zeroAddress
+                    address: zeroAddress
                 }
             ),
             middleware: {
@@ -736,7 +736,7 @@ describe("Session Key kernel Account", async () => {
             account: await getSessionKeyToSessionKeyKernelAccount(
                 sessionKeyPlugin,
                 {
-                    executor: zeroAddress,
+                    address: zeroAddress,
                     selector: toFunctionSelector(
                         "executeDelegateCall(address, bytes)"
                     )

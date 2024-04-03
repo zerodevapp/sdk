@@ -35,7 +35,7 @@ export const getEncodedPluginsData = async <
             [
                 enableData,
                 "0x",
-                concat([action.selector, action.executor, zeroAddress, "0x"]),
+                concat([action.selector, action.address, zeroAddress, "0x"]),
                 enableSignature,
                 userOpSignature
             ]

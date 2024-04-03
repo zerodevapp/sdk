@@ -30,7 +30,7 @@ export type ExportModularPermissionAccountParams = {
 
 export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
     modularPermissionParams: ModularPermissionData<entryPoint>
-    executorData: Action
+    action: Action
     validityData: PluginValidityData
     accountParams: ExportModularPermissionAccountParams
     enableSignature?: Hex

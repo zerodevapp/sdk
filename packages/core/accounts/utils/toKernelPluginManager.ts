@@ -46,9 +46,9 @@ export async function toKernelPluginManager<
         regular,
         pluginEnableSignature,
         validatorInitData,
-        executorData = {
+        action = {
             selector: getActionSelector("v0.6"),
-            executor: zeroAddress
+            address: zeroAddress
         },
         validAfter = 0,
         validUntil = 0,
@@ -62,12 +62,11 @@ export async function toKernelPluginManager<
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
     }
-    executorData = {
-        selector:
-            executorData?.selector ?? getActionSelector(entryPointVersion),
-        executor: executorData?.executor ?? zeroAddress
+    action = {
+        selector: action?.selector ?? getActionSelector(entryPointVersion),
+        address: action?.address ?? zeroAddress
     }
-    if (!executorData) {
+    if (!action) {
         throw new Error("Executor data must be set")
     }
 
@@ -82,15 +81,16 @@ export async function toKernelPluginManager<
                     return ValidatorMode.plugin
                 }
 
-                const enableSignature =
-                    await getPluginEnableSignature(accountAddress)
+                const enableSignature = await getPluginEnableSignature(
+                    accountAddress
+                )
                 if (!enableSignature) {
                     throw new Error("Enable signature not set")
                 }
                 return getEncodedPluginsDataV1({
                     accountAddress,
                     enableSignature,
-                    action: executorData,
+                    action,
                     validator: regular,
                     validUntil,
                     validAfter
@@ -104,14 +104,15 @@ export async function toKernelPluginManager<
             }
         }
         if (regular) {
-            if (await isPluginEnabled(accountAddress, executorData.selector)) {
+            if (await isPluginEnabled(accountAddress, action.selector)) {
                 return userOpSignature
             }
-            const enableSignature =
-                await getPluginEnableSignature(accountAddress)
+            const enableSignature = await getPluginEnableSignature(
+                accountAddress
+            )
             return getEncodedPluginsDataV2({
                 accountAddress,
-                action: executorData,
+                action,
                 enableSignature,
                 userOpSignature,
                 validator: regular
@@ -129,7 +130,7 @@ export async function toKernelPluginManager<
             return regular.isEnabled(accountAddress, selector)
         }
         return (
-            (await regular.isEnabled(accountAddress, executorData.selector)) ||
+            (await regular.isEnabled(accountAddress, action.selector)) ||
             (await isPluginInitialized(client, accountAddress, regular.address))
         )
     }
@@ -153,7 +154,7 @@ export async function toKernelPluginManager<
                 accountAddress,
                 chainId,
                 kernelVersion: version ?? kernelVersion,
-                action: executorData,
+                action,
                 validator: regular,
                 validUntil,
                 validAfter
@@ -167,7 +168,7 @@ export async function toKernelPluginManager<
             accountAddress,
             chainId,
             kernelVersion: version,
-            action: executorData,
+            action,
             validator: regular,
             validatorNonce
         })
@@ -186,8 +187,9 @@ export async function toKernelPluginManager<
             ])
         },
         signUserOperation: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.signUserOperation(userOperation)
+            const userOpSig = await activeValidator.signUserOperation(
+                userOperation
+            )
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -203,14 +205,15 @@ export async function toKernelPluginManager<
                 userOpSig
             )
         },
-        getExecutorData: () => executorData,
+        getAction: () => action,
         getValidityData: () => ({
             validAfter,
             validUntil
         }),
         getDummySignature: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.getDummySignature(userOperation)
+            const userOpSig = await activeValidator.getDummySignature(
+                userOperation
+            )
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -232,7 +235,7 @@ export async function toKernelPluginManager<
 
             const validatorMode =
                 !regular ||
-                (await isPluginEnabled(accountAddress, executorData.selector))
+                (await isPluginEnabled(accountAddress, action.selector))
                     ? VALIDATOR_MODE.DEFAULT
                     : VALIDATOR_MODE.ENABLE
             const validatorType = regular

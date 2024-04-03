@@ -16,7 +16,7 @@ export const serializeModularPermissionAccount = async <
         throw new Error("Account plugin is not a modular permission validator")
     const modularPermissionParams =
         account.kernelPluginManager.getPluginSerializationParams()
-    const executorData = account.kernelPluginManager.getExecutorData()
+    const action = account.kernelPluginManager.getAction()
     const validityData = account.kernelPluginManager.getValidityData()
     const enableSignature =
         await account.kernelPluginManager.getPluginEnableSignature(
@@ -29,7 +29,7 @@ export const serializeModularPermissionAccount = async <
 
     const paramsToBeSerialized = {
         modularPermissionParams,
-        executorData,
+        action,
         validityData,
         accountParams,
         enableSignature,

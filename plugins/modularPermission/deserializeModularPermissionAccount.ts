@@ -59,7 +59,7 @@ export const deserializeModularPermissionAccount = async <
             regular: modularPermissionPlugin,
             pluginEnableSignature: params.enableSignature,
             validatorInitData,
-            executorData: params.executorData,
+            action: params.action,
             entryPoint: entryPointAddress,
             ...params.validityData
         }

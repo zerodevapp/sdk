@@ -121,7 +121,7 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint> & {
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
-        getExecutorData(): Action
+        getAction(): Action
         getValidityData(): PluginValidityData
         getIdentifier(isSudo?: boolean): Hex
     }
@@ -131,13 +131,13 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     regular?: KernelValidator<entryPoint>
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
-    executorData?: Action
+    action?: Action
     entryPoint: entryPoint
     kernelVersion?: string
 } & Partial<PluginValidityData>
 
 export type Action = {
-    executor: Address
+    address: Address
     selector: Hex
 }
 

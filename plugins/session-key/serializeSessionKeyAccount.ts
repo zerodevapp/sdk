@@ -14,7 +14,7 @@ export const serializeSessionKeyAccount = async <entryPoint extends EntryPoint>(
         throw new Error("Account plugin is not a session key validator")
     const sessionKeyParams =
         account.kernelPluginManager.getPluginSerializationParams()
-    const executorData = account.kernelPluginManager.getExecutorData()
+    const action = account.kernelPluginManager.getAction()
     const validityData = account.kernelPluginManager.getValidityData()
     const enableSignature =
         await account.kernelPluginManager.getPluginEnableSignature(
@@ -27,7 +27,7 @@ export const serializeSessionKeyAccount = async <entryPoint extends EntryPoint>(
 
     const paramsToBeSerialized = {
         sessionKeyParams,
-        executorData,
+        action,
         validityData,
         accountParams,
         enableSignature,

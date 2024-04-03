@@ -39,7 +39,7 @@ export const deserializeSessionKeyAccountV2 = async <
         regular: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
-        executorData: params.executorData,
+        action: params.action,
         kernelVersion: "0.0.2",
         entryPoint: ENTRYPOINT_ADDRESS_V06,
         ...params.validityData

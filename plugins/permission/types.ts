@@ -63,7 +63,7 @@ export type ExportPermissionAccountParams = {
 
 export type PermissionAccountParams = {
     permissionParams: PermissionData
-    executorData: Action
+    action: Action
     validityData: PluginValidityData
     accountParams: ExportPermissionAccountParams
     enableSignature?: Hex

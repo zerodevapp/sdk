@@ -68,7 +68,7 @@ export const getPluginsEnableTypedData = async <
                 ]),
                 { size: 32 }
             ),
-            executor: action.executor as Address,
+            executor: action.address as Address,
             enableData: await validator.getEnableData(accountAddress)
         },
         primaryType: "ValidatorApproved"
