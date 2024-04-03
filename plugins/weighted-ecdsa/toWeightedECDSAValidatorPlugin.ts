@@ -147,9 +147,11 @@ export async function createWeightedECDSAValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WeightedECDSAValidator",
-        isPermissionValidator: false,
+        getIdentifier: () =>
+            validatorAddress ?? getValidatorAddress(entryPointAddress),
 
         async getEnableData() {
             if (!config) return "0x" // TODO: check if this is correct

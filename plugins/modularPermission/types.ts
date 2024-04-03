@@ -1,5 +1,5 @@
 import { type KernelValidator } from "@zerodev/sdk"
-import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
+import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import { type ExtractAbiFunction, type ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -30,7 +30,7 @@ export type ExportModularPermissionAccountParams = {
 
 export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
     modularPermissionParams: ModularPermissionData<entryPoint>
-    executorData: ExecutorData
+    executorData: Action
     validityData: PluginValidityData
     accountParams: ExportModularPermissionAccountParams
     enableSignature?: Hex
@@ -39,7 +39,6 @@ export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
 
 export type ModularPermissionPlugin<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint, "ModularPermissionValidator"> & {
-        getPermissionId: () => Hex
         getPluginSerializationParams: () => ModularPermissionData<entryPoint>
     }
 

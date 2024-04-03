@@ -122,11 +122,13 @@ export async function createPermissionValidator<
 
     return {
         ...signer.account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ModularPermissionValidator",
-        isPermissionValidator: false,
         getEnableData,
-        getPermissionId,
+        getIdentifier() {
+            return validatorAddress
+        },
 
         signMessage: async ({ message }) => {
             return concat([

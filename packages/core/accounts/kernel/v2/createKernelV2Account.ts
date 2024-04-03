@@ -56,6 +56,7 @@ export type KernelSmartAccount<
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
     kernelPluginManager: KernelPluginManager<entryPoint>
+    generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
 
@@ -281,6 +282,7 @@ export async function createKernelV2Account<
         entryPoint: entryPointAddress,
         source: "kernelSmartAccount",
         kernelPluginManager,
+        generateInitCode,
         async getFactory() {
             if (smartAccountDeployed) return undefined
 

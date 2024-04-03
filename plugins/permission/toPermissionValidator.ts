@@ -73,11 +73,15 @@ export async function toPermissionValidator<
 
     return {
         ...signer.account,
+        validatorType: "PERMISSION",
         address: zeroAddress,
         source: "PermissionValidator",
-        isPermissionValidator: true,
         getEnableData,
-        getPermissionId,
+        getIdentifier: () =>
+            pad(getPermissionId(), {
+                size: 20,
+                dir: "right"
+            }),
 
         signMessage: async ({ message }) => {
             return concat([

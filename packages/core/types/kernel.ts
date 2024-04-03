@@ -88,42 +88,29 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
     }
 ]
 
-export type ValidatorType = keyof typeof VALIDATOR_TYPE
+export type ValidatorType = Extract<
+    keyof typeof VALIDATOR_TYPE,
+    "PERMISSION" | "SECONDARY"
+>
 
 export type KernelValidator<
     entryPoint extends EntryPoint,
-    Name extends string = string,
-    type extends ValidatorType = "SUDO"
-> = type extends "PERMISSION"
-    ? LocalAccount<Name> & {
-          getNonceKey: (accountAddress?: Address) => Promise<bigint>
-          getDummySignature(
-              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-              pluginEnableSignature?: Hex
-          ): Promise<Hex>
-          signUserOperation: (
-              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-              pluginEnableSignature?: Hex
-          ) => Promise<Hex>
-          getEnableData(accountAddress?: Address): Promise<Hex>
-          isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
-          isPermissionValidator: boolean
-          getPermissionId: () => Hex
-      }
-    : LocalAccount<Name> & {
-          getNonceKey: (accountAddress?: Address) => Promise<bigint>
-          getDummySignature(
-              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-              pluginEnableSignature?: Hex
-          ): Promise<Hex>
-          signUserOperation: (
-              userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-              pluginEnableSignature?: Hex
-          ) => Promise<Hex>
-          getEnableData(accountAddress?: Address): Promise<Hex>
-          isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
-          isPermissionValidator: boolean
-      }
+    Name extends string = string
+> = LocalAccount<Name> & {
+    validatorType: ValidatorType
+    getNonceKey: (accountAddress?: Address) => Promise<bigint>
+    getDummySignature(
+        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+        pluginEnableSignature?: Hex
+    ): Promise<Hex>
+    signUserOperation: (
+        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+        pluginEnableSignature?: Hex
+    ) => Promise<Hex>
+    getEnableData(accountAddress?: Address): Promise<Hex>
+    isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
+    getIdentifier: () => Hex
+}
 
 export type ValidatorInitData = {
     validatorAddress: Address
@@ -134,9 +121,9 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint> & {
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
-        getExecutorData(): ExecutorData
+        getExecutorData(): Action
         getValidityData(): PluginValidityData
-        getValidationId(isSudo?: boolean): Hex
+        getIdentifier(isSudo?: boolean): Hex
     }
 
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
@@ -144,12 +131,12 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     regular?: KernelValidator<entryPoint>
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
-    executorData?: ExecutorData
+    executorData?: Action
     entryPoint: entryPoint
     kernelVersion?: string
 } & Partial<PluginValidityData>
 
-export type ExecutorData = {
+export type Action = {
     executor: Address
     selector: Hex
 }

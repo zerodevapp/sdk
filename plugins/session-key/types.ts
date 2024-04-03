@@ -1,5 +1,5 @@
 import type { KernelValidator } from "@zerodev/sdk"
-import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
+import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -78,7 +78,7 @@ export type ExportSessionKeyAccountParams = {
 
 export type SessionKeyAccountParams = {
     sessionKeyParams: SessionKeyData<Abi, string>
-    executorData: ExecutorData
+    executorData: Action
     validityData: PluginValidityData
     accountParams: ExportSessionKeyAccountParams
     enableSignature?: Hex

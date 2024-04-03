@@ -251,9 +251,10 @@ export async function signerToSessionKeyValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "SessionKeyValidator",
-        isPermissionValidator: false,
+        getIdentifier: () => validatorAddress,
         getEnableData,
 
         signUserOperation: async (userOperation): Promise<Hex> => {

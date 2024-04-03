@@ -96,9 +96,12 @@ export async function signerToEcdsaValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ECDSAValidator",
-        isPermissionValidator: false,
+        getIdentifier() {
+            return validatorAddress ?? getValidatorAddress(entryPointAddress)
+        },
 
         async getEnableData() {
             return viemSigner.address

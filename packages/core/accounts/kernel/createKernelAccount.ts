@@ -143,7 +143,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
         abi: KernelV3InitAbi,
         functionName: "initialize",
         args: [
-            kernelPluginManager.getValidationId(true),
+            kernelPluginManager.getIdentifier(true),
             zeroAddress,
             enableData,
             "0x"
@@ -379,7 +379,7 @@ export async function createKernelAccount<
                 }
 
                 return concatHex([
-                    kernelPluginManager.getValidationId(),
+                    kernelPluginManager.getIdentifier(),
                     signature
                 ])
             },
@@ -428,7 +428,7 @@ export async function createKernelAccount<
                     return signature
                 }
                 return concatHex([
-                    kernelPluginManager.getValidationId(),
+                    kernelPluginManager.getIdentifier(),
                     signature
                 ])
             },

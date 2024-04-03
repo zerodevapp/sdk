@@ -1,3 +1,4 @@
+// @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountClient,

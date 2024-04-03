@@ -15,7 +15,7 @@ import type {
     GeneratePermissionFromArgsParameters,
     ParamRule,
     PermissionCore
-} from "./types"
+} from "./types.js"
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],

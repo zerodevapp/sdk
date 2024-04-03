@@ -388,9 +388,12 @@ export async function createPasskeyValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
-        isPermissionValidator: false,
+        getIdentifier() {
+            return validatorAddress
+        },
         async getEnableData() {
             return createEnableData(
                 pubKeyX,
@@ -575,9 +578,10 @@ export async function getPasskeyValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
-        isPermissionValidator: false,
+        getIdentifier: () => validatorAddress,
         async getEnableData() {
             return createEnableData(
                 pubKeyX,
@@ -702,9 +706,10 @@ export async function deserializePasskeyValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
-        isPermissionValidator: false,
+        getIdentifier: () => validatorAddress,
         async getEnableData() {
             return createEnableData(
                 pubKeyX,

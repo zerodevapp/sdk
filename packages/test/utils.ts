@@ -12,7 +12,7 @@ import {
 } from "@zerodev/sdk/accounts"
 import { createKernelV2Account } from "@zerodev/sdk/accounts"
 import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
-import type { ExecutorData } from "@zerodev/sdk/types"
+import type { Action } from "@zerodev/sdk/types"
 import {
     ParamOperator,
     SessionKeyPlugin,
@@ -402,7 +402,7 @@ export const getSignerToModularPermissionKernelAccount = async (
 
 export const getSessionKeyToSessionKeyKernelAccount = async (
     sessionKeyPlugin: SessionKeyPlugin<EntryPoint>,
-    executorData?: ExecutorData
+    executorData?: Action
 ): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {

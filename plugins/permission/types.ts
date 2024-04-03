@@ -1,5 +1,5 @@
 import { type KernelValidator } from "@zerodev/sdk"
-import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
+import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
 import { PolicyFlags } from "./constants.js"
@@ -13,10 +13,8 @@ import type {
 
 export type PermissionPlugin<entryPoint extends EntryPoint> = KernelValidator<
     entryPoint,
-    "PermissionValidator",
-    "PERMISSION"
+    "PermissionValidator"
 > & {
-    getPermissionId: () => Hex
     getPluginSerializationParams: () => PermissionData
 }
 
@@ -65,7 +63,7 @@ export type ExportPermissionAccountParams = {
 
 export type PermissionAccountParams = {
     permissionParams: PermissionData
-    executorData: ExecutorData
+    executorData: Action
     validityData: PluginValidityData
     accountParams: ExportPermissionAccountParams
     enableSignature?: Hex
