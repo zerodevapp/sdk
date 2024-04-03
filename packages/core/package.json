@@ -90,10 +90,10 @@
         }
     },
     "peerDependencies": {
-        "viem": "^2.0.0"
+        "viem": "^2.0.0",
+        "permissionless": "^0.1.4"
     },
     "dependencies": {
-        "semver": "^7.6.0",
-        "permissionless": "^0.1.4"
+        "semver": "^7.6.0"
     }
 }
