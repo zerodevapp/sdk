@@ -5,6 +5,7 @@ import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accoun
 import {
     type Chain,
     type Client,
+    type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type Transport,
@@ -30,6 +31,7 @@ import {
 export type WebAuthnKey = {
     pubX: bigint
     pubY: bigint
+    authenticatorIdHash: Hex
 }
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
@@ -150,14 +152,16 @@ export const toWebAuthnSigner = async <
                 { name: "clientDataJSON", type: "string" },
                 { name: "responseTypeLocation", type: "uint256" },
                 { name: "r", type: "uint256" },
-                { name: "s", type: "uint256" }
+                { name: "s", type: "uint256" },
+                { name: "usePrecompiled", type: "bool" }
             ],
             [
                 authenticatorDataHex,
                 clientDataJSON,
                 beforeType,
                 BigInt(r),
-                BigInt(s)
+                BigInt(s),
+                isRIP7212SupportedNetwork(chainId)
             ]
         )
         return encodedSignature
@@ -201,11 +205,20 @@ export const toWebAuthnSigner = async <
             }
             return encodeAbiParameters(
                 [
-                    { name: "pubX", type: "uint256" },
-                    { name: "pubY", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
+                    {
+                        components: [
+                            { name: "pubKeyX", type: "uint256" },
+                            { name: "pubKeyY", type: "uint256" }
+                        ],
+                        name: "WebAuthnSignerData",
+                        type: "tuple"
+                    },
+                    { name: "authenticatorIdHash", type: "bytes32" }
                 ],
-                [pubKey.pubX, pubKey.pubY, isRIP7212SupportedNetwork(chainId)]
+                [
+                    { pubKeyX: pubKey.pubX, pubKeyY: pubKey.pubY },
+                    pubKey.authenticatorIdHash
+                ]
             )
         },
         getDummySignature: () => {
@@ -215,14 +228,16 @@ export const toWebAuthnSigner = async <
                     { name: "clientDataJSON", type: "string" },
                     { name: "responseTypeLocation", type: "uint256" },
                     { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" }
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
                 ],
                 [
                     "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
                     '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
                     1n,
                     44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-                    9910254599581058084911561569808925251374718953855182016200087235935345969636n
+                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
+                    false
                 ]
             )
         }

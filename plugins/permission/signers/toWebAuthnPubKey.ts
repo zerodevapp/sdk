@@ -1,6 +1,8 @@
 import { Buffer } from "buffer"
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { type WebAuthnKey } from "./toWebAuthnSigner.js"
+import { type Hex, keccak256 } from "viem"
+import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
 
 export enum WebAuthnMode {
     Register = "register",
@@ -17,6 +19,7 @@ export const toWebAuthnPubKey = async ({
     mode: WebAuthnMode
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
+    let authenticatorIdHash: Hex
     if (mode === WebAuthnMode.Login) {
         // Get login options
         const loginOptionsResponse = await fetch(
@@ -31,6 +34,11 @@ export const toWebAuthnPubKey = async ({
 
         // Start authentication (login)
         const loginCred = await startAuthentication(loginOptions)
+
+        // get authenticatorIdHash
+        authenticatorIdHash = keccak256(
+            uint8ArrayToHexString(b64ToBytes(loginCred.id))
+        )
 
         // Verify authentication
         const loginVerifyResponse = await fetch(
@@ -81,6 +89,11 @@ export const toWebAuthnPubKey = async ({
 
         // Start registration
         const registerCred = await startRegistration(registerOptions.options)
+
+        // get authenticatorIdHash
+        authenticatorIdHash = keccak256(
+            uint8ArrayToHexString(b64ToBytes(registerCred.id))
+        )
 
         // Verify registration
         const registerVerifyResponse = await fetch(
@@ -133,6 +146,7 @@ export const toWebAuthnPubKey = async ({
 
     return {
         pubX: BigInt(`0x${pubKeyX}`),
-        pubY: BigInt(`0x${pubKeyY}`)
+        pubY: BigInt(`0x${pubKeyY}`),
+        authenticatorIdHash
     }
 }
