@@ -55,6 +55,7 @@ export type KernelSmartAccount<
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
     kernelPluginManager: KernelPluginManager<entryPoint>
+    generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
 
@@ -296,6 +297,7 @@ export async function createKernelAccount<
 
     return {
         kernelPluginManager,
+        generateInitCode,
         ...toSmartAccount({
             address: accountAddress,
             publicKey: accountAddress,
@@ -432,8 +434,9 @@ export async function createKernelAccount<
             },
             // Get the nonce of the smart account
             async getNonce() {
-                const key =
-                    await kernelPluginManager.getNonceKey(accountAddress)
+                const key = await kernelPluginManager.getNonceKey(
+                    accountAddress
+                )
                 return getAccountNonce(client, {
                     sender: accountAddress,
                     entryPoint: entryPointAddress,
