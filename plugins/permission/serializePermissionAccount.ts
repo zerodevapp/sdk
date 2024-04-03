@@ -21,7 +21,7 @@ export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
             account.address
         )
     const accountParams = {
-        initCode: await account.getInitCode(),
+        initCode: await account.generateInitCode(),
         accountAddress: account.address
     }
 

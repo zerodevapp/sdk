@@ -200,6 +200,7 @@ export async function createKernelV1Account<
 
     return {
         ...account,
+        generateInitCode,
         client: client,
         publicKey: accountAddress,
         entryPoint: entryPointAddress,

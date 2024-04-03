@@ -1,4 +1,4 @@
-import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
+import { KernelV3AccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
@@ -11,7 +11,8 @@ import {
     toCallPolicy,
     toGasPolicy,
     toRateLimitPolicy,
-    toSignatureCallerPolicy
+    toSignatureCallerPolicy,
+    toSudoPolicy
 } from "./policies/index.js"
 import { toECDSASigner } from "./signers/toECDSASigner.js"
 import { toPermissionValidator } from "./toPermissionValidator.js"
@@ -82,6 +83,8 @@ export const createPolicyFromParams = async (policy: Policy) => {
             return await toRateLimitPolicy(policy.policyParams)
         case "signature-caller":
             return await toSignatureCallerPolicy(policy.policyParams)
+        case "sudo":
+            return await toSudoPolicy(policy.policyParams)
         default:
             throw new Error("Unsupported policy type")
     }
@@ -98,7 +101,7 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
     if (createAccountFunctionData.functionName === "createAccount") {
         index = createAccountFunctionData.args[2]
         const initializeFunctionData = decodeFunctionData({
-            abi: KernelAccountAbi,
+            abi: KernelV3AccountAbi,
             data: createAccountFunctionData.args[1]
         })
         if (!initializeFunctionData) throw new Error("Invalid initCode")
