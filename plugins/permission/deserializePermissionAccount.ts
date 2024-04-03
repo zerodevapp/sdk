@@ -1,8 +1,4 @@
-import {
-    KernelAccountAbi,
-    KernelV3AccountAbi,
-    createKernelAccount
-} from "@zerodev/sdk"
+import { KernelV3AccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
