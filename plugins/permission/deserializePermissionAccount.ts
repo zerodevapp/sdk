@@ -108,7 +108,8 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
         if (initializeFunctionData.functionName === "initialize") {
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
-                enableData: initializeFunctionData.args[1]
+                identifier: initializeFunctionData.args[0],
+                enableData: initializeFunctionData.args[2]
             }
         }
     }

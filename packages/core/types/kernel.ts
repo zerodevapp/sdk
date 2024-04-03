@@ -115,6 +115,7 @@ export type KernelValidator<
 export type ValidatorInitData = {
     validatorAddress: Address
     enableData: Hex
+    identifier: Hex
 }
 
 export type KernelPluginManager<entryPoint extends EntryPoint> =

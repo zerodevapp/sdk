@@ -128,7 +128,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     kernelPluginManager: KernelPluginManager<entryPoint>
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    const { enableData, validatorAddress } =
+    const { enableData, identifier, validatorAddress } =
         await kernelPluginManager.getValidatorInitData()
 
     if (entryPointVersion === "v0.6") {
@@ -142,12 +142,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     return encodeFunctionData({
         abi: KernelV3InitAbi,
         functionName: "initialize",
-        args: [
-            kernelPluginManager.getIdentifier(true),
-            zeroAddress,
-            enableData,
-            "0x"
-        ]
+        args: [identifier, zeroAddress, enableData, "0x"]
     })
 }
 

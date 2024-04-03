@@ -64,6 +64,7 @@ export const decodeParamsFromInitCodeV2 = (initCode: Hex) => {
         index = createAccountFunctionData.args[2]
         validatorInitData = {
             validatorAddress: createAccountFunctionData.args[0],
+            identifier: createAccountFunctionData.args[0],
             enableData: createAccountFunctionData.args[1]
         }
     }
