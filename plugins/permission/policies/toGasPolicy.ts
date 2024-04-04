@@ -4,20 +4,20 @@ import { GAS_POLICY_CONTRACT } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 
 export type GasPolicyParams = PolicyParams & {
-    allowed: bigint
+    allowed?: bigint
     enforcePaymaster?: boolean
     allowedPaymaster?: Address
     type?: "gas"
 }
 
-export async function toGasPolicy({
+export function toGasPolicy({
     policyAddress = GAS_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    allowed,
+    allowed = 0n,
     enforcePaymaster = false,
     allowedPaymaster = zeroAddress,
     type = "gas"
-}: GasPolicyParams): Promise<Policy> {
+}: GasPolicyParams): Policy {
     return {
         getPolicyData: () => {
             return encodeAbiParameters(

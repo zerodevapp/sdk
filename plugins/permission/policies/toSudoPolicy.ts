@@ -6,11 +6,11 @@ export type SudoPolicyParams = PolicyParams & {
     type?: "sudo"
 }
 
-export async function toSudoPolicy({
+export function toSudoPolicy({
     policyAddress = SUDO_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     type = "sudo"
-}: SudoPolicyParams): Promise<Policy> {
+}: SudoPolicyParams): Policy {
     return {
         getPolicyData: () => {
             return "0x"
