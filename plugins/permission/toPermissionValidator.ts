@@ -118,7 +118,10 @@ export async function toPermissionValidator<
             return concat(["0xff", signature])
         },
 
-        getNonceKey: async () => {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
 

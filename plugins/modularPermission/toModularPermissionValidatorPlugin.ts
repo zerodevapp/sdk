@@ -167,7 +167,10 @@ export async function createPermissionValidator<
             ])
         },
 
-        getNonceKey: async () => {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
 

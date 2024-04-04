@@ -10,14 +10,14 @@ export type RateLimitPolicyParams = PolicyParams & {
     type?: "rate-limit"
 }
 
-export async function toRateLimitPolicy({
+export function toRateLimitPolicy({
     policyAddress = RATE_LIMIT_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     interval = 0,
     count,
     startAt = 0,
     type = "rate-limit"
-}: RateLimitPolicyParams): Promise<Policy> {
+}: RateLimitPolicyParams): Policy {
     return {
         getPolicyData: () => {
             const intervalHex = interval.toString(16).padStart(12, "0")

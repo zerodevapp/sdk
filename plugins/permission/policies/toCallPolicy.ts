@@ -17,7 +17,7 @@ export type CallPolicyParams<
     type?: "call"
 }
 
-export async function toCallPolicy<
+export function toCallPolicy<
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string
 >({
@@ -25,7 +25,7 @@ export async function toCallPolicy<
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     permissions = [],
     type = "call"
-}: CallPolicyParams<TAbi, TFunctionName>): Promise<Policy> {
+}: CallPolicyParams<TAbi, TFunctionName>): Policy {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
             abi: perm.abi as Abi,

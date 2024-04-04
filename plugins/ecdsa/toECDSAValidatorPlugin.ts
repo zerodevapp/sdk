@@ -105,7 +105,10 @@ export async function signerToEcdsaValidator<
         async getEnableData() {
             return viemSigner.address
         },
-        async getNonceKey() {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
         // Sign a user operation

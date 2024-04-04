@@ -8,12 +8,12 @@ export type SignatureCallerPolicyParams = PolicyParams & {
     type?: "signature-caller"
 }
 
-export async function toSignatureCallerPolicy({
+export function toSignatureCallerPolicy({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     allowedCallers,
     type = "signature-caller"
-}: SignatureCallerPolicyParams): Promise<Policy> {
+}: SignatureCallerPolicyParams): Policy {
     return {
         getPolicyData: () => {
             return encodeAbiParameters(

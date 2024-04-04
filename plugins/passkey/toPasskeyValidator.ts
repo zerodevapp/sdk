@@ -403,7 +403,10 @@ export async function createPasskeyValidator<
                 entryPointAddress
             )
         },
-        async getNonceKey() {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
         async signUserOperation(

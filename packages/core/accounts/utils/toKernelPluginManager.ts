@@ -226,9 +226,19 @@ export async function toKernelPluginManager<
                 userOpSig
             )
         },
-        getNonceKey: async (accountAddress = zeroAddress) => {
+        getNonceKey: async (
+            accountAddress = zeroAddress,
+            customNonceKey = 0n
+        ) => {
             if (entryPointVersion === "v0.6")
-                return await activeValidator.getNonceKey()
+                return await activeValidator.getNonceKey(
+                    accountAddress,
+                    customNonceKey
+                )
+
+            // when using v0.7 if customNonceKey is greater than 2 bytes, throw error
+            if (customNonceKey > 0xffffn)
+                throw new Error("Custom nonce key must be less than 2 bytes")
 
             const validatorMode =
                 !regular ||
@@ -244,9 +254,17 @@ export async function toKernelPluginManager<
                         validatorMode, // 1 byte
                         validatorType, // 1 byte
                         activeValidator.getIdentifier(), // 20 bytes
-                        pad(toHex(await activeValidator.getNonceKey()), {
-                            size: 2
-                        }) // 2 byte
+                        pad(
+                            toHex(
+                                await activeValidator.getNonceKey(
+                                    accountAddress,
+                                    customNonceKey
+                                )
+                            ),
+                            {
+                                size: 2
+                            }
+                        ) // 2 byte
                     ]),
                     { size: 24 }
                 )

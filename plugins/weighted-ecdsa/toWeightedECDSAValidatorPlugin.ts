@@ -169,7 +169,10 @@ export async function createWeightedECDSAValidator<
                 ]
             )
         },
-        async getNonceKey() {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
         // Sign a user operation
