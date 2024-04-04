@@ -1,7 +1,6 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
-    ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
     getEntryPointVersion,
     getUserOperationHash
@@ -48,11 +47,11 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        entryPoint: entryPointAddress,
         validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint?: entryPoint
+        entryPoint: entryPoint
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {

@@ -27,8 +27,8 @@ import { KernelAccountAbi } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
 import {
-    ENTRYPOINT_ADDRESS_V06,
     getAction,
+    getEntryPointVersion,
     getUserOperationHash
 } from "permissionless"
 import {
@@ -77,16 +77,21 @@ export async function signerToSessionKeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06,
+        entryPoint: entryPointAddress,
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
-        entryPoint?: EntryPoint
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
 ): Promise<SessionKeyPlugin<entryPoint>> {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData,
         validAfter: validatorData?.validAfter ?? 0,

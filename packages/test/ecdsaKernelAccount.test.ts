@@ -726,8 +726,7 @@ describe("ECDSA kernel Account", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: ecdsaValidatorPlugin,
-                        entryPoint: getEntryPoint()
+                        sudo: ecdsaValidatorPlugin
                     },
                     deployedAccountAddress,
                     index

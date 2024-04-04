@@ -1,6 +1,6 @@
 import {
-    ENTRYPOINT_ADDRESS_V06,
     getAccountNonce,
+    getEntryPointVersion,
     getSenderAddress,
     isSmartAccountDeployed
 } from "permissionless"
@@ -155,7 +155,7 @@ export async function createKernelV2Account<
     client: Client<TTransport, TChain, undefined>,
     {
         plugins,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        entryPoint: entryPointAddress,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
         deployedAccountAddress
@@ -163,12 +163,17 @@ export async function createKernelV2Account<
         plugins:
             | KernelPluginManagerParams<entryPoint>
             | KernelPluginManager<entryPoint>
-        entryPoint?: entryPoint
+        entryPoint: entryPoint
         index?: bigint
         factoryAddress?: Address
         deployedAccountAddress?: Address
     }
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
         : await toKernelPluginManager(client, {

@@ -116,8 +116,7 @@ const getEcdsaKernelAccountWithPrivateKey = async <
     return createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     }) as unknown as KernelSmartAccount<entryPoint>
@@ -360,7 +359,6 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
         plugins: {
             sudo: ecdsaValidatorPlugin,
             regular: weightedECDSAPlugin,
-            entryPoint: getEntryPoint(),
             action: {
                 address: zeroAddress,
                 selector: toFunctionSelector(
@@ -402,7 +400,6 @@ export const getSignerToPermissionKernelAccount = async (
         plugins: {
             sudo: ecdsaValidatorPlugin,
             regular: permissionPlugin,
-            entryPoint: getEntryPoint(),
             action: {
                 address: zeroAddress,
                 selector: toFunctionSelector(
@@ -437,7 +434,6 @@ export const getSignerToRootPermissionKernelAccount = async (
         entryPoint: getEntryPoint(),
         plugins: {
             sudo: permissionPlugin,
-            entryPoint: getEntryPoint(),
             action: {
                 address: zeroAddress,
                 selector: toFunctionSelector(
@@ -484,7 +480,6 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             plugins: {
                 sudo: permissionPlugin,
                 regular: permissionSessionKeyPlugin,
-                entryPoint: getEntryPoint(),
                 action: {
                     address: zeroAddress,
                     selector: toFunctionSelector(
@@ -500,9 +495,8 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
         )
         account = await deserializePermissionAccount(
             publicClient,
-            serializedData,
-            undefined,
-            getEntryPoint()
+            getEntryPoint(),
+            serializedData
         )
         return account
     }

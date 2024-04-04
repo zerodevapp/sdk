@@ -191,6 +191,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -265,6 +266,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -322,6 +324,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -398,6 +401,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -512,6 +516,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -567,6 +572,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: sessionKeyAccount,
                 validatorData: {
                     permissions: [
@@ -586,6 +592,7 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await deserializeSessionKeyAccount(
                 publicClient,
+                getEntryPoint(),
                 serializedSessionKeyAccountParams
             ),
             middleware: {
@@ -621,6 +628,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     paymaster: anyPaymaster,
@@ -674,6 +682,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -704,6 +713,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [

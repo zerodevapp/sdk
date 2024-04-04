@@ -34,7 +34,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { WEBAUTHN_VALIDATOR_ADDRESS_V06 } from "./index.js"
+import { WEBAUTHN_VALIDATOR_ADDRESS_V06, getValidatorAddress } from "./index.js"
 import {
     b64ToBytes,
     deserializePasskeyValidatorData,
@@ -455,11 +455,11 @@ export async function getPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         passkeyServerUrl,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
-        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS_V06
+        entryPoint: entryPointAddress,
+        validatorAddress
     }: {
         passkeyServerUrl: string
-        entryPoint?: entryPoint
+        entryPoint: entryPoint
         validatorAddress?: Address
     }
 ): Promise<
@@ -467,6 +467,8 @@ export async function getPasskeyValidator<
         getSerializedData: () => string
     }
 > {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     // Get login options
     const loginOptionsResponse = await fetch(
         `${passkeyServerUrl}/login/options`,
@@ -581,7 +583,8 @@ export async function getPasskeyValidator<
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
-        getIdentifier: () => validatorAddress,
+        getIdentifier: () =>
+            validatorAddress ?? getValidatorAddress(entryPointAddress),
         async getEnableData() {
             return createEnableData(
                 pubKeyX,
@@ -625,7 +628,8 @@ export async function getPasskeyValidator<
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 entryPoint: entryPointAddress,
-                validatorAddress,
+                validatorAddress:
+                    validatorAddress ?? getValidatorAddress(entryPointAddress),
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
@@ -642,10 +646,10 @@ export async function deserializePasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         serializedData,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint
+        entryPoint: entryPointAddress
     }: {
         serializedData: string
-        entryPoint?: entryPoint
+        entryPoint: entryPoint
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {

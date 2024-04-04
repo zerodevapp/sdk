@@ -144,8 +144,7 @@ const getEcdsaKernelAccountWithPrivateKey = async <
     return createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     }) as unknown as KernelSmartAccount<entryPoint>
@@ -164,7 +163,8 @@ export const getKernelV1Account = async (): Promise<
 
     return createKernelV1Account(publicClient, {
         signer,
-        index
+        index,
+        entrypoint: getEntryPoint()
     }) as unknown as KernelSmartAccount<EntryPoint>
 }
 
@@ -249,6 +249,7 @@ export const getSignerToSessionKeyKernelV2Account = async (): Promise<
 
     return (await deserializeSessionKeyAccountV2(
         publicClient,
+        getEntryPoint(),
         serializedSessionKeyAccountParams,
         sessionKey
     )) as unknown as KernelSmartAccount<EntryPoint>
@@ -271,6 +272,7 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
     const weigthedECDSAPlugin = await createWeightedECDSAValidator(
         publicClient,
         {
+            entryPoint: getEntryPoint(),
             config: {
                 threshold: 100,
                 delay: 0,
@@ -288,8 +290,7 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
             entryPoint: getEntryPoint(),
             plugins: {
                 regular: plugin,
-                sudo: weigthedECDSAPlugin,
-                entryPoint: getEntryPoint()
+                sudo: weigthedECDSAPlugin
             },
             index
         })
@@ -297,8 +298,7 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
         return await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                sudo: weigthedECDSAPlugin,
-                entryPoint: getEntryPoint()
+                sudo: weigthedECDSAPlugin
             },
             index
         })
@@ -324,6 +324,7 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
     })
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
+        entryPoint: getEntryPoint(),
         signer: sessionKeyEmptyAccount,
         validatorData: {
             permissions: [
@@ -347,8 +348,7 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
         entryPoint: getEntryPoint(),
         plugins: {
             regular: sessionKeyPlugin,
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     })
@@ -358,6 +358,7 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
 
     return await deserializeSessionKeyAccount(
         publicClient,
+        getEntryPoint(),
         serializedSessionKeyAccountParams,
         sessionKey
     )
@@ -384,6 +385,7 @@ export const getSignerToModularPermissionKernelAccount = async (
     const modularPermissionPlugin = await createPermissionValidator(
         publicClient,
         {
+            entryPoint: getEntryPoint(),
             signer: ecdsaModularSigner,
             policies
         }
@@ -393,8 +395,7 @@ export const getSignerToModularPermissionKernelAccount = async (
         entryPoint: getEntryPoint(),
         plugins: {
             regular: modularPermissionPlugin,
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     })
@@ -421,8 +422,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
         plugins: {
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin,
-            action,
-            entryPoint: getEntryPoint()
+            action
         },
         index
     })

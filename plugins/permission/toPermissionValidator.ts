@@ -1,5 +1,9 @@
 import { KernelV3AccountAbi } from "@zerodev/sdk"
-import { getAction, getUserOperationHash } from "permissionless"
+import {
+    getAction,
+    getEntryPointVersion,
+    getUserOperationHash
+} from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
@@ -38,6 +42,11 @@ export async function toPermissionValidator<
     }: PermissionPluginParams
 ): Promise<PermissionPlugin<entryPoint>> {
     const chainId = await getChainId(client)
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.7") {
+        throw new Error("Only EntryPoint 0.7 is supported")
+    }
 
     const getEnableData = async (
         _kernelAccountAddress?: Address

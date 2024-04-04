@@ -300,6 +300,7 @@ describe("Weighted ECDSA kernel Account", () => {
             const sessionKeyPlugin = await signerToSessionKeyValidator(
                 publicClient,
                 {
+                    entryPoint: getEntryPoint(),
                     signer: sessionKeySigner,
                     validatorData: {
                         permissions: []

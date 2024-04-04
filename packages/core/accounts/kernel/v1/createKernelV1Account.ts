@@ -1,6 +1,7 @@
 import {
     ENTRYPOINT_ADDRESS_V06,
     getAccountNonce,
+    getEntryPointVersion,
     getSenderAddress,
     getUserOperationHash,
     isSmartAccountDeployed
@@ -9,7 +10,10 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -96,15 +100,20 @@ export async function createKernelV1Account<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entrypoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        entrypoint: entryPointAddress,
         index = 0n
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entrypoint?: entryPoint
+        entrypoint: entryPoint
         index?: bigint
     }
 ): Promise<KernelV1SmartAccount<entryPoint, TTransport, TChain>> {
-    if (entryPointAddress !== ENTRYPOINT_ADDRESS_V06) {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (
+        entryPointVersion !== "v0.6" ||
+        entryPointAddress !== ENTRYPOINT_ADDRESS_V06
+    ) {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
 
@@ -130,10 +139,13 @@ export async function createKernelV1Account<
     }
 
     const initCode = await generateInitCode()
-    const accountAddress = await getSenderAddress(client, {
-        initCode,
-        entryPoint: entryPointAddress
-    })
+    const accountAddress = await getSenderAddress<ENTRYPOINT_ADDRESS_V06_TYPE>(
+        client,
+        {
+            initCode,
+            entryPoint: entryPointAddress
+        }
+    )
 
     if (!accountAddress) throw new Error("Account address not found")
 

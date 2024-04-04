@@ -61,7 +61,7 @@ export type KernelSmartAccount<
 
 export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     plugins:
-        | KernelPluginManagerParams<entryPoint>
+        | Omit<KernelPluginManagerParams<entryPoint>, "entryPoint">
         | KernelPluginManager<entryPoint>
     entryPoint: entryPoint
     index?: bigint

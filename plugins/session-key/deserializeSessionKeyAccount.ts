@@ -6,7 +6,7 @@ import {
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
-import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
+import { getEntryPointVersion } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Address, Chain, Hex, Transport } from "viem"
@@ -21,9 +21,15 @@ export const deserializeSessionKeyAccount = async <
     TAddress extends Address = Address
 >(
     client: Parameters<typeof createKernelAccount>[0],
+    entryPointAddress: entryPoint,
     sessionKeyAccountParams: string,
     sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
 ): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
     let signer: SmartAccountSigner<string, Hex>
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
@@ -32,7 +38,8 @@ export const deserializeSessionKeyAccount = async <
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
-        validatorData: params.sessionKeyParams
+        validatorData: params.sessionKeyParams,
+        entryPoint: entryPointAddress
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
@@ -44,7 +51,7 @@ export const deserializeSessionKeyAccount = async <
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
         action: params.action,
-        entryPoint: ENTRYPOINT_ADDRESS_V06,
+        entryPoint: entryPointAddress,
         ...params.validityData
     })
 
@@ -52,7 +59,7 @@ export const deserializeSessionKeyAccount = async <
         plugins: kernelPluginManager,
         index,
         deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: ENTRYPOINT_ADDRESS_V06
+        entryPoint: entryPointAddress
     }) as unknown as KernelSmartAccount<
         entryPoint,
         Transport,

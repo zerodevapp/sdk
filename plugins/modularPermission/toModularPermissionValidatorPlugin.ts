@@ -1,7 +1,7 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
 import {
-    ENTRYPOINT_ADDRESS_V06,
     getAction,
+    getEntryPointVersion,
     getUserOperationHash
 } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -36,7 +36,7 @@ export async function createPermissionValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06,
+        entryPoint: entryPointAddress,
         policies,
         validUntil,
         validAfter,
@@ -46,11 +46,16 @@ export async function createPermissionValidator<
         validUntil?: number
         validAfter?: number
         policies: Policy<entryPoint>[]
-        entryPoint?: EntryPoint
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
 ): Promise<ModularPermissionPlugin<entryPoint>> {
     const chainId = await getChainId(client)
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
 
     const getNonces = async (
         kernelAccountAddress: Address

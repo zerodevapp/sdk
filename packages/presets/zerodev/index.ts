@@ -83,13 +83,13 @@ export async function createEcdsaKernelAccountClient<
     })
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
-        signer
+        signer,
+        entryPoint: ENTRYPOINT_ADDRESS_V06
     })
 
     const account = await createKernelAccount(publicClient, {
         plugins: {
-            sudo: ecdsaValidator,
-            entryPoint: ENTRYPOINT_ADDRESS_V06
+            sudo: ecdsaValidator
         },
         index,
         entryPoint: ENTRYPOINT_ADDRESS_V06

@@ -2,7 +2,6 @@ import { KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
-    ENTRYPOINT_ADDRESS_V06,
     type UserOperation,
     getAction,
     getEntryPointVersion,
@@ -68,12 +67,12 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers: _signers,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06,
+        entryPoint: entryPointAddress,
         validatorAddress
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
-        entryPoint?: EntryPoint
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
