@@ -49,20 +49,16 @@ import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 
-type KernelSmartAccountNonceExtension = {
-    getNonce: (customNonceKey?: bigint) => Promise<bigint>
-}
-
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> &
-    KernelSmartAccountNonceExtension & {
-        kernelPluginManager: KernelPluginManager<entryPoint>
-        generateInitCode: () => Promise<Hex>
-        encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
-    }
+> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
+    kernelPluginManager: KernelPluginManager<entryPoint>
+    getNonce: (customNonceKey?: bigint) => Promise<bigint>
+    generateInitCode: () => Promise<Hex>
+    encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
+}
 
 export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     plugins:

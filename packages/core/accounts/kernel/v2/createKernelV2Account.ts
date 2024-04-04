@@ -50,20 +50,16 @@ import {
 import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
 
-type KernelSmartAccountNonceExtension = {
-    getNonce: (customNonceKey?: bigint) => Promise<bigint>
-}
-
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> &
-    KernelSmartAccountNonceExtension & {
-        kernelPluginManager: KernelPluginManager<entryPoint>
-        generateInitCode: () => Promise<Hex>
-        encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
-    }
+> = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
+    kernelPluginManager: KernelPluginManager<entryPoint>
+    getNonce: (customNonceKey?: bigint) => Promise<bigint>
+    generateInitCode: () => Promise<Hex>
+    encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
+}
 
 // Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
 // Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
