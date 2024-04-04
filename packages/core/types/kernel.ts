@@ -98,7 +98,10 @@ export type KernelValidator<
     Name extends string = string
 > = LocalAccount<Name> & {
     validatorType: ValidatorType
-    getNonceKey: (accountAddress?: Address) => Promise<bigint>
+    getNonceKey: (
+        accountAddress?: Address,
+        customNonceKey?: bigint
+    ) => Promise<bigint>
     getDummySignature(
         userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
         pluginEnableSignature?: Hex
