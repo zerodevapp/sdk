@@ -120,8 +120,9 @@ describe("ECDSA kernel Account", () => {
             account,
             middleware: {
                 gasPrice: async () =>
-                    (await pimlicoBundlerClient.getUserOperationGasPrice())
-                        .fast,
+                    (
+                        await pimlicoBundlerClient.getUserOperationGasPrice()
+                    ).fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -507,6 +508,29 @@ describe("ECDSA kernel Account", () => {
     )
 
     test(
+        "Client send UserOp with custom nonce key",
+        async () => {
+            const customNonceKey = 11n
+
+            const nonce = await account.getNonce(customNonceKey)
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                userOperation: {
+                    callData: await kernelClient.account.encodeCallData({
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }),
+                    nonce
+                }
+            })
+
+            expect(userOpHash).toHaveLength(66)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Client send Transaction with paymaster",
         async () => {
             const transactionHash = await kernelClient.sendTransaction({
@@ -539,8 +563,9 @@ describe("ECDSA kernel Account", () => {
                 account,
                 middleware: {
                     gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
+                        (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -723,8 +748,9 @@ describe("ECDSA kernel Account", () => {
                 account: initialEcdsaSmartAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
+                        (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

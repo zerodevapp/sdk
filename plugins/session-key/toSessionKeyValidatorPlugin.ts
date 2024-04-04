@@ -276,8 +276,11 @@ export async function signerToSessionKeyValidator<
             ])
         },
 
-        getNonceKey: async () => {
-            return BigInt(signer.address)
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
+            return 0n
         },
 
         async getDummySignature(userOperation) {
