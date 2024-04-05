@@ -2,7 +2,7 @@ import type {
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint
 } from "permissionless/types/entrypoint"
-import { type Address, type CustomSource, concat, zeroAddress } from "viem"
+import { type Address, type CustomSource, concat, pad, zeroAddress } from "viem"
 import { VALIDATOR_TYPE } from "../../../../../constants.js"
 import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
 
@@ -43,7 +43,7 @@ export const getPluginsEnableTypedData = async <
         message: {
             validationId: concat([
                 VALIDATOR_TYPE[validator.validatorType],
-                validator.getIdentifier()
+                pad(validator.getIdentifier(), { size: 20, dir: "right" })
             ]),
             nonce: validatorNonce,
             hook: zeroAddress,

@@ -77,7 +77,7 @@ export async function toPermissionValidator<
             [{ name: "policyAndSignerData", type: "bytes[]" }],
             [[toPolicyId(policies), flag, toSignerId(signer)]]
         )
-        return slice(keccak256(pIdData), 0, 2)
+        return slice(keccak256(pIdData), 0, 4)
     }
 
     return {
@@ -86,11 +86,7 @@ export async function toPermissionValidator<
         address: zeroAddress,
         source: "PermissionValidator",
         getEnableData,
-        getIdentifier: () =>
-            pad(getPermissionId(), {
-                size: 20,
-                dir: "right"
-            }),
+        getIdentifier: getPermissionId,
 
         signMessage: async ({ message }) => {
             return concat([

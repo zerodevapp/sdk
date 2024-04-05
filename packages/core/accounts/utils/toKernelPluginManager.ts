@@ -248,27 +248,30 @@ export async function toKernelPluginManager<
             const validatorType = regular
                 ? VALIDATOR_TYPE[regular.validatorType]
                 : VALIDATOR_TYPE.SUDO
-            return BigInt(
-                pad(
-                    concatHex([
-                        validatorMode, // 1 byte
-                        validatorType, // 1 byte
-                        activeValidator.getIdentifier(), // 20 bytes
-                        pad(
-                            toHex(
-                                await activeValidator.getNonceKey(
-                                    accountAddress,
-                                    customNonceKey
-                                )
-                            ),
-                            {
-                                size: 2
-                            }
-                        ) // 2 byte
-                    ]),
-                    { size: 24 }
-                )
+            const encoding = pad(
+                concatHex([
+                    validatorMode, // 1 byte
+                    validatorType, // 1 byte
+                    pad(activeValidator.getIdentifier(), {
+                        size: 20,
+                        dir: "right"
+                    }), // 20 bytes
+                    pad(
+                        toHex(
+                            await activeValidator.getNonceKey(
+                                accountAddress,
+                                customNonceKey
+                            )
+                        ),
+                        {
+                            size: 2
+                        }
+                    ) // 2 byte
+                ]),
+                { size: 24 }
             )
+            const encodedNonceKey = BigInt(encoding)
+            return encodedNonceKey
         },
         getPluginEnableSignature,
         getValidatorInitData: async () => {
@@ -280,7 +283,7 @@ export async function toKernelPluginManager<
                     (await sudo?.getEnableData()) ??
                     (await activeValidator.getEnableData()),
 
-                identifier: getIdentifier(true)
+                identifier: pad(getIdentifier(true), { size: 21, dir: "right" })
             }
         }
     }

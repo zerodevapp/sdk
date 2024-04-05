@@ -1,10 +1,14 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
+import { verifyMessage } from "@ambire/signature-validator"
 import {
+    EIP1271Abi,
     KernelAccountClient,
     KernelSmartAccount,
-    KernelV3AccountAbi
+    KernelV3AccountAbi,
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
+import { ethers } from "ethers"
 import { BundlerClient } from "permissionless"
 import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
 import { EntryPoint } from "permissionless/types/entrypoint"
@@ -19,9 +23,12 @@ import {
     decodeErrorResult,
     decodeFunctionData,
     encodeFunctionData,
+    hashMessage,
+    hashTypedData,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { Policy } from "../../../plugins/permission"
 import {
     toGasPolicy,
     toSignatureCallerPolicy,
@@ -31,6 +38,7 @@ import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
 import { ParamCondition } from "../../../plugins/permission/policies/types"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
+import { config } from "../config"
 import { Test_ERC20Address } from "../utils"
 import {
     getEntryPoint,
@@ -48,8 +56,8 @@ import {
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
-const SIGNATURE_LENGTH = 174
-const SIGNATURE_REGEX = /^0x[0-9a-fA-F]{172}$/
+const SIGNATURE_LENGTH = 144
+const SIGNATURE_REGEX = /^0x[0-9a-fA-F]{142}$/
 const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
@@ -65,6 +73,13 @@ describe("Permission kernel Account", () => {
     >
     let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
     let owner: PrivateKeyAccount
+    let gasPolicy: Policy
+    let permissionSmartAccountClient: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >
 
     async function mintToAccount(target: Address, amount: bigint) {
         const balanceBefore = await publicClient.readContract({
@@ -131,6 +146,25 @@ describe("Permission kernel Account", () => {
                 }
             }
         })
+        gasPolicy = await toGasPolicy({
+            allowed: 1000000000000000000n
+        })
+
+        permissionSmartAccountClient = await getKernelAccountClient({
+            account: await getSignerToRootPermissionKernelAccount([gasPolicy]),
+            middleware: {
+                gasPrice: async () =>
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
+                sponsorUserOperation: async ({ userOperation }) => {
+                    const zeroDevPaymaster = getZeroDevPaymasterClient()
+                    return zeroDevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint: getEntryPoint()
+                    })
+                }
+            }
+        })
     })
 
     test("Account address should be a valid Ethereum address", async () => {
@@ -141,6 +175,201 @@ describe("Permission kernel Account", () => {
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
         expect(account.address).not.toEqual(zeroAddress)
     })
+
+    test(
+        "Should validate message signatures for undeployed accounts (6492)",
+        async () => {
+            const account = await getSignerToRootPermissionKernelAccount([
+                gasPolicy
+            ])
+            const message = "hello world"
+            const signature = await account.signMessage({
+                message
+            })
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: hashMessage(message),
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                message,
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["v0.7"].sepolia.rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Should validate typed data signatures for undeployed accounts (6492)",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
+
+            const primaryType = "Test"
+
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const account = await getSignerToRootPermissionKernelAccount([
+                gasPolicy
+            ])
+            const signature = await account.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: typedHash,
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                typedData: {
+                    domain,
+                    types,
+                    message
+                },
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["v0.7"].sepolia.rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client signMessage should return a valid signature",
+        async () => {
+            // to make sure kernel is deployed
+            const tx = await permissionSmartAccountClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log("tx", tx)
+
+            const message = "hello world"
+            const response = await permissionSmartAccountClient.signMessage({
+                message
+            })
+            console.log("hashMessage(message)", hashMessage(message))
+            console.log("response", response)
+            const ambireResult = await verifyMessage({
+                signer: permissionSmartAccountClient.account.address,
+                message,
+                signature: response,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["v0.7"].sepolia.rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
+
+            const eip1271response = await publicClient.readContract({
+                address: permissionSmartAccountClient.account.address,
+                abi: EIP1271Abi,
+                functionName: "isValidSignature",
+                args: [hashMessage(message), response]
+            })
+            console.log("eip1271response", eip1271response)
+            console.log("response", response)
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+            expect(response).toHaveLength(SIGNATURE_LENGTH)
+            expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client signTypedData",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
+
+            const primaryType = "Test"
+
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const response = await permissionSmartAccountClient.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const eip1271response = await publicClient.readContract({
+                address: permissionSmartAccountClient.account.address,
+                abi: EIP1271Abi,
+                functionName: "isValidSignature",
+                args: [typedHash, response]
+            })
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+            expect(response).toHaveLength(SIGNATURE_LENGTH)
+            expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
 
     test(
         "Smart account client send transaction with GasPolicy and PermissionValidator as root",
