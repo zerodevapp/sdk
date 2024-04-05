@@ -1,5 +1,4 @@
 import { Buffer } from "buffer"
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
@@ -188,6 +187,7 @@ const doSignMessage = async (
     }
 
     // start authentication (signing)
+    const { startAuthentication } = await import("@simplewebauthn/browser")
     const cred = await startAuthentication(assertionOptions)
 
     // verify signature from server
@@ -288,6 +288,7 @@ export async function createPasskeyValidator<
     sessionStorage.setItem("userId", registerOptionsResult.userId)
 
     // Start registration
+    const { startRegistration } = await import("@simplewebauthn/browser")
     const registerCred = await startRegistration(registerOptionsResult.options)
 
     // get authenticatorIdHash
@@ -484,6 +485,7 @@ export async function getPasskeyValidator<
     const loginOptions = await loginOptionsResponse.json()
 
     // Start authentication (login)
+    const { startAuthentication } = await import("@simplewebauthn/browser")
     const loginCred = await startAuthentication(loginOptions)
 
     // get authenticatorIdHash

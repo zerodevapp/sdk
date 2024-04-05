@@ -1,4 +1,3 @@
-import { startAuthentication } from "@simplewebauthn/browser"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { TypedData } from "abitype"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -110,6 +109,7 @@ export const toWebAuthnSigner = async <
         }
 
         // start authentication (signing)
+        const { startAuthentication } = await import("@simplewebauthn/browser")
         const cred = await startAuthentication(assertionOptions)
 
         // verify signature from server

@@ -1,5 +1,4 @@
 import { Buffer } from "buffer"
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { type Hex, keccak256 } from "viem"
 import { type WebAuthnKey } from "./toWebAuthnSigner.js"
 import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
@@ -33,6 +32,7 @@ export const toWebAuthnPubKey = async ({
         const loginOptions = await loginOptionsResponse.json()
 
         // Start authentication (login)
+        const { startAuthentication } = await import("@simplewebauthn/browser")
         const loginCred = await startAuthentication(loginOptions)
 
         // get authenticatorIdHash
@@ -88,6 +88,7 @@ export const toWebAuthnPubKey = async ({
         sessionStorage.setItem("userId", registerOptions.userId)
 
         // Start registration
+        const { startRegistration } = await import("@simplewebauthn/browser")
         const registerCred = await startRegistration(registerOptions.options)
 
         // get authenticatorIdHash

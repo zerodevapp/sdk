@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/passkey-validator",
-    "version": "5.2.1-alpha.1",
+    "version": "5.2.1-alpha.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -24,7 +24,7 @@
     "scripts": {
         "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
         "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
-        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2020 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
         "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
         "clean": "rimraf _esm _cjs _types",
         "changeset": "changeset",

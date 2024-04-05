@@ -1,5 +1,4 @@
 import { Buffer } from "buffer"
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { type WebAuthnKey } from "./toWebAuthnSigner.js"
 
 export enum WebAuthnMode {
@@ -30,6 +29,7 @@ export const toWebAuthnPubKey = async ({
         const loginOptions = await loginOptionsResponse.json()
 
         // Start authentication (login)
+        const { startAuthentication } = await import("@simplewebauthn/browser")
         const loginCred = await startAuthentication(loginOptions)
 
         // Verify authentication
@@ -80,6 +80,7 @@ export const toWebAuthnPubKey = async ({
         sessionStorage.setItem("userId", registerOptions.userId)
 
         // Start registration
+        const { startRegistration } = await import("@simplewebauthn/browser")
         const registerCred = await startRegistration(registerOptions.options)
 
         // Verify registration
