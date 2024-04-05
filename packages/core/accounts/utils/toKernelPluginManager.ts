@@ -46,10 +46,7 @@ export async function toKernelPluginManager<
         regular,
         pluginEnableSignature,
         validatorInitData,
-        action = {
-            selector: getActionSelector("v0.6"),
-            address: zeroAddress
-        },
+        action,
         validAfter = 0,
         validUntil = 0,
         entryPoint: entryPointAddress,
@@ -67,7 +64,7 @@ export async function toKernelPluginManager<
         address: action?.address ?? zeroAddress
     }
     if (!action) {
-        throw new Error("Executor data must be set")
+        throw new Error("Action data must be set")
     }
 
     const getSignatureData = async (
@@ -75,6 +72,9 @@ export async function toKernelPluginManager<
         selector: Hex,
         userOpSignature: Hex = "0x"
     ): Promise<Hex> => {
+        if (!action) {
+            throw new Error("Action data must be set")
+        }
         if (entryPointVersion === "v0.6") {
             if (regular) {
                 if (await isPluginEnabled(accountAddress, selector)) {
@@ -123,6 +123,9 @@ export async function toKernelPluginManager<
     }
 
     const isPluginEnabled = async (accountAddress: Address, selector: Hex) => {
+        if (!action) {
+            throw new Error("Action data must be set")
+        }
         if (!regular) throw new Error("regular validator not set")
         if (entryPointVersion === "v0.6") {
             return regular.isEnabled(accountAddress, selector)
@@ -134,6 +137,9 @@ export async function toKernelPluginManager<
     }
 
     const getPluginEnableSignature = async (accountAddress: Address) => {
+        if (!action) {
+            throw new Error("Action data must be set")
+        }
         if (pluginEnableSignature) return pluginEnableSignature
         if (!sudo)
             throw new Error(
@@ -203,7 +209,12 @@ export async function toKernelPluginManager<
                 userOpSig
             )
         },
-        getAction: () => action,
+        getAction: () => {
+            if (!action) {
+                throw new Error("Action data must be set")
+            }
+            return action
+        },
         getValidityData: () => ({
             validAfter,
             validUntil
@@ -230,6 +241,9 @@ export async function toKernelPluginManager<
             accountAddress = zeroAddress,
             customNonceKey = 0n
         ) => {
+            if (!action) {
+                throw new Error("Action data must be set")
+            }
             if (entryPointVersion === "v0.6")
                 return await activeValidator.getNonceKey(
                     accountAddress,
