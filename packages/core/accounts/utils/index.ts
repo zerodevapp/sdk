@@ -10,3 +10,5 @@ export const parseFactoryAddressAndCallDataFromAccountInitCode = (
     const factoryCalldata = `0x${initCode.substring(42)}` as Hex
     return [factoryAddress, factoryCalldata]
 }
+
+export { getCustomNonceKeyFromString } from "./getCustomNonceKeyFromString.js"

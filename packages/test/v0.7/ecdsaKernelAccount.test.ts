@@ -7,11 +7,13 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
+    getCustomNonceKeyFromString,
+    getERC20PaymasterApproveCall,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
+import { BundlerClient, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
 import { EntryPoint } from "permissionless/types/entrypoint.js"
@@ -541,7 +543,10 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with custom nonce key",
         async () => {
-            const customNonceKey = 11n
+            const customNonceKey = getCustomNonceKeyFromString(
+                "Hello, World!",
+                ENTRYPOINT_ADDRESS_V07
+            )
 
             const nonce = await account.getNonce(customNonceKey)
 

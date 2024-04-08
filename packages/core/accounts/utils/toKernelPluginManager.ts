@@ -8,6 +8,8 @@ import {
     type Transport,
     concat,
     concatHex,
+    maxUint16,
+    maxUint192,
     pad,
     toHex,
     zeroAddress
@@ -244,15 +246,23 @@ export async function toKernelPluginManager<
             if (!action) {
                 throw new Error("Action data must be set")
             }
-            if (entryPointVersion === "v0.6")
+            if (entryPointVersion === "v0.6") {
+                if (customNonceKey > maxUint192) {
+                    throw new Error(
+                        "Custom nonce key must be equal or less than maxUint192 for v0.6"
+                    )
+                }
+
                 return await activeValidator.getNonceKey(
                     accountAddress,
                     customNonceKey
                 )
+            }
 
-            // when using v0.7 if customNonceKey is greater than 2 bytes, throw error
-            if (customNonceKey > 0xffffn)
-                throw new Error("Custom nonce key must be less than 2 bytes")
+            if (customNonceKey > maxUint16)
+                throw new Error(
+                    "Custom nonce key must be equal or less than 2 bytes(maxUint16) for v0.7"
+                )
 
             const validatorMode =
                 !regular ||
