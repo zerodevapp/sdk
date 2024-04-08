@@ -42,5 +42,8 @@ export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"
 export { gasTokenAddresses, type TokenSymbolsMap } from "./gasTokenAddresses.js"
-export { verifyEIP6492Signature } from "./accounts/utils/index.js"
+export {
+    verifyEIP6492Signature,
+    getCustomNonceKeyFromString
+} from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"

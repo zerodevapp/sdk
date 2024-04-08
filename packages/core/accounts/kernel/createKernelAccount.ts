@@ -48,7 +48,6 @@ import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/enc
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
-import { hashAndTruncate } from "./utils/common/hashAndTruncate.js"
 
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
@@ -57,7 +56,6 @@ export type KernelSmartAccount<
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
     kernelPluginManager: KernelPluginManager<entryPoint>
     getNonce: (customNonceKey?: bigint) => Promise<bigint>
-    getCustomNonceKeyFromString: (input: string) => bigint
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
@@ -293,18 +291,9 @@ export async function createKernelAccount<
         accountAddress
     )
 
-    // Get random custom nonce key from a string
-    const getCustomNonceKeyFromString = (input: string) => {
-        if (entryPointVersion === "v0.6") {
-            return hashAndTruncate(input, 24) // 24 bytes for v0.6
-        }
-        return hashAndTruncate(input, 2) // 2 bytes for v0.7
-    }
-
     return {
         kernelPluginManager,
         generateInitCode,
-        getCustomNonceKeyFromString,
         ...toSmartAccount({
             address: accountAddress,
             publicKey: accountAddress,
