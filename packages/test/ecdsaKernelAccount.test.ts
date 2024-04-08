@@ -8,9 +8,9 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
+    getCustomNonceKeyFromString,
     getERC20PaymasterApproveCall,
-    verifyEIP6492Signature,
-    getCustomNonceKeyFromString
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"

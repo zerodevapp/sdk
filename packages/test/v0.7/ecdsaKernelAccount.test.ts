@@ -7,9 +7,9 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
+    getCustomNonceKeyFromString,
     getERC20PaymasterApproveCall,
-    verifyEIP6492Signature,
-    getCustomNonceKeyFromString
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import { universalValidatorByteCode } from "@zerodev/sdk/accounts"
@@ -121,9 +121,8 @@ describe("ECDSA kernel Account", () => {
             account,
             middleware: {
                 gasPrice: async () =>
-                    (
-                        await pimlicoBundlerClient.getUserOperationGasPrice()
-                    ).fast,
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -567,9 +566,8 @@ describe("ECDSA kernel Account", () => {
                 account,
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -752,9 +750,8 @@ describe("ECDSA kernel Account", () => {
                 account: initialEcdsaSmartAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
