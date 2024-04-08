@@ -120,8 +120,9 @@ describe("ECDSA kernel Account", () => {
             account,
             middleware: {
                 gasPrice: async () =>
-                    (await pimlicoBundlerClient.getUserOperationGasPrice())
-                        .fast,
+                    (
+                        await pimlicoBundlerClient.getUserOperationGasPrice()
+                    ).fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -509,7 +510,8 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with custom nonce key",
         async () => {
-            const customNonceKey = 11n
+            const customNonceKey =
+                account.getCustomNonceKeyFromString("Hello, World!")
 
             const nonce = await account.getNonce(customNonceKey)
 
@@ -562,8 +564,9 @@ describe("ECDSA kernel Account", () => {
                 account,
                 middleware: {
                     gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
+                        (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -746,8 +749,9 @@ describe("ECDSA kernel Account", () => {
                 account: initialEcdsaSmartAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
+                        (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

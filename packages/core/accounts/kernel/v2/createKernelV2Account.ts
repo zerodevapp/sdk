@@ -49,6 +49,7 @@ import {
 } from "../../utils/toKernelPluginManager.js"
 import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
+import { hashAndTruncate } from "../utils/common/hashAndTruncate.js"
 
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
@@ -57,6 +58,7 @@ export type KernelSmartAccount<
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
     kernelPluginManager: KernelPluginManager<entryPoint>
     getNonce: (customNonceKey?: bigint) => Promise<bigint>
+    getCustomNonceKeyFromString(input: string): bigint
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
 }
@@ -281,6 +283,14 @@ export async function createKernelV2Account<
         })
     }
 
+    // Get random custom nonce key from a string
+    const getCustomNonceKeyFromString = (input: string) => {
+        if (entryPointVersion === "v0.6") {
+            return hashAndTruncate(input, 24)
+        }
+        return hashAndTruncate(input, 2)
+    }
+
     return {
         ...account,
         client: client,
@@ -289,6 +299,7 @@ export async function createKernelV2Account<
         source: "kernelSmartAccount",
         kernelPluginManager,
         generateInitCode,
+        getCustomNonceKeyFromString,
         async getFactory() {
             if (smartAccountDeployed) return undefined
 

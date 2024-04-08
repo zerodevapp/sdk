@@ -470,7 +470,8 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with custom nonce key",
         async () => {
-            const customNonceKey = 11n
+            const customNonceKey =
+                account.getCustomNonceKeyFromString("Hello, World!")
 
             const nonce = await account.getNonce(customNonceKey)
 
