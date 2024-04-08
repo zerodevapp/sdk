@@ -4,7 +4,6 @@ import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271Abi,
-    KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
@@ -15,20 +14,9 @@ import {
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import {
-    BundlerClient,
-    ENTRYPOINT_ADDRESS_V06,
-    bundlerActions
-} from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    SmartAccount
-} from "permissionless/accounts"
-import {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint.js"
-import type { UserOperation } from "permissionless/types/userOperation.js"
+import { BundlerClient } from "permissionless"
+import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     Address,
     Chain,
@@ -44,13 +32,15 @@ import {
     hashTypedData,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount, sign } from "viem/accounts"
+import { privateKeyToAccount } from "viem/accounts"
 import { goerli } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
-import { config } from "./config.js"
+import { TokenActionsAbi } from "./abis/TokenActionsAbi.js"
+import { TOKEN_ACTION_ADDRESS, config } from "./config.js"
 import {
+    Test_ERC20Address,
     findUserOperationEvent,
     getEcdsaKernelAccountWithRandomSigner,
     getEntryPoint,
@@ -63,6 +53,7 @@ import {
     index,
     waitForNonceUpdate
 } from "./utils.js"
+import { mintToAccount } from "./v0.7/utils.js"
 
 dotenv.config()
 
@@ -450,18 +441,65 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with delegatecall",
         async () => {
+            const accountAddress = kernelClient.account.address
+            const amountToMint = 10000000n
+            const amountToTransfer = 4337n
+            await mintToAccount(
+                publicClient,
+                kernelClient,
+                accountAddress,
+                amountToMint
+            )
             const userOpHash = await kernelClient.sendUserOperation({
                 userOperation: {
                     callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
+                        to: TOKEN_ACTION_ADDRESS,
                         value: 0n,
-                        data: "0x",
+                        data: encodeFunctionData({
+                            abi: TokenActionsAbi,
+                            functionName: "transferERC20Action",
+                            args: [
+                                Test_ERC20Address,
+                                amountToTransfer,
+                                "0xA02CDdFa44B8C01b4257F54ac1c43F75801E8175"
+                            ]
+                        }),
                         callType: "delegatecall"
                     })
                 }
             })
+            const transaction = await bundlerClient.waitForUserOperationReceipt(
+                {
+                    hash: userOpHash
+                }
+            )
+            console.log(
+                "transferTransactionHash",
+                `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
+            )
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: transaction.receipt.transactionHash
+                })
+            let transferEventFound = false
+            for (const log of transactionReceipt.logs) {
+                try {
+                    const event = decodeEventLog({
+                        abi: erc20Abi,
+                        ...log
+                    })
+                    if (
+                        event.eventName === "Transfer" &&
+                        event.args.from === account.address &&
+                        event.args.value === amountToTransfer
+                    ) {
+                        transferEventFound = true
+                    }
+                } catch (error) {}
+            }
 
             expect(userOpHash).toHaveLength(66)
+            expect(transferEventFound).toBeTrue()
 
             await waitForNonceUpdate()
         },

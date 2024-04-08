@@ -50,10 +50,12 @@ export const getPluginsEnableTypedData = async <
             validatorData: await validator.getEnableData(accountAddress),
             hookData: "0x",
             selectorData: concat([
-                action.selector,
+                action.selector
+                /*
                 action.address,
                 zeroAddress,
                 "0x"
+                */
             ])
         },
         primaryType: "Enable"

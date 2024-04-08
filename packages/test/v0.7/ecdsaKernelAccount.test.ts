@@ -11,8 +11,6 @@ import {
     getERC20PaymasterApproveCall,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
-import { gasTokenAddresses } from "@zerodev/sdk"
-import { universalValidatorByteCode } from "@zerodev/sdk/accounts"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { BundlerClient, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
@@ -22,28 +20,24 @@ import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     Address,
     Chain,
-    Client,
     GetContractReturnType,
     Hex,
     type PublicClient,
     Transport,
-    concat,
     decodeEventLog,
-    encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
     getContract,
     hashMessage,
     hashTypedData,
-    parseAbiParameters,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { goerli } from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
-import { config } from "../config.js"
+import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
+import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
+import { Test_ERC20Address } from "../utils.js"
 import {
     findUserOperationEvent,
     getEcdsaKernelAccountWithRandomSigner,
@@ -51,14 +45,12 @@ import {
     getKernelAccountClient,
     getKernelBundlerClient,
     getPimlicoBundlerClient,
-    getPimlicoPaymasterClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
-    getZeroDevERC20PaymasterClient,
     getZeroDevPaymasterClient,
     index,
-    waitForNonceUpdate,
-    waitForUserOperationTransaction
+    mintToAccount,
+    waitForNonceUpdate
 } from "./utils.js"
 
 dotenv.config()
@@ -111,9 +103,11 @@ describe("ECDSA kernel Account", () => {
         typeof kernelClient,
         Address
     >
+    let owner: Address
 
     beforeAll(async () => {
         account = await getSignerToEcdsaKernelAccount()
+        owner = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex).address
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
         pimlicoBundlerClient = getPimlicoBundlerClient()
@@ -485,22 +479,61 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with delegatecall",
         async () => {
+            const accountAddress = kernelClient.account.address
+            const amountToMint = 10000000n
+            const amountToTransfer = 4337n
+            await mintToAccount(
+                publicClient,
+                kernelClient,
+                accountAddress,
+                amountToMint
+            )
             const userOpHash = await kernelClient.sendUserOperation({
                 userOperation: {
                     callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
+                        to: TOKEN_ACTION_ADDRESS,
                         value: 0n,
-                        data: "0x",
+                        data: encodeFunctionData({
+                            abi: TokenActionsAbi,
+                            functionName: "transferERC20Action",
+                            args: [Test_ERC20Address, amountToTransfer, owner]
+                        }),
                         callType: "delegatecall"
                     })
                 }
             })
-            const txHash = await bundlerClient.waitForUserOperationReceipt({
-                hash: userOpHash
-            })
-            console.log("txHash", txHash)
+            const transaction = await bundlerClient.waitForUserOperationReceipt(
+                {
+                    hash: userOpHash
+                }
+            )
+            console.log(
+                "transferTransactionHash",
+                `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
+            )
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: transaction.receipt.transactionHash
+                })
+            let transferEventFound = false
+            for (const log of transactionReceipt.logs) {
+                try {
+                    const event = decodeEventLog({
+                        abi: erc20Abi,
+                        ...log
+                    })
+                    if (
+                        event.eventName === "Transfer" &&
+                        event.args.from === account.address &&
+                        event.args.value === amountToTransfer
+                    ) {
+                        transferEventFound = true
+                    }
+                } catch (error) {}
+            }
 
             expect(userOpHash).toHaveLength(66)
+            expect(transferEventFound).toBeTrue()
 
             await waitForNonceUpdate()
         },

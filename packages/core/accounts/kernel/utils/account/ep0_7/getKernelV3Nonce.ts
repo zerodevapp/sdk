@@ -19,6 +19,6 @@ export const getKernelV3Nonce = async (
         })
         return nonce
     } catch (error) {
-        return 2
+        return 1
     }
 }

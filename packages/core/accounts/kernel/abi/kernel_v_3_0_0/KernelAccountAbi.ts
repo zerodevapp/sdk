@@ -23,11 +23,7 @@ export const KernelV3ExecuteAbi = [
         name: "execute",
         inputs: [
             { name: "execMode", type: "bytes32", internalType: "ExecMode" },
-            {
-                name: "executionCalldata",
-                type: "bytes",
-                internalType: "bytes"
-            }
+            { name: "executionCalldata", type: "bytes", internalType: "bytes" }
         ],
         outputs: [],
         stateMutability: "payable"
@@ -37,11 +33,7 @@ export const KernelV3ExecuteAbi = [
         name: "executeFromExecutor",
         inputs: [
             { name: "execMode", type: "bytes32", internalType: "ExecMode" },
-            {
-                name: "executionCalldata",
-                type: "bytes",
-                internalType: "bytes"
-            }
+            { name: "executionCalldata", type: "bytes", internalType: "bytes" }
         ],
         outputs: [
             { name: "returnData", type: "bytes[]", internalType: "bytes[]" }
@@ -144,11 +136,7 @@ export const KernelV3AccountAbi = [
                 internalType: "address"
             },
             { name: "salt", type: "bytes32", internalType: "bytes32" },
-            {
-                name: "extensions",
-                type: "uint256[]",
-                internalType: "uint256[]"
-            }
+            { name: "extensions", type: "uint256[]", internalType: "uint256[]" }
         ],
         stateMutability: "view"
     },
@@ -157,11 +145,7 @@ export const KernelV3AccountAbi = [
         name: "entrypoint",
         inputs: [],
         outputs: [
-            {
-                name: "",
-                type: "address",
-                internalType: "contract IEntryPoint"
-            }
+            { name: "", type: "address", internalType: "contract IEntryPoint" }
         ],
         stateMutability: "view"
     },
@@ -170,11 +154,7 @@ export const KernelV3AccountAbi = [
         name: "execute",
         inputs: [
             { name: "execMode", type: "bytes32", internalType: "ExecMode" },
-            {
-                name: "executionCalldata",
-                type: "bytes",
-                internalType: "bytes"
-            }
+            { name: "executionCalldata", type: "bytes", internalType: "bytes" }
         ],
         outputs: [],
         stateMutability: "payable"
@@ -184,11 +164,7 @@ export const KernelV3AccountAbi = [
         name: "executeFromExecutor",
         inputs: [
             { name: "execMode", type: "bytes32", internalType: "ExecMode" },
-            {
-                name: "executionCalldata",
-                type: "bytes",
-                internalType: "bytes"
-            }
+            { name: "executionCalldata", type: "bytes", internalType: "bytes" }
         ],
         outputs: [
             { name: "returnData", type: "bytes[]", internalType: "bytes[]" }
@@ -268,16 +244,6 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
-        name: "fallbackConfig",
-        inputs: [],
-        outputs: [
-            { name: "", type: "address", internalType: "contract IFallback" },
-            { name: "", type: "address", internalType: "contract IHook" }
-        ],
-        stateMutability: "view"
-    },
-    {
-        type: "function",
         name: "initialize",
         inputs: [
             {
@@ -305,6 +271,34 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
+        name: "installValidations",
+        inputs: [
+            { name: "vIds", type: "bytes21[]", internalType: "ValidationId[]" },
+            {
+                name: "configs",
+                type: "tuple[]",
+                internalType: "struct ValidationManager.ValidationConfig[]",
+                components: [
+                    { name: "nonce", type: "uint32", internalType: "uint32" },
+                    {
+                        name: "hook",
+                        type: "address",
+                        internalType: "contract IHook"
+                    }
+                ]
+            },
+            {
+                name: "validationData",
+                type: "bytes[]",
+                internalType: "bytes[]"
+            },
+            { name: "hookData", type: "bytes[]", internalType: "bytes[]" }
+        ],
+        outputs: [],
+        stateMutability: "nonpayable"
+    },
+    {
+        type: "function",
         name: "invalidateNonce",
         inputs: [{ name: "nonce", type: "uint32", internalType: "uint32" }],
         outputs: [],
@@ -326,11 +320,7 @@ export const KernelV3AccountAbi = [
         inputs: [
             { name: "moduleType", type: "uint256", internalType: "uint256" },
             { name: "module", type: "address", internalType: "address" },
-            {
-                name: "additionalContext",
-                type: "bytes",
-                internalType: "bytes"
-            }
+            { name: "additionalContext", type: "bytes", internalType: "bytes" }
         ],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
         stateMutability: "view"
@@ -399,7 +389,16 @@ export const KernelV3AccountAbi = [
                         type: "address",
                         internalType: "contract IHook"
                     },
-                    { name: "target", type: "address", internalType: "address" }
+                    {
+                        name: "target",
+                        type: "address",
+                        internalType: "address"
+                    },
+                    {
+                        name: "callType",
+                        type: "bytes1",
+                        internalType: "CallType"
+                    }
                 ]
             }
         ],
@@ -425,7 +424,7 @@ export const KernelV3AccountAbi = [
         type: "function",
         name: "uninstallModule",
         inputs: [
-            { name: "", type: "uint256", internalType: "uint256" },
+            { name: "moduleType", type: "uint256", internalType: "uint256" },
             { name: "module", type: "address", internalType: "address" },
             { name: "deInitData", type: "bytes", internalType: "bytes" }
         ],
@@ -437,7 +436,21 @@ export const KernelV3AccountAbi = [
         name: "uninstallValidation",
         inputs: [
             { name: "vId", type: "bytes21", internalType: "ValidationId" },
-            { name: "deinitData", type: "bytes", internalType: "bytes" }
+            { name: "deinitData", type: "bytes", internalType: "bytes" },
+            { name: "hookDeinitData", type: "bytes", internalType: "bytes" }
+        ],
+        outputs: [],
+        stateMutability: "payable"
+    },
+    {
+        type: "function",
+        name: "upgradeTo",
+        inputs: [
+            {
+                name: "_newImplementation",
+                type: "address",
+                internalType: "address"
+            }
         ],
         outputs: [],
         stateMutability: "payable"
@@ -507,7 +520,7 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "function",
-        name: "validatorConfig",
+        name: "validationConfig",
         inputs: [
             { name: "vId", type: "bytes21", internalType: "ValidationId" }
         ],
@@ -543,6 +556,25 @@ export const KernelV3AccountAbi = [
                 type: "address",
                 indexed: false,
                 internalType: "address"
+            }
+        ],
+        anonymous: false
+    },
+    {
+        type: "event",
+        name: "ModuleUninstallResult",
+        inputs: [
+            {
+                name: "module",
+                type: "address",
+                indexed: false,
+                internalType: "address"
+            },
+            {
+                name: "result",
+                type: "bool",
+                indexed: false,
+                internalType: "bool"
             }
         ],
         anonymous: false
@@ -676,6 +708,19 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "event",
+        name: "Upgraded",
+        inputs: [
+            {
+                name: "implementation",
+                type: "address",
+                indexed: true,
+                internalType: "address"
+            }
+        ],
+        anonymous: false
+    },
+    {
+        type: "event",
         name: "ValidatorInstalled",
         inputs: [
             {
@@ -715,15 +760,15 @@ export const KernelV3AccountAbi = [
     { type: "error", name: "InvalidMode", inputs: [] },
     { type: "error", name: "InvalidModuleType", inputs: [] },
     { type: "error", name: "InvalidNonce", inputs: [] },
+    { type: "error", name: "InvalidSelector", inputs: [] },
     { type: "error", name: "InvalidSignature", inputs: [] },
     { type: "error", name: "InvalidValidationType", inputs: [] },
     { type: "error", name: "InvalidValidator", inputs: [] },
+    { type: "error", name: "NonceInvalidationError", inputs: [] },
+    { type: "error", name: "NotSupportedCallType", inputs: [] },
     { type: "error", name: "OnlyExecuteUserOp", inputs: [] },
-    {
-        type: "error",
-        name: "PermissionNotAlllowedForSignature",
-        inputs: []
-    },
+    { type: "error", name: "PermissionDataLengthMismatch", inputs: [] },
+    { type: "error", name: "PermissionNotAlllowedForSignature", inputs: [] },
     { type: "error", name: "PermissionNotAlllowedForUserOp", inputs: [] },
     { type: "error", name: "PolicyDataTooLarge", inputs: [] },
     {

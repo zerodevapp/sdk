@@ -29,3 +29,5 @@ export const config: {
         }
     }
 }
+
+export const TOKEN_ACTION_ADDRESS = "0xA015bd458DbAc61c254104099f544dB6ef570c7C"

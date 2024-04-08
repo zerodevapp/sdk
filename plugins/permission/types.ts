@@ -29,12 +29,12 @@ export type PolicyParams = {
 export type ModularSigner = {
     account: LocalAccount
     signerContractAddress: Address
-    getSignerData: (permissionId?: Hex) => Hex
+    getSignerData: () => Hex
     getDummySignature: () => Hex
 }
 
 export type Policy = {
-    getPolicyData: (permissionId?: Hex) => Hex
+    getPolicyData: () => Hex
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:

@@ -1,7 +1,4 @@
-import {
-    KernelValidator,
-    signerToEcdsaValidator
-} from "@zerodev/ecdsa-validator"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     KernelAccountClient,
     KernelSmartAccount,
@@ -24,44 +21,37 @@ import {
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     http,
+    Address,
     Chain,
     Hash,
     Hex,
     Log,
-    PrivateKeyAccount,
     PublicClient,
     Transport,
     createPublicClient,
     decodeEventLog,
+    encodeFunctionData,
     getAbiItem,
     toFunctionSelector,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { goerli, polygonMumbai } from "viem/chains"
+import { polygonMumbai } from "viem/chains"
 import * as allChains from "viem/chains"
 
-import {
-    toSignatureCallerPolicy,
-    toSudoPolicy
-} from "../../../plugins/permission/policies"
-import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
-import { toGasPolicy } from "../../../plugins/permission/policies/toGasPolicy"
-import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
-import { ParamCondition } from "../../../plugins/permission/policies/types"
 import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
 import { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
-import { Test_ERC20Address } from "../utils"
 
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
+import { Test_ERC20Address } from "../utils.js"
 
 // export const index = 43244782332432423423n
-export const index = 4323343756544387823332432423423n
+export const index = 43233437532434365532464445487823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
 const projectId = config["v0.7"].sepolia.projectId
 
@@ -282,7 +272,7 @@ export const getSignerToEcdsaKernelAccount = async <
 
 const getBundlerRpc = (provider?: string): string => {
     const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
+    const zeroDevBundlerRpcHost = config["v0.7"].sepolia.bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
@@ -414,12 +404,6 @@ export const getSignerToPermissionKernelAccount = async (
 export const getSignerToRootPermissionKernelAccount = async (
     policies: Policy[]
 ): Promise<KernelSmartAccount<EntryPoint>> => {
-    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
-    if (!privateKey1) {
-        throw new Error(
-            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
-        )
-    }
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
     const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
@@ -447,12 +431,6 @@ export const getSignerToRootPermissionKernelAccount = async (
 
 export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
     async (policies: Policy[]): Promise<KernelSmartAccount<EntryPoint>> => {
-        const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
-        if (!privateKey1) {
-            throw new Error(
-                "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
-            )
-        }
         const publicClient = await getPublicClient()
         const signer1 = privateKeyToAccount(generatePrivateKey())
         const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
@@ -500,3 +478,54 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
         )
         return account
     }
+
+export async function mintToAccount(
+    publicClient: PublicClient,
+    ecdsaSmartAccountClient: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >,
+    target: Address,
+    amount: bigint
+) {
+    const balanceBefore = await publicClient.readContract({
+        abi: TEST_ERC20Abi,
+        address: Test_ERC20Address,
+        functionName: "balanceOf",
+        args: [target]
+    })
+
+    console.log("balanceBefore of account", balanceBefore)
+
+    const amountToMint = balanceBefore > amount ? 0n : amount
+
+    const mintData = encodeFunctionData({
+        abi: TEST_ERC20Abi,
+        functionName: "mint",
+        args: [target, amountToMint]
+    })
+
+    if (amountToMint > 0n) {
+        const mintTransactionHash =
+            await ecdsaSmartAccountClient.sendTransaction({
+                to: Test_ERC20Address,
+                data: mintData
+            })
+
+        const balanceAfter = await publicClient.readContract({
+            abi: TEST_ERC20Abi,
+            address: Test_ERC20Address,
+            functionName: "balanceOf",
+            args: [target]
+        })
+
+        console.log("balanceAfter of account", balanceAfter)
+
+        console.log(
+            "mintTransactionHash",
+            `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
+        )
+    }
+}

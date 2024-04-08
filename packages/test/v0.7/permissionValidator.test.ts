@@ -5,7 +5,6 @@ import {
     EIP1271Abi,
     KernelAccountClient,
     KernelSmartAccount,
-    KernelV3AccountAbi,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
@@ -19,12 +18,10 @@ import {
     PrivateKeyAccount,
     PublicClient,
     Transport,
-    decodeAbiParameters,
-    decodeErrorResult,
-    decodeFunctionData,
     encodeFunctionData,
     hashMessage,
     hashTypedData,
+    parseEther,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
@@ -147,11 +144,12 @@ describe("Permission kernel Account", () => {
             }
         })
         gasPolicy = await toGasPolicy({
-            allowed: 1000000000000000000n
+            allowed: parseEther("10")
         })
+        const sudoPolicy = await toSudoPolicy({})
 
         permissionSmartAccountClient = await getKernelAccountClient({
-            account: await getSignerToRootPermissionKernelAccount([gasPolicy]),
+            account: await getSignerToRootPermissionKernelAccount([sudoPolicy]),
             middleware: {
                 gasPrice: async () =>
                     (await pimlicoBundlerClient.getUserOperationGasPrice())
@@ -563,7 +561,7 @@ describe("Permission kernel Account", () => {
                 }
             })
 
-            await sleep(5000)
+            await sleep(2 * 5000)
 
             const response = await permissionSmartAccountClient.sendTransaction(
                 {
