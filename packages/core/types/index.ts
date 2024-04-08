@@ -6,7 +6,9 @@ export type {
     ValidatorInitData,
     CallType,
     KernelEncodeCallDataArgs,
-    PluginValidityData
+    PluginValidityData,
+    ZeroDevAccountClientRpcSchema,
+    ZeroDevUserOperationGasPriceWithBigIntAsHex
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"
