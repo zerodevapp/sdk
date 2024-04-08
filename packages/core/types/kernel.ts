@@ -88,6 +88,29 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
     }
 ]
 
+export type ZeroDevUserOperationGasPriceWithBigIntAsHex = {
+    slow: {
+        maxFeePerGas: Hex
+        maxPriorityFeePerGas: Hex
+    }
+    standard: {
+        maxFeePerGas: Hex
+        maxPriorityFeePerGas: Hex
+    }
+    fast: {
+        maxFeePerGas: Hex
+        maxPriorityFeePerGas: Hex
+    }
+}
+
+export type ZeroDevAccountClientRpcSchema = [
+    {
+        Method: "zd_getUserOperationGasPrice"
+        Parameters: []
+        ReturnType: ZeroDevUserOperationGasPriceWithBigIntAsHex
+    }
+]
+
 export type ValidatorType = Extract<
     keyof typeof VALIDATOR_TYPE,
     "PERMISSION" | "SECONDARY"

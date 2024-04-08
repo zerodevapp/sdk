@@ -1,8 +1,12 @@
 import { type SmartAccountActions, smartAccountActions } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
 import { type Middleware } from "permissionless/actions/smartAccount"
-import type { EntryPoint } from "permissionless/types"
+import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Transport } from "viem"
+import {
+    type GetUserOperationGasPriceReturnType,
+    getUserOperationGasPrice
+} from "../../actions/account-client/getUserOperationGasPrice.js"
 import type {
     SignUserOperationParameters,
     SignUserOperationReturnType
@@ -72,6 +76,14 @@ export type KernelAccountClientActions<
             >
         >[1]
     ) => Promise<SignUserOperationReturnType>
+    /**
+     * Returns the live gas prices that you can use to send a user operation.
+     *
+     * @returns maxFeePerGas & maxPriorityFeePerGas {@link GetUserOperationGasPriceReturnType}
+     */
+    getUserOperationGasPrice: () => Promise<
+        Prettify<GetUserOperationGasPriceReturnType>
+    >
 }
 
 export const kernelAccountClientActions =
@@ -93,5 +105,6 @@ export const kernelAccountClientActions =
                     ...args,
                     middleware
                 } as SignUserOperationParameters<entryPoint, TSmartAccount>
-            )
+            ),
+        getUserOperationGasPrice: async () => getUserOperationGasPrice(client)
     })

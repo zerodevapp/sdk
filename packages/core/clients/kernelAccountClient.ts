@@ -1,3 +1,4 @@
+import { ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
@@ -10,6 +11,7 @@ import {
     createClient
 } from "viem"
 import { type KernelSmartAccount } from "../accounts/index.js"
+import { getUserOperationGasPrice } from "../actions/account-client/getUserOperationGasPrice.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
@@ -79,9 +81,23 @@ export const createKernelAccountClient = <
         type: "kernelAccountClient"
     })
 
+    let middleware = parameters.middleware
+
+    if (
+        !middleware ||
+        (typeof middleware !== "function" &&
+            !middleware.gasPrice &&
+            parameters.entryPoint === ENTRYPOINT_ADDRESS_V07)
+    ) {
+        const gasPrice = () => getUserOperationGasPrice(client)
+        middleware = {
+            ...middleware,
+            gasPrice
+        }
+    }
     return client.extend(
         kernelAccountClientActions({
-            middleware: parameters.middleware
+            middleware
         })
     ) as KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount>
 }
