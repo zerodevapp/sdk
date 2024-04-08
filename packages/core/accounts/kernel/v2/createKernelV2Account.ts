@@ -285,10 +285,7 @@ export async function createKernelV2Account<
 
     // Get random custom nonce key from a string
     const getCustomNonceKeyFromString = (input: string) => {
-        if (entryPointVersion === "v0.6") {
-            return hashAndTruncate(input, 24)
-        }
-        return hashAndTruncate(input, 2)
+        return hashAndTruncate(input, 24) // 24 bytes for v0.6
     }
 
     return {
