@@ -7,6 +7,7 @@ import {
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
+    getCustomNonceKeyFromString,
     getERC20PaymasterApproveCall,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
@@ -508,7 +509,10 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client send UserOp with custom nonce key",
         async () => {
-            const customNonceKey = 11n
+            const customNonceKey = getCustomNonceKeyFromString(
+                "Hello, World!",
+                ENTRYPOINT_ADDRESS_V06
+            )
 
             const nonce = await account.getNonce(customNonceKey)
 
