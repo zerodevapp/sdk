@@ -83,9 +83,8 @@ export async function toKernelPluginManager<
                     return ValidatorMode.plugin
                 }
 
-                const enableSignature = await getPluginEnableSignature(
-                    accountAddress
-                )
+                const enableSignature =
+                    await getPluginEnableSignature(accountAddress)
                 if (!enableSignature) {
                     throw new Error("Enable signature not set")
                 }
@@ -109,9 +108,8 @@ export async function toKernelPluginManager<
             if (await isPluginEnabled(accountAddress, action.selector)) {
                 return userOpSignature
             }
-            const enableSignature = await getPluginEnableSignature(
-                accountAddress
-            )
+            const enableSignature =
+                await getPluginEnableSignature(accountAddress)
             return getEncodedPluginsDataV2({
                 accountAddress,
                 action,
@@ -196,9 +194,8 @@ export async function toKernelPluginManager<
         ...activeValidator,
         getIdentifier,
         signUserOperation: async (userOperation) => {
-            const userOpSig = await activeValidator.signUserOperation(
-                userOperation
-            )
+            const userOpSig =
+                await activeValidator.signUserOperation(userOperation)
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -225,9 +222,8 @@ export async function toKernelPluginManager<
             validUntil
         }),
         getDummySignature: async (userOperation) => {
-            const userOpSig = await activeValidator.getDummySignature(
-                userOperation
-            )
+            const userOpSig =
+                await activeValidator.getDummySignature(userOperation)
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(

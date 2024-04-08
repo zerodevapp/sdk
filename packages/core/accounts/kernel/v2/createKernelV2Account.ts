@@ -47,9 +47,9 @@ import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../../utils/toKernelPluginManager.js"
+import { hashAndTruncate } from "../utils/common/hashAndTruncate.js"
 import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
-import { hashAndTruncate } from "../utils/common/hashAndTruncate.js"
 
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
