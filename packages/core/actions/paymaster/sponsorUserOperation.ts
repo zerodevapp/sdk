@@ -10,7 +10,6 @@ import type {
 import { ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem/types/utils"
-import { KERNEL_ADDRESSES } from "../../accounts/index.js"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
 
 export type SponsorUserOperationParameters<entryPoint extends EntryPoint> = {
@@ -70,8 +69,7 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
                 ) as UserOperationWithBigIntAsHex<
                     GetEntryPointVersion<entryPoint>
                 >,
-                entryPointAddress:
-                    args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+                entryPointAddress: args.entryPoint,
                 gasTokenData: args.gasToken && {
                     tokenAddress: args.gasToken
                 },

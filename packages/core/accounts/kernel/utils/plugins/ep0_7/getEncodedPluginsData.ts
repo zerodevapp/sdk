@@ -35,7 +35,10 @@ export const getEncodedPluginsData = async <
             [
                 enableData,
                 "0x",
-                concat([action.selector, action.address, zeroAddress, "0x"]),
+                // [TODO]: Integrate custom target contract and hook
+                concat([
+                    action.selector /*, action.address, zeroAddress, "0x"*/
+                ]),
                 enableSignature,
                 userOpSignature
             ]

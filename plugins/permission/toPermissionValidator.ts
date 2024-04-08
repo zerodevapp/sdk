@@ -58,13 +58,13 @@ export async function toPermissionValidator<
                     ...policies.map((policy) =>
                         concat([
                             policy.getPolicyInfoInBytes(),
-                            policy.getPolicyData(getPermissionId())
+                            policy.getPolicyData()
                         ])
                     ),
                     concat([
                         flag,
                         signer.signerContractAddress,
-                        signer.getSignerData(getPermissionId())
+                        signer.getSignerData()
                     ])
                 ]
             ]
@@ -105,7 +105,7 @@ export async function toPermissionValidator<
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
                 entryPoint: entryPointAddress,
-                chainId: chainId
+                chainId
             })
 
             const signature = await signer.account.signMessage({
