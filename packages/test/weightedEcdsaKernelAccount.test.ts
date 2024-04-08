@@ -3,11 +3,16 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KERNEL_ADDRESSES,
     KernelAccountClient,
-    KernelSmartAccount
+    KernelSmartAccount,
+    getCustomNonceKeyFromString
 } from "@zerodev/sdk"
 import { signerToSessionKeyValidator } from "@zerodev/session-key"
 import dotenv from "dotenv"
-import { BundlerClient, bundlerActions } from "permissionless"
+import {
+    BundlerClient,
+    ENTRYPOINT_ADDRESS_V06,
+    bundlerActions
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
@@ -272,8 +277,10 @@ describe("Weighted ECDSA kernel Account", () => {
     test(
         "Client send UserOp with custom nonce key",
         async () => {
-            const customNonceKey =
-                account.getCustomNonceKeyFromString("Hello, World!")
+            const customNonceKey = getCustomNonceKeyFromString(
+                "Hello, World!",
+                ENTRYPOINT_ADDRESS_V06
+            )
 
             const nonce = await account.getNonce(customNonceKey)
 
