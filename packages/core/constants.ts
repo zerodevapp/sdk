@@ -10,7 +10,7 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3",
     "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
     "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
-    "0x541E811D24A54745619a5B9f0c1d4B08D5740144": "0.3.0-beta"
+    "0xe59cffb45AFFB215e3823F7D1a207a71C1aa09c3": "0.3.0-beta"
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const KERNEL_NAME = "Kernel"

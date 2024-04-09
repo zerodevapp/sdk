@@ -1,5 +1,8 @@
-import { KernelV3AccountAbi, createKernelAccount } from "@zerodev/sdk"
-import { KernelFactoryAbi } from "@zerodev/sdk"
+import {
+    KernelFactoryStakerAbi,
+    KernelV3AccountAbi,
+    createKernelAccount
+} from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
@@ -98,16 +101,16 @@ export const createPolicyFromParams = async (policy: Policy) => {
 export const decodeParamsFromInitCode = (initCode: Hex) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
-    const createAccountFunctionData = decodeFunctionData({
-        abi: KernelFactoryAbi,
+    const deployWithFactoryFunctionData = decodeFunctionData({
+        abi: KernelFactoryStakerAbi,
         data: `0x${initCode.slice(42)}`
     })
-    if (!createAccountFunctionData) throw new Error("Invalid initCode")
-    if (createAccountFunctionData.functionName === "createAccount") {
-        index = createAccountFunctionData.args[2]
+    if (!deployWithFactoryFunctionData) throw new Error("Invalid initCode")
+    if (deployWithFactoryFunctionData.functionName === "deployWithFactory") {
+        index = BigInt(deployWithFactoryFunctionData.args[2])
         const initializeFunctionData = decodeFunctionData({
             abi: KernelV3AccountAbi,
-            data: createAccountFunctionData.args[1]
+            data: deployWithFactoryFunctionData.args[1]
         })
         if (!initializeFunctionData) throw new Error("Invalid initCode")
         if (initializeFunctionData.functionName === "initialize") {

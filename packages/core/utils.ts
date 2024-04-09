@@ -1,4 +1,4 @@
-import { getEntryPointVersion } from "permissionless"
+import { ENTRYPOINT_ADDRESS_V06, getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import { satisfies } from "semver"
 import {
@@ -13,7 +13,6 @@ import {
     signatureToHex,
     zeroAddress
 } from "viem"
-import { KERNEL_ADDRESSES } from "./accounts/index.js"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import {
     CALL_TYPE,
@@ -73,7 +72,7 @@ export const getERC20PaymasterApproveCall = async (
         params: [
             {
                 chainId: client.chain?.id as number,
-                entryPointAddress: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                entryPointAddress: ENTRYPOINT_ADDRESS_V06
             }
         ]
     })

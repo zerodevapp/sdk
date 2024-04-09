@@ -26,6 +26,7 @@ import {
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
+    toHex,
     validateTypedData,
     zeroAddress
 } from "viem"
@@ -42,6 +43,7 @@ import {
 } from "../utils/toKernelPluginManager.js"
 import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
 import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
@@ -68,6 +70,7 @@ export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     index?: bigint
     factoryAddress?: Address
     accountLogicAddress?: Address
+    factoryStakerAddress?: Address
     deployedAccountAddress?: Address
 }
 
@@ -112,13 +115,15 @@ const createAccountAbi = [
 export const KERNEL_ADDRESSES: {
     ACCOUNT_LOGIC_V0_6: Address
     ACCOUNT_LOGIC_V0_7: Address
-    FACTORY_ADDRESS: Address
-    ENTRYPOINT_V0_6: Address
+    FACTORY_ADDRESS_V0_6: Address
+    FACTORY_ADDRESS_V0_7: Address
+    FACTORY_STAKER: Address
 } = {
     ACCOUNT_LOGIC_V0_6: "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
-    ACCOUNT_LOGIC_V0_7: "0x541E811D24A54745619a5B9f0c1d4B08D5740144",
-    FACTORY_ADDRESS: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
-    ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+    ACCOUNT_LOGIC_V0_7: "0xe59cffb45AFFB215e3823F7D1a207a71C1aa09c3",
+    FACTORY_ADDRESS_V0_6: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
+    FACTORY_ADDRESS_V0_7: "0x17B6697d81844518365484323e810Be08EaA3A6a",
+    FACTORY_STAKER: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5"
 }
 
 const getKernelInitData = async <entryPoint extends EntryPoint>({
@@ -158,12 +163,14 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     index,
     factoryAddress,
     accountLogicAddress,
+    factoryStakerAddress,
     entryPoint: entryPointAddress,
     kernelPluginManager
 }: {
     index: bigint
     factoryAddress: Address
     accountLogicAddress: Address
+    factoryStakerAddress: Address
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
 }): Promise<Hex> => {
@@ -172,15 +179,31 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
         entryPoint: entryPointAddress,
         kernelPluginManager
     })
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
     // Build the account init code
+    if (entryPointVersion === "v0.6") {
+        return concatHex([
+            factoryAddress,
+            encodeFunctionData({
+                abi: createAccountAbi,
+                functionName: "createAccount",
+                args: [accountLogicAddress, initialisationData, index]
+            }) as Hex
+        ])
+    }
+
     return concatHex([
-        factoryAddress,
+        factoryStakerAddress,
         encodeFunctionData({
-            abi: createAccountAbi,
-            functionName: "createAccount",
-            args: [accountLogicAddress, initialisationData, index]
-        }) as Hex
+            abi: KernelFactoryStakerAbi,
+            functionName: "deployWithFactory",
+            args: [
+                factoryAddress,
+                initialisationData,
+                toHex(index, { size: 32 })
+            ]
+        })
     ])
 }
 
@@ -244,8 +267,9 @@ export async function createKernelAccount<
         plugins,
         entryPoint: entryPointAddress,
         index = 0n,
-        factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
+        factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6,
         accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6,
+        factoryStakerAddress = KERNEL_ADDRESSES.FACTORY_STAKER,
         deployedAccountAddress
     }: CreateKernelAccountParameters<entryPoint>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
@@ -254,6 +278,10 @@ export async function createKernelAccount<
         entryPointVersion === "v0.6"
             ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
             : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7
+    factoryAddress =
+        entryPointVersion === "v0.6"
+            ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
+            : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7
 
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
@@ -270,6 +298,7 @@ export async function createKernelAccount<
             index,
             factoryAddress,
             accountLogicAddress,
+            factoryStakerAddress,
             entryPoint: entryPointAddress,
             kernelPluginManager
         })
@@ -331,7 +360,11 @@ export async function createKernelAccount<
 
                 if (smartAccountDeployed) return undefined
 
-                return factoryAddress
+                const entryPointVersion =
+                    getEntryPointVersion(entryPointAddress)
+                return entryPointVersion === "v0.6"
+                    ? factoryAddress
+                    : factoryStakerAddress
             },
 
             async getFactoryData() {

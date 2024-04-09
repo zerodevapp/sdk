@@ -14,7 +14,7 @@ import {
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
+import { BundlerClient, ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {

@@ -84,10 +84,9 @@ export const createKernelAccountClient = <
     let middleware = parameters.middleware
 
     if (
-        !middleware ||
-        (typeof middleware !== "function" &&
-            !middleware.gasPrice &&
-            parameters.entryPoint === ENTRYPOINT_ADDRESS_V07)
+        (!middleware ||
+            (typeof middleware !== "function" && !middleware.gasPrice)) &&
+        parameters.entryPoint === ENTRYPOINT_ADDRESS_V07
     ) {
         const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {

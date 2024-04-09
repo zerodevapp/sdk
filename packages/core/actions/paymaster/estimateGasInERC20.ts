@@ -1,3 +1,4 @@
+import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
 import type {
     UserOperation,
@@ -5,7 +6,6 @@ import type {
 } from "permissionless/types/userOperation.js"
 import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
-import { KERNEL_ADDRESSES } from "../../accounts/index.js"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
 
 export type EstimateGasInERC20Parameters = {
@@ -40,8 +40,7 @@ export const estimateGasInERC20 = async <entryPoint extends EntryPoint>(
                     args.userOperation
                 ) as UserOperationWithBigIntAsHex<"v0.6">,
                 tokenAddress: args.gasTokenAddress,
-                entryPointAddress:
-                    args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                entryPointAddress: args.entryPoint ?? ENTRYPOINT_ADDRESS_V06
             }
         ]
     })
