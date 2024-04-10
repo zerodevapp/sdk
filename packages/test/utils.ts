@@ -62,7 +62,7 @@ import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import { config } from "./config.js"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
-export const index = 54385340n
+export const index = 54385323232340n
 const projectId = config["v0.6"].polygonMumbai.projectId
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
@@ -432,7 +432,7 @@ const DEFAULT_PROVIDER = "PIMLICO"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = process.env.ZERODEV_BUNDLER_RPC_HOST
+    const zeroDevBundlerRpcHost = config["v0.6"].polygonMumbai.bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
