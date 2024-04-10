@@ -8,7 +8,8 @@ import type {
     GasPolicyParams,
     RateLimitPolicyParams,
     SignatureCallerPolicyParams,
-    SudoPolicyParams
+    SudoPolicyParams,
+    TimestampPolicyParams
 } from "./policies/index.js"
 
 export type PermissionPlugin<entryPoint extends EntryPoint> = KernelValidator<
@@ -43,6 +44,7 @@ export type Policy = {
         | RateLimitPolicyParams
         | SignatureCallerPolicyParams
         | SudoPolicyParams
+        | TimestampPolicyParams
 }
 
 export type PermissionPluginParams = {
