@@ -348,18 +348,26 @@ export function getUpdateConfigCall<entryPoint extends EntryPoint>(
 }
 
 export async function getCurrentSigners<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
+        entryPoint: entryPointAddress,
         multiSigAccountAddress,
-        validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
+        validatorAddress
     }: {
+        entryPoint: entryPoint
         multiSigAccountAddress: Address
         validatorAddress?: Address
     }
 ): Promise<Array<{ address: Address; weight: number }>> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    if (!validatorAddress) {
+        throw new Error("Validator address not provided")
+    }
     const signers: Array<{ address: Address; weight: number }> = []
     let nextGuardian: Address
 
