@@ -1,5 +1,5 @@
 import type { EntryPointVersion } from "permissionless/types/entrypoint"
-import { type Address } from "viem"
+import { type Address, type Hex } from "viem"
 
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
@@ -41,3 +41,7 @@ export enum EXEC_TYPE {
 // Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
 export const safeCreateCallAddress =
     "0x9b35Af71d77eaf8d7e40252370304687390A1A52"
+export const KernelFactoryToInitCodeHashMap: { [key: Address]: Hex } = {
+    "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3":
+        "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73"
+}
