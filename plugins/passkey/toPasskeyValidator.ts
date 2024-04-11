@@ -33,7 +33,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { WEBAUTHN_VALIDATOR_ADDRESS_V06, getValidatorAddress } from "./index.js"
+import { getValidatorAddress } from "./index.js"
 import {
     b64ToBytes,
     deserializePasskeyValidatorData,
@@ -254,19 +254,19 @@ export async function createPasskeyValidator<
     {
         passkeyName,
         passkeyServerUrl,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
-        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS_V06
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint
     }: {
         passkeyName: string
         passkeyServerUrl: string
         entryPoint?: entryPoint
-        validatorAddress?: Address
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
+    const validatorAddress = getValidatorAddress(entryPointAddress)
+
     // Get registration options
     const registerOptionsResponse = await fetch(
         `${passkeyServerUrl}/register/options`,
@@ -459,20 +459,17 @@ export async function getPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         passkeyServerUrl,
-        entryPoint: entryPointAddress,
-        validatorAddress
+        entryPoint: entryPointAddress
     }: {
         passkeyServerUrl: string
         entryPoint: entryPoint
-        validatorAddress?: Address
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    const validatorAddress = getValidatorAddress(entryPointAddress)
     // Get login options
     const loginOptionsResponse = await fetch(
         `${passkeyServerUrl}/login/options`,
@@ -633,8 +630,7 @@ export async function getPasskeyValidator<
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 entryPoint: entryPointAddress,
-                validatorAddress:
-                    validatorAddress ?? getValidatorAddress(entryPointAddress),
+                validatorAddress,
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
