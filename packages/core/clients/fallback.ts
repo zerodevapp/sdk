@@ -5,19 +5,6 @@ import {
     createTransport
 } from "viem"
 
-// type SortOptions = {
-//     /**
-//      * The polling interval (in ms).
-//      * @default client.pollingInterval
-//      */
-//     interval?: number
-//     /**
-//      * Timeout when testing transports.
-//      * @default 1_000
-//      */
-//     timeout?: number
-// }
-
 export type OnResponseFn = (
     args: {
         method: string
@@ -167,84 +154,3 @@ export function createFallbackTransport(
         paymasterFallbackTransport: createTransportInstance(false)
     }
 }
-
-// export function adjustTransportPairs({
-//     failedIndex,
-//     transportPairs
-// }: {
-//     failedIndex: number
-//     transportPairs: TransportPair[]
-// }) {
-//     const failedPair = transportPairs.splice(failedIndex, 1)[0]
-//     transportPairs.push(failedPair)
-// }
-
-// export function sortTransportPairs({
-//     chain,
-//     interval = 2_000,
-//     onPairTransports,
-//     timeout = 1_000,
-//     bundlerTransports,
-//     paymasterTransports
-// }: {
-//     chain?: Chain
-//     interval?: SortOptions["interval"]
-//     onPairTransports: (
-//         bundlerTransports: Transport[],
-//         paymasterTransports: Transport[]
-//     ) => void
-//     timeout?: SortOptions["timeout"]
-//     bundlerTransports: Transport[]
-//     paymasterTransports: Transport[]
-// }) {
-//     type pairData = { priority: number; success: boolean }
-
-//     const sortTransports_ = async () => {
-//         const pairData: pairData[] = await Promise.all(
-//             bundlerTransports.map(async (transport, i) => {
-//                 const bundlerTransport_ = transport({
-//                     chain,
-//                     retryCount: 0,
-//                     timeout
-//                 })
-//                 const paymasterTransport_ = paymasterTransports[i]({
-//                     chain,
-//                     retryCount: 0,
-//                     timeout
-//                 })
-
-//                 let success: boolean
-//                 try {
-//                     await Promise.all([
-//                         bundlerTransport_.request({ method: "net_listening" }),
-//                         paymasterTransport_.request({ method: "net_listening" })
-//                     ])
-//                     success = true
-//                 } catch {
-//                     success = false
-//                 }
-//                 return { priority: i, success }
-//             })
-//         )
-
-//         const sortedPairData = pairData.sort((a, b) => {
-//             if (a.success === b.success) {
-//                 return a.priority - b.priority // Sort by priority if success status is the same
-//             }
-//             return a.success ? -1 : 1 // Successful ones first
-//         })
-
-//         const sortedBundlerTransports = sortedPairData.map(
-//             (data) => bundlerTransports[data.priority]
-//         )
-//         const sortedPaymasterTransports = sortedPairData.map(
-//             (data) => paymasterTransports[data.priority]
-//         )
-
-//         onPairTransports(sortedBundlerTransports, sortedPaymasterTransports)
-
-//         await wait(interval)
-//         sortTransports_()
-//     }
-//     sortTransports_()
-// }
