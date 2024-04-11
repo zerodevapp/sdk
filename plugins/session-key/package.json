@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/session-key",
-    "version": "5.2.1-alpha.1",
+    "version": "5.2.1-alpha.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
