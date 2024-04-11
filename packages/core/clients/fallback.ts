@@ -67,11 +67,9 @@ export function createFallbackTransport(
     const {
         key = "fallback",
         name = "Fallback",
-        retryCount,
+        retryCount, // @dev when retryCount is undefined, it will default to 3 in viem
         retryDelay
     } = config
-
-    console.log("createFallbackTransport", retryCount, retryDelay)
 
     const createTransportInstance = (isBundler: boolean): FallbackTransport => {
         return ({ chain, pollingInterval = 2_000, timeout, ...rest }) => {
