@@ -1,5 +1,7 @@
+import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
+    http,
     type Account,
     type Chain,
     type Client,
@@ -12,6 +14,7 @@ import {
     type ZeroDevPaymasterClientActions,
     zerodevPaymasterActions
 } from "./decorators/kernel.js"
+import { setPimlicoAsProvider } from "./utils.js"
 
 export type ZeroDevPaymasterClient<entryPoint extends EntryPoint> = Client<
     Transport,
@@ -46,9 +49,29 @@ export const createZeroDevPaymasterClient = <
         entryPoint: entryPoint
     }
 ): ZeroDevPaymasterClient<entryPoint> => {
-    const { key = "public", name = "ZeroDev Paymaster Client" } = parameters
+    const {
+        key = "public",
+        name = "ZeroDev Paymaster Client",
+        entryPoint: entryPointAddress,
+        transport
+    } = parameters
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    const shouldIncludePimlicoProvider =
+        transport({}).config.key === "http" && entryPointVersion === "v0.7"
     const client = createClient({
         ...parameters,
+        transport: (opts) => {
+            let _transport = transport({
+                ...opts,
+                retryCount: 0
+            })
+            if (!shouldIncludePimlicoProvider) return _transport
+            _transport = http(setPimlicoAsProvider(_transport.value?.url))({
+                ...opts,
+                retryCount: 0
+            })
+            return _transport
+        },
         key,
         name,
         type: "zerodevPaymasterClient"

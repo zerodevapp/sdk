@@ -8,3 +8,4 @@ export {
 } from "./toWebAuthnSigner.js"
 export { WebAuthnMode } from "./toWebAuthnPubKey.js"
 export { toSignerId } from "./utils/toSignerId.js"
+export { toEmptyECDSASigner } from "./toEmptyECDSASigner.js"

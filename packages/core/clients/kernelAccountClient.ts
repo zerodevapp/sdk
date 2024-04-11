@@ -1,8 +1,10 @@
+import { getEntryPointVersion } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
 import {
+    http,
     type Chain,
     type Client,
     type ClientConfig,
@@ -15,6 +17,7 @@ import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
+import { hasPimlicoAsProvider, setPimlicoAsProvider } from "./utils.js"
 
 export type KernelAccountClient<
     entryPoint extends EntryPoint,
@@ -70,21 +73,38 @@ export const createKernelAccountClient = <
     const {
         key = "Account",
         name = "Kernel Account Client",
-        bundlerTransport
+        bundlerTransport,
+        entryPoint
     } = parameters
+    const entryPointVersion = getEntryPointVersion(entryPoint)
+    const shouldIncludePimlicoProvider =
+        bundlerTransport({}).config.key === "http" &&
+        entryPointVersion === "v0.7"
+
     const client = createClient({
         ...parameters,
         key,
         name,
-        transport: (opts) => bundlerTransport({ ...opts, retryCount: 0 }),
+        transport: (opts) => {
+            let _bundlerTransport = bundlerTransport({
+                ...opts,
+                retryCount: 0
+            })
+            if (!shouldIncludePimlicoProvider) return _bundlerTransport
+            _bundlerTransport = http(
+                setPimlicoAsProvider(_bundlerTransport.value?.url)
+            )({ ...opts, retryCount: 0 })
+            return _bundlerTransport
+        },
         type: "kernelAccountClient"
     })
 
     let middleware = parameters.middleware
-
     if (
-        !middleware ||
-        (typeof middleware !== "function" && !middleware.gasPrice)
+        (!middleware ||
+            (typeof middleware !== "function" && !middleware.gasPrice)) &&
+        client.transport?.url &&
+        hasPimlicoAsProvider(client.transport.url)
     ) {
         const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {

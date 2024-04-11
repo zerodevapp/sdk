@@ -33,7 +33,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { WEBAUTHN_VALIDATOR_ADDRESS_V06, getValidatorAddress } from "./index.js"
+import { getValidatorAddress } from "./index.js"
 import {
     b64ToBytes,
     deserializePasskeyValidatorData,
@@ -255,7 +255,7 @@ export async function createPasskeyValidator<
         passkeyName,
         passkeyServerUrl,
         entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
-        validatorAddress = WEBAUTHN_VALIDATOR_ADDRESS_V06
+        validatorAddress
     }: {
         passkeyName: string
         passkeyServerUrl: string
@@ -267,6 +267,9 @@ export async function createPasskeyValidator<
         getSerializedData: () => string
     }
 > {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
+
     // Get registration options
     const registerOptionsResponse = await fetch(
         `${passkeyServerUrl}/register/options`,
@@ -393,7 +396,7 @@ export async function createPasskeyValidator<
         address: validatorAddress,
         source: "WebAuthnValidator",
         getIdentifier() {
-            return validatorAddress
+            return validatorAddress ?? getValidatorAddress(entryPointAddress)
         },
         async getEnableData() {
             return createEnableData(
@@ -442,7 +445,8 @@ export async function createPasskeyValidator<
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 entryPoint: entryPointAddress,
-                validatorAddress,
+                validatorAddress:
+                    validatorAddress ?? getValidatorAddress(entryPointAddress),
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash

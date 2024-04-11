@@ -171,7 +171,7 @@ const getPaymasterRpc = (): string => {
         )
     }
 
-    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?paymasterProvider=${DEFAULT_PROVIDER}`
+    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}`
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
@@ -279,9 +279,7 @@ const getBundlerRpc = (provider?: string): string => {
         )
     }
 
-    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?bundlerProvider=${
-        provider ?? DEFAULT_PROVIDER
-    }`
+    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}`
 }
 
 export const waitForUserOperationTransaction = async (

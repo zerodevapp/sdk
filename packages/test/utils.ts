@@ -428,7 +428,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
     })
 }
 
-const DEFAULT_PROVIDER = "PIMLICO"
+const DEFAULT_PROVIDER = "STACKUP"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = projectId
