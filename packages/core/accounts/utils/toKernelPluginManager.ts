@@ -159,7 +159,7 @@ export async function toKernelPluginManager<
             const typeData = await getPluginsEnableTypedDataV1({
                 accountAddress,
                 chainId,
-                kernelVersion: version ?? kernelVersion,
+                kernelVersion: kernelVersion ?? version,
                 action,
                 validator: regular,
                 validUntil,

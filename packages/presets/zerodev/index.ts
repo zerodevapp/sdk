@@ -1,11 +1,11 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type { SponsorUserOperationParameters } from "@zerodev/sdk"
 import {
     createKernelAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
 import type { Address, Chain, HttpTransport } from "viem"
@@ -62,12 +62,14 @@ export async function createEcdsaKernelAccountClient<
     signer,
     provider,
     index,
-    paymaster = "SPONSOR"
+    paymaster = "SPONSOR",
+    entryPointAddress
 }: {
     chain: TChain
     projectId: string
     signer: SmartAccountSigner<TSource, TAddress>
     paymaster: PaymasterType
+    entryPointAddress: entryPoint
     provider?: Provider
     index?: bigint
 }): Promise<
@@ -84,7 +86,7 @@ export async function createEcdsaKernelAccountClient<
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
         signer,
-        entryPoint: ENTRYPOINT_ADDRESS_V06
+        entryPoint: entryPointAddress
     })
 
     const account = await createKernelAccount(publicClient, {
@@ -92,7 +94,7 @@ export async function createEcdsaKernelAccountClient<
             sudo: ecdsaValidator
         },
         index,
-        entryPoint: ENTRYPOINT_ADDRESS_V06
+        entryPoint: entryPointAddress
     })
 
     if (!isValidPaymasterType(paymaster)) {
@@ -102,31 +104,30 @@ export async function createEcdsaKernelAccountClient<
     const zerodevPaymaster = createZeroDevPaymasterClient({
         chain: chain,
         transport: http(getZeroDevPaymasterRPC(projectId, provider)),
-        entryPoint: ENTRYPOINT_ADDRESS_V06
+        entryPoint: entryPointAddress
     })
 
     const kernelClient = createKernelAccountClient({
         account,
         chain,
-        entryPoint: ENTRYPOINT_ADDRESS_V06,
+        entryPoint: entryPointAddress,
         bundlerTransport: http(getZeroDevBundlerRPC(projectId, provider)),
         middleware:
             paymaster !== "NONE"
                 ? {
-                      sponsorUserOperation: async ({
-                          userOperation,
-                          entryPoint
-                      }) => {
+                      sponsorUserOperation: async ({ userOperation }) => {
+                          const _userOperation =
+                              userOperation as SponsorUserOperationParameters<entryPoint>["userOperation"]
                           if (isERC20(paymaster)) {
                               return zerodevPaymaster.sponsorUserOperation({
-                                  userOperation,
-                                  entryPoint,
+                                  userOperation: _userOperation,
+                                  entryPoint: entryPointAddress,
                                   gasToken: paymaster
                               })
                           }
                           return zerodevPaymaster.sponsorUserOperation({
-                              userOperation,
-                              entryPoint
+                              userOperation: _userOperation,
+                              entryPoint: entryPointAddress
                           })
                       }
                   }

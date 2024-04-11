@@ -1,4 +1,3 @@
-import { ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
@@ -84,9 +83,8 @@ export const createKernelAccountClient = <
     let middleware = parameters.middleware
 
     if (
-        (!middleware ||
-            (typeof middleware !== "function" && !middleware.gasPrice)) &&
-        parameters.entryPoint === ENTRYPOINT_ADDRESS_V07
+        !middleware ||
+        (typeof middleware !== "function" && !middleware.gasPrice)
     ) {
         const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {

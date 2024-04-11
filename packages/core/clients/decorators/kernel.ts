@@ -42,10 +42,13 @@ export const zerodevPaymasterActions =
         sponsorUserOperation: async (
             args: Omit<SponsorUserOperationParameters<entryPoint>, "entryPoint">
         ) =>
-            sponsorUserOperation(client as ZeroDevPaymasterClient<entryPoint>, {
-                ...args,
-                entryPoint: entryPointAddress
-            }),
+            sponsorUserOperation<entryPoint>(
+                client as ZeroDevPaymasterClient<entryPoint>,
+                {
+                    ...args,
+                    entryPoint: entryPointAddress
+                }
+            ),
         estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>
             estimateGasInERC20(
                 client as ZeroDevPaymasterClient<entryPoint>,
