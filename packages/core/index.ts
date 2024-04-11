@@ -27,6 +27,10 @@ export {
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
 export {
+    createFallbackTransport,
+    type TransportPair
+} from "./clients/fallback.js"
+export {
     type KernelValidator,
     type ZeroDevPaymasterRpcSchema,
     type KernelPluginManager

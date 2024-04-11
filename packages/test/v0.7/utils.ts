@@ -50,6 +50,9 @@ import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
 
+import { type RequestListener, createServer } from "http"
+import type { AddressInfo } from "net"
+
 // export const index = 43244782332432423423n
 export const index = 4323343754343332434365532464445487823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
@@ -528,4 +531,22 @@ export async function mintToAccount(
             `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
         )
     }
+}
+
+export function createHttpServer(
+    handler: RequestListener
+): Promise<{ close: () => Promise<unknown>; url: string }> {
+    const server = createServer(handler)
+
+    const closeAsync = () =>
+        new Promise((resolve, reject) =>
+            server.close((err) => (err ? reject(err) : resolve(undefined)))
+        )
+
+    return new Promise((resolve) => {
+        server.listen(() => {
+            const { port } = server.address() as AddressInfo
+            resolve({ close: closeAsync, url: `http://localhost:${port}` })
+        })
+    })
 }
