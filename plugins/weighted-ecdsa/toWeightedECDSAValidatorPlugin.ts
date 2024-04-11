@@ -67,14 +67,17 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers: _signers,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        validatorAddress
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
         entryPoint: EntryPoint
+        validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     if (!validatorAddress) {
         throw new Error("Validator address not provided")
     }
@@ -352,13 +355,16 @@ export async function getCurrentSigners<
     client: Client<TTransport, TChain, undefined>,
     {
         entryPoint: entryPointAddress,
-        multiSigAccountAddress
+        multiSigAccountAddress,
+        validatorAddress
     }: {
         entryPoint: entryPoint
         multiSigAccountAddress: Address
+        validatorAddress?: Address
     }
 ): Promise<Array<{ address: Address; weight: number }>> {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     if (!validatorAddress) {
         throw new Error("Validator address not provided")
     }

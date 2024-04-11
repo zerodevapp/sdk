@@ -78,14 +78,15 @@ export async function signerToSessionKeyValidator<
     {
         signer,
         entryPoint: entryPointAddress,
-        validatorData
+        validatorData,
+        validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
         entryPoint: EntryPoint
+        validatorAddress?: Address
     }
 ): Promise<SessionKeyPlugin<entryPoint>> {
-    const validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
     if (entryPointVersion !== "v0.6") {

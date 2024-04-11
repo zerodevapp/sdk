@@ -47,13 +47,16 @@ export async function signerToEcdsaValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entryPoint: entryPoint
+        validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,

@@ -254,18 +254,21 @@ export async function createPasskeyValidator<
     {
         passkeyName,
         passkeyServerUrl,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint
+        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        validatorAddress
     }: {
         passkeyName: string
         passkeyServerUrl: string
         entryPoint?: entryPoint
+        validatorAddress?: Address
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
 
     // Get registration options
     const registerOptionsResponse = await fetch(
@@ -393,7 +396,7 @@ export async function createPasskeyValidator<
         address: validatorAddress,
         source: "WebAuthnValidator",
         getIdentifier() {
-            return validatorAddress
+            return validatorAddress ?? getValidatorAddress(entryPointAddress)
         },
         async getEnableData() {
             return createEnableData(
@@ -442,7 +445,8 @@ export async function createPasskeyValidator<
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 entryPoint: entryPointAddress,
-                validatorAddress,
+                validatorAddress:
+                    validatorAddress ?? getValidatorAddress(entryPointAddress),
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
@@ -459,17 +463,20 @@ export async function getPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         passkeyServerUrl,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        validatorAddress
     }: {
         passkeyServerUrl: string
         entryPoint: entryPoint
+        validatorAddress?: Address
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
     // Get login options
     const loginOptionsResponse = await fetch(
         `${passkeyServerUrl}/login/options`,
@@ -630,7 +637,8 @@ export async function getPasskeyValidator<
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 entryPoint: entryPointAddress,
-                validatorAddress,
+                validatorAddress:
+                    validatorAddress ?? getValidatorAddress(entryPointAddress),
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
