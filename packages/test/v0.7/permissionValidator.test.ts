@@ -133,9 +133,8 @@ describe("Permission kernel Account", () => {
             account: ecdsaAccount,
             middleware: {
                 gasPrice: async () =>
-                    (
-                        await pimlicoBundlerClient.getUserOperationGasPrice()
-                    ).fast,
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -154,9 +153,8 @@ describe("Permission kernel Account", () => {
             account: await getSignerToRootPermissionKernelAccount([sudoPolicy]),
             middleware: {
                 gasPrice: async () =>
-                    (
-                        await pimlicoBundlerClient.getUserOperationGasPrice()
-                    ).fast,
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -385,9 +383,8 @@ describe("Permission kernel Account", () => {
                 ]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -426,9 +423,8 @@ describe("Permission kernel Account", () => {
                     ),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -466,9 +462,8 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToPermissionKernelAccount([gasPolicy]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -513,9 +508,8 @@ describe("Permission kernel Account", () => {
                 ]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -555,9 +549,8 @@ describe("Permission kernel Account", () => {
                 ]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -601,9 +594,8 @@ describe("Permission kernel Account", () => {
                 ]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -668,9 +660,8 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
