@@ -39,17 +39,17 @@ export async function createPermissionValidator<
         entryPoint: entryPointAddress,
         policies,
         validUntil,
-        validAfter,
-        validatorAddress = MODULAR_PERMISSION_VALIDATOR_ADDRESS
+        validAfter
     }: {
         signer: ModularSigner
         validUntil?: number
         validAfter?: number
         policies: Policy<entryPoint>[]
         entryPoint: EntryPoint
-        validatorAddress?: Address
     }
 ): Promise<ModularPermissionPlugin<entryPoint>> {
+    const validatorAddress = MODULAR_PERMISSION_VALIDATOR_ADDRESS
+
     const chainId = await getChainId(client)
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
