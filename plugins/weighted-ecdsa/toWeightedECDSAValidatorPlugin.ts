@@ -153,7 +153,7 @@ export async function createWeightedECDSAValidator<
             validatorAddress ?? getValidatorAddress(entryPointAddress),
 
         async getEnableData() {
-            if (!config) return "0x" // TODO: check if this is correct
+            if (!config) return "0x"
             return encodeAbiParameters(
                 [
                     { name: "_guardians", type: "address[]" },
