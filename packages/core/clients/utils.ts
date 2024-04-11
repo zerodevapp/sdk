@@ -13,7 +13,6 @@ export const setPimlicoAsProvider = (urlString: string): string => {
 
     url.search = params.toString()
 
-    console.log(url.toString())
     return url.toString()
 }
 
