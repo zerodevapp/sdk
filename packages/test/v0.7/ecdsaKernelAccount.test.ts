@@ -559,6 +559,9 @@ describe("ECDSA kernel Account", () => {
             })
 
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )

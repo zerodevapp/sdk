@@ -31,9 +31,10 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress
+    zeroAddress,
+    parseEther
 } from "viem"
-import { goerli } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
@@ -149,7 +150,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.6"].polygonMumbai.rpcUrl
+                    config["v0.6"].sepolia.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -391,7 +392,7 @@ describe("ECDSA kernel Account", () => {
                         return zerodevPaymaster.sponsorUserOperation({
                             userOperation,
                             entryPoint,
-                            gasToken: gasTokenAddresses[goerli.id]["6TEST"]
+                            gasToken: gasTokenAddresses[sepolia.id]["6TEST"]
                         })
                     }
                 }
@@ -401,17 +402,17 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.sendTransactions({
                 transactions: [
                     {
-                        to: gasTokenAddresses[goerli.id]["6TEST"],
+                        to: gasTokenAddresses[sepolia.id]["6TEST"],
                         data: encodeFunctionData({
                             abi: TEST_ERC20Abi,
                             functionName: "mint",
-                            args: [account.address, 100000n]
+                            args: [account.address, parseEther("0.9")]
                         }),
                         value: 0n
                     },
                     await getERC20PaymasterApproveCall(pmClient, {
-                        gasToken: gasTokenAddresses[goerli.id]["6TEST"],
-                        approveAmount: 100000n
+                        gasToken: gasTokenAddresses[sepolia.id]["6TEST"],
+                        approveAmount: parseEther("0.9")
                     }),
                     {
                         to: zeroAddress,
@@ -423,7 +424,7 @@ describe("ECDSA kernel Account", () => {
 
             console.log(
                 "erc20PMTransaction:",
-                `https://mumbai.polygonscan.com/tx/${response}`
+                `https://sepolia.etherscan.io/tx/${response}`
             )
 
             expect(response).toBeString()

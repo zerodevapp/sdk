@@ -1,11 +1,9 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
-    constants,
     KernelAccountAbi,
     KernelAccountClient,
     KernelSmartAccount,
-    TokenActionsAbi
 } from "@zerodev/sdk"
 import {
     Operation,
@@ -36,9 +34,9 @@ import {
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { polygonMumbai } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
-import { config } from "./config.js"
+import { TOKEN_ACTION_ADDRESS, config } from "./config.js"
 import {
     Test_ERC20Address,
     getEntryPoint,
@@ -50,12 +48,13 @@ import {
     getSignerToSessionKeyKernelAccount,
     getZeroDevPaymasterClient
 } from "./utils.js"
+import { TokenActionsAbi } from "./abis/TokenActionsAbi.js";
 
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient
     const client = await createPublicClient({
-        chain: polygonMumbai,
-        transport: http(config["v0.6"].polygonMumbai.rpcUrl as string)
+        chain: sepolia,
+        transport: http(config["v0.6"].sepolia.rpcUrl as string)
     })
     const executeBatchSelector = toFunctionSelector(
         getAbiItem({
@@ -66,7 +65,7 @@ describe("Session Key kernel Account", async () => {
     const transfer20ActionSelector = toFunctionSelector(
         getAbiItem({
             abi: TokenActionsAbi,
-            name: "transfer20Action"
+            name: "transferERC20Action"
         })
     )
     let testPrivateKey: Hex
@@ -110,7 +109,7 @@ describe("Session Key kernel Account", async () => {
                 })
             console.log(
                 "mintTransactionHash",
-                `https://mumbai.polygonscan.com/tx/${mintTransactionHash}`
+                `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
             )
         }
     }
@@ -173,7 +172,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -200,7 +199,7 @@ describe("Session Key kernel Account", async () => {
             account: await getSessionKeyToSessionKeyKernelAccount(
                 sessionKeyPlugin,
                 {
-                    address: constants.TOKEN_ACTION,
+                    address: TOKEN_ACTION_ADDRESS,
                     selector: transfer20ActionSelector
                 }
             ),
@@ -218,7 +217,7 @@ describe("Session Key kernel Account", async () => {
         const amountToTransfer = 10000n
         const transferData = encodeFunctionData({
             abi: TokenActionsAbi,
-            functionName: "transfer20Action",
+            functionName: "transferERC20Action",
             args: [Test_ERC20Address, amountToTransfer, owner.address]
         })
 
@@ -236,7 +235,7 @@ describe("Session Key kernel Account", async () => {
             })
         console.log(
             "jiffyScanLink:",
-            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=mumbai/`
+            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
         )
         const bundlerClient = getKernelBundlerClient()
         const {
@@ -247,7 +246,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
 
         const balanceOfReceipientAfter = await client.readContract({
@@ -306,7 +305,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -383,7 +382,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -491,7 +490,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -557,7 +556,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfAfter = await client.getBalance({
             address: owner.address
@@ -718,9 +717,9 @@ describe("Session Key kernel Account", async () => {
                 validatorData: {
                     permissions: [
                         {
-                            target: constants.TOKEN_ACTION,
+                            target: TOKEN_ACTION_ADDRESS,
                             abi: TokenActionsAbi,
-                            functionName: "transfer20Action",
+                            functionName: "transferERC20Action",
                             args: [
                                 {
                                     operator: ParamOperator.EQUAL,
@@ -766,7 +765,7 @@ describe("Session Key kernel Account", async () => {
         const amountToTransfer = 10000n
         const transferData = encodeFunctionData({
             abi: TokenActionsAbi,
-            functionName: "transfer20Action",
+            functionName: "transferERC20Action",
             args: [Test_ERC20Address, amountToTransfer, owner.address]
         })
 
@@ -782,7 +781,7 @@ describe("Session Key kernel Account", async () => {
                     callData:
                         await _sessionKeySmartAccountClient.account.encodeCallData(
                             {
-                                to: constants.TOKEN_ACTION,
+                                to: TOKEN_ACTION_ADDRESS,
                                 data: transferData,
                                 value: 0n,
                                 callType: "delegatecall"
@@ -792,7 +791,7 @@ describe("Session Key kernel Account", async () => {
             })
         console.log(
             "jiffyScanLink:",
-            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=mumbai/`
+            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
         )
         const bundlerClient = getKernelBundlerClient()
         const {
@@ -803,7 +802,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,

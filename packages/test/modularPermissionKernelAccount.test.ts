@@ -3,21 +3,17 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import { EntryPoint } from "permissionless/_types/types"
 import {
-    http,
     Address,
     Chain,
     Hex,
     PrivateKeyAccount,
     PublicClient,
     Transport,
-    createPublicClient,
     encodeFunctionData,
     pad,
-    parseEther,
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { polygonMumbai } from "viem/chains"
 import { toGasPolicy } from "../../plugins/modularPermission/policies/toGasPolicy"
 import {
     ParamOperator,
@@ -26,7 +22,6 @@ import {
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi"
 import {
     Test_ERC20Address,
-    getEntryPoint,
     getKernelAccountClient,
     getPublicClient,
     getSignerToEcdsaKernelAccount,
@@ -73,7 +68,7 @@ describe("Modular Permission kernel Account", async () => {
                 })
             console.log(
                 "mintTransactionHash",
-                `https://mumbai.polygonscan.com/tx/${mintTransactionHash}`
+                `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
             )
         }
     }
@@ -128,7 +123,7 @@ describe("Modular Permission kernel Account", async () => {
                     value: 0n,
                     data: "0x"
                 })
-            console.log("txHash", `https://mumbai.polygonscan.com/tx/${txHash}`)
+            console.log("txHash", `https://sepolia.etherscan.io/tx/${txHash}`)
         },
         TEST_TIMEOUT
     )
@@ -192,7 +187,7 @@ describe("Modular Permission kernel Account", async () => {
                     to: Test_ERC20Address,
                     data: transferData
                 })
-            console.log("txHash", `https://mumbai.polygonscan.com/tx/${txHash}`)
+            console.log("txHash", `https://sepolia.etherscan.io/tx/${txHash}`)
             const balanceOfReceipientAfter = await publicClient.readContract({
                 abi: TEST_ERC20Abi,
                 address: Test_ERC20Address,
@@ -239,7 +234,7 @@ describe("Modular Permission kernel Account", async () => {
                     to: zeroAddress,
                     data: pad("0x", { size: 4 })
                 })
-            console.log("txHash", `https://mumbai.polygonscan.com/tx/${txHash}`)
+            console.log("txHash", `https://sepolia.etherscan.io/tx/${txHash}`)
         },
         TEST_TIMEOUT
     )

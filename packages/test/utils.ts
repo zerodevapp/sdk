@@ -52,7 +52,7 @@ import {
     generatePrivateKey,
     privateKeyToAccount
 } from "viem/accounts"
-import { type Chain, goerli, polygonMumbai } from "viem/chains"
+import { type Chain, goerli, sepolia } from "viem/chains"
 import * as allChains from "viem/chains"
 import { Policy } from "../../plugins/modularPermission/policies/types.js"
 import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
@@ -62,8 +62,8 @@ import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import { config } from "./config.js"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
-export const index = 54385323232340n
-const projectId = config["v0.6"].polygonMumbai.projectId
+export const index = 543853232332340n
+const projectId = config["v0.6"].sepolia.projectId
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -81,8 +81,8 @@ export const getPrivateKeyAccount = (): Account => {
 }
 
 export const getTestingChain = (): Chain => {
-    const testChainId = config["v0.6"].polygonMumbai.chainId
-    const chainId = testChainId ?? polygonMumbai.id
+    const testChainId = config["v0.6"].sepolia.chainId
+    const chainId = testChainId ?? sepolia.id
     const chain = Object.values(allChains).find((c) => c.id === chainId)
     if (!chain) {
         throw new Error(`Chain with id ${chainId} not found`)
@@ -432,7 +432,7 @@ const DEFAULT_PROVIDER = "STACKUP"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = config["v0.6"].polygonMumbai.bundlerUrl
+    const zeroDevBundlerRpcHost = config["v0.6"].sepolia.bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
@@ -479,7 +479,7 @@ export const getKernelAccountClient = async <entryPoint extends EntryPoint>({
 }
 
 export const getEoaWalletClient = (): WalletClient => {
-    const rpcUrl = config["v0.6"].polygonMumbai.rpcUrl
+    const rpcUrl = config["v0.6"].sepolia.rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -496,7 +496,7 @@ export const getEntryPoint = (): EntryPoint => {
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = config["v0.6"].polygonMumbai.rpcUrl
+    const rpcUrl = config["v0.6"].sepolia.rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
