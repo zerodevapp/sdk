@@ -1,5 +1,5 @@
 import type { KernelValidator } from "@zerodev/sdk"
-import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
+import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import {
     type AbiFunction,
     type AbiParameter,
@@ -9,6 +9,7 @@ import {
 } from "abitype"
 import type { ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Abi,
     type AbiStateMutability,
@@ -77,14 +78,17 @@ export type ExportSessionKeyAccountParams = {
 
 export type SessionKeyAccountParams = {
     sessionKeyParams: SessionKeyData<Abi, string>
-    executorData: ExecutorData
+    action: Action
     validityData: PluginValidityData
     accountParams: ExportSessionKeyAccountParams
     enableSignature?: Hex
     privateKey?: Hex
 }
 
-export type SessionKeyPlugin = KernelValidator<"SessionKeyValidator"> & {
+export type SessionKeyPlugin<entryPoint extends EntryPoint> = KernelValidator<
+    entryPoint,
+    "SessionKeyValidator"
+> & {
     getPluginSerializationParams(): SessionKeyData<Abi, string>
 }
 

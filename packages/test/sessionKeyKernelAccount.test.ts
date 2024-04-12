@@ -1,10 +1,9 @@
+// @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
-    constants,
     KernelAccountAbi,
     KernelAccountClient,
-    KernelSmartAccount,
-    TokenActionsAbi
+    KernelSmartAccount
 } from "@zerodev/sdk"
 import {
     Operation,
@@ -16,6 +15,7 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     http,
     Address,
@@ -34,8 +34,10 @@ import {
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { polygonMumbai } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { TokenActionsAbi } from "./abis/TokenActionsAbi.js"
+import { TOKEN_ACTION_ADDRESS, config } from "./config.js"
 import {
     Test_ERC20Address,
     getEntryPoint,
@@ -51,33 +53,35 @@ import {
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient
     const client = await createPublicClient({
-        chain: polygonMumbai,
-        transport: http(process.env.RPC_URL as string)
+        chain: sepolia,
+        transport: http(config["v0.6"].sepolia.rpcUrl as string)
     })
-    const executeBatchSelector = getFunctionSelector(
+    const executeBatchSelector = toFunctionSelector(
         getAbiItem({
             abi: KernelAccountAbi,
             name: "executeBatch"
         })
     )
-    const transfer20ActionSelector = getFunctionSelector(
+    const transfer20ActionSelector = toFunctionSelector(
         getAbiItem({
             abi: TokenActionsAbi,
-            name: "transfer20Action"
+            name: "transferERC20Action"
         })
     )
     let testPrivateKey: Hex
     let owner: PrivateKeyAccount
     let accountAddress: Address
     let ecdsaSmartAccountClient: KernelAccountClient<
+        EntryPoint,
         Transport,
         Chain,
-        KernelSmartAccount
+        KernelSmartAccount<EntryPoint>
     >
     let sessionKeySmartAccountClient: KernelAccountClient<
+        EntryPoint,
         Transport,
         Chain,
-        KernelSmartAccount
+        KernelSmartAccount<EntryPoint>
     >
 
     async function mintToAccount(amount: bigint) {
@@ -105,7 +109,7 @@ describe("Session Key kernel Account", async () => {
                 })
             console.log(
                 "mintTransactionHash",
-                `https://mumbai.polygonscan.com/tx/${mintTransactionHash}`
+                `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
             )
         }
     }
@@ -117,13 +121,14 @@ describe("Session Key kernel Account", async () => {
 
         sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
         accountAddress = (await sessionKeySmartAccountClient.account
@@ -131,13 +136,14 @@ describe("Session Key kernel Account", async () => {
 
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
     })
@@ -166,7 +172,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -184,6 +190,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -192,24 +199,25 @@ describe("Session Key kernel Account", async () => {
             account: await getSessionKeyToSessionKeyKernelAccount(
                 sessionKeyPlugin,
                 {
-                    executor: constants.TOKEN_ACTION,
+                    address: TOKEN_ACTION_ADDRESS,
                     selector: transfer20ActionSelector
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
         const amountToTransfer = 10000n
         const transferData = encodeFunctionData({
             abi: TokenActionsAbi,
-            functionName: "transfer20Action",
+            functionName: "transferERC20Action",
             args: [Test_ERC20Address, amountToTransfer, owner.address]
         })
 
@@ -219,16 +227,28 @@ describe("Session Key kernel Account", async () => {
             functionName: "balanceOf",
             args: [owner.address]
         })
-        const transferTransactionHash =
-            await _sessionKeySmartAccountClient.sendTransaction({
-                to: accountAddress,
-                data: transferData
+        const userOpHash =
+            await _sessionKeySmartAccountClient.sendUserOperation({
+                userOperation: {
+                    callData: transferData
+                }
             })
+        console.log(
+            "jiffyScanLink:",
+            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
+        )
+        const bundlerClient = getKernelBundlerClient()
+        const {
+            receipt: { transactionHash: transferTransactionHash }
+        } = await bundlerClient.waitForUserOperationReceipt({
+            hash: userOpHash
+        })
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
+
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
             address: Test_ERC20Address,
@@ -245,6 +265,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -252,13 +273,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -283,7 +305,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -301,6 +323,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -327,13 +350,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -358,7 +382,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -376,6 +400,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -409,16 +434,17 @@ describe("Session Key kernel Account", async () => {
                 sessionKeyPlugin,
                 {
                     selector: executeBatchSelector,
-                    executor: zeroAddress
+                    address: zeroAddress
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -464,7 +490,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,
@@ -489,6 +515,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -504,13 +531,14 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account:
                 await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -528,7 +556,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfAfter = await client.getBalance({
             address: owner.address
@@ -543,6 +571,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: sessionKeyAccount,
                 validatorData: {
                     permissions: [
@@ -562,15 +591,17 @@ describe("Session Key kernel Account", async () => {
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await deserializeSessionKeyAccount(
                 publicClient,
+                getEntryPoint(),
                 serializedSessionKeyAccountParams
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
@@ -596,6 +627,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     paymaster: anyPaymaster,
@@ -649,6 +681,7 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -679,13 +712,14 @@ describe("Session Key kernel Account", async () => {
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
             {
+                entryPoint: getEntryPoint(),
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
                         {
-                            target: constants.TOKEN_ACTION,
+                            target: TOKEN_ACTION_ADDRESS,
                             abi: TokenActionsAbi,
-                            functionName: "transfer20Action",
+                            functionName: "transferERC20Action",
                             args: [
                                 {
                                     operator: ParamOperator.EQUAL,
@@ -711,26 +745,27 @@ describe("Session Key kernel Account", async () => {
             account: await getSessionKeyToSessionKeyKernelAccount(
                 sessionKeyPlugin,
                 {
-                    executor: zeroAddress,
+                    address: zeroAddress,
                     selector: toFunctionSelector(
                         "executeDelegateCall(address, bytes)"
                     )
                 }
             ),
-            sponsorUserOperation: async ({ userOperation }) => {
-                const kernelPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return kernelPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const kernelPaymaster = getZeroDevPaymasterClient()
+                    return kernelPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
 
         const amountToTransfer = 10000n
         const transferData = encodeFunctionData({
             abi: TokenActionsAbi,
-            functionName: "transfer20Action",
+            functionName: "transferERC20Action",
             args: [Test_ERC20Address, amountToTransfer, owner.address]
         })
 
@@ -746,7 +781,7 @@ describe("Session Key kernel Account", async () => {
                     callData:
                         await _sessionKeySmartAccountClient.account.encodeCallData(
                             {
-                                to: constants.TOKEN_ACTION,
+                                to: TOKEN_ACTION_ADDRESS,
                                 data: transferData,
                                 value: 0n,
                                 callType: "delegatecall"
@@ -756,7 +791,7 @@ describe("Session Key kernel Account", async () => {
             })
         console.log(
             "jiffyScanLink:",
-            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=mumbai/`
+            `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
         )
         const bundlerClient = getKernelBundlerClient()
         const {
@@ -767,7 +802,7 @@ describe("Session Key kernel Account", async () => {
 
         console.log(
             "transferTransactionHash",
-            `https://mumbai.polygonscan.com/tx/${transferTransactionHash}`
+            `https://sepolia.etherscan.io/tx/${transferTransactionHash}`
         )
         const balanceOfReceipientAfter = await client.readContract({
             abi: TEST_ERC20Abi,

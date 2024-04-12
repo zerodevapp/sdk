@@ -1,14 +1,15 @@
+import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
+import type { EntryPoint } from "permissionless/types"
 import type {
     UserOperation,
     UserOperationWithBigIntAsHex
 } from "permissionless/types/userOperation.js"
 import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
-import { KERNEL_ADDRESSES } from "../../accounts/index.js"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
 
 export type EstimateGasInERC20Parameters = {
-    userOperation: UserOperation
+    userOperation: UserOperation<"v0.6">
     gasTokenAddress: Hex
     entryPoint?: Address
 }
@@ -26,8 +27,8 @@ export type EstimateGasInERC20ReturnType = {
  * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
  */
 
-export const estimateGasInERC20 = async (
-    client: ZeroDevPaymasterClient,
+export const estimateGasInERC20 = async <entryPoint extends EntryPoint>(
+    client: ZeroDevPaymasterClient<entryPoint>,
     args: EstimateGasInERC20Parameters
 ): Promise<EstimateGasInERC20ReturnType> => {
     const response = await client.request({
@@ -37,10 +38,9 @@ export const estimateGasInERC20 = async (
                 chainId: client.chain?.id as number,
                 userOp: deepHexlify(
                     args.userOperation
-                ) as UserOperationWithBigIntAsHex,
+                ) as UserOperationWithBigIntAsHex<"v0.6">,
                 tokenAddress: args.gasTokenAddress,
-                entryPointAddress:
-                    args.entryPoint ?? KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                entryPointAddress: args.entryPoint ?? ENTRYPOINT_ADDRESS_V06
             }
         ]
     })

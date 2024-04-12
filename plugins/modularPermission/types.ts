@@ -1,7 +1,8 @@
 import { type KernelValidator } from "@zerodev/sdk"
-import type { ExecutorData, PluginValidityData } from "@zerodev/sdk/types"
+import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import { type ExtractAbiFunction, type ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import type {
     Abi,
     AbiFunction,
@@ -16,10 +17,10 @@ import type {
 import { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
 import type { Policy } from "./policies/types.js"
 
-export interface ModularPermissionData {
+export interface ModularPermissionData<entryPoint extends EntryPoint> {
     validUntil?: number
     validAfter?: number
-    policies?: Policy[]
+    policies?: Policy<entryPoint>[]
 }
 
 export type ExportModularPermissionAccountParams = {
@@ -27,19 +28,18 @@ export type ExportModularPermissionAccountParams = {
     accountAddress: Address
 }
 
-export type ModularPermissionAccountParams = {
-    modularPermissionParams: ModularPermissionData
-    executorData: ExecutorData
+export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
+    modularPermissionParams: ModularPermissionData<entryPoint>
+    action: Action
     validityData: PluginValidityData
     accountParams: ExportModularPermissionAccountParams
     enableSignature?: Hex
     privateKey?: Hex
 }
 
-export type ModularPermissionPlugin =
-    KernelValidator<"ModularPermissionValidator"> & {
-        getPermissionId: () => Hex
-        getPluginSerializationParams: () => ModularPermissionData
+export type ModularPermissionPlugin<entryPoint extends EntryPoint> =
+    KernelValidator<entryPoint, "ModularPermissionValidator"> & {
+        getPluginSerializationParams: () => ModularPermissionData<entryPoint>
     }
 
 export type Nonces = {

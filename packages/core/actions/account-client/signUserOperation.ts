@@ -1,8 +1,12 @@
 import type { SmartAccount } from "permissionless/accounts/types"
-import type { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
-import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
+import {
+    type Middleware,
+    prepareUserOperationRequest
+} from "permissionless/actions/smartAccount"
 import type {
+    EntryPoint,
     GetAccountParameter,
+    GetEntryPointVersion,
     PartialBy,
     Prettify,
     UserOperation
@@ -15,10 +19,13 @@ import {
 import type { Chain, Client, Transport } from "viem"
 
 export type SignUserOperationParameters<
-    TAccount extends SmartAccount | undefined = SmartAccount | undefined
+    entryPoint extends EntryPoint,
+    TAccount extends SmartAccount<entryPoint> | undefined =
+        | SmartAccount<entryPoint>
+        | undefined
 > = {
     userOperation: PartialBy<
-        UserOperation,
+        UserOperation<"v0.6">,
         | "nonce"
         | "sender"
         | "initCode"
@@ -30,30 +37,35 @@ export type SignUserOperationParameters<
         | "verificationGasLimit"
         | "paymasterAndData"
     >
-} & GetAccountParameter<TAccount> &
-    SponsorUserOperationMiddleware
+} & GetAccountParameter<entryPoint, TAccount> &
+    Middleware<entryPoint>
 
-export type SignUserOperationReturnType = UserOperation
+export type SignUserOperationReturnType = UserOperation<"v0.6">
 
 export async function signUserOperation<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount | undefined = SmartAccount | undefined
+    TAccount extends SmartAccount<entryPoint> | undefined =
+        | SmartAccount<entryPoint>
+        | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<SignUserOperationParameters<TAccount>>
+    args: Prettify<SignUserOperationParameters<entryPoint, TAccount>>
 ): Promise<SignUserOperationReturnType> {
     const { account: account_ = client.account } = args
     if (!account_) throw new AccountOrClientNotFoundError()
 
-    const account = parseAccount(account_) as SmartAccount
+    const account = parseAccount(account_) as SmartAccount<entryPoint>
 
     const userOperation = await getAction(
         client,
-        prepareUserOperationRequest
+        prepareUserOperationRequest<entryPoint, TTransport, TChain, TAccount>
     )(args)
 
-    userOperation.signature = await account.signUserOperation(userOperation)
+    userOperation.signature = await account.signUserOperation(
+        userOperation as UserOperation<GetEntryPointVersion<entryPoint>>
+    )
 
-    return userOperation
+    return userOperation as SignUserOperationReturnType
 }

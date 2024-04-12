@@ -1,12 +1,19 @@
 import {
+    ENTRYPOINT_ADDRESS_V06,
     getAccountNonce,
+    getEntryPointVersion,
     getSenderAddress,
-    getUserOperationHash
+    getUserOperationHash,
+    isSmartAccountDeployed
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -21,12 +28,7 @@ import {
     encodeFunctionData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import {
-    getBytecode,
-    getChainId,
-    signMessage,
-    signTypedData
-} from "viem/actions"
+import { getChainId, signMessage, signTypedData } from "viem/actions"
 import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
@@ -38,9 +40,13 @@ import {
 import { type KernelSmartAccount } from "../createKernelAccount.js"
 
 export type KernelV1SmartAccount<
+    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = Omit<KernelSmartAccount<transport, chain>, "kernelPluginManager">
+> = Omit<
+    KernelSmartAccount<entryPoint, transport, chain>,
+    "kernelPluginManager"
+>
 
 const createAccountAbi = [
     {
@@ -85,6 +91,7 @@ const KERNEL_V1_ADDRESSES: {
 }
 
 export async function createKernelV1Account<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = string,
@@ -93,15 +100,20 @@ export async function createKernelV1Account<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entrypoint = KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6,
+        entrypoint: entryPointAddress,
         index = 0n
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entrypoint?: Address
+        entrypoint: entryPoint
         index?: bigint
     }
-): Promise<KernelV1SmartAccount<TTransport, TChain>> {
-    if (entrypoint !== KERNEL_V1_ADDRESSES.ENTRYPOINT_V0_6) {
+): Promise<KernelV1SmartAccount<entryPoint, TTransport, TChain>> {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (
+        entryPointVersion !== "v0.6" ||
+        entryPointAddress !== ENTRYPOINT_ADDRESS_V06
+    ) {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
 
@@ -127,18 +139,26 @@ export async function createKernelV1Account<
     }
 
     const initCode = await generateInitCode()
-    const accountAddress = await getSenderAddress(client, {
-        initCode,
-        entryPoint: entrypoint
-    })
+    const accountAddress = await getSenderAddress<ENTRYPOINT_ADDRESS_V06_TYPE>(
+        client,
+        {
+            initCode,
+            entryPoint: entryPointAddress
+        }
+    )
 
     if (!accountAddress) throw new Error("Account address not found")
+
+    let smartAccountDeployed = await isSmartAccountDeployed(
+        client,
+        accountAddress
+    )
 
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
             const [isDeployed, signature] = await Promise.all([
-                isAccountDeployed(),
+                isSmartAccountDeployed(client, accountAddress),
                 signer.signMessage({ message })
             ])
             return create6492Signature(isDeployed, signature)
@@ -162,13 +182,13 @@ export async function createKernelV1Account<
         }
     })
 
-    const isAccountDeployed = async (): Promise<boolean> => {
-        const contractCode = await getBytecode(client, {
-            address: accountAddress
-        })
+    // const isAccountDeployed = async (): Promise<boolean> => {
+    //     const contractCode = await getBytecode(client, {
+    //         address: accountAddress
+    //     })
 
-        return (contractCode?.length ?? 0) > 2
-    }
+    //     return (contractCode?.length ?? 0) > 2
+    // }
 
     const create6492Signature = async (
         isDeployed: boolean,
@@ -192,15 +212,42 @@ export async function createKernelV1Account<
 
     return {
         ...account,
+        generateInitCode,
         client: client,
         publicKey: accountAddress,
-        entryPoint: entrypoint,
+        entryPoint: entryPointAddress,
         source: "kernelSmartAccount",
-        generateInitCode,
+        async getFactory() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return KERNEL_V1_ADDRESSES.FACTORY_ADDRESS
+        },
+
+        async getFactoryData() {
+            if (smartAccountDeployed) return undefined
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return undefined
+
+            return parseFactoryAddressAndCallDataFromAccountInitCode(
+                await generateInitCode()
+            )[1]
+        },
         async getNonce() {
             return getAccountNonce(client, {
                 sender: accountAddress,
-                entryPoint: entrypoint
+                entryPoint: entryPointAddress
             })
         },
         async signUserOperation(userOperation) {
@@ -209,7 +256,7 @@ export async function createKernelV1Account<
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entrypoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -219,11 +266,15 @@ export async function createKernelV1Account<
             return signature
         },
         async getInitCode() {
-            if (await isAccountDeployed()) {
-                return "0x"
-            } else {
-                return generateInitCode()
-            }
+            if (smartAccountDeployed) return "0x"
+
+            smartAccountDeployed = await isSmartAccountDeployed(
+                client,
+                accountAddress
+            )
+
+            if (smartAccountDeployed) return "0x"
+            return generateInitCode()
         },
         async encodeCallData(_tx) {
             const tx = _tx as KernelEncodeCallDataArgs

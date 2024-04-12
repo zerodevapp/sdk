@@ -5,7 +5,7 @@ export {
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
-    EIP1271ABI
+    EIP1271Abi
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,
@@ -33,9 +33,19 @@ export {
 } from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
 export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
+export {
+    KernelV3AccountAbi,
+    KernelV3ExecuteAbi,
+    KernelV3InitAbi
+} from "./accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
+export { KernelV3FactoryAbi } from "./accounts/kernel/abi/kernel_v_3_0_0/KernelFactoryAbi.js"
+export { KernelFactoryStakerAbi } from "./accounts/kernel/abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"
 export * as constants from "./constants.js"
 export * from "./utils.js"
 export { gasTokenAddresses, type TokenSymbolsMap } from "./gasTokenAddresses.js"
-export { verifyEIP6492Signature } from "./accounts/utils/index.js"
+export {
+    verifyEIP6492Signature,
+    getCustomNonceKeyFromString
+} from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"

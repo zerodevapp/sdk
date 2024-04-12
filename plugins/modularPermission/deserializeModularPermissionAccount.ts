@@ -2,6 +2,7 @@ import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type { EntryPoint } from "permissionless/types"
 import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
@@ -17,8 +18,11 @@ import type { ModularSigner } from "./signers/types.js"
 import { createPermissionValidator } from "./toModularPermissionValidatorPlugin.js"
 import { deserializeModularPermissionAccountParams } from "./utils.js"
 
-export const deserializeModularPermissionAccount = async (
+export const deserializeModularPermissionAccount = async <
+    entryPoint extends EntryPoint
+>(
     client: Parameters<typeof createKernelAccount>[0],
+    entryPointAddress: entryPoint,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
@@ -41,29 +45,37 @@ export const deserializeModularPermissionAccount = async (
             ) || []
         ),
         validUntil: params.modularPermissionParams.validUntil || 0,
-        validAfter: params.modularPermissionParams.validAfter || 0
+        validAfter: params.modularPermissionParams.validAfter || 0,
+        entryPoint: entryPointAddress
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
         params.accountParams.initCode
     )
 
-    const kernelPluginManager = await toKernelPluginManager(client, {
-        regular: modularPermissionPlugin,
-        pluginEnableSignature: params.enableSignature,
-        validatorInitData,
-        executorData: params.executorData,
-        ...params.validityData
-    })
+    const kernelPluginManager = await toKernelPluginManager<entryPoint>(
+        client,
+        {
+            regular: modularPermissionPlugin,
+            pluginEnableSignature: params.enableSignature,
+            validatorInitData,
+            action: params.action,
+            entryPoint: entryPointAddress,
+            ...params.validityData
+        }
+    )
 
-    return createKernelAccount(client, {
+    return createKernelAccount<entryPoint>(client, {
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress
+        deployedAccountAddress: params.accountParams.accountAddress,
+        entryPoint: entryPointAddress
     })
 }
 
-export const createPolicyFromParams = async (policy: Policy) => {
+export const createPolicyFromParams = async <entryPoint extends EntryPoint>(
+    policy: Policy<entryPoint>
+) => {
     switch (policy.policyParams.type) {
         case "sudo":
             return await toSudoPolicy(policy.policyParams)
@@ -96,6 +108,7 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
         if (initializeFunctionData.functionName === "initialize") {
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
+                identifier: initializeFunctionData.args[0],
                 enableData: initializeFunctionData.args[1]
             }
         }

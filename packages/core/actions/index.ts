@@ -11,6 +11,11 @@ export {
 } from "./account-client/signUserOperation.js"
 
 export {
+    getUserOperationGasPrice,
+    type GetUserOperationGasPriceReturnType
+} from "./account-client/getUserOperationGasPrice.js"
+
+export {
     estimateGasInERC20,
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType

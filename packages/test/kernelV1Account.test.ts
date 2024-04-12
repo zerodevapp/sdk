@@ -1,13 +1,15 @@
+// @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
-    EIP1271ABI,
+    EIP1271Abi,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
     getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
+import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { BundlerClient } from "permissionless"
@@ -15,6 +17,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
+import { EntryPoint } from "permissionless/types/entrypoint.js"
 import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
     Address,
@@ -28,12 +31,14 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
+    parseEther,
     zeroAddress
 } from "viem"
-import { goerli } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { config } from "./config.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
@@ -82,10 +87,15 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
-    let account: SmartAccount
+    let account: KernelSmartAccount<EntryPoint>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient
-    let kernelClient: KernelAccountClient<Transport, Chain, KernelSmartAccount>
+    let bundlerClient: BundlerClient<EntryPoint>
+    let kernelClient: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >
 
     beforeAll(async () => {
         account = await getKernelV1Account()
@@ -93,13 +103,14 @@ describe("ECDSA kernel Account", () => {
         bundlerClient = getKernelBundlerClient()
         kernelClient = await getKernelAccountClient({
             account,
-            sponsorUserOperation: async ({ userOperation }) => {
-                const zerodevPaymaster = getZeroDevPaymasterClient()
-                const entryPoint = getEntryPoint()
-                return zerodevPaymaster.sponsorUserOperation({
-                    userOperation,
-                    entryPoint
-                })
+            middleware: {
+                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
+                    const zerodevPaymaster = getZeroDevPaymasterClient()
+                    return zerodevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint
+                    })
+                }
             }
         })
     })
@@ -139,14 +150,14 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    process.env.RPC_URL as string
+                    config["v0.6"].sepolia.rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [hashMessage(message), response]
             })
@@ -197,7 +208,7 @@ describe("ECDSA kernel Account", () => {
 
             const eip1271response = await publicClient.readContract({
                 address: account.address,
-                abi: EIP1271ABI,
+                abi: EIP1271Abi,
                 functionName: "isValidSignature",
                 args: [typedHash, response]
             })
@@ -308,8 +319,7 @@ describe("ECDSA kernel Account", () => {
             expect(userOp.signature).not.toBe("0x")
 
             const userOpHash = await bundlerClient.sendUserOperation({
-                userOperation: userOp,
-                entryPoint: KERNEL_ADDRESSES.ENTRYPOINT_V0_6
+                userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
 
@@ -373,16 +383,18 @@ describe("ECDSA kernel Account", () => {
 
             const kernelClient = await getKernelAccountClient({
                 account,
-                sponsorUserOperation: async ({
-                    entryPoint: _entryPoint,
-                    userOperation
-                }): Promise<UserOperation> => {
-                    const zerodevPaymaster = getZeroDevERC20PaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
+                middleware: {
+                    sponsorUserOperation: async ({
                         userOperation,
-                        entryPoint: getEntryPoint(),
-                        gasToken: gasTokenAddresses[goerli.id]["6TEST"]
-                    })
+                        entryPoint
+                    }) => {
+                        const zerodevPaymaster = getZeroDevPaymasterClient()
+                        return zerodevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint,
+                            gasToken: gasTokenAddresses[sepolia.id]["6TEST"]
+                        })
+                    }
                 }
             })
 
@@ -390,17 +402,17 @@ describe("ECDSA kernel Account", () => {
             const response = await kernelClient.sendTransactions({
                 transactions: [
                     {
-                        to: gasTokenAddresses[goerli.id]["6TEST"],
+                        to: gasTokenAddresses[sepolia.id]["6TEST"],
                         data: encodeFunctionData({
                             abi: TEST_ERC20Abi,
                             functionName: "mint",
-                            args: [account.address, 100000n]
+                            args: [account.address, parseEther("0.9")]
                         }),
                         value: 0n
                     },
                     await getERC20PaymasterApproveCall(pmClient, {
-                        gasToken: gasTokenAddresses[goerli.id]["6TEST"],
-                        approveAmount: 100000n
+                        gasToken: gasTokenAddresses[sepolia.id]["6TEST"],
+                        approveAmount: parseEther("0.9")
                     }),
                     {
                         to: zeroAddress,
@@ -412,7 +424,7 @@ describe("ECDSA kernel Account", () => {
 
             console.log(
                 "erc20PMTransaction:",
-                `https://mumbai.polygonscan.com/tx/${response}`
+                `https://sepolia.etherscan.io/tx/${response}`
             )
 
             expect(response).toBeString()

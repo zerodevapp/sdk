@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/modular-permission",
-    "version": "5.1.0-beta.19",
+    "version": "5.2.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -24,7 +24,7 @@
     "scripts": {
         "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
         "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
-        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2020 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
         "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
         "clean": "rimraf _esm _cjs _types",
         "changeset": "changeset",
@@ -57,7 +57,7 @@
     },
     "peerDependencies": {
         "viem": "^2.0.0",
-        "@zerodev/sdk": "^5.1.5",
-        "permissionless": "^0.0.34"
+        "@zerodev/sdk": "^5.2.0",
+        "permissionless": "^0.1.16"
     }
 }

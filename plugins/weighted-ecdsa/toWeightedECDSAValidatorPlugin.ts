@@ -1,15 +1,20 @@
-import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
+import { KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type UserOperation,
     getAction,
+    getEntryPointVersion,
     getUserOperationHash
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type {
+    EntryPoint,
+    GetEntryPointVersion
+} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -25,7 +30,10 @@ import {
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
 import { WeightedValidatorAbi } from "./abi.js"
-import { WEIGHTED_ECDSA_VALIDATOR_ADDRESS } from "./index.js"
+import {
+    WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V06,
+    WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V07
+} from "./index.js"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number
@@ -41,7 +49,15 @@ const sortByAddress = (a: { address: Address }, b: { address: Address }) => {
     return a.address.toLowerCase() < b.address.toLowerCase() ? 1 : -1
 }
 
+export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    return entryPointVersion === "v0.6"
+        ? WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V06
+        : WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V07
+}
+
 export async function createWeightedECDSAValidator<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
     TSource extends string = "custom",
@@ -51,15 +67,20 @@ export async function createWeightedECDSAValidator<
     {
         config,
         signers: _signers,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
-        validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
+        entryPoint: entryPointAddress,
+        validatorAddress
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
-        entryPoint?: Address
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<"WeightedECDSAValidator">> {
+): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    if (!validatorAddress) {
+        throw new Error("Validator address not provided")
+    }
     // Check if sum of weights is equal or greater than threshold
     if (config) {
         let sum = 0
@@ -125,11 +146,14 @@ export async function createWeightedECDSAValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WeightedECDSAValidator",
+        getIdentifier: () =>
+            validatorAddress ?? getValidatorAddress(entryPointAddress),
 
         async getEnableData() {
-            if (!config) return "0x" // TODO: check if this is correct
+            if (!config) return "0x"
             return encodeAbiParameters(
                 [
                     { name: "_guardians", type: "address[]" },
@@ -145,11 +169,16 @@ export async function createWeightedECDSAValidator<
                 ]
             )
         },
-        async getNonceKey() {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(userOperation: UserOperation) {
+        async signUserOperation(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const callDataAndNonceHash = keccak256(
                 encodeAbiParameters(
                     parseAbiParameters("address, bytes, uint256"),
@@ -194,7 +223,7 @@ export async function createWeightedECDSAValidator<
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 
@@ -214,7 +243,9 @@ export async function createWeightedECDSAValidator<
 
         // Get simple dummy signature
         // Equivalent to signUserOperation for now
-        async getDummySignature(userOperation: UserOperation) {
+        async getDummySignature(
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) {
             const callDataAndNonceHash = keccak256(
                 encodeAbiParameters(
                     parseAbiParameters("address, bytes, uint256"),
@@ -280,7 +311,7 @@ export async function createWeightedECDSAValidator<
                 })
                 return (
                     execDetail.validator.toLowerCase() ===
-                    validatorAddress.toLowerCase()
+                    validatorAddress?.toLowerCase()
                 )
             } catch (error) {
                 return false
@@ -289,15 +320,19 @@ export async function createWeightedECDSAValidator<
     }
 }
 
-export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
+export function getUpdateConfigCall<entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    newConfig: WeightedECDSAValidatorConfig
+): {
     to: Address
     value: bigint
     data: Hex
 } {
     const signers = [...newConfig.signers].sort(sortByAddress)
+    const validatorAddress = getValidatorAddress(entryPointAddress)
 
     return {
-        to: WEIGHTED_ECDSA_VALIDATOR_ADDRESS,
+        to: validatorAddress,
         value: 0n,
         data: encodeFunctionData({
             abi: WeightedValidatorAbi,
@@ -313,18 +348,26 @@ export function getUpdateConfigCall(newConfig: WeightedECDSAValidatorConfig): {
 }
 
 export async function getCurrentSigners<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
+        entryPoint: entryPointAddress,
         multiSigAccountAddress,
-        validatorAddress = WEIGHTED_ECDSA_VALIDATOR_ADDRESS
+        validatorAddress
     }: {
+        entryPoint: entryPoint
         multiSigAccountAddress: Address
         validatorAddress?: Address
     }
 ): Promise<Array<{ address: Address; weight: number }>> {
+    validatorAddress =
+        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    if (!validatorAddress) {
+        throw new Error("Validator address not provided")
+    }
     const signers: Array<{ address: Address; weight: number }> = []
     let nextGuardian: Address
 

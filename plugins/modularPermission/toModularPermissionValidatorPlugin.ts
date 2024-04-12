@@ -1,5 +1,10 @@
-import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
-import { getAction, getUserOperationHash } from "permissionless"
+import { KernelAccountAbi } from "@zerodev/sdk"
+import {
+    getAction,
+    getEntryPointVersion,
+    getUserOperationHash
+} from "permissionless"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -24,13 +29,14 @@ import {
 } from "./types.js"
 
 export async function createPermissionValidator<
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress,
         policies,
         validUntil,
         validAfter,
@@ -39,12 +45,17 @@ export async function createPermissionValidator<
         signer: ModularSigner
         validUntil?: number
         validAfter?: number
-        policies: Policy[]
-        entryPoint?: Address
+        policies: Policy<entryPoint>[]
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
-): Promise<ModularPermissionPlugin> {
+): Promise<ModularPermissionPlugin<entryPoint>> {
     const chainId = await getChainId(client)
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
 
     const getNonces = async (
         kernelAccountAddress: Address
@@ -116,10 +127,13 @@ export async function createPermissionValidator<
 
     return {
         ...signer.account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ModularPermissionValidator",
         getEnableData,
-        getPermissionId,
+        getIdentifier() {
+            return validatorAddress
+        },
 
         signMessage: async ({ message }) => {
             return concat([
@@ -137,7 +151,7 @@ export async function createPermissionValidator<
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
-                entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 
@@ -153,7 +167,10 @@ export async function createPermissionValidator<
             ])
         },
 
-        getNonceKey: async () => {
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
             return 0n
         },
 
@@ -166,7 +183,7 @@ export async function createPermissionValidator<
                 signer.getDummySignature()
             ])
         },
-        getPluginSerializationParams: (): ModularPermissionData => {
+        getPluginSerializationParams: (): ModularPermissionData<entryPoint> => {
             return {
                 validAfter,
                 validUntil,

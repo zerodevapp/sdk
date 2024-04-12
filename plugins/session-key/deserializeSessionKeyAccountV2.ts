@@ -5,6 +5,7 @@ import {
 } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
 import type { SmartAccountSigner } from "permissionless/accounts"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Address, Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
@@ -12,10 +13,12 @@ import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
 
 export const deserializeSessionKeyAccountV2 = async <
+    entryPoint extends EntryPoint,
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
     client: Parameters<typeof createKernelV2Account>[0],
+    entryPointAddress: entryPoint,
     sessionKeyAccountParams: string,
     sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
 ) => {
@@ -27,7 +30,8 @@ export const deserializeSessionKeyAccountV2 = async <
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
-        validatorData: params.sessionKeyParams
+        validatorData: params.sessionKeyParams,
+        entryPoint: entryPointAddress
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCodeV2(
@@ -38,34 +42,35 @@ export const deserializeSessionKeyAccountV2 = async <
         regular: sessionKeyPlugin,
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
-        executorData: params.executorData,
+        action: params.action,
         kernelVersion: "0.0.2",
+        entryPoint: entryPointAddress,
         ...params.validityData
     })
 
     return createKernelV2Account(client, {
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress
+        deployedAccountAddress: params.accountParams.accountAddress,
+        entryPoint: entryPointAddress
     })
 }
 
 export const decodeParamsFromInitCodeV2 = (initCode: Hex) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
+    if (initCode === "0x") return { index, validatorInitData }
     const createAccountFunctionData = decodeFunctionData({
         abi: KernelFactoryV2Abi,
         data: `0x${initCode.slice(42)}`
     })
-    if (!createAccountFunctionData) throw new Error("Invalid initCode")
     if (createAccountFunctionData.functionName === "createAccount") {
         index = createAccountFunctionData.args[2]
         validatorInitData = {
             validatorAddress: createAccountFunctionData.args[0],
+            identifier: createAccountFunctionData.args[0],
             enableData: createAccountFunctionData.args[1]
         }
     }
-    if (index === undefined || validatorInitData === undefined)
-        throw new Error("Invalid initCode")
     return { index, validatorInitData }
 }

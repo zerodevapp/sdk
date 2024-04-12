@@ -1,0 +1,63 @@
+{
+    "name": "@zerodev/permissions",
+    "version": "5.2.0",
+    "author": "ZeroDev",
+    "main": "./_cjs/index.js",
+    "module": "./_esm/index.js",
+    "types": "./_types/index.d.ts",
+    "typings": "./_types/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "license": "MIT",
+    "files": [
+        "_esm",
+        "_cjs",
+        "_types",
+        "./**/*.ts",
+        "!_esm/**/*.tsbuildinfo",
+        "!_cjs/**/*.tsbuildinfo",
+        "!_types/**/*.tsbuildinfo",
+        "!.env",
+        "!./**/*.test.ts",
+        "!.changeset"
+    ],
+    "scripts": {
+        "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
+        "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2020 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
+        "clean": "rimraf _esm _cjs _types",
+        "changeset": "changeset",
+        "changeset:release": "bun run build && changeset publish",
+        "changeset:version": "changeset version && bun install --lockfile-only",
+        "format": "biome format . --write",
+        "lint": "biome check .",
+        "lint:fix": "bun run lint --apply"
+    },
+    "exports": {
+        ".": {
+            "types": "./_types/index.d.ts",
+            "import": "./_esm/index.js",
+            "default": "./_cjs/index.js"
+        },
+        "./policies": {
+            "types": "./_types/policies/index.d.ts",
+            "import": "./_esm/policies/index.js",
+            "default": "./_cjs/policies/index.js"
+        },
+        "./signers": {
+            "types": "./_types/signers/index.d.ts",
+            "import": "./_esm/signers/index.js",
+            "default": "./_cjs/signers/index.js"
+        }
+    },
+    "dependencies": {
+        "merkletreejs": "^0.3.11",
+        "@simplewebauthn/browser": "^9.0.1"
+    },
+    "peerDependencies": {
+        "viem": "^2.0.0",
+        "@zerodev/sdk": "^5.2.0",
+        "permissionless": "^0.1.16"
+    }
+}

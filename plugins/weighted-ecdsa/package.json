@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/weighted-ecdsa-validator",
-    "version": "5.1.6",
+    "version": "5.2.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -36,7 +36,7 @@
     },
     "peerDependencies": {
         "viem": "^2.0.0",
-        "@zerodev/sdk": "^5.1.0",
-        "permissionless": "^0.0.34"
+        "@zerodev/sdk": "^5.2.0",
+        "permissionless": "^0.1.16"
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/sdk",
-    "version": "5.1.18",
+    "version": "5.2.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -90,9 +90,10 @@
         }
     },
     "peerDependencies": {
-        "viem": "^2.0.0"
+        "viem": "^2.0.0",
+        "permissionless": "^0.1.16"
     },
     "dependencies": {
-        "permissionless": "^0.0.34"
+        "semver": "^7.6.0"
     }
 }

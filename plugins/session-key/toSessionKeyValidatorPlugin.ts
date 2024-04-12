@@ -24,14 +24,18 @@ import { concat, concatHex } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@zerodev/sdk"
-import { KERNEL_ADDRESSES } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
-import { getAction, getUserOperationHash } from "permissionless"
+import {
+    getAction,
+    getEntryPointVersion,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type {
     SessionKeyData,
@@ -62,6 +66,7 @@ export enum ParamOperator {
 export const anyPaymaster = "0x0000000000000000000000000000000000000001"
 
 export async function signerToSessionKeyValidator<
+    entryPoint extends EntryPoint,
     TAbi extends Abi | readonly unknown[],
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
@@ -72,16 +77,21 @@ export async function signerToSessionKeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entryPoint = KERNEL_ADDRESSES.ENTRYPOINT_V0_6,
+        entryPoint: entryPointAddress,
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
-        entryPoint?: Address
+        entryPoint: EntryPoint
         validatorAddress?: Address
     }
-): Promise<SessionKeyPlugin> {
+): Promise<SessionKeyPlugin<entryPoint>> {
+    const entryPointVersion = getEntryPointVersion(entryPointAddress)
+
+    if (entryPointVersion !== "v0.6") {
+        throw new Error("Only EntryPoint 0.6 is supported")
+    }
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
         ...validatorData,
         validAfter: validatorData?.validAfter ?? 0,
@@ -246,14 +256,16 @@ export async function signerToSessionKeyValidator<
 
     return {
         ...account,
+        validatorType: "SECONDARY",
         address: validatorAddress,
         source: "SessionKeyValidator",
+        getIdentifier: () => validatorAddress,
         getEnableData,
 
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
                 userOperation: { ...userOperation, signature: "0x" },
-                entryPoint,
+                entryPoint: entryPointAddress,
                 chainId: chainId
             })
 
@@ -269,8 +281,11 @@ export async function signerToSessionKeyValidator<
             ])
         },
 
-        getNonceKey: async () => {
-            return BigInt(signer.address)
+        async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
+            if (customNonceKey) {
+                return customNonceKey
+            }
+            return 0n
         },
 
         async getDummySignature(userOperation) {

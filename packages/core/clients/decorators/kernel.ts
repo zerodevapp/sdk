@@ -1,7 +1,12 @@
 import { type SmartAccountActions, smartAccountActions } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts/types"
-import type { SponsorUserOperationMiddleware } from "permissionless/actions/smartAccount"
+import { type Middleware } from "permissionless/actions/smartAccount"
+import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Transport } from "viem"
+import {
+    type GetUserOperationGasPriceReturnType,
+    getUserOperationGasPrice
+} from "../../actions/account-client/getUserOperationGasPrice.js"
 import type {
     SignUserOperationParameters,
     SignUserOperationReturnType
@@ -19,42 +24,45 @@ import {
 } from "../../actions/paymaster/sponsorUserOperation.js"
 import type { ZeroDevPaymasterClient } from "../paymasterClient.js"
 
-export type ZeroDevPaymasterClientActions = {
+export type ZeroDevPaymasterClientActions<entryPoint extends EntryPoint> = {
     /**
      * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
      */
     sponsorUserOperation: (
-        args: SponsorUserOperationParameters
-    ) => Promise<SponsorUserOperationReturnType>
+        args: SponsorUserOperationParameters<entryPoint>
+    ) => Promise<SponsorUserOperationReturnType<entryPoint>>
     estimateGasInERC20: (
         args: EstimateGasInERC20Parameters
     ) => Promise<EstimateGasInERC20ReturnType>
 }
 
-export const zerodevPaymasterActions = (
-    client: Client
-): ZeroDevPaymasterClientActions => ({
-    sponsorUserOperation: async (args: SponsorUserOperationParameters) =>
-        sponsorUserOperation(client as ZeroDevPaymasterClient, args),
-    estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>
-        estimateGasInERC20(client as ZeroDevPaymasterClient, args)
-})
-
-// export type KernelAccountClientActions<
-//     TChain extends Chain | undefined = Chain | undefined,
-//     TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
-// > = {
-//     signUserOperation: <TTransport extends Transport>(
-//         args: Parameters<
-//             typeof signUserOperation<TTransport, TChain, TSmartAccount>
-//         >[1]
-//     ) => Promise<SignUserOperationReturnType>
-// }
+export const zerodevPaymasterActions =
+    <entryPoint extends EntryPoint>(entryPointAddress: entryPoint) =>
+    (client: Client): ZeroDevPaymasterClientActions<entryPoint> => ({
+        sponsorUserOperation: async (
+            args: Omit<SponsorUserOperationParameters<entryPoint>, "entryPoint">
+        ) =>
+            sponsorUserOperation<entryPoint>(
+                client as ZeroDevPaymasterClient<entryPoint>,
+                {
+                    ...args,
+                    entryPoint: entryPointAddress
+                }
+            ),
+        estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>
+            estimateGasInERC20(
+                client as ZeroDevPaymasterClient<entryPoint>,
+                args
+            )
+    })
 
 export type KernelAccountClientActions<
+    entryPoint extends EntryPoint,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
-> = SmartAccountActions<TChain, TSmartAccount> & {
+    TSmartAccount extends SmartAccount<entryPoint> | undefined =
+        | SmartAccount<entryPoint>
+        | undefined
+> = SmartAccountActions<entryPoint, TChain, TSmartAccount> & {
     /**
      * Signs a user operation with the given transport, chain, and smart account.
      *
@@ -63,26 +71,43 @@ export type KernelAccountClientActions<
      */
     signUserOperation: <TTransport extends Transport>(
         args: Parameters<
-            typeof signUserOperation<TTransport, TChain, TSmartAccount>
+            typeof signUserOperation<
+                entryPoint,
+                TTransport,
+                TChain,
+                TSmartAccount
+            >
         >[1]
     ) => Promise<SignUserOperationReturnType>
+    /**
+     * Returns the live gas prices that you can use to send a user operation.
+     *
+     * @returns maxFeePerGas & maxPriorityFeePerGas {@link GetUserOperationGasPriceReturnType}
+     */
+    getUserOperationGasPrice: () => Promise<
+        Prettify<GetUserOperationGasPriceReturnType>
+    >
 }
 
 export const kernelAccountClientActions =
-    ({ sponsorUserOperation }: SponsorUserOperationMiddleware) =>
+    <entryPoint extends EntryPoint>({ middleware }: Middleware<entryPoint>) =>
     <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends SmartAccount | undefined =
-            | SmartAccount
+        TSmartAccount extends SmartAccount<entryPoint> | undefined =
+            | SmartAccount<entryPoint>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
-    ): KernelAccountClientActions<TChain, TSmartAccount> => ({
-        ...smartAccountActions({ sponsorUserOperation })(client),
+    ): KernelAccountClientActions<entryPoint, TChain, TSmartAccount> => ({
+        ...smartAccountActions({ middleware })(client),
         signUserOperation: (args) =>
-            signUserOperation(client, {
-                ...args,
-                sponsorUserOperation
-            } as SignUserOperationParameters<TSmartAccount>)
+            signUserOperation<entryPoint, TTransport, TChain, TSmartAccount>(
+                client,
+                {
+                    ...args,
+                    middleware
+                } as SignUserOperationParameters<entryPoint, TSmartAccount>
+            ),
+        getUserOperationGasPrice: async () => getUserOperationGasPrice(client)
     })

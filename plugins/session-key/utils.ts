@@ -1,5 +1,6 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
 import type { AbiFunction } from "abitype"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint"
 import {
     type Abi,
     type Address,
@@ -11,6 +12,7 @@ import {
     hexToSignature,
     isHex,
     pad,
+    padHex,
     signatureToHex,
     toFunctionSelector,
     toHex,
@@ -59,7 +61,7 @@ export function getPermissionFromABI<
             .map(
                 (arg, i) =>
                     arg && {
-                        param: pad(
+                        param: padHex(
                             isHex(arg.value)
                                 ? arg.value
                                 : toHex(
@@ -195,10 +197,12 @@ export function bytesToBase64(bytes: Uint8Array) {
     return btoa(binString)
 }
 
-export function isSessionKeyValidatorPlugin(
+export function isSessionKeyValidatorPlugin<
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
+>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
-): plugin is SessionKeyPlugin {
+): plugin is SessionKeyPlugin<entryPoint> {
     return plugin?.getPluginSerializationParams !== undefined
 }
 // We need to be able to serialize bigint to transmit session key over

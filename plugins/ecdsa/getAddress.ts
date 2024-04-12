@@ -1,4 +1,6 @@
 import { KERNEL_ADDRESSES, KernelAccountAbi } from "@zerodev/sdk"
+import { getEntryPointVersion } from "permissionless"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Hex,
@@ -11,11 +13,11 @@ import {
     pad,
     toHex
 } from "viem"
-import { ECDSA_VALIDATOR_ADDRESS } from "./constants.js"
+import { ECDSA_VALIDATOR_ADDRESS_V06 } from "./constants.js"
 
 const getInitCodeHash = async (publicClient: PublicClient): Promise<Hex> => {
     const factoryContract = getContract({
-        address: KERNEL_ADDRESSES.FACTORY_ADDRESS,
+        address: KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6,
         abi: [
             {
                 type: "function",
@@ -32,21 +34,29 @@ const getInitCodeHash = async (publicClient: PublicClient): Promise<Hex> => {
     return await factoryContract.read.initCodeHash()
 }
 
-type GetKernelAddressFromECDSAParams =
+type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> =
     | {
+          entryPointAddress: entryPoint
           publicClient: PublicClient
           eoaAddress: Address
           index: bigint
       }
     | {
+          entryPointAddress: entryPoint
           eoaAddress: Address
           index: bigint
           initCodeHash: Hex
       }
 
-export async function getKernelAddressFromECDSA(
-    params: GetKernelAddressFromECDSAParams
+export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
+    params: GetKernelAddressFromECDSAParams<entryPoint>
 ) {
+    const entryPointVersion = getEntryPointVersion(params.entryPointAddress)
+    if (entryPointVersion !== "v0.6") {
+        throw Error(
+            "Only EntryPoint v0.6 is supported. TODO! Ping us to add support. :)"
+        )
+    }
     const bytecodeHash = await (async () => {
         if ("initCodeHash" in params) {
             return params.initCodeHash
@@ -60,7 +70,7 @@ export async function getKernelAddressFromECDSA(
     const initData = encodeFunctionData({
         abi: KernelAccountAbi,
         functionName: "initialize",
-        args: [ECDSA_VALIDATOR_ADDRESS, params.eoaAddress]
+        args: [ECDSA_VALIDATOR_ADDRESS_V06, params.eoaAddress]
     })
     const encodedSalt = concat([initData, encodedIndex])
     const salt = BigInt(keccak256(encodedSalt))
@@ -70,7 +80,7 @@ export async function getKernelAddressFromECDSA(
     return getContractAddress({
         bytecodeHash,
         opcode: "CREATE2",
-        from: KERNEL_ADDRESSES.FACTORY_ADDRESS,
+        from: KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6,
         salt: maskedSalt
     })
 }
