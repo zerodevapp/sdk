@@ -1,10 +1,15 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import {
+    combineSignatures,
+    signWithSingleSigner
+} from "@zerodev/weighted-ecdsa-validator"
 import { BundlerClient } from "permissionless"
+import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
 import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
 import { EntryPoint } from "permissionless/types/entrypoint"
-import { Chain, PublicClient, Transport, zeroAddress, Hex } from "viem"
+import { Chain, Hex, PublicClient, Transport, zeroAddress } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import {
     getEntryPoint,
@@ -16,11 +21,6 @@ import {
     getZeroDevPaymasterClient,
     sortByAddress
 } from "./utils"
-import {
-    combineSignatures,
-    signWithSingleSigner
-} from "@zerodev/weighted-ecdsa-validator"
-import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -51,9 +51,8 @@ describe("Weighted ECDSA kernel Account", () => {
             account,
             middleware: {
                 gasPrice: async () =>
-                    (
-                        await pimlicoBundlerClient.getUserOperationGasPrice()
-                    ).fast,
+                    (await pimlicoBundlerClient.getUserOperationGasPrice())
+                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
