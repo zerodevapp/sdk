@@ -1,13 +1,10 @@
+import { getEntryPointVersion } from "permissionless"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint,
-    GetEntryPointVersion
+    EntryPoint
 } from "permissionless/types/entrypoint"
-import type {
-    UserOperation,
-    UserOperationWithBigIntAsHex
-} from "permissionless/types/userOperation.js"
-import { ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless/utils"
+import type { UserOperation } from "permissionless/types/userOperation.js"
+import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem/types/utils"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
@@ -32,6 +29,8 @@ export type SponsorUserOperationParameters<entryPoint extends EntryPoint> = {
     shouldConsume?: boolean
 }
 
+export type PartialPick<T, K extends keyof T> = Partial<Pick<T, K>>
+
 export type SponsorUserOperationReturnType<entryPoint extends EntryPoint> =
     entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
         ? Pick<
@@ -40,7 +39,11 @@ export type SponsorUserOperationReturnType<entryPoint extends EntryPoint> =
               | "verificationGasLimit"
               | "preVerificationGas"
               | "paymasterAndData"
-          >
+          > &
+              PartialPick<
+                  UserOperation<"v0.6">,
+                  "maxFeePerGas" | "maxPriorityFeePerGas"
+              >
         : Pick<
               UserOperation<"v0.7">,
               | "callGasLimit"
@@ -50,7 +53,11 @@ export type SponsorUserOperationReturnType<entryPoint extends EntryPoint> =
               | "paymasterVerificationGasLimit"
               | "paymasterPostOpGasLimit"
               | "paymasterData"
-          >
+          > &
+              PartialPick<
+                  UserOperation<"v0.7">,
+                  "maxFeePerGas" | "maxPriorityFeePerGas"
+              >
 
 /**
  * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
@@ -64,11 +71,7 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
         params: [
             {
                 chainId: client.chain?.id as number,
-                userOp: deepHexlify(
-                    args.userOperation
-                ) as UserOperationWithBigIntAsHex<
-                    GetEntryPointVersion<entryPoint>
-                >,
+                userOp: deepHexlify(args.userOperation),
                 entryPointAddress: args.entryPoint,
                 gasTokenData: args.gasToken && {
                     tokenAddress: args.gasToken
@@ -78,22 +81,18 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
             }
         ]
     })
-    if (args.entryPoint === ENTRYPOINT_ADDRESS_V06) {
-        const responseV06 = response as {
-            paymasterAndData: Hex
-            preVerificationGas: Hex
-            verificationGasLimit: Hex
-            callGasLimit: Hex
-            paymaster?: never
-            paymasterVerificationGasLimit?: never
-            paymasterPostOpGasLimit?: never
-            paymasterData?: never
-        }
+    const entryPointVersion = getEntryPointVersion(args.entryPoint)
+    if (entryPointVersion === "v0.6") {
         return {
-            paymasterAndData: responseV06.paymasterAndData,
-            preVerificationGas: BigInt(responseV06.preVerificationGas),
-            verificationGasLimit: BigInt(responseV06.verificationGasLimit),
-            callGasLimit: BigInt(responseV06.callGasLimit)
+            paymasterAndData: response.paymasterAndData,
+            preVerificationGas: BigInt(response.preVerificationGas),
+            verificationGasLimit: BigInt(response.verificationGasLimit),
+            callGasLimit: BigInt(response.callGasLimit),
+            maxFeePerGas:
+                response.maxFeePerGas && BigInt(response.maxFeePerGas),
+            maxPriorityFeePerGas:
+                response.maxPriorityFeePerGas &&
+                BigInt(response.maxPriorityFeePerGas)
         } as SponsorUserOperationReturnType<entryPoint>
     }
     const responseV07 = response as {
@@ -118,24 +117,4 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
         paymasterPostOpGasLimit: BigInt(responseV07.paymasterPostOpGasLimit),
         paymasterData: responseV07.paymasterData
     } as SponsorUserOperationReturnType<entryPoint>
-    // [TODO] Add gas price params in the response in permissionless
-    // let result: UserOperation<"v0.6"> = {
-    //     ...args.userOperation,
-    //     paymasterAndData: response.paymasterAndData,
-    //     preVerificationGas: BigInt(response.preVerificationGas),
-    //     verificationGasLimit: BigInt(response.verificationGasLimit),
-    //     callGasLimit: BigInt(response.callGasLimit)
-    // }
-    // if (
-    //     response.maxFeePerGas !== undefined &&
-    //     response.maxPriorityFeePerGas !== undefined
-    // ) {
-    //     result = {
-    //         ...result,
-    //         maxFeePerGas: BigInt(response.maxFeePerGas),
-    //         maxPriorityFeePerGas: BigInt(response.maxPriorityFeePerGas)
-    //     }
-    // }
-
-    // return result
 }
