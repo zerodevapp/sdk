@@ -33,7 +33,8 @@ import {
     encodeFunctionData,
     getAbiItem,
     toFunctionSelector,
-    zeroAddress
+    zeroAddress,
+    PrivateKeyAccount
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
@@ -381,6 +382,47 @@ export const getSignerToPermissionKernelAccount = async (
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin,
+            regular: permissionPlugin,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+}
+
+export const getSessionKeySignerToPermissionKernelAccount = async (
+    policies: Policy[],
+    sessionKeySigner: PrivateKeyAccount
+): Promise<KernelSmartAccount<EntryPoint>> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey1) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+        )
+    }
+    const publicClient = await getPublicClient()
+    const ecdsaModularSigner = toECDSASigner({ signer: sessionKeySigner })
+
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaModularSigner,
+        policies
+    })
+
+    const rootSigner = privateKeyToAccount(privateKey1)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...rootSigner, source: "local" as "local" | "external" }
     })
 
     return await createKernelAccount(publicClient, {
