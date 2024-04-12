@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountAbi,
     KernelAccountClient,
-    KernelSmartAccount,
+    KernelSmartAccount
 } from "@zerodev/sdk"
 import {
     Operation,
@@ -36,6 +36,7 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
+import { TokenActionsAbi } from "./abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "./config.js"
 import {
     Test_ERC20Address,
@@ -48,7 +49,6 @@ import {
     getSignerToSessionKeyKernelAccount,
     getZeroDevPaymasterClient
 } from "./utils.js"
-import { TokenActionsAbi } from "./abis/TokenActionsAbi.js";
 
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient

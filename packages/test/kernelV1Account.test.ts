@@ -31,8 +31,8 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress,
-    parseEther
+    parseEther,
+    zeroAddress
 } from "viem"
 import { sepolia } from "viem/chains"
 import { EntryPointAbi } from "./abis/EntryPoint.js"

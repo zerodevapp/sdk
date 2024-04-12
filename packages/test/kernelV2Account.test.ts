@@ -31,8 +31,8 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress,
-    parseEther
+    parseEther,
+    zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"

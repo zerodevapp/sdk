@@ -30,8 +30,8 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress,
-    parseEther
+    parseEther,
+    zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
@@ -529,7 +529,9 @@ describe("ECDSA kernel Account", () => {
             })
 
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({hash: userOpHash})
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )
