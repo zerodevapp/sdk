@@ -26,6 +26,7 @@ import {
     Hash,
     Hex,
     Log,
+    PrivateKeyAccount,
     PublicClient,
     Transport,
     createPublicClient,
@@ -33,8 +34,7 @@ import {
     encodeFunctionData,
     getAbiItem,
     toFunctionSelector,
-    zeroAddress,
-    PrivateKeyAccount
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { polygonMumbai } from "viem/chains"
