@@ -5,6 +5,9 @@ import {
     getUpdateConfigCall
 } from "./toWeightedECDSAValidatorPlugin.js"
 
+export { signWithSingleSigner } from "./signWithSingleSigner.js"
+export { combineSignatures, type SignerSignature } from "./combineSignatures.js"
+
 export {
     createWeightedECDSAValidator,
     getUpdateConfigCall,

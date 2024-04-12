@@ -569,3 +569,10 @@ export async function mintToAccount(
         )
     }
 }
+
+export const sortByAddress = (
+    a: { address: Address },
+    b: { address: Address }
+) => {
+    return a.address.toLowerCase() < b.address.toLowerCase() ? 1 : -1
+}
