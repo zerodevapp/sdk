@@ -5,14 +5,12 @@ import type { Policy, PolicyParams } from "../types.js"
 
 export type SignatureCallerPolicyParams = PolicyParams & {
     allowedCallers: Address[]
-    type?: "signature-caller"
 }
 
 export function toSignatureCallerPolicy({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    allowedCallers,
-    type = "signature-caller"
+    allowedCallers
 }: SignatureCallerPolicyParams): Policy {
     return {
         getPolicyData: () => {
@@ -25,10 +23,10 @@ export function toSignatureCallerPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "signature-caller",
             policyAddress,
             policyFlag,
             allowedCallers
-        }
+        } as SignatureCallerPolicyParams & { type: "signature-caller" }
     }
 }

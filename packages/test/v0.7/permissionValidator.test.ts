@@ -24,8 +24,12 @@ import {
     parseEther,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
-import { Policy } from "../../../plugins/permission"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import {
+    Policy,
+    deserializePermissionAccount,
+    serializePermissionAccount
+} from "../../../plugins/permission"
 import {
     toGasPolicy,
     toSignatureCallerPolicy,
@@ -44,6 +48,7 @@ import {
     getKernelBundlerClient,
     getPimlicoBundlerClient,
     getPublicClient,
+    getSessionKeySignerToPermissionKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToPermissionKernelAccount,
     getSignerToRootPermissionKernelAccount,
@@ -483,7 +488,7 @@ describe("Permission kernel Account", () => {
             const now = Math.floor(Date.now() / 1000)
 
             const timestampPolicy = await toTimestampPolicy({
-                validAfter: now,
+                validAfter: now - 60,
                 validUntil: now + 60
             })
 
@@ -635,6 +640,107 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
                 middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with serialization/deserialization",
+        async () => {
+            const callPolicy = await toCallPolicy({
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const privateKey = generatePrivateKey()
+            const signer = privateKeyToAccount(privateKey)
+
+            const account = await getSessionKeySignerToPermissionKernelAccount(
+                [callPolicy],
+                signer
+            )
+
+            const serializedAccount = await serializePermissionAccount(
+                account,
+                privateKey
+            )
+
+            const deserilizedAccount = await deserializePermissionAccount(
+                publicClient,
+                getEntryPoint(),
+                serializedAccount
+            )
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: deserilizedAccount,
+                middleware: {
+                    gasPrice: async () =>
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

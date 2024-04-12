@@ -14,7 +14,6 @@ export type CallPolicyParams<
     TFunctionName extends string | undefined = string
 > = PolicyParams & {
     permissions?: Permission<TAbi, TFunctionName>[]
-    type?: "call"
 }
 
 export function toCallPolicy<
@@ -23,8 +22,7 @@ export function toCallPolicy<
 >({
     policyAddress = CALL_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    permissions = [],
-    type = "call"
+    permissions = []
 }: CallPolicyParams<TAbi, TFunctionName>): Policy {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
@@ -56,10 +54,12 @@ export function toCallPolicy<
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "call",
             policyAddress,
             policyFlag,
             permissions
-        } as unknown as CallPolicyParams<Abi | readonly unknown[], string>
+        } as unknown as CallPolicyParams<Abi | readonly unknown[], string> & {
+            type: "call"
+        }
     }
 }

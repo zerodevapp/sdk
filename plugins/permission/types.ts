@@ -39,12 +39,14 @@ export type Policy = {
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
-        | CallPolicyParams<Abi | readonly unknown[], string>
-        | GasPolicyParams
-        | RateLimitPolicyParams
-        | SignatureCallerPolicyParams
-        | SudoPolicyParams
-        | TimestampPolicyParams
+        | (CallPolicyParams<Abi | readonly unknown[], string> & {
+              type: "call"
+          })
+        | (GasPolicyParams & { type: "gas" })
+        | (RateLimitPolicyParams & { type: "rate-limit" })
+        | (SignatureCallerPolicyParams & { type: "signature-caller" })
+        | (SudoPolicyParams & { type: "sudo" })
+        | (TimestampPolicyParams & { type: "timestamp" })
 }
 
 export type PermissionPluginParams = {

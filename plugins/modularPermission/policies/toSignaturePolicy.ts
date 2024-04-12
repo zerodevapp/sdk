@@ -6,8 +6,7 @@ import type { Policy, SignaturePolicyParams } from "./types.js"
 export async function toSignaturePolicy<entryPoint extends EntryPoint>({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.NOT_FOR_VALIDATE_USEROP,
-    allowedRequestors,
-    type = "signature"
+    allowedRequestors
 }: SignaturePolicyParams): Promise<Policy<entryPoint>> {
     return {
         getPolicyData: () => {
@@ -23,10 +22,10 @@ export async function toSignaturePolicy<entryPoint extends EntryPoint>({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "signature",
             policyAddress,
             policyFlag,
             allowedRequestors
-        } as SignaturePolicyParams
+        } as SignaturePolicyParams & { type: "signature" }
     }
 }

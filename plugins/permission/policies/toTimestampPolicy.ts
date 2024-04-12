@@ -5,15 +5,13 @@ import type { Policy, PolicyParams } from "../types.js"
 export type TimestampPolicyParams = PolicyParams & {
     validAfter?: number
     validUntil?: number
-    type?: "timestamp"
 }
 
 export function toTimestampPolicy({
     policyAddress = TIMESTAMP_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     validAfter = 0,
-    validUntil = 0,
-    type = "timestamp"
+    validUntil = 0
 }: TimestampPolicyParams): Policy {
     return {
         getPolicyData: () => {
@@ -29,11 +27,11 @@ export function toTimestampPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "timestamp",
             policyAddress,
             policyFlag,
             validAfter,
             validUntil
-        }
+        } as TimestampPolicyParams & { type: "timestamp" }
     }
 }
