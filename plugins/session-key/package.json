@@ -38,8 +38,8 @@
         "merkletreejs": "^0.3.11"
     },
     "peerDependencies": {
-        "viem": "^2.0.0",
+        "viem": "^2.9.17",
         "@zerodev/sdk": "^5.2.0",
-        "permissionless": "^0.1.16"
+        "permissionless": "^0.1.17"
     }
 }

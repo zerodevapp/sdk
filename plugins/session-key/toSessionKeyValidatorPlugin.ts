@@ -20,17 +20,13 @@ import {
     signMessage,
     signTypedData
 } from "viem/actions"
-import { concat, concatHex } from "viem/utils"
+import { concat, concatHex, getAction } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
-import {
-    getAction,
-    getEntryPointVersion,
-    getUserOperationHash
-} from "permissionless"
+import { getEntryPointVersion, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -204,7 +200,8 @@ export async function signerToSessionKeyValidator<
     ): Promise<SessionNonces> => {
         const nonce = await getAction(
             client,
-            readContract
+            readContract,
+            "readContract"
         )({
             abi: SessionKeyValidatorAbi,
             address: validatorAddress,
@@ -304,7 +301,8 @@ export async function signerToSessionKeyValidator<
             try {
                 const execDetail = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: KernelAccountAbi,
                     address: kernelAccountAddress,
@@ -313,7 +311,8 @@ export async function signerToSessionKeyValidator<
                 })
                 const enableData = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: SessionKeyValidatorAbi,
                     address: validatorAddress,

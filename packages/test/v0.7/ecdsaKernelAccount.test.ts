@@ -13,7 +13,11 @@ import {
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
+import {
+    BundlerClient,
+    ENTRYPOINT_ADDRESS_V07,
+    bundlerActions
+} from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
 import { EntryPoint } from "permissionless/types/entrypoint.js"
@@ -109,7 +113,6 @@ describe("ECDSA kernel Account", () => {
         account = await getSignerToEcdsaKernelAccount()
         owner = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex).address
         publicClient = await getPublicClient()
-        bundlerClient = getKernelBundlerClient()
         pimlicoBundlerClient = getPimlicoBundlerClient()
         kernelClient = await getKernelAccountClient({
             account,
@@ -123,6 +126,7 @@ describe("ECDSA kernel Account", () => {
                 }
             }
         })
+        bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
         greeterContract = getContract({
             abi: GreeterAbi,
             address: process.env.GREETER_ADDRESS as Address,
