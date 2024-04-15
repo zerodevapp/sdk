@@ -3,7 +3,6 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type UserOperation,
-    getAction,
     getEntryPointVersion,
     getUserOperationHash
 } from "permissionless"
@@ -29,6 +28,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
+import { getAction } from "viem/utils"
 import { WeightedValidatorAbi } from "./abi.js"
 import {
     WEIGHTED_ECDSA_VALIDATOR_ADDRESS_V06,
@@ -302,7 +302,8 @@ export async function createWeightedECDSAValidator<
             try {
                 const execDetail = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: KernelAccountAbi,
                     address: kernelAccountAddress,
@@ -374,7 +375,8 @@ export async function getCurrentSigners<
     // Fetch first guardian info from weightedStorage
     const weightedStorage = await getAction(
         client,
-        readContract
+        readContract,
+        "readContract"
     )({
         abi: WeightedValidatorAbi,
         address: validatorAddress,
@@ -388,7 +390,8 @@ export async function getCurrentSigners<
     while (nextGuardian !== "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF") {
         const guardianStorage = await getAction(
             client,
-            readContract
+            readContract,
+            "readContract"
         )({
             abi: WeightedValidatorAbi,
             address: validatorAddress,

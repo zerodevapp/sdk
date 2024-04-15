@@ -1,4 +1,7 @@
-import type { EntryPoint } from "permissionless/types"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types"
 import type { GetEntryPointVersion } from "permissionless/types/entrypoint"
 import type {
     UserOperation,
@@ -151,7 +154,21 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
         getAction(): Action
         getValidityData(): PluginValidityData
         getIdentifier(isSudo?: boolean): Hex
+        encodeModuleInstallCallData: (accountAddress: Address) => Promise<Hex>
     }
+
+export type PluginInstallData<entryPoint extends EntryPoint> =
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
+        ? {
+              selector: Hex
+              executor: Address
+              validator: Address
+              validUntil: number
+              validAfter: number
+              enableData: Hex
+          }
+        : // TODO: Add support for EP v0.7
+          never
 
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     sudo?: KernelValidator<entryPoint>

@@ -1,9 +1,5 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
-import {
-    getAction,
-    getEntryPointVersion,
-    getUserOperationHash
-} from "permissionless"
+import { getEntryPointVersion, getUserOperationHash } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
@@ -18,6 +14,7 @@ import {
     toHex
 } from "viem"
 import { getChainId, readContract } from "viem/actions"
+import { getAction } from "viem/utils"
 import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"
 import { MAX_FLAG, MODULAR_PERMISSION_VALIDATOR_ADDRESS } from "./constants.js"
 import type { Policy } from "./policies/types.js"
@@ -62,7 +59,8 @@ export async function createPermissionValidator<
     ): Promise<Nonces> => {
         const nonce = await getAction(
             client,
-            readContract
+            readContract,
+            "readContract"
         )({
             abi: ModularPermissionValidatorAbi,
             address: validatorAddress,
@@ -197,7 +195,8 @@ export async function createPermissionValidator<
             try {
                 const execDetail = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: KernelAccountAbi,
                     address: kernelAccountAddress,
@@ -206,7 +205,8 @@ export async function createPermissionValidator<
                 })
                 const permission = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: ModularPermissionValidatorAbi,
                     address: validatorAddress,
