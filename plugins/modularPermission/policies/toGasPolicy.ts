@@ -9,8 +9,7 @@ export async function toGasPolicy<entryPoint extends EntryPoint>({
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     maxGasAllowedInWei,
     enforcePaymaster = false,
-    paymasterAddress = zeroAddress,
-    type = "gas"
+    paymasterAddress = zeroAddress
 }: GasPolicyParams): Promise<Policy<entryPoint>> {
     return {
         getPolicyData: () => {
@@ -30,12 +29,12 @@ export async function toGasPolicy<entryPoint extends EntryPoint>({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "gas",
             policyAddress,
             policyFlag,
             maxGasAllowedInWei,
             enforcePaymaster,
             paymasterAddress
-        } as GasPolicyParams
+        } as GasPolicyParams & { type: "gas" }
     }
 }

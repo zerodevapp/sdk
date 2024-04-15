@@ -456,7 +456,7 @@ describe("ECDSA kernel Account", () => {
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const userOpHash = await bundlerClient.sendUserOperation({
+            const userOpHash = await kernelClient.sendUserOperation({
                 userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
@@ -559,6 +559,9 @@ describe("ECDSA kernel Account", () => {
             })
 
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )

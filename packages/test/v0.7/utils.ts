@@ -26,6 +26,7 @@ import {
     Hash,
     Hex,
     Log,
+    PrivateKeyAccount,
     PublicClient,
     Transport,
     createPublicClient,
@@ -174,7 +175,7 @@ const getPaymasterRpc = (): string => {
         )
     }
 
-    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?paymasterProvider=${DEFAULT_PROVIDER}`
+    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}`
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
@@ -282,9 +283,7 @@ const getBundlerRpc = (provider?: string): string => {
         )
     }
 
-    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?bundlerProvider=${
-        provider ?? DEFAULT_PROVIDER
-    }`
+    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}`
 }
 
 export const waitForUserOperationTransaction = async (
@@ -386,6 +385,47 @@ export const getSignerToPermissionKernelAccount = async (
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: { ...signer, source: "local" as "local" | "external" }
+    })
+
+    return await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin,
+            regular: permissionPlugin,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+}
+
+export const getSessionKeySignerToPermissionKernelAccount = async (
+    policies: Policy[],
+    sessionKeySigner: PrivateKeyAccount
+): Promise<KernelSmartAccount<EntryPoint>> => {
+    const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey1) {
+        throw new Error(
+            "TEST_PRIVATE_KEY and TEST_PRIVATE_KEY2 environment variables must be set"
+        )
+    }
+    const publicClient = await getPublicClient()
+    const ecdsaModularSigner = toECDSASigner({ signer: sessionKeySigner })
+
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaModularSigner,
+        policies
+    })
+
+    const rootSigner = privateKeyToAccount(privateKey1)
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...rootSigner, source: "local" as "local" | "external" }
     })
 
     return await createKernelAccount(publicClient, {

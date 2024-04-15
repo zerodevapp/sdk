@@ -24,12 +24,17 @@ import {
     parseEther,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
-import { Policy } from "../../../plugins/permission"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import {
+    Policy,
+    deserializePermissionAccount,
+    serializePermissionAccount
+} from "../../../plugins/permission"
 import {
     toGasPolicy,
     toSignatureCallerPolicy,
-    toSudoPolicy
+    toSudoPolicy,
+    toTimestampPolicy
 } from "../../../plugins/permission/policies"
 import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
@@ -43,6 +48,7 @@ import {
     getKernelBundlerClient,
     getPimlicoBundlerClient,
     getPublicClient,
+    getSessionKeySignerToPermissionKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToPermissionKernelAccount,
     getSignerToRootPermissionKernelAccount,
@@ -131,9 +137,6 @@ describe("Permission kernel Account", () => {
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: ecdsaAccount,
             middleware: {
-                gasPrice: async () =>
-                    (await pimlicoBundlerClient.getUserOperationGasPrice())
-                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -151,9 +154,6 @@ describe("Permission kernel Account", () => {
         permissionSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToRootPermissionKernelAccount([sudoPolicy]),
             middleware: {
-                gasPrice: async () =>
-                    (await pimlicoBundlerClient.getUserOperationGasPrice())
-                        .fast,
                 sponsorUserOperation: async ({ userOperation }) => {
                     const zeroDevPaymaster = getZeroDevPaymasterClient()
                     return zeroDevPaymaster.sponsorUserOperation({
@@ -381,9 +381,6 @@ describe("Permission kernel Account", () => {
                     gasPolicy
                 ]),
                 middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -421,9 +418,6 @@ describe("Permission kernel Account", () => {
                         [await toSudoPolicy({})]
                     ),
                 middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -460,9 +454,6 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([gasPolicy]),
                 middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -492,6 +483,47 @@ describe("Permission kernel Account", () => {
     )
 
     test(
+        "Smart account client send transaction with TimestampPolicy",
+        async () => {
+            const now = Math.floor(Date.now() / 1000)
+
+            const timestampPolicy = await toTimestampPolicy({
+                validAfter: now - 60,
+                validUntil: now + 60
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([
+                    timestampPolicy
+                ]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Smart account client send transaction with SignaturePolicy",
         async () => {
             const signaturePolicy = await toSignatureCallerPolicy({
@@ -503,9 +535,6 @@ describe("Permission kernel Account", () => {
                     signaturePolicy
                 ]),
                 middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -548,9 +577,6 @@ describe("Permission kernel Account", () => {
                     rateLimitPolicy
                 ]),
                 middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
@@ -613,6 +639,104 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with serialization/deserialization",
+        async () => {
+            const callPolicy = await toCallPolicy({
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const privateKey = generatePrivateKey()
+            const signer = privateKeyToAccount(privateKey)
+
+            const account = await getSessionKeySignerToPermissionKernelAccount(
+                [callPolicy],
+                signer
+            )
+
+            const serializedAccount = await serializePermissionAccount(
+                account,
+                privateKey
+            )
+
+            const deserilizedAccount = await deserializePermissionAccount(
+                publicClient,
+                getEntryPoint(),
+                serializedAccount
+            )
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: deserilizedAccount,
                 middleware: {
                     gasPrice: async () =>
                         (await pimlicoBundlerClient.getUserOperationGasPrice())

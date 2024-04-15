@@ -5,8 +5,7 @@ import type { Policy, SudoPolicyParams } from "./types.js"
 
 export async function toSudoPolicy<entryPoint extends EntryPoint>({
     policyAddress = SUDO_POLICY_CONTRACT,
-    policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    type = "sudo"
+    policyFlag = PolicyFlags.FOR_ALL_VALIDATION
 }: SudoPolicyParams): Promise<Policy<entryPoint>> {
     return {
         getPolicyData: () => {
@@ -19,9 +18,9 @@ export async function toSudoPolicy<entryPoint extends EntryPoint>({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "sudo",
             policyAddress,
             policyFlag
-        } as SudoPolicyParams
+        } as SudoPolicyParams & { type: "sudo" }
     }
 }

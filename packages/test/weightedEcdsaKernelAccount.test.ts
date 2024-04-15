@@ -247,6 +247,9 @@ describe("Weighted ECDSA kernel Account", () => {
                 userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
 
             await waitForNonceUpdate()
         },
@@ -268,6 +271,9 @@ describe("Weighted ECDSA kernel Account", () => {
             })
 
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
 
             await waitForNonceUpdate()
         },
@@ -294,8 +300,12 @@ describe("Weighted ECDSA kernel Account", () => {
                     nonce
                 }
             })
+            console.log("userOpHash", userOpHash)
 
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )

@@ -18,6 +18,12 @@ export const config: {
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV06 || "",
             chainId: polygonMumbai.id,
             projectId: process.env.ZERODEV_PROJECT_ID_MUMBAI || ""
+        },
+        sepolia: {
+            rpcUrl: process.env.RPC_URL_SEPOLIA || "",
+            bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
+            chainId: sepolia.id,
+            projectId: process.env.ZERODEV_PROJECT_ID_SEPOLIA || ""
         }
     },
     "v0.7": {

@@ -14,7 +14,6 @@ import {
     concat,
     encodeAbiParameters,
     keccak256,
-    pad,
     slice,
     zeroAddress
 } from "viem"
@@ -141,15 +140,7 @@ export async function toPermissionValidator<
                     abi: KernelV3AccountAbi,
                     address: kernelAccountAddress,
                     functionName: "permissionConfig",
-                    args: [
-                        concat([
-                            "0x00",
-                            pad(getPermissionId(), {
-                                size: 20,
-                                dir: "right"
-                            })
-                        ])
-                    ]
+                    args: [getPermissionId()]
                 })
                 return permissionConfig.signer === signer.signerContractAddress
             } catch (error) {

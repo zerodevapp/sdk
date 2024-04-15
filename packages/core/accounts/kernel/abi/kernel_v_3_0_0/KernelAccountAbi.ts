@@ -295,7 +295,7 @@ export const KernelV3AccountAbi = [
             { name: "hookData", type: "bytes[]", internalType: "bytes[]" }
         ],
         outputs: [],
-        stateMutability: "nonpayable"
+        stateMutability: "payable"
     },
     {
         type: "function",
@@ -338,9 +338,7 @@ export const KernelV3AccountAbi = [
     {
         type: "function",
         name: "permissionConfig",
-        inputs: [
-            { name: "vId", type: "bytes21", internalType: "ValidationId" }
-        ],
+        inputs: [{ name: "pId", type: "bytes4", internalType: "PermissionId" }],
         outputs: [
             {
                 name: "",
@@ -407,7 +405,7 @@ export const KernelV3AccountAbi = [
     {
         type: "function",
         name: "supportsExecutionMode",
-        inputs: [{ name: "", type: "bytes32", internalType: "ExecMode" }],
+        inputs: [{ name: "mode", type: "bytes32", internalType: "ExecMode" }],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
         stateMutability: "pure"
     },
@@ -664,6 +662,19 @@ export const KernelV3AccountAbi = [
     },
     {
         type: "event",
+        name: "RootValidatorUpdated",
+        inputs: [
+            {
+                name: "rootValidator",
+                type: "bytes21",
+                indexed: false,
+                internalType: "ValidationId"
+            }
+        ],
+        anonymous: false
+    },
+    {
+        type: "event",
         name: "SelectorSet",
         inputs: [
             {
@@ -777,5 +788,6 @@ export const KernelV3AccountAbi = [
         inputs: [{ name: "i", type: "uint256", internalType: "uint256" }]
     },
     { type: "error", name: "PolicySignatureOrderError", inputs: [] },
+    { type: "error", name: "RootValidatorCannotBeRemoved", inputs: [] },
     { type: "error", name: "SignerPrefixNotPresent", inputs: [] }
 ] as const

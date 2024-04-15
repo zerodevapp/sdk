@@ -8,7 +8,8 @@ import type {
     GasPolicyParams,
     RateLimitPolicyParams,
     SignatureCallerPolicyParams,
-    SudoPolicyParams
+    SudoPolicyParams,
+    TimestampPolicyParams
 } from "./policies/index.js"
 
 export type PermissionPlugin<entryPoint extends EntryPoint> = KernelValidator<
@@ -38,11 +39,14 @@ export type Policy = {
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
-        | CallPolicyParams<Abi | readonly unknown[], string>
-        | GasPolicyParams
-        | RateLimitPolicyParams
-        | SignatureCallerPolicyParams
-        | SudoPolicyParams
+        | (CallPolicyParams<Abi | readonly unknown[], string> & {
+              type: "call"
+          })
+        | (GasPolicyParams & { type: "gas" })
+        | (RateLimitPolicyParams & { type: "rate-limit" })
+        | (SignatureCallerPolicyParams & { type: "signature-caller" })
+        | (SudoPolicyParams & { type: "sudo" })
+        | (TimestampPolicyParams & { type: "timestamp" })
 }
 
 export type PermissionPluginParams = {

@@ -2,14 +2,11 @@ import { concatHex } from "viem"
 import { PolicyFlags, SUDO_POLICY_CONTRACT } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 
-export type SudoPolicyParams = PolicyParams & {
-    type?: "sudo"
-}
+export type SudoPolicyParams = PolicyParams
 
 export function toSudoPolicy({
     policyAddress = SUDO_POLICY_CONTRACT,
-    policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
-    type = "sudo"
+    policyFlag = PolicyFlags.FOR_ALL_VALIDATION
 }: SudoPolicyParams): Policy {
     return {
         getPolicyData: () => {
@@ -19,9 +16,9 @@ export function toSudoPolicy({
             return concatHex([policyFlag, policyAddress])
         },
         policyParams: {
-            type,
+            type: "sudo",
             policyAddress,
             policyFlag
-        }
+        } as SudoPolicyParams & { type: "sudo" }
     }
 }
