@@ -6,11 +6,11 @@ import {
     signerToEcdsaValidator
 } from "@zerodev/ecdsa-validator"
 import {
+    constants,
     EIP1271Abi,
     KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
-    constants,
     createKernelAccount,
     getCustomNonceKeyFromString,
     getERC20PaymasterApproveCall,
