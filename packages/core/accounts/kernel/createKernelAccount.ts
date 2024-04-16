@@ -350,7 +350,7 @@ export async function createKernelAccount<
                 const tx = _tx as KernelEncodeCallDataArgs
                 if (
                     !Array.isArray(tx) &&
-                    tx.callType === "call" &&
+                    (!tx.callType || tx.callType === "call") &&
                     tx.to.toLowerCase() === accountAddress.toLowerCase()
                 ) {
                     return tx.data
