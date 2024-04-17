@@ -1,9 +1,14 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
+    getKernelAddressFromECDSA,
+    signerToEcdsaValidator
+} from "@zerodev/ecdsa-validator"
+import {
+    constants,
     EIP1271Abi,
+    KERNEL_ADDRESSES,
     KernelAccountClient,
     KernelSmartAccount,
     createKernelAccount,
@@ -22,6 +27,7 @@ import {
     Chain,
     GetContractReturnType,
     Hex,
+    PrivateKeyAccount,
     type PublicClient,
     Transport,
     decodeEventLog,
@@ -92,6 +98,7 @@ const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
     let account: KernelSmartAccount<EntryPoint>
+    let ownerAccount: PrivateKeyAccount
     let publicClient: PublicClient
     let bundlerClient: BundlerClient<EntryPoint>
     let kernelClient: KernelAccountClient<
@@ -107,6 +114,11 @@ describe("ECDSA kernel Account", () => {
     >
 
     beforeAll(async () => {
+        const ownerPrivateKey = process.env.TEST_PRIVATE_KEY
+        if (!ownerPrivateKey) {
+            throw new Error("TEST_PRIVATE_KEY is not set")
+        }
+        ownerAccount = privateKeyToAccount(ownerPrivateKey as Hex)
         account = await getSignerToEcdsaKernelAccount()
         publicClient = await getPublicClient()
         bundlerClient = getKernelBundlerClient()
@@ -133,6 +145,25 @@ describe("ECDSA kernel Account", () => {
         expect(account.address).toBeString()
         expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
+        expect(account.address).not.toEqual(zeroAddress)
+        console.log("account.address: ", account.address)
+    })
+
+    test("getKernelAddressFromECDSA util should return valid account address", async () => {
+        const generatedAccountAddress = await getKernelAddressFromECDSA({
+            entryPointAddress: ENTRYPOINT_ADDRESS_V06,
+            eoaAddress: ownerAccount.address,
+            index: index,
+            initCodeHash:
+                constants.KernelFactoryToInitCodeHashMap[
+                    KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
+                ]
+        })
+        console.log(
+            "Generate accountAddress using getKernelAddressFromECDSA: ",
+            generatedAccountAddress
+        )
+        expect(account.address).toEqual(generatedAccountAddress)
     })
 
     test("Account should throw when trying to sign a transaction", async () => {

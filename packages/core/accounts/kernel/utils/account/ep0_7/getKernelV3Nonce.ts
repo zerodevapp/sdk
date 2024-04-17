@@ -1,6 +1,6 @@
-import { getAction } from "permissionless"
 import type { Address, Client } from "viem"
 import { readContract } from "viem/actions"
+import { getAction } from "viem/utils"
 import { KernelV3AccountAbi } from "../../../abi/kernel_v_3_0_0/KernelAccountAbi.js"
 
 export const getKernelV3Nonce = async (
@@ -10,7 +10,8 @@ export const getKernelV3Nonce = async (
     try {
         const nonce = await getAction(
             client,
-            readContract
+            readContract,
+            "sendTransaction"
         )({
             abi: KernelV3AccountAbi,
             address: accountAddress,

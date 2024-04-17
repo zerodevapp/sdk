@@ -10,6 +10,7 @@ import {
     parseAbiParameters,
     zeroAddress
 } from "viem"
+import { CALL_TYPE } from "../../../../../constants.js"
 import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
 
 export const getEncodedPluginsData = async <
@@ -35,9 +36,17 @@ export const getEncodedPluginsData = async <
             [
                 enableData,
                 "0x",
-                // [TODO]: Integrate custom target contract and hook
                 concat([
-                    action.selector /*, action.address, zeroAddress, "0x"*/
+                    action.selector,
+                    action.address,
+                    zeroAddress,
+                    encodeAbiParameters(
+                        parseAbiParameters(
+                            "bytes selectorInitData, bytes hookInitData"
+                        ),
+                        // [TODO]: Add support for other call_type
+                        [CALL_TYPE.DELEGATE_CALL, "0x"]
+                    )
                 ]),
                 enableSignature,
                 userOpSignature

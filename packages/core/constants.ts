@@ -43,5 +43,7 @@ export const safeCreateCallAddress =
     "0x9b35Af71d77eaf8d7e40252370304687390A1A52"
 export const KernelFactoryToInitCodeHashMap: { [key: Address]: Hex } = {
     "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3":
-        "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73"
+        "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73",
+    "0x6723b44Abeec4E71eBE3232BD5B455805baDD22f":
+        "0x6fe6e6ea30eddce942b9618033ab8429f9ddac594053bec8a6744fffc71976e2"
 }

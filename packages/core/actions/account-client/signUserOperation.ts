@@ -13,10 +13,10 @@ import type {
 } from "permissionless/types"
 import {
     AccountOrClientNotFoundError,
-    getAction,
     parseAccount
 } from "permissionless/utils"
 import type { Chain, Client, Transport } from "viem"
+import { getAction } from "viem/utils"
 
 export type SignUserOperationParameters<
     entryPoint extends EntryPoint,
@@ -60,7 +60,8 @@ export async function signUserOperation<
 
     const userOperation = await getAction(
         client,
-        prepareUserOperationRequest<entryPoint, TTransport, TChain, TAccount>
+        prepareUserOperationRequest<entryPoint, TTransport, TChain, TAccount>,
+        "prepareUserOperationRequest"
     )(args)
 
     userOperation.signature = await account.signUserOperation(

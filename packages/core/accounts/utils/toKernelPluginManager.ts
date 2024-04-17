@@ -15,6 +15,7 @@ import {
     zeroAddress
 } from "viem"
 import { getChainId } from "viem/actions"
+import { encodeModuleInstallCallData as encodeModuleInstallCallDataEpV06 } from "../../accounts/kernel/utils/account/ep0_6/encodeModuleInstallCallData.js"
 import { VALIDATOR_MODE, VALIDATOR_TYPE } from "../../constants.js"
 import {
     type KernelPluginManager,
@@ -193,6 +194,24 @@ export async function toKernelPluginManager<
     return {
         ...activeValidator,
         getIdentifier,
+        encodeModuleInstallCallData: async (accountAddress: Address) => {
+            if (!action) {
+                throw new Error("Action data must be set")
+            }
+            if (!regular) throw new Error("regular validator not set")
+            if (entryPointVersion === "v0.6") {
+                return await encodeModuleInstallCallDataEpV06({
+                    accountAddress,
+                    selector: action.selector,
+                    executor: action.address,
+                    validator: regular?.address,
+                    validUntil,
+                    validAfter,
+                    enableData: await regular.getEnableData(accountAddress)
+                })
+            }
+            throw new Error("EntryPoint v0.7 not supported yet")
+        },
         signUserOperation: async (userOperation) => {
             const userOpSig =
                 await activeValidator.signUserOperation(userOperation)

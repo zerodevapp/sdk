@@ -45,6 +45,7 @@ import { toPermissionValidator } from "../../../plugins/permission/toPermissionV
 import { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
+import { Action } from "@zerodev/sdk/types/kernel.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
@@ -360,7 +361,8 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
 }
 
 export const getSignerToPermissionKernelAccount = async (
-    policies: Policy[]
+    policies: Policy[],
+    action?: Action
 ): Promise<KernelSmartAccount<EntryPoint>> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey1) {
@@ -389,7 +391,7 @@ export const getSignerToPermissionKernelAccount = async (
         plugins: {
             sudo: ecdsaValidatorPlugin,
             regular: permissionPlugin,
-            action: {
+            action: action ?? {
                 address: zeroAddress,
                 selector: toFunctionSelector(
                     getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
