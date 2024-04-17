@@ -84,7 +84,7 @@ export function createFallbackTransport(
                             i = Math.max(0, successfulIndex.index)
                             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                         ): Promise<any> => {
-                            console.log("fetch", i)
+                            console.log("fetch", i, isBundler, method)
                             const transport = isBundler
                                 ? transportPairs[i].bundlerTransport
                                 : transportPairs[i].paymasterTransport
@@ -111,6 +111,8 @@ export function createFallbackTransport(
                                 successfulIndex.index = i
                                 return response
                             } catch (err) {
+                                console.log("error", err)
+
                                 onResponse({
                                     error: err as Error,
                                     method,

@@ -60,6 +60,8 @@ import { createPermissionValidator } from "../../plugins/modularPermission/toMod
 import { EntryPointAbi } from "./abis/EntryPoint.js"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import { config } from "./config.js"
+import { type RequestListener, createServer } from "http"
+import type { AddressInfo } from "net"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const index = 543853232332340n
@@ -244,8 +246,9 @@ export const getSignerToSessionKeyKernelV2Account = async (): Promise<
         index
     })
 
-    const serializedSessionKeyAccountParams =
-        await serializeSessionKeyAccount(account)
+    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
+        account
+    )
 
     return (await deserializeSessionKeyAccountV2(
         publicClient,
@@ -353,8 +356,9 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
         index
     })
 
-    const serializedSessionKeyAccountParams =
-        await serializeSessionKeyAccount(account)
+    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
+        account
+    )
 
     return await deserializeSessionKeyAccount(
         publicClient,
@@ -625,5 +629,23 @@ export const findUserOperationEvent = (logs: Log[]): boolean => {
         } catch {
             return false
         }
+    })
+}
+
+export function createHttpServer(
+    handler: RequestListener
+): Promise<{ close: () => Promise<unknown>; url: string }> {
+    const server = createServer(handler)
+
+    const closeAsync = () =>
+        new Promise((resolve, reject) =>
+            server.close((err) => (err ? reject(err) : resolve(undefined)))
+        )
+
+    return new Promise((resolve) => {
+        server.listen(() => {
+            const { port } = server.address() as AddressInfo
+            resolve({ close: closeAsync, url: `http://localhost:${port}` })
+        })
     })
 }

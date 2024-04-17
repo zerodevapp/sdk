@@ -18,6 +18,7 @@ export const setPimlicoAsProvider = (urlString: string): string => {
 
 export const hasPimlicoAsProvider = (urlString: string): boolean => {
     const url = new URL(urlString)
+    console.log("url", url)
     const params = url.searchParams
     const provider =
         params.get("provider") ??
