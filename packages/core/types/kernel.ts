@@ -46,8 +46,8 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
                   preVerificationGas: Hex
                   verificationGasLimit: Hex
                   callGasLimit: Hex
-                  maxFeePerGas: Hex
-                  maxPriorityFeePerGas: Hex
+                  maxFeePerGas?: Hex
+                  maxPriorityFeePerGas?: Hex
                   paymaster?: never
                   paymasterVerificationGasLimit?: never
                   paymasterPostOpGasLimit?: never
@@ -61,6 +61,8 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
                   paymasterVerificationGasLimit: Hex
                   paymasterPostOpGasLimit: Hex
                   paymasterData: Hex
+                  maxFeePerGas?: Hex
+                  maxPriorityFeePerGas?: Hex
                   paymasterAndData?: never
               }
     },

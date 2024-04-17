@@ -464,6 +464,9 @@ describe("ECDSA kernel Account", () => {
                 userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
 
             await waitForNonceUpdate()
         },
