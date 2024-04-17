@@ -37,6 +37,6 @@
     "peerDependencies": {
         "viem": "^2.9.17",
         "@zerodev/sdk": "^5.2.1",
-        "permissionless": "^0.1.17"
+        "permissionless": "^0.1.18"
     }
 }
