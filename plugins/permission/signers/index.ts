@@ -9,3 +9,5 @@ export {
 export { WebAuthnMode } from "./toWebAuthnPubKey.js"
 export { toSignerId } from "./utils/toSignerId.js"
 export { toEmptyECDSASigner } from "./toEmptyECDSASigner.js"
+export { toRemoteSessionKeySigner } from "./toRemoteSessionKeySigner.js"
+export { SessionKeySignerMode } from "./toRemoteSessionKeySigner.js"
