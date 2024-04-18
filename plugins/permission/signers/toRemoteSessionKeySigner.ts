@@ -1,19 +1,19 @@
 import { constants, fixSignedData } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
+import axios from "axios"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     type Hex,
-    type TypedDataDefinition,
-    type SignableMessage,
-    hashTypedData,
     type SignTypedDataParameters,
+    type SignableMessage,
+    type TypedDataDefinition,
     getTypesForEIP712Domain,
+    hashTypedData,
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
-import axios from "axios"
 
 export enum SessionKeySignerMode {
     Create = "create",
