@@ -1,6 +1,5 @@
 import { constants, fixSignedData } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
-import axios from "axios"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     type Hex,
@@ -21,49 +20,44 @@ export enum SessionKeySignerMode {
 }
 
 export type SessionKeyModularSignerParams = ModularSignerParams & {
-    userName: string
     apiKey: string
-    sessionKeyStorageUrl: string
+    sessionKeyStorageUrl?: string
     walletAddress?: Hex
     mode?: SessionKeySignerMode
 }
 
 export async function toRemoteSessionKeySigner({
-    userName,
     apiKey,
     walletAddress,
-    sessionKeyStorageUrl,
+    sessionKeyStorageUrl = "https://keys.zerodev.app/wallet/v1",
     mode = SessionKeySignerMode.Get,
     signerContractAddress = ECDSA_SIGNER_CONTRACT
 }: SessionKeyModularSignerParams): Promise<ModularSigner> {
     if (mode === SessionKeySignerMode.Create) {
         try {
-            const createTurnkeyWalletResult = await axios.post(
-                `${sessionKeyStorageUrl}/key-pair`,
-                {
-                    userName
-                },
-                {
-                    headers: {
-                        "x-api-key": apiKey
-                    }
+            const response = await fetch(`${sessionKeyStorageUrl}/key-pair`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey
                 }
-            )
-            walletAddress = createTurnkeyWalletResult.data.walletAddress
+            })
+
+            if (!response.ok) {
+                const errorBody = await response.json()
+                throw new Error(
+                    `Request failed with status code ${response.status}: ${errorBody.message}`
+                )
+            }
+
+            const createTurnkeyWalletResult = await response.json()
+            walletAddress = createTurnkeyWalletResult.walletAddress
         } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "An unknown error occurred"
-            if (axios.isAxiosError(error) && error.response) {
-                throw new Error(
-                    `Request failed with status code ${
-                        error.response.status
-                    }: ${error.response.data.message || errorMessage}`
-                )
-            } else {
-                throw new Error(`An unexpected error occurred: ${errorMessage}`)
-            }
+            throw new Error(`An unexpected error occurred: ${errorMessage}`)
         }
     }
 
@@ -73,34 +67,38 @@ export async function toRemoteSessionKeySigner({
 
     const signMessageWithTurnkeyWallet = async (message: SignableMessage) => {
         try {
-            const signMessageResult = await axios.post(
+            const response = await fetch(
                 `${sessionKeyStorageUrl}/sign-message`,
                 {
-                    walletAddress,
-                    message
-                },
-                {
+                    method: "POST",
                     headers: {
+                        "Content-Type": "application/json",
                         "x-api-key": apiKey
-                    }
+                    },
+                    body: JSON.stringify({
+                        walletAddress,
+                        message
+                    })
                 }
             )
 
-            return signMessageResult.data.signature
+            if (!response.ok) {
+                const errorBody = await response.json()
+                throw new Error(
+                    `Request failed with status code ${response.status}: ${
+                        errorBody.message || "An unknown error occurred"
+                    }`
+                )
+            }
+
+            const signMessageResult = await response.json()
+            return signMessageResult.signature
         } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "An unknown error occurred"
-            if (axios.isAxiosError(error) && error.response) {
-                throw new Error(
-                    `Request failed with status code ${
-                        error.response.status
-                    }: ${error.response.data.message || errorMessage}`
-                )
-            } else {
-                throw new Error(`An unexpected error occurred: ${errorMessage}`)
-            }
+            throw new Error(`An unexpected error occurred: ${errorMessage}`)
         }
     }
 
