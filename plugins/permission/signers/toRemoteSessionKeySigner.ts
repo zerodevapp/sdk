@@ -22,13 +22,13 @@ export enum SessionKeySignerMode {
 export type SessionKeyModularSignerParams = ModularSignerParams & {
     apiKey: string
     sessionKeyStorageUrl?: string
-    walletAddress?: Hex
+    keyAddress?: Hex
     mode?: SessionKeySignerMode
 }
 
 export async function toRemoteSessionKeySigner({
     apiKey,
-    walletAddress,
+    keyAddress,
     sessionKeyStorageUrl = "https://keys.zerodev.app/wallet/v1",
     mode = SessionKeySignerMode.Get,
     signerContractAddress = ECDSA_SIGNER_CONTRACT
@@ -51,7 +51,7 @@ export async function toRemoteSessionKeySigner({
             }
 
             const createTurnkeyWalletResult = await response.json()
-            walletAddress = createTurnkeyWalletResult.walletAddress
+            keyAddress = createTurnkeyWalletResult.walletAddress
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -61,7 +61,7 @@ export async function toRemoteSessionKeySigner({
         }
     }
 
-    if (!walletAddress) {
+    if (!keyAddress) {
         throw new Error("Wallet address should be provided on get mode")
     }
 
@@ -76,7 +76,7 @@ export async function toRemoteSessionKeySigner({
                         "x-api-key": apiKey
                     },
                     body: JSON.stringify({
-                        walletAddress,
+                        keyAddress,
                         message
                     })
                 }
@@ -103,7 +103,7 @@ export async function toRemoteSessionKeySigner({
     }
 
     const account = toAccount({
-        address: walletAddress,
+        address: keyAddress,
         async signMessage({ message }) {
             return fixSignedData(await signMessageWithTurnkeyWallet(message))
         },
@@ -134,10 +134,10 @@ export async function toRemoteSessionKeySigner({
         account,
         signerContractAddress,
         getSignerData: () => {
-            if (!walletAddress) {
+            if (!keyAddress) {
                 throw new Error("Wallet address not found")
             }
-            return walletAddress
+            return keyAddress
         },
         getDummySignature: () => constants.DUMMY_ECDSA_SIG
     }
