@@ -57,7 +57,9 @@ export const hasKernelFeature = (
     return satisfies(version, KERNEL_FEATURES_BY_VERSION[feature])
 }
 
-export const getERC20PaymasterApproveCall = async <entryPoint extends EntryPoint>(
+export const getERC20PaymasterApproveCall = async <
+    entryPoint extends EntryPoint
+>(
     client: ZeroDevPaymasterClient<entryPoint>,
     {
         gasToken,
