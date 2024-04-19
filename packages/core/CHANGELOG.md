@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.6
+
+### Patch Changes
+
+- Fix typing in createKernelAccountClient
+
 ## 5.2.5
 
 ### Patch Changes
