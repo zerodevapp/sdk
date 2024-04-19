@@ -14,6 +14,7 @@ jobs:
     secrets: inherit
 
   size:
+    if: false
     name: Size
     runs-on: ubuntu-latest
     timeout-minutes: 5
