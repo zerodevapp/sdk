@@ -13,7 +13,6 @@ import {
     createKernelAccount
 } from "@zerodev/sdk/accounts"
 import { createKernelV2Account } from "@zerodev/sdk/accounts"
-import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
 import type { Action } from "@zerodev/sdk/types"
 import {
     ParamOperator,
@@ -24,6 +23,7 @@ import {
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
+import { getRecoveryAction } from "@zerodev/weighted-ecdsa-validator/constants.js"
 import {
     BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
@@ -54,7 +54,7 @@ import {
     generatePrivateKey,
     privateKeyToAccount
 } from "viem/accounts"
-import { type Chain, goerli, sepolia } from "viem/chains"
+import { type Chain, sepolia } from "viem/chains"
 import * as allChains from "viem/chains"
 import { Policy } from "../../plugins/modularPermission/policies/types.js"
 import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
@@ -64,7 +64,8 @@ import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
 import { config } from "./config.js"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
-export const index = 543853232332340n
+export const index = 5438533232332340n
+const DEFAULT_PROVIDER = "STACKUP"
 const projectId = config["v0.6"].sepolia.projectId
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
@@ -122,12 +123,12 @@ export const getSignerToEcdsaKernelAccount = async <
 }
 
 export const getEcdsaKernelAccountWithRandomSigner = async (): Promise<
-    SmartAccount<EntryPoint>
+    KernelSmartAccount<EntryPoint>
 > => {
     return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async <
+export const getEcdsaKernelAccountWithPrivateKey = async <
     entryPoint extends EntryPoint
 >(
     privateKey: Hex
@@ -307,6 +308,34 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
     }
 }
 
+export const getRecoveryKernelAccount = async (
+    deployedAccountAddress: Address
+) => {
+    const privateKey1 = generatePrivateKey()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const recoveryPlugin = await createWeightedECDSAValidator(
+        await getPublicClient(),
+        {
+            entryPoint: getEntryPoint(),
+            config: {
+                threshold: 100,
+                delay: 0,
+                signers: [{ address: signer1.address, weight: 100 }]
+            },
+            signers: [signer1]
+        }
+    )
+    return await createKernelAccount(await getPublicClient(), {
+        entryPoint: getEntryPoint(),
+        deployedAccountAddress,
+        plugins: {
+            regular: recoveryPlugin,
+            action: getRecoveryAction()
+        },
+        index
+    })
+}
+
 export const getSignerToSessionKeyKernelAccount = async (): Promise<
     KernelSmartAccount<EntryPoint>
 > => {
@@ -429,8 +458,6 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
         index
     })
 }
-
-const DEFAULT_PROVIDER = "STACKUP"
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = projectId

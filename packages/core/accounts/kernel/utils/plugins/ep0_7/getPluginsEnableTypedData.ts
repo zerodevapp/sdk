@@ -2,8 +2,16 @@ import type {
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint
 } from "permissionless/types/entrypoint"
-import { type Address, type CustomSource, concat, pad, zeroAddress } from "viem"
-import { VALIDATOR_TYPE } from "../../../../../constants.js"
+import {
+    type Address,
+    type CustomSource,
+    concat,
+    encodeAbiParameters,
+    pad,
+    parseAbiParameters,
+    zeroAddress
+} from "viem"
+import { CALL_TYPE, VALIDATOR_TYPE } from "../../../../../constants.js"
 import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
 
 export const getPluginsEnableTypedData = async <
@@ -50,12 +58,15 @@ export const getPluginsEnableTypedData = async <
             validatorData: await validator.getEnableData(accountAddress),
             hookData: "0x",
             selectorData: concat([
-                action.selector
-                /*
+                action.selector,
                 action.address,
                 zeroAddress,
-                "0x"
-                */
+                encodeAbiParameters(
+                    parseAbiParameters(
+                        "bytes selectorInitData, bytes hookInitData"
+                    ),
+                    [CALL_TYPE.DELEGATE_CALL, "0x"]
+                )
             ])
         },
         primaryType: "Enable"

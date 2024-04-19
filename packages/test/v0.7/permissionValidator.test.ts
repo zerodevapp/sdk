@@ -19,9 +19,11 @@ import {
     PublicClient,
     Transport,
     encodeFunctionData,
+    getAbiItem,
     hashMessage,
     hashTypedData,
     parseEther,
+    toFunctionSelector,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
@@ -40,7 +42,8 @@ import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
 import { ParamCondition } from "../../../plugins/permission/policies/types"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
-import { config } from "../config"
+import { TokenActionsAbi } from "../abis/TokenActionsAbi"
+import { TOKEN_ACTION_ADDRESS, config } from "../config"
 import { Test_ERC20Address } from "../utils"
 import {
     getEntryPoint,
@@ -775,6 +778,82 @@ describe("Permission kernel Account", () => {
             const response = await permissionSmartAccountClient.sendTransaction(
                 {
                     to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with Action",
+        async () => {
+            const sudoPolicy = toSudoPolicy({})
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount(
+                    [sudoPolicy],
+                    {
+                        address: TOKEN_ACTION_ADDRESS,
+                        selector: toFunctionSelector(
+                            getAbiItem({
+                                abi: TokenActionsAbi,
+                                name: "transferERC20Action"
+                            })
+                        )
+                    }
+                ),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+
+            const transferData = encodeFunctionData({
+                abi: TokenActionsAbi,
+                functionName: "transferERC20Action",
+                args: [Test_ERC20Address, amountToTransfer, owner.address]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: permissionSmartAccountClient.account.address,
                     data: transferData
                 }
             )

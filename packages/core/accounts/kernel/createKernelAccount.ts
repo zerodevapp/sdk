@@ -60,6 +60,7 @@ export type KernelSmartAccount<
     getNonce: (customNonceKey?: bigint) => Promise<bigint>
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
+    encodeModuleInstallCallData: () => Promise<Hex>
 }
 
 export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
@@ -267,21 +268,23 @@ export async function createKernelAccount<
         plugins,
         entryPoint: entryPointAddress,
         index = 0n,
-        factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6,
-        accountLogicAddress = KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6,
+        factoryAddress,
+        accountLogicAddress,
         factoryStakerAddress = KERNEL_ADDRESSES.FACTORY_STAKER,
         deployedAccountAddress
     }: CreateKernelAccountParameters<entryPoint>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     accountLogicAddress =
-        entryPointVersion === "v0.6"
+        accountLogicAddress ??
+        (entryPointVersion === "v0.6"
             ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
-            : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7
+            : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7)
     factoryAddress =
-        entryPointVersion === "v0.6"
+        factoryAddress ??
+        (entryPointVersion === "v0.6"
             ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
-            : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7
+            : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7)
 
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
@@ -294,6 +297,8 @@ export async function createKernelAccount<
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
+        if (!accountLogicAddress || !factoryAddress)
+            throw new Error("Missing account logic address or factory address")
         return getAccountInitCode<entryPoint>({
             index,
             factoryAddress,
@@ -323,6 +328,11 @@ export async function createKernelAccount<
     return {
         kernelPluginManager,
         generateInitCode,
+        encodeModuleInstallCallData: async () => {
+            return await kernelPluginManager.encodeModuleInstallCallData(
+                accountAddress
+            )
+        },
         ...toSmartAccount({
             address: accountAddress,
             publicKey: accountAddress,
@@ -340,7 +350,7 @@ export async function createKernelAccount<
                 const tx = _tx as KernelEncodeCallDataArgs
                 if (
                     !Array.isArray(tx) &&
-                    tx.callType === "call" &&
+                    (!tx.callType || tx.callType === "call") &&
                     tx.to.toLowerCase() === accountAddress.toLowerCase()
                 ) {
                     return tx.data

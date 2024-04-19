@@ -213,6 +213,9 @@ export async function createKernelV1Account<
     return {
         ...account,
         generateInitCode,
+        encodeModuleInstallCallData: async () => {
+            throw new Error("Not implemented")
+        },
         client: client,
         publicKey: accountAddress,
         entryPoint: entryPointAddress,

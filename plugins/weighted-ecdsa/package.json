@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/weighted-ecdsa-validator",
-    "version": "5.2.0",
+    "version": "5.2.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -35,8 +35,8 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.0.0",
-        "@zerodev/sdk": "^5.2.0",
-        "permissionless": "^0.1.16"
+        "viem": "^2.9.17",
+        "@zerodev/sdk": "^5.2.1",
+        "permissionless": "^0.1.18"
     }
 }

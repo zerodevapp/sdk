@@ -1,6 +1,5 @@
 // copied from: https://github.com/alchemyplatform/aa-sdk/blob/266c9757cd721ef0bd97d04c0b592a329f8a9da5/packages/core/src/signer/utils.ts
 
-import { getAction } from "permissionless"
 import {
     type Address,
     type Chain,
@@ -14,6 +13,7 @@ import {
     parseAbiParameters
 } from "viem"
 import { getStorageAt } from "viem/actions"
+import { getAction } from "viem/utils"
 
 export type SignWith6492Params = {
     factoryAddress: Address
@@ -85,7 +85,8 @@ export const getKernelImplementationAddress = async <
     try {
         const strgAddr = await getAction(
             client,
-            getStorageAt
+            getStorageAt,
+            "getStorageAt"
         )({
             address: accountAddress,
             slot: "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"

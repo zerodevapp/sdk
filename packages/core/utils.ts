@@ -57,8 +57,10 @@ export const hasKernelFeature = (
     return satisfies(version, KERNEL_FEATURES_BY_VERSION[feature])
 }
 
-export const getERC20PaymasterApproveCall = async (
-    client: ZeroDevPaymasterClient<EntryPoint>,
+export const getERC20PaymasterApproveCall = async <
+    entryPoint extends EntryPoint
+>(
+    client: ZeroDevPaymasterClient<entryPoint>,
     {
         gasToken,
         approveAmount
@@ -98,7 +100,8 @@ export const fixSignedData = (sig: Hex): Hex => {
 
     let { r, s, v } = hexToSignature(signature)
     if (v === 0n || v === 1n) v += 27n
-    const joined = signatureToHex({ r, s, v })
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    const joined = signatureToHex({ r, s, v: v! })
     return joined
 }
 

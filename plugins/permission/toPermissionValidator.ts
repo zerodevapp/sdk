@@ -1,9 +1,5 @@
 import { KernelV3AccountAbi } from "@zerodev/sdk"
-import {
-    getAction,
-    getEntryPointVersion,
-    getUserOperationHash
-} from "permissionless"
+import { getEntryPointVersion, getUserOperationHash } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
@@ -18,6 +14,7 @@ import {
     zeroAddress
 } from "viem"
 import { getChainId, readContract } from "viem/actions"
+import { getAction } from "viem/utils"
 import { PolicyFlags } from "./constants.js"
 import { toPolicyId } from "./policies/index.js"
 import { toSignerId } from "./signers/index.js"
@@ -135,7 +132,8 @@ export async function toPermissionValidator<
             try {
                 const permissionConfig = await getAction(
                     client,
-                    readContract
+                    readContract,
+                    "readContract"
                 )({
                     abi: KernelV3AccountAbi,
                     address: kernelAccountAddress,

@@ -34,7 +34,6 @@ export const getPluginsEnableTypedData = async <
     accountAddress: Address
     chainId: number
     kernelVersion: string
-    // { action, validator }: Kernel2_0_plugins
 } & Kernel2_0_plugins<entryPoint> &
     PluginValidityData): Promise<
     Parameters<CustomSource["signTypedData"]>[0]
