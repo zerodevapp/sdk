@@ -1,5 +1,5 @@
 export {
     toRemoteSigner,
-    type RemoteSignerMode,
+    RemoteSignerMode,
     type RemoteSignerParams
 } from "./toRemoteSigner.js"
