@@ -46,6 +46,7 @@ import { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
 import { Action } from "@zerodev/sdk/types/kernel.js"
+import { SmartAccountSigner } from "permissionless/accounts/types.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
@@ -590,5 +591,46 @@ export function createHttpServer(
             const { port } = server.address() as AddressInfo
             resolve({ close: closeAsync, url: `http://localhost:${port}` })
         })
+    })
+}
+
+export const getEcdsaKernelAccountWithRemoteSigner = async <
+    entryPoint extends EntryPoint
+>(
+    remoteSigner: SmartAccountSigner
+): Promise<KernelSmartAccount<entryPoint>> => {
+    const publicClient = await getPublicClient()
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: remoteSigner
+    })
+
+    return createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin
+        },
+        index
+    }) as unknown as KernelSmartAccount<entryPoint>
+}
+
+export const getPermissionKernelAccountWithRemoteSigner = async (
+    remoteSigner: SmartAccountSigner,
+    policies: Policy[]
+): Promise<KernelSmartAccount<EntryPoint>> => {
+    const publicClient = await getPublicClient()
+    const ecdsaSigner = toECDSASigner({ signer: remoteSigner })
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaSigner,
+        policies
+    })
+
+    return createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: permissionPlugin
+        },
+        index
     })
 }
