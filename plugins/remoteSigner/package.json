@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/remote-signer",
-    "version": "5.2.0-alpah.0",
+    "version": "5.2.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
