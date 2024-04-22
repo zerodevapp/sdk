@@ -2,8 +2,8 @@ import { fixSignedData } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
-    type LocalAccount,
     type Hex,
+    type LocalAccount,
     type SignTypedDataParameters,
     type SignableMessage,
     type TypedDataDefinition,
