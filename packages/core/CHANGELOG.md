@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.7
+
+### Patch Changes
+
+- fix kernelAccountActions typing
+
 ## 5.2.6
 
 ### Patch Changes
