@@ -122,4 +122,8 @@ export const CHAIN_ID_TO_NODE: { [key: number]: string } = {
   94204209: 'https://rpc.polygon-blackberry.gelato.digital',
   88153591557: 'https://rpc.arb-blueberry.gelato.digital',
   123420111: 'https://rpc.opcelestia-raspberry.gelato.digital',
+  6038361: 'https://rpc.startale.com/zkyoto',
+  666666666: 'https://rpc.degen.tips',
+  7560: 'https://cyber.alt.technology',
+  111557560: 'https://cyber-testnet.alt.technology',
 };

@@ -166,3 +166,102 @@ export const polygonBlackberry = defineChain({
   },
   testnet: true,
 })
+
+export const cyberMainnet = defineChain({
+  id: 7560,
+  name: 'Cyber Mainnet',
+  network: 'cyber-mainnet',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ['https://cyber.alt.technology/'],
+    },
+    public: {
+      http: ['https://cyber.alt.technology/'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Cyber Mainnet Explorer',
+      url: 'https://cyber-explorer.alt.technology/',
+    },
+  },
+  testnet: false,
+})
+
+export const cyberTestnet = defineChain({
+  id: 111_557_560,
+  name: 'Cyber Testnet',
+  network: 'cyber-testnet',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ['https://cyber-testnet.alt.technology'],
+    },
+    public: {
+      http: ['https://cyber-testnet.alt.technology'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Cyber Testnet Explorer',
+      url: 'https://cyber-testnet-explorer.alt.technology/',
+    },
+  },
+  testnet: true,
+})
+
+export const astarZkyoto = defineChain({
+  id: 6_038_361,
+  name: 'Astar zkEVM Testnet zKyoto',
+  network: 'zKyoto',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.startale.com/zkyoto'],
+    },
+    public: {
+      http: ['https://rpc.startale.com/zkyoto'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'zKyoto Explorer',
+      url: 'https://zkyoto.explorer.startale.com',
+    },
+  },
+  contracts: {
+    multicall3: {
+      address: '0xca11bde05977b3631167028862be2a173976ca11',
+      blockCreated: 196153,
+    },
+  },
+  testnet: true,
+})
+
+export const degen = defineChain({
+  id: 666666666,
+  name: 'Degen',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Degen',
+    symbol: 'DEGEN',
+  },
+  network: 'degen',
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.degen.tips'],
+      webSocket: ['wss://rpc.degen.tips'],
+    },
+    public: {
+      http: ['https://rpc.degen.tips'],
+      webSocket: ['wss://rpc.degen.tips'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Degen Chain Explorer',
+      url: 'https://explorer.degen.tips'
+    },
+  },
+})

@@ -1,6 +1,6 @@
 {
   "name": "@zerodev/sdk",
-  "version": "4.7.6",
+  "version": "4.7.7",
   "description": "A collection of ERC-4337 compliant smart contract account interfaces",
   "author": "ZeroDev",
   "license": "MIT",
