@@ -2,6 +2,7 @@ import { type SmartAccountActions, smartAccountActions } from "permissionless"
 import { type Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Transport } from "viem"
+import { type KernelSmartAccount } from "../../accounts/index.js"
 import {
     type GetUserOperationGasPriceReturnType,
     getUserOperationGasPrice
@@ -22,7 +23,6 @@ import {
     sponsorUserOperation
 } from "../../actions/paymaster/sponsorUserOperation.js"
 import type { ZeroDevPaymasterClient } from "../paymasterClient.js"
-import { type KernelSmartAccount } from "../../accounts/index.js";
 
 export type ZeroDevPaymasterClientActions<entryPoint extends EntryPoint> = {
     /**
