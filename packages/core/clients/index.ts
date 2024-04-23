@@ -8,7 +8,4 @@ export {
     type KernelAccountClient
 } from "./kernelAccountClient.js"
 
-export {
-    createFallbackTransport,
-    type TransportPair
-} from "./fallback.js"
+export { createFallbackKernelAccountClient } from "./fallbackKernelAccountClient.js"

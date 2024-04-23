@@ -116,6 +116,14 @@ export type ZeroDevAccountClientRpcSchema = [
     }
 ]
 
+export type PimlicoClientRpcSchema = [
+    {
+        Method: "pimlico_getUserOperationGasPrice"
+        Parameters: []
+        ReturnType: ZeroDevUserOperationGasPriceWithBigIntAsHex
+    }
+]
+
 export type ValidatorType = Extract<
     keyof typeof VALIDATOR_TYPE,
     "PERMISSION" | "SECONDARY"

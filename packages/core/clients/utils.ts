@@ -27,3 +27,8 @@ export const hasPimlicoAsProvider = (urlString: string): boolean => {
     if (provider === "PIMLICO") return true
     return false
 }
+
+export const isPimlicoClient = (urlString: string): boolean => {
+    const regex = /^https:\/\/api\.pimlico\.io\/v2\/\d+\/rpc\?apikey=[\w-]+$/
+    return regex.test(urlString)
+}
