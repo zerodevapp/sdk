@@ -39,13 +39,13 @@ export const getEncodedPluginsData = async <
                 concat([
                     action.selector,
                     action.address,
-                    zeroAddress,
+                    action.hook?.address ?? zeroAddress,
                     encodeAbiParameters(
                         parseAbiParameters(
                             "bytes selectorInitData, bytes hookInitData"
                         ),
                         // [TODO]: Add support for other call_type
-                        [CALL_TYPE.DELEGATE_CALL, "0x"]
+                        [CALL_TYPE.DELEGATE_CALL, "0x0000"]
                     )
                 ]),
                 enableSignature,

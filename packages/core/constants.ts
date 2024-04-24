@@ -13,6 +13,8 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27": "0.3.0-beta"
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
+export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
+    "0xb230f0A1C7C95fa11001647383c8C7a8F316b900"
 export const KERNEL_NAME = "Kernel"
 export const LATEST_KERNEL_VERSION: { [key in EntryPointVersion]: string } = {
     "v0.6": "0.2.4",
