@@ -7,7 +7,10 @@ import {
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import { KernelV3ExecuteAbi } from "@zerodev/sdk"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
+import {
+    createWeightedECDSAValidator,
+    getRecoveryAction
+} from "@zerodev/weighted-ecdsa-validator"
 import {
     BundlerClient,
     ENTRYPOINT_ADDRESS_V07,
@@ -46,6 +49,7 @@ import { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
 import { Action } from "@zerodev/sdk/types/kernel.js"
+import { SmartAccountSigner } from "permissionless/accounts/types.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
@@ -360,6 +364,39 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
     })
 }
 
+export const getRecoveryKernelAccount = async (
+    deployedAccountAddress?: Address
+) => {
+    const privateKey1 = generatePrivateKey()
+    const privateKey2 = generatePrivateKey()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const signer2 = privateKeyToAccount(privateKey2)
+    const publicClient = await getPublicClient()
+    const ecdsaPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: signer1
+    })
+    const recoveryPlugin = await createWeightedECDSAValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        config: {
+            threshold: 100,
+            delay: 0,
+            signers: [{ address: signer2.address, weight: 100 }]
+        },
+        signers: [signer2]
+    })
+    return await createKernelAccount(await getPublicClient(), {
+        entryPoint: getEntryPoint(),
+        deployedAccountAddress,
+        plugins: {
+            sudo: ecdsaPlugin,
+            regular: recoveryPlugin,
+            action: getRecoveryAction(getEntryPoint())
+        },
+        index
+    })
+}
+
 export const getSignerToPermissionKernelAccount = async (
     policies: Policy[],
     action?: Action
@@ -495,7 +532,7 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             }
         )
 
-        let account = await createKernelAccount(publicClient, {
+        const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: permissionPlugin,
@@ -509,15 +546,6 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             },
             index
         })
-        const serializedData = await serializePermissionAccount(
-            account,
-            privateKey2
-        )
-        account = await deserializePermissionAccount(
-            publicClient,
-            getEntryPoint(),
-            serializedData
-        )
         return account
     }
 
@@ -570,4 +598,45 @@ export async function mintToAccount(
             `https://sepolia.etherscan.io/tx/${mintTransactionHash}`
         )
     }
+}
+
+export const getEcdsaKernelAccountWithRemoteSigner = async <
+    entryPoint extends EntryPoint
+>(
+    remoteSigner: SmartAccountSigner
+): Promise<KernelSmartAccount<entryPoint>> => {
+    const publicClient = await getPublicClient()
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: remoteSigner
+    })
+
+    return createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin
+        },
+        index
+    }) as unknown as KernelSmartAccount<entryPoint>
+}
+
+export const getPermissionKernelAccountWithRemoteSigner = async (
+    remoteSigner: SmartAccountSigner,
+    policies: Policy[]
+): Promise<KernelSmartAccount<EntryPoint>> => {
+    const publicClient = await getPublicClient()
+    const ecdsaSigner = toECDSASigner({ signer: remoteSigner })
+    const permissionPlugin = await toPermissionValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: ecdsaSigner,
+        policies
+    })
+
+    return createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: permissionPlugin
+        },
+        index
+    })
 }

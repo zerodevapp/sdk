@@ -56,20 +56,22 @@ export type SmartAccountClientConfig<
 >
 
 export const createKernelAccountClient = <
-    entryPoint extends EntryPoint,
-    TTransport extends Transport,
+    TSmartAccount extends KernelSmartAccount<TEntryPoint> | undefined,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
-        | undefined
+    TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<
+        infer U
+    >
+        ? U
+        : never
 >(
     parameters: SmartAccountClientConfig<
-        entryPoint,
+        TEntryPoint,
         TTransport,
         TChain,
         TSmartAccount
     >
-): KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount> => {
+): KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount> => {
     const {
         key = "Account",
         name = "Kernel Account Client",
@@ -116,5 +118,5 @@ export const createKernelAccountClient = <
         kernelAccountClientActions({
             middleware
         })
-    ) as KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount>
+    ) as KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount>
 }
