@@ -15,6 +15,7 @@ jobs:
     secrets: inherit
 
   changesets:
+    if: false
     name: Changesets
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -39,6 +40,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
+    if: false
     name: Release
     needs: verify
     runs-on: ubuntu-latest

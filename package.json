@@ -27,7 +27,7 @@
   "keywords": [],
   "license": "MIT",
   "scripts": {
-    "build": "sh build-all.sh",
+    "build": "bash build-all.sh",
     "format": "biome format . --write",
     "lint": "biome check .",
     "lint:fix": "bun run lint --apply",
