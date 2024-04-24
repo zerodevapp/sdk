@@ -6,6 +6,7 @@ on:
 
 jobs:
   prune:
+    if: false
     name: Prune NPM tags
     runs-on: ubuntu-latest
     steps:

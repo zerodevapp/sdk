@@ -6,6 +6,7 @@ on:
 
 jobs:
   canary:
+    if: false
     name: Release canary
     runs-on: ubuntu-latest
     timeout-minutes: 5
