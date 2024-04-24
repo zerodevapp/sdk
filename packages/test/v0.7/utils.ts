@@ -7,7 +7,10 @@ import {
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import { KernelV3ExecuteAbi } from "@zerodev/sdk"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
+import {
+    createWeightedECDSAValidator,
+    getRecoveryAction
+} from "@zerodev/weighted-ecdsa-validator"
 import {
     BundlerClient,
     ENTRYPOINT_ADDRESS_V07,
@@ -361,6 +364,39 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
     })
 }
 
+export const getRecoveryKernelAccount = async (
+    deployedAccountAddress?: Address
+) => {
+    const privateKey1 = generatePrivateKey()
+    const privateKey2 = generatePrivateKey()
+    const signer1 = privateKeyToAccount(privateKey1)
+    const signer2 = privateKeyToAccount(privateKey2)
+    const publicClient = await getPublicClient()
+    const ecdsaPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: signer1
+    })
+    const recoveryPlugin = await createWeightedECDSAValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        config: {
+            threshold: 100,
+            delay: 0,
+            signers: [{ address: signer2.address, weight: 100 }]
+        },
+        signers: [signer2]
+    })
+    return await createKernelAccount(await getPublicClient(), {
+        entryPoint: getEntryPoint(),
+        deployedAccountAddress,
+        plugins: {
+            sudo: ecdsaPlugin,
+            regular: recoveryPlugin,
+            action: getRecoveryAction(getEntryPoint())
+        },
+        index
+    })
+}
+
 export const getSignerToPermissionKernelAccount = async (
     policies: Policy[],
     action?: Action
@@ -496,7 +532,7 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             }
         )
 
-        let account = await createKernelAccount(publicClient, {
+        const account = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: permissionPlugin,
@@ -510,15 +546,6 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             },
             index
         })
-        const serializedData = await serializePermissionAccount(
-            account,
-            privateKey2
-        )
-        account = await deserializePermissionAccount(
-            publicClient,
-            getEntryPoint(),
-            serializedData
-        )
         return account
     }
 

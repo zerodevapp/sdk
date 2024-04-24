@@ -16,7 +16,11 @@ import {
 } from "viem"
 import { getChainId } from "viem/actions"
 import { encodeModuleInstallCallData as encodeModuleInstallCallDataEpV06 } from "../../accounts/kernel/utils/account/ep0_6/encodeModuleInstallCallData.js"
-import { VALIDATOR_MODE, VALIDATOR_TYPE } from "../../constants.js"
+import {
+    ONLY_ENTRYPOINT_HOOK_ADDRESS,
+    VALIDATOR_MODE,
+    VALIDATOR_TYPE
+} from "../../constants.js"
 import {
     type KernelPluginManager,
     type KernelPluginManagerParams,
@@ -66,6 +70,17 @@ export async function toKernelPluginManager<
         selector: action?.selector ?? getActionSelector(entryPointVersion),
         address: action?.address ?? zeroAddress
     }
+    if (
+        entryPointVersion === "v0.7" &&
+        (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||
+            action.selector.toLowerCase() !==
+                getActionSelector(entryPointVersion).toLowerCase())
+    ) {
+        action.hook = {
+            address: action.hook?.address ?? ONLY_ENTRYPOINT_HOOK_ADDRESS
+        }
+    }
+
     if (!action) {
         throw new Error("Action data must be set")
     }
