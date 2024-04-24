@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.8
+
+### Patch Changes
+
+- Added default only entrypoint hook integration for custom action in kernel v3
+
 ## 5.2.7
 
 ### Patch Changes
