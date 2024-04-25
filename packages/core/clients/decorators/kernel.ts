@@ -89,9 +89,10 @@ export type KernelAccountClientActions<
     >
 }
 
-export const kernelAccountClientActions =
-    <entryPoint extends EntryPoint>({ middleware }: Middleware<entryPoint>) =>
-    <
+export function kernelAccountClientActions<entryPoint extends EntryPoint>({
+    middleware
+}: Middleware<entryPoint>) {
+    return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
         TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
@@ -111,3 +112,4 @@ export const kernelAccountClientActions =
             ),
         getUserOperationGasPrice: async () => getUserOperationGasPrice(client)
     })
+}

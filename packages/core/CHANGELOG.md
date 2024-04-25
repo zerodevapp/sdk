@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.10
+
+### Patch Changes
+
+- Fixed createKernelAccountClient return type issue
+
 ## 5.2.9
 
 ### Patch Changes

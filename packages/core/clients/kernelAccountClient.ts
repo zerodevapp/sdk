@@ -26,14 +26,12 @@ export type KernelAccountClient<
     account extends KernelSmartAccount<entryPoint> | undefined =
         | KernelSmartAccount<entryPoint>
         | undefined
-> = Prettify<
-    Client<
-        transport,
-        chain,
-        account,
-        BundlerRpcSchema<entryPoint>,
-        KernelAccountClientActions<entryPoint, chain, account>
-    >
+> = Client<
+    transport,
+    chain,
+    account,
+    BundlerRpcSchema<entryPoint>,
+    KernelAccountClientActions<entryPoint, chain, account>
 >
 
 export type SmartAccountClientConfig<
