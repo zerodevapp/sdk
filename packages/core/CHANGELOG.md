@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.9
+
+### Patch Changes
+
+- Added fallbackKernelClient to support fallback providers
+
 ## 5.2.8
 
 ### Patch Changes
