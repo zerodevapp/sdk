@@ -1,4 +1,4 @@
-import { toSmartAccount } from "permissionless/accounts"
+import type { toSmartAccount } from "permissionless/accounts"
 import { encodeDeployData } from "viem"
 import { EXEC_TYPE, safeCreateCallAddress } from "../../../../../constants.js"
 import { encodeSafeCreateCall } from "../../common/encodeSafeCreateCall.js"

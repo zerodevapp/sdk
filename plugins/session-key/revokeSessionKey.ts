@@ -1,4 +1,4 @@
-import { type KernelAccountClient, type KernelSmartAccount } from "@zerodev/sdk"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint"
 import {
     type Address,

@@ -2,8 +2,8 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountAbi,
-    KernelAccountClient,
-    KernelSmartAccount
+    type KernelAccountClient,
+    type KernelSmartAccount
 } from "@zerodev/sdk"
 import {
     Operation,
@@ -15,15 +15,15 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     http,
-    Address,
-    Chain,
-    Hex,
-    PrivateKeyAccount,
-    PublicClient,
-    Transport,
+    type Address,
+    type Chain,
+    type Hex,
+    type PrivateKeyAccount,
+    type PublicClient,
+    type Transport,
     createPublicClient,
     encodeFunctionData,
     getAbiItem,

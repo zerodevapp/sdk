@@ -1,11 +1,11 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import { KernelValidator, createKernelV1Account } from "@zerodev/sdk"
+import { type KernelValidator, createKernelV1Account } from "@zerodev/sdk"
 import {
     addressToEmptyAccount,
     createKernelAccount
@@ -14,7 +14,7 @@ import { createKernelV2Account } from "@zerodev/sdk/accounts"
 import type { Action } from "@zerodev/sdk/types"
 import {
     ParamOperator,
-    SessionKeyPlugin,
+    type SessionKeyPlugin,
     deserializeSessionKeyAccount,
     deserializeSessionKeyAccountV2,
     serializeSessionKeyAccount,
@@ -23,7 +23,7 @@ import {
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import { getRecoveryAction } from "@zerodev/weighted-ecdsa-validator/constants.js"
 import {
-    BundlerClient,
+    type BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
     createBundlerClient
 } from "permissionless"
@@ -31,16 +31,16 @@ import {
     type SmartAccount,
     signerToSimpleSmartAccount
 } from "permissionless/accounts"
-import { Middleware } from "permissionless/actions/smartAccount.js"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { Middleware } from "permissionless/actions/smartAccount.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     http,
-    AbiItem,
-    Address,
-    Hex,
+    type AbiItem,
+    type Address,
+    type Hex,
     type Log,
     type PublicClient,
-    Transport,
+    type Transport,
     type WalletClient,
     createPublicClient,
     createWalletClient,
@@ -54,7 +54,7 @@ import {
 } from "viem/accounts"
 import { type Chain, sepolia } from "viem/chains"
 import * as allChains from "viem/chains"
-import { Policy } from "../../plugins/modularPermission/policies/types.js"
+import type { Policy } from "../../plugins/modularPermission/policies/types.js"
 import { toECDSASigner } from "../../plugins/modularPermission/signers/toECDSASigner.js"
 import { createPermissionValidator } from "../../plugins/modularPermission/toModularPermissionValidatorPlugin.js"
 import { EntryPointAbi } from "./abis/EntryPoint.js"

@@ -20,7 +20,7 @@ import {
 } from "./policies/index.js"
 import { toECDSASigner } from "./signers/toECDSASigner.js"
 import { toPermissionValidator } from "./toPermissionValidator.js"
-import { type Policy } from "./types.js"
+import type { Policy } from "./types.js"
 import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 

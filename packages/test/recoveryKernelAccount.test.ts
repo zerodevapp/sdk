@@ -1,10 +1,15 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import dotenv from "dotenv"
-import { BundlerClient, bundlerActions } from "permissionless"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
-import { Chain, type PublicClient, Transport, zeroAddress } from "viem"
+import { type BundlerClient, bundlerActions } from "permissionless"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import {
+    type Chain,
+    type PublicClient,
+    type Transport,
+    zeroAddress
+} from "viem"
 import { generatePrivateKey } from "viem/accounts"
 import {
     getEcdsaKernelAccountWithPrivateKey,

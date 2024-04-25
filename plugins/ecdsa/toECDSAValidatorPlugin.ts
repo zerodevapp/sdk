@@ -13,14 +13,14 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import {
-    type Address,
-    type Chain,
-    type Client,
-    type Hex,
-    type LocalAccount,
-    type Transport,
-    type TypedDataDefinition
+import type {
+    Address,
+    Chain,
+    Client,
+    Hex,
+    LocalAccount,
+    Transport,
+    TypedDataDefinition
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"

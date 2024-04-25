@@ -1,7 +1,7 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     createKernelAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
@@ -12,11 +12,11 @@ import {
     getRecoveryAction
 } from "@zerodev/weighted-ecdsa-validator"
 import {
-    BundlerClient,
+    type BundlerClient,
     ENTRYPOINT_ADDRESS_V07,
     createBundlerClient
 } from "permissionless"
-import { Middleware } from "permissionless/actions/smartAccount"
+import type { Middleware } from "permissionless/actions/smartAccount"
 import {
     createPimlicoBundlerClient,
     createPimlicoPaymasterClient
@@ -24,14 +24,14 @@ import {
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     http,
-    Address,
-    Chain,
-    Hash,
-    Hex,
-    Log,
-    PrivateKeyAccount,
-    PublicClient,
-    Transport,
+    type Address,
+    type Chain,
+    type Hash,
+    type Hex,
+    type Log,
+    type PrivateKeyAccount,
+    type PublicClient,
+    type Transport,
     createPublicClient,
     decodeEventLog,
     encodeFunctionData,
@@ -45,11 +45,11 @@ import * as allChains from "viem/chains"
 
 import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
-import { Policy } from "../../../plugins/permission/types"
+import type { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
-import { Action } from "@zerodev/sdk/types/kernel.js"
-import { SmartAccountSigner } from "permissionless/accounts/types.js"
+import type { Action } from "@zerodev/sdk/types/kernel.js"
+import type { SmartAccountSigner } from "permissionless/accounts/types.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"

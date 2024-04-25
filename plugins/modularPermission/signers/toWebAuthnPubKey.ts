@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { type WebAuthnKey } from "./toWebAuthnSigner.js"
+import type { WebAuthnKey } from "./toWebAuthnSigner.js"
 
 export enum WebAuthnMode {
     Register = "register",

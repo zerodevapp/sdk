@@ -1,58 +1,58 @@
 {
-  "name": "@zerodev/presets",
-  "version": "5.2.2",
-  "author": "ZeroDev",
-  "main": "./_cjs/index.js",
-  "module": "./_esm/index.js",
-  "types": "./_types/index.d.ts",
-  "typings": "./_types/index.d.ts",
-  "type": "module",
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "exports": {
-    ".": {
-      "types": "./_types/zerodev/index.d.ts",
-      "import": "./_esm/zerodev/index.js",
-      "default": "./_cjs/zerodev/index.js"
+    "name": "@zerodev/presets",
+    "version": "5.2.2",
+    "author": "ZeroDev",
+    "main": "./_cjs/index.js",
+    "module": "./_esm/index.js",
+    "types": "./_types/index.d.ts",
+    "typings": "./_types/index.d.ts",
+    "type": "module",
+    "devDependencies": {
+        "bun-types": "latest"
     },
-    "./zerodev": {
-      "types": "./_types/zerodev/index.d.ts",
-      "import": "./_esm/zerodev/index.js",
-      "default": "./_cjs/zerodev/index.js"
+    "exports": {
+        ".": {
+            "types": "./_types/zerodev/index.d.ts",
+            "import": "./_esm/zerodev/index.js",
+            "default": "./_cjs/zerodev/index.js"
+        },
+        "./zerodev": {
+            "types": "./_types/zerodev/index.d.ts",
+            "import": "./_esm/zerodev/index.js",
+            "default": "./_cjs/zerodev/index.js"
+        }
+    },
+    "license": "MIT",
+    "files": [
+        "_esm",
+        "_cjs",
+        "_types",
+        "./**/*.ts",
+        "!_esm/**/*.tsbuildinfo",
+        "!_cjs/**/*.tsbuildinfo",
+        "!_types/**/*.tsbuildinfo",
+        "!.env",
+        "!./**/*.test.ts",
+        "!.changeset"
+    ],
+    "scripts": {
+        "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
+        "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
+        "clean": "rimraf _esm _cjs _types",
+        "changeset": "changeset",
+        "changeset:release": "bun run build && changeset publish",
+        "changeset:version": "changeset version && bun install --lockfile-only",
+        "format": "biome format . --write",
+        "lint": "biome check .",
+        "lint:fix": "bun run lint --apply"
+    },
+    "peerDependencies": {
+        "typescript": "~5.3.0",
+        "@zerodev/sdk": "^5.2.1",
+        "@zerodev/ecdsa-validator": "^5.2.1",
+        "permissionless": "^0.1.18",
+        "viem": "^2.9.17"
     }
-  },
-  "license": "MIT",
-  "files": [
-    "_esm",
-    "_cjs",
-    "_types",
-    "./**/*.ts",
-    "!_esm/**/*.tsbuildinfo",
-    "!_cjs/**/*.tsbuildinfo",
-    "!_types/**/*.tsbuildinfo",
-    "!.env",
-    "!./**/*.test.ts",
-    "!.changeset"
-  ],
-  "scripts": {
-    "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
-    "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
-    "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
-    "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
-    "clean": "rimraf _esm _cjs _types",
-    "changeset": "changeset",
-    "changeset:release": "bun run build && changeset publish",
-    "changeset:version": "changeset version && bun install --lockfile-only",
-    "format": "biome format . --write",
-    "lint": "biome check .",
-    "lint:fix": "bun run lint --apply"
-  },
-  "peerDependencies": {
-    "typescript": "~5.3.0",
-    "@zerodev/sdk": "^5.2.1",
-    "@zerodev/ecdsa-validator": "^5.2.1",
-    "permissionless": "^0.1.18",
-    "viem": "^2.9.17"
-  }
 }

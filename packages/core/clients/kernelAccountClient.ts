@@ -11,7 +11,7 @@ import {
     type Transport,
     createClient
 } from "viem"
-import { type KernelSmartAccount } from "../accounts/index.js"
+import type { KernelSmartAccount } from "../accounts/index.js"
 import { getUserOperationGasPrice } from "../actions/account-client/getUserOperationGasPrice.js"
 import {
     type KernelAccountClientActions,

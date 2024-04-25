@@ -3,21 +3,21 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
-import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import { EntryPoint } from "permissionless/types/entrypoint"
+import type { BundlerClient } from "permissionless"
+import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
-    Address,
-    Chain,
-    Hex,
-    PrivateKeyAccount,
-    PublicClient,
-    Transport,
+    type Address,
+    type Chain,
+    type Hex,
+    type PrivateKeyAccount,
+    type PublicClient,
+    type Transport,
     encodeFunctionData,
     getAbiItem,
     hashMessage,
@@ -28,7 +28,7 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
-    Policy,
+    type Policy,
     deserializePermissionAccount,
     serializePermissionAccount
 } from "../../../plugins/permission"

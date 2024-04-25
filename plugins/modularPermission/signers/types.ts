@@ -1,4 +1,4 @@
-import { type Address, type Hex, type LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount } from "viem"
 
 export type ModularSignerParams = {
     signerContractAddress?: Address

@@ -1,5 +1,5 @@
-import { EntryPointVersion } from "permissionless/types/entrypoint"
-import { Chain } from "viem"
+import type { EntryPointVersion } from "permissionless/types/entrypoint"
+import type { Chain } from "viem"
 import { polygonMumbai, sepolia } from "viem/chains"
 
 export const config: {

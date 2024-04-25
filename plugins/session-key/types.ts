@@ -1,23 +1,17 @@
 import type { KernelValidator } from "@zerodev/sdk"
 import type { Action, PluginValidityData } from "@zerodev/sdk/types"
-import {
-    type AbiFunction,
-    type AbiParameter,
-    type AbiParameterKind,
-    type AbiParameterToPrimitiveType,
-    type ExtractAbiFunction
+import type {
+    AbiFunction,
+    AbiParameter,
+    AbiParameterKind,
+    AbiParameterToPrimitiveType,
+    ExtractAbiFunction
 } from "abitype"
 import type { ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
 import type { EntryPoint } from "permissionless/types/entrypoint"
-import {
-    type Abi,
-    type AbiStateMutability,
-    type Address,
-    type Hex,
-    type Narrow
-} from "viem"
-import { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
+import type { Abi, AbiStateMutability, Address, Hex, Narrow } from "viem"
+import type { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
 
 export type SessionNonces = {
     lastNonce: bigint
@@ -56,9 +50,9 @@ export type Permission<
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
           ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                  TAbi,
-                  _FunctionName
-              >
+                TAbi,
+                _FunctionName
+            >
           : never)
 
 export interface SessionKeyData<
@@ -125,8 +119,8 @@ export type GetFunctionArgs<
     : TArgs extends readonly []
       ? { args?: never }
       : {
-              args?: TArgs
-          }
+            args?: TArgs
+        }
 
 export type GeneratePermissionFromArgsParameters<
     TAbi extends Abi | readonly unknown[],
