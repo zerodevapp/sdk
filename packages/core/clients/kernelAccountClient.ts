@@ -12,19 +12,12 @@ import {
     createClient
 } from "viem"
 import { type KernelSmartAccount } from "../accounts/index.js"
-import {
-    getUserOperationGasPrice,
-    pimlicoGetUserOperationGasPrice
-} from "../actions/account-client/getUserOperationGasPrice.js"
+import { getUserOperationGasPrice } from "../actions/account-client/getUserOperationGasPrice.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
-import {
-    hasPimlicoAsProvider,
-    isPimlicoClient,
-    setPimlicoAsProvider
-} from "./utils.js"
+import { hasPimlicoAsProvider, setPimlicoAsProvider } from "./utils.js"
 
 export type KernelAccountClient<
     entryPoint extends EntryPoint,
@@ -109,28 +102,18 @@ export const createKernelAccountClient = <
     })
 
     let middleware = parameters.middleware
-
-    const isPimlicoProvider =
-        client.transport?.url && hasPimlicoAsProvider(client.transport.url)
-    const isPimlicoCli =
-        client.transport?.url && isPimlicoClient(client.transport.url)
-
-    const shouldUpdateMiddleware =
+    if (
         (!middleware ||
             (typeof middleware !== "function" && !middleware.gasPrice)) &&
-        (isPimlicoProvider || isPimlicoCli)
-
-    if (shouldUpdateMiddleware) {
-        const gasPrice = isPimlicoCli
-            ? () => pimlicoGetUserOperationGasPrice(client)
-            : () => getUserOperationGasPrice(client)
-
+        client.transport?.url &&
+        hasPimlicoAsProvider(client.transport.url)
+    ) {
+        const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {
             ...middleware,
             gasPrice
         }
     }
-
     return client.extend(
         kernelAccountClientActions({
             middleware

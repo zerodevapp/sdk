@@ -18,7 +18,6 @@ export const setPimlicoAsProvider = (urlString: string): string => {
 
 export const hasPimlicoAsProvider = (urlString: string): boolean => {
     const url = new URL(urlString)
-    console.log("url", url)
     const params = url.searchParams
     const provider =
         params.get("provider") ??
@@ -26,9 +25,4 @@ export const hasPimlicoAsProvider = (urlString: string): boolean => {
         params.get("paymasterProvider")
     if (provider === "PIMLICO") return true
     return false
-}
-
-export const isPimlicoClient = (urlString: string): boolean => {
-    const regex = /^https:\/\/api\.pimlico\.io\/v2\/\d+\/rpc\?apikey=[\w-]+$/
-    return regex.test(urlString)
 }

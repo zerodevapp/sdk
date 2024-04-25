@@ -16,7 +16,10 @@ import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { BundlerClient } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import { createPimlicoPaymasterClient } from "permissionless/clients/pimlico"
+import {
+    createPimlicoBundlerClient,
+    createPimlicoPaymasterClient
+} from "permissionless/clients/pimlico"
 import { createStackupPaymasterClient } from "permissionless/clients/stackup"
 import { EntryPoint } from "permissionless/types/entrypoint"
 import {
@@ -178,11 +181,21 @@ describe("fallback client e2e", () => {
                 entryPoint: getEntryPoint()
             })
 
+            const pimlicoBundlerClient = createPimlicoBundlerClient({
+                transport: http(PIMLICO_RPC_URL),
+                entryPoint: getEntryPoint()
+            })
+
             const pimlicoKernelClient = createKernelAccountClient({
                 account: kernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(PIMLICO_RPC_URL),
                 middleware: {
+                    gasPrice: async () => {
+                        return (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast
+                    },
                     sponsorUserOperation: async ({ userOperation }) => {
                         return pimlicoPaymasterClient.sponsorUserOperation({
                             userOperation
@@ -798,11 +811,21 @@ describe("fallback client e2e", () => {
                 entryPoint: getEntryPoint()
             })
 
+            const pimlicoBundlerClient = createPimlicoBundlerClient({
+                transport: http(PIMLICO_RPC_URL),
+                entryPoint: getEntryPoint()
+            })
+
             const pimlicoKernelClient = createKernelAccountClient({
                 account: kernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(PIMLICO_RPC_URL),
                 middleware: {
+                    gasPrice: async () => {
+                        return (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast
+                    },
                     sponsorUserOperation: async ({ userOperation }) => {
                         return pimlicoPaymasterClient.sponsorUserOperation({
                             userOperation
@@ -910,11 +933,21 @@ describe("fallback client e2e", () => {
                 entryPoint: getEntryPoint()
             })
 
+            const pimlicoBundlerClient = createPimlicoBundlerClient({
+                transport: http(PIMLICO_RPC_URL),
+                entryPoint: getEntryPoint()
+            })
+
             const pimlicoKernelClient = createKernelAccountClient({
                 account: kernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(unavailableServer.url),
                 middleware: {
+                    gasPrice: async () => {
+                        return (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast
+                    },
                     sponsorUserOperation: async ({ userOperation }) => {
                         return pimlicoPaymasterClient.sponsorUserOperation({
                             userOperation
@@ -1022,11 +1055,21 @@ describe("fallback client e2e", () => {
                 entryPoint: getEntryPoint()
             })
 
+            const pimlicoBundlerClient = createPimlicoBundlerClient({
+                transport: http(unavailableServer.url),
+                entryPoint: getEntryPoint()
+            })
+
             const pimlicoKernelClient = createKernelAccountClient({
                 account: kernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(unavailableServer.url),
                 middleware: {
+                    gasPrice: async () => {
+                        return (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast
+                    },
                     sponsorUserOperation: async ({ userOperation }) => {
                         return pimlicoPaymasterClient.sponsorUserOperation({
                             userOperation
