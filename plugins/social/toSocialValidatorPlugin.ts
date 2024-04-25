@@ -10,10 +10,6 @@ export async function isAuthorized(): Promise<boolean> {
     try {
         const magic = getMagic()
 
-        if (!magic) {
-            return false
-        }
-
         const isLoggedIn = await magic.user.isLoggedIn()
         if (isLoggedIn) return true
 
@@ -28,10 +24,6 @@ export function initiateLogin(
     oauthCallbackUrl?: string
 ) {
     const magic = getMagic()
-
-    if (!magic) {
-        throw new Error("Social provider not found")
-    }
 
     magic.oauth.loginWithRedirect({
         provider: socialProvider,
@@ -53,11 +45,7 @@ export async function getSocialValidator<
 ): Promise<KernelValidator<entryPoint, "SocialValidator">> {
     const magic = getMagic()
 
-    if (!magic) {
-        throw new Error("Social provider not found")
-    }
-
-    const authorized = isAuthorized()
+    const authorized = await isAuthorized()
     if (!authorized) {
         throw new Error("initiateLogin() must be called first.")
     }
@@ -79,10 +67,14 @@ export async function getSocialValidator<
 function getMagic() {
     // TODO: check if ZeroDev user has access to socials
 
-    return (
+    const magic = (
         typeof window !== "undefined" &&
-        new Magic("asdf", {
+        new Magic("pk_live_0DBE9E97107C9A16", {
             extensions: [new OAuthExtension()]
         })
     )
+    if (!magic) {
+        throw new Error("Failed to initialize Magic SDK")
+    }
+    return magic
 }
