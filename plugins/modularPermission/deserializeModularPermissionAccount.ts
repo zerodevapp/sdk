@@ -12,7 +12,7 @@ import {
     toSignaturePolicy,
     toSudoPolicy
 } from "./policies/index.js"
-import { type Policy } from "./policies/types.js"
+import type { Policy } from "./policies/types.js"
 import { toECDSASigner } from "./signers/toECDSASigner.js"
 import type { ModularSigner } from "./signers/types.js"
 import { createPermissionValidator } from "./toModularPermissionValidatorPlugin.js"

@@ -18,11 +18,11 @@ import { getAction } from "viem/utils"
 import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"
 import { MAX_FLAG, MODULAR_PERMISSION_VALIDATOR_ADDRESS } from "./constants.js"
 import type { Policy } from "./policies/types.js"
-import { type ModularSigner } from "./signers/types.js"
-import {
-    type ModularPermissionData,
-    type ModularPermissionPlugin,
-    type Nonces
+import type { ModularSigner } from "./signers/types.js"
+import type {
+    ModularPermissionData,
+    ModularPermissionPlugin,
+    Nonces
 } from "./types.js"
 
 export async function createPermissionValidator<

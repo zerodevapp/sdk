@@ -3,19 +3,19 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
-import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import { EntryPoint } from "permissionless/types/entrypoint"
+import type { BundlerClient } from "permissionless"
+import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
-    Address,
-    Chain,
-    PublicClient,
-    Transport,
+    type Address,
+    type Chain,
+    type PublicClient,
+    type Transport,
     hashMessage,
     hashTypedData,
     zeroAddress

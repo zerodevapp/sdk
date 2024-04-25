@@ -44,7 +44,7 @@ import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../../utils/toKernelPluginManager.js"
-import { type KernelSmartAccount } from "../createKernelAccount.js"
+import type { KernelSmartAccount } from "../createKernelAccount.js"
 import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
 

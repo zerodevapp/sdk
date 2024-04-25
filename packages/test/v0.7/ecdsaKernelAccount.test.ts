@@ -9,8 +9,8 @@ import {
     constants,
     EIP1271Abi,
     KERNEL_ADDRESSES,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     createKernelAccount,
     getCustomNonceKeyFromString,
     verifyEIP6492Signature
@@ -18,21 +18,21 @@ import {
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import {
-    BundlerClient,
+    type BundlerClient,
     ENTRYPOINT_ADDRESS_V07,
     bundlerActions
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
-    Address,
-    Chain,
-    GetContractReturnType,
-    Hex,
-    PrivateKeyAccount,
+    type Address,
+    type Chain,
+    type GetContractReturnType,
+    type Hex,
+    type PrivateKeyAccount,
     type PublicClient,
-    Transport,
+    type Transport,
     decodeEventLog,
     encodeFunctionData,
     erc20Abi,

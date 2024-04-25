@@ -26,7 +26,8 @@
             },
             "style": {
                 "noUnusedTemplateLiteral": "warn",
-                "noUselessElse": "off"
+                "noUselessElse": "off",
+                "useNodejsImportProtocol": "off"
             }
         }
     },

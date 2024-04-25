@@ -1,4 +1,4 @@
-import { type ExtractAbiFunction, type ExtractAbiFunctionNames } from "abitype"
+import type { ExtractAbiFunction, ExtractAbiFunctionNames } from "abitype"
 import type {
     Abi,
     AbiFunction,
@@ -73,8 +73,8 @@ export type GetFunctionArgs<
     : TArgs extends readonly []
       ? { args?: never }
       : {
-              args?: TArgs
-          }
+            args?: TArgs
+        }
 
 export type Permission<
     TAbi extends Abi | readonly unknown[],
@@ -88,9 +88,9 @@ export type Permission<
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
           ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                  TAbi,
-                  _FunctionName
-              >
+                TAbi,
+                _FunctionName
+            >
           : never)
 
 export type CombinedArgs<

@@ -9,8 +9,8 @@ import {
     constants,
     EIP1271Abi,
     KERNEL_ADDRESSES,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     createKernelAccount,
     getCustomNonceKeyFromString,
     getERC20PaymasterApproveCall,
@@ -19,17 +19,17 @@ import {
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient, ENTRYPOINT_ADDRESS_V06 } from "permissionless"
+import { type BundlerClient, ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
-    Address,
-    Chain,
-    GetContractReturnType,
-    Hex,
-    PrivateKeyAccount,
+    type Address,
+    type Chain,
+    type GetContractReturnType,
+    type Hex,
+    type PrivateKeyAccount,
     type PublicClient,
-    Transport,
+    type Transport,
     decodeEventLog,
     encodeFunctionData,
     erc20Abi,

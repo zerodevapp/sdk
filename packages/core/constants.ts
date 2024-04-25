@@ -1,5 +1,5 @@
 import type { EntryPointVersion } from "permissionless/types/entrypoint"
-import { type Address, type Hex } from "viem"
+import type { Address, Hex } from "viem"
 
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"

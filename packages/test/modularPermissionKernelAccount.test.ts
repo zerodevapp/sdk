@@ -1,14 +1,14 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import { EntryPoint } from "permissionless/_types/types"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type { EntryPoint } from "permissionless/_types/types"
 import {
-    Address,
-    Chain,
-    Hex,
-    PrivateKeyAccount,
-    PublicClient,
-    Transport,
+    type Address,
+    type Chain,
+    type Hex,
+    type PrivateKeyAccount,
+    type PublicClient,
+    type Transport,
     encodeFunctionData,
     pad,
     zeroAddress

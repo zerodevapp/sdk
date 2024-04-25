@@ -4,7 +4,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
 } from "permissionless/accounts"
-import { type Address, type LocalAccount, type TypedDataDefinition } from "viem"
+import type { Address, LocalAccount, TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
 import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"

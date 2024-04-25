@@ -1,10 +1,15 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import { BundlerClient } from "permissionless"
-import { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import { EntryPoint } from "permissionless/types/entrypoint"
-import { Chain, PublicClient, Transport, zeroAddress } from "viem"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type { BundlerClient } from "permissionless"
+import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
+import type { EntryPoint } from "permissionless/types/entrypoint"
+import {
+    type Chain,
+    type PublicClient,
+    type Transport,
+    zeroAddress
+} from "viem"
 import {
     getEntryPoint,
     getKernelAccountClient,

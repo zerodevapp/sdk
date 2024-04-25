@@ -1,11 +1,11 @@
 import { EventEmitter } from "events"
-import { type KernelAccountClient } from "@zerodev/sdk"
+import type { KernelAccountClient } from "@zerodev/sdk"
 import type { EntryPoint } from "permissionless/types"
-import {
-    type EIP1193Parameters,
-    type EIP1193RequestFn,
-    type Hash,
-    type SendTransactionParameters
+import type {
+    EIP1193Parameters,
+    EIP1193RequestFn,
+    Hash,
+    SendTransactionParameters
 } from "viem"
 
 export class KernelEIP1193Provider<

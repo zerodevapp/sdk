@@ -1,6 +1,6 @@
-import { type KernelValidator } from "@zerodev/sdk"
+import type { KernelValidator } from "@zerodev/sdk"
 import type { Action, PluginValidityData } from "@zerodev/sdk/types"
-import { type ExtractAbiFunction, type ExtractAbiFunctionNames } from "abitype"
+import type { ExtractAbiFunction, ExtractAbiFunctionNames } from "abitype"
 import type { Pretty } from "abitype/src/types.js"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type {
@@ -14,7 +14,7 @@ import type {
     Hex,
     Narrow
 } from "viem"
-import { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
+import type { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
 import type { Policy } from "./policies/types.js"
 
 export interface ModularPermissionData<entryPoint extends EntryPoint> {
@@ -94,9 +94,9 @@ export type Permission<
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
           ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                  TAbi,
-                  _FunctionName
-              >
+                TAbi,
+                _FunctionName
+            >
           : never)
 
 export type GetFunctionArgs<
@@ -116,8 +116,8 @@ export type GetFunctionArgs<
     : TArgs extends readonly []
       ? { args?: never }
       : {
-              args?: TArgs
-          }
+            args?: TArgs
+        }
 
 export type AbiParametersToPrimitiveTypes<
     TAbiParameters extends readonly AbiParameter[],

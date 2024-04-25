@@ -15,8 +15,8 @@ import {
 } from "viem"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import {
-    CALL_TYPE,
-    EXEC_TYPE,
+    type CALL_TYPE,
+    type EXEC_TYPE,
     KernelImplToVersionMap,
     LATEST_KERNEL_VERSION
 } from "./constants.js"

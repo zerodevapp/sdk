@@ -1,11 +1,11 @@
-import { type UserOperation } from "permissionless"
+import type { UserOperation } from "permissionless"
 import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
 import type { Abi, Address, Hex } from "viem"
-import { PolicyFlags } from "../constants.js"
-import { type Permission } from "../types.js"
+import type { PolicyFlags } from "../constants.js"
+import type { Permission } from "../types.js"
 
 export type PolicyParams = {
     policyAddress?: Address

@@ -1,8 +1,8 @@
-import { type KernelValidator } from "@zerodev/sdk"
+import type { KernelValidator } from "@zerodev/sdk"
 import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
-import { PolicyFlags } from "./constants.js"
+import type { PolicyFlags } from "./constants.js"
 import type {
     CallPolicyParams,
     GasPolicyParams,

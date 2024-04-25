@@ -2,14 +2,14 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KERNEL_ADDRESSES,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     getCustomNonceKeyFromString
 } from "@zerodev/sdk"
 import { signerToSessionKeyValidator } from "@zerodev/session-key"
 import dotenv from "dotenv"
 import {
-    BundlerClient,
+    type BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
     bundlerActions
 } from "permissionless"
@@ -17,12 +17,12 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
-    Address,
-    Chain,
+    type Address,
+    type Chain,
     type PublicClient,
-    Transport,
+    type Transport,
     encodeFunctionData,
     getContract,
     zeroAddress

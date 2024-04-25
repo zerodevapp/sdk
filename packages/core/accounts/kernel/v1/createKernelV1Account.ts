@@ -29,7 +29,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage, signTypedData } from "viem/actions"
-import { type KernelEncodeCallDataArgs } from "../../../types/kernel.js"
+import type { KernelEncodeCallDataArgs } from "../../../types/kernel.js"
 import { wrapSignatureWith6492 } from "../../utils/6492.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
 import {
@@ -37,7 +37,7 @@ import {
     encodeMultiSend,
     multiSendAbi
 } from "../../utils/multisend.js"
-import { type KernelSmartAccount } from "../createKernelAccount.js"
+import type { KernelSmartAccount } from "../createKernelAccount.js"
 
 export type KernelV1SmartAccount<
     entryPoint extends EntryPoint,

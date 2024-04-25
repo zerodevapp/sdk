@@ -4,27 +4,27 @@ import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
     KERNEL_ADDRESSES,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
 import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
+import type { BundlerClient } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
-import { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
-    Address,
-    Chain,
+    type Address,
+    type Chain,
     Hex,
     type PublicClient,
-    Transport,
+    type Transport,
     decodeEventLog,
     encodeFunctionData,
     erc20Abi,

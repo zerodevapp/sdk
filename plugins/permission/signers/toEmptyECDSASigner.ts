@@ -1,6 +1,6 @@
 import { constants } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
-import { type Address, type TypedDataDefinition } from "viem"
+import type { Address, TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
 import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner } from "../types.js"
