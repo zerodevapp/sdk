@@ -67,12 +67,11 @@ export async function getSocialValidator<
 function getMagic() {
     // TODO: check if ZeroDev user has access to socials
 
-    const magic = (
+    const magic =
         typeof window !== "undefined" &&
         new Magic("pk_live_0DBE9E97107C9A16", {
             extensions: [new OAuthExtension()]
         })
-    )
     if (!magic) {
         throw new Error("Failed to initialize Magic SDK")
     }
