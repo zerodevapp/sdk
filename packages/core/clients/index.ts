@@ -7,3 +7,5 @@ export {
     createKernelAccountClient,
     type KernelAccountClient
 } from "./kernelAccountClient.js"
+
+export { createFallbackKernelAccountClient } from "./fallbackKernelAccountClient.js"
