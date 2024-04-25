@@ -1,7 +1,7 @@
 import type { EntryPoint } from "permissionless/types"
-import { type Chain, type Transport } from "viem"
-import { type KernelSmartAccount } from "../accounts/index.js"
-import { type KernelAccountClient } from "./kernelAccountClient.js"
+import type { Chain, Transport } from "viem"
+import type { KernelSmartAccount } from "../accounts/index.js"
+import type { KernelAccountClient } from "./kernelAccountClient.js"
 
 export const createFallbackKernelAccountClient = <
     TEntryPoint extends EntryPoint,

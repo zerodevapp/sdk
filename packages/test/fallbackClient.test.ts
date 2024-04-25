@@ -4,8 +4,8 @@ import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     EIP1271Abi,
-    KernelAccountClient,
-    KernelSmartAccount,
+    type KernelAccountClient,
+    type KernelSmartAccount,
     createFallbackKernelAccountClient,
     createKernelAccount,
     createKernelAccountClient,
@@ -14,21 +14,21 @@ import {
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import { BundlerClient } from "permissionless"
+import type { BundlerClient } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     createPimlicoBundlerClient,
     createPimlicoPaymasterClient
 } from "permissionless/clients/pimlico"
 import { createStackupPaymasterClient } from "permissionless/clients/stackup"
-import { EntryPoint } from "permissionless/types/entrypoint"
+import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     http,
-    Address,
-    Chain,
-    GetContractReturnType,
+    type Address,
+    type Chain,
+    type GetContractReturnType,
     type PublicClient,
-    Transport,
+    type Transport,
     createPublicClient,
     decodeEventLog,
     encodeFunctionData,
