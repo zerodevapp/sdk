@@ -330,7 +330,7 @@ export const getRecoveryKernelAccount = async (
         deployedAccountAddress,
         plugins: {
             regular: recoveryPlugin,
-            action: getRecoveryAction()
+            action: getRecoveryAction(getEntryPoint())
         },
         index
     })

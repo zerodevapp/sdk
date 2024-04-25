@@ -190,9 +190,14 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     kernelVersion?: string
 } & Partial<PluginValidityData>
 
+export type Hook = {
+    address: Address
+}
+
 export type Action = {
     address: Address
     selector: Hex
+    hook?: Hook
 }
 
 export type PluginValidityData = {

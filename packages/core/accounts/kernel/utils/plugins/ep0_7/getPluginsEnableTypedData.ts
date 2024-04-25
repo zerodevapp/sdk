@@ -60,12 +60,12 @@ export const getPluginsEnableTypedData = async <
             selectorData: concat([
                 action.selector,
                 action.address,
-                zeroAddress,
+                action.hook?.address ?? zeroAddress,
                 encodeAbiParameters(
                     parseAbiParameters(
                         "bytes selectorInitData, bytes hookInitData"
                     ),
-                    [CALL_TYPE.DELEGATE_CALL, "0x"]
+                    [CALL_TYPE.DELEGATE_CALL, "0x0000"]
                 )
             ])
         },

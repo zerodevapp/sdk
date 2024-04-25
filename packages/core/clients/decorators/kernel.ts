@@ -1,8 +1,8 @@
 import { type SmartAccountActions, smartAccountActions } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts/types"
 import { type Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Transport } from "viem"
+import { type KernelSmartAccount } from "../../accounts/index.js"
 import {
     type GetUserOperationGasPriceReturnType,
     getUserOperationGasPrice
@@ -59,8 +59,8 @@ export const zerodevPaymasterActions =
 export type KernelAccountClientActions<
     entryPoint extends EntryPoint,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
+        | KernelSmartAccount<entryPoint>
         | undefined
 > = SmartAccountActions<entryPoint, TChain, TSmartAccount> & {
     /**
@@ -94,8 +94,8 @@ export const kernelAccountClientActions =
     <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends SmartAccount<entryPoint> | undefined =
-            | SmartAccount<entryPoint>
+        TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
+            | KernelSmartAccount<entryPoint>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
