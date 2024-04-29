@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/sdk",
-    "version": "5.2.10",
+    "version": "5.2.11",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -81,6 +81,34 @@
             "types": "./_types/providers/index.d.ts",
             "import": "./_esm/providers/index.js",
             "default": "./_cjs/providers/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "accounts": [
+                "./_types/accounts/index.d.ts"
+            ],
+            "plugins": [
+                "./_types/plugins/index.d.ts"
+            ],
+            "actions": [
+                "./_types/actions/index.d.ts"
+            ],
+            "types": [
+                "./_types/types/index.d.ts"
+            ],
+            "actions/kernel": [
+                "./_types/actions/kernel/index.d.ts"
+            ],
+            "clients": [
+                "./_types/clients/index.d.ts"
+            ],
+            "clients/kernel": [
+                "./_types/clients/kernel/index.d.ts"
+            ],
+            "providers": [
+                "./_types/providers/index.d.ts"
+            ]
         }
     },
     "peerDependencies": {
