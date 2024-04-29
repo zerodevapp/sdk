@@ -1,7 +1,8 @@
 import {
     getSocialValidator,
     initiateLogin,
-    isAuthorized
+    isAuthorized,
+    logout
 } from "./toSocialValidatorPlugin.js"
 
-export { getSocialValidator, isAuthorized, initiateLogin }
+export { getSocialValidator, isAuthorized, initiateLogin, logout }

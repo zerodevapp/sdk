@@ -73,6 +73,13 @@ export async function getSocialValidator<
     }
 }
 
+export async function logout({ projectId }: { projectId: string }) {
+    try {
+        const magic = await getMagic({ projectId })
+        await magic.user.logout()
+    } catch (e) {}
+}
+
 async function getMagic({ projectId }: { projectId: string }) {
     const magicKey = await fetchMagicKey({ projectId })
 
