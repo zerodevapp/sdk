@@ -8,7 +8,7 @@ export { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 export * from "./utils.js"
 export type * from "./types.js"
 export const SESSION_KEY_VALIDATOR_ADDRESS =
-    "0x5C06CE2b673fD5E6e56076e40DD46aB67f5a72A5"
+    "0x8Df2bf61F849676f00C6883743E077d391da1dDA"
 export { serializeSessionKeyAccount } from "./serializeSessionKeyAccount.js"
 export { deserializeSessionKeyAccount } from "./deserializeSessionKeyAccount.js"
 export { deserializeSessionKeyAccountV2 } from "./deserializeSessionKeyAccountV2.js"

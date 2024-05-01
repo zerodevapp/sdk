@@ -542,7 +542,7 @@ describe("Session Key kernel Account", async () => {
             }
         })
 
-        const amountToTransfer = parseEther("0.00000001")
+        const amountToTransfer = parseEther("0.0000000001")
 
         const balanceOfBefore = await client.getBalance({
             address: owner.address
@@ -550,7 +550,7 @@ describe("Session Key kernel Account", async () => {
         const transferTransactionHash =
             await _sessionKeySmartAccountClient.sendTransaction({
                 to: owner.address,
-                data: pad("0x", { size: 4 }),
+                data: "0x",
                 value: amountToTransfer
             })
 

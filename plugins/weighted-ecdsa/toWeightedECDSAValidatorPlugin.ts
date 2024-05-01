@@ -72,7 +72,7 @@ export async function createWeightedECDSAValidator<
     }: {
         config?: WeightedECDSAValidatorConfig
         signers: Array<SmartAccountSigner<TSource, TAddress>>
-        entryPoint: EntryPoint
+        entryPoint: entryPoint
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "WeightedECDSAValidator">> {
