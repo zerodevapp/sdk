@@ -93,8 +93,6 @@ export async function prepareMultiUserOpRequest<
         middleware
     } = args
 
-    console.log("prepareMultiUserOpRequest middleware", middleware)
-
     if (!account_) throw new AccountOrClientNotFoundError()
 
     const account = parseAccount(
