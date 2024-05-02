@@ -364,7 +364,8 @@ const filterBySignature = (
     return permissions.filter(
         (permission) =>
             (permission.sig ?? pad("0x", { size: 4 })).toLowerCase() ===
-            signature
+                signature ||
+            (permission.sig === pad("0x", { size: 4 }) && signature === "0x")
     )
 }
 

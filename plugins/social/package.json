@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/weighted-ecdsa-validator",
-    "version": "5.2.5",
+    "name": "@zerodev/social-validator",
+    "version": "5.0.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -35,8 +35,13 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.9.17",
+        "@zerodev/ecdsa-validator": "^5.2.3",
         "@zerodev/sdk": "^5.2.1",
-        "permissionless": "^0.1.18"
+        "permissionless": "^0.1.18",
+        "viem": "^2.9.17"
+    },
+    "dependencies": {
+        "@magic-ext/oauth": "^22.0.3",
+        "magic-sdk": "^28.0.3"
     }
 }

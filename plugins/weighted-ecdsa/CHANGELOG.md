@@ -1,5 +1,11 @@
 # @zerodev/weighted-ecdsa-validator
 
+## 5.2.5
+
+### Patch Changes
+
+- Fixed entryPoint param type
+
 ## 5.2.4
 
 ### Patch Changes
