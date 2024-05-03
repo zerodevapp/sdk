@@ -21,7 +21,7 @@ export async function signUserOps<entryPoint extends EntryPoint>({
     multiUserOps: MultiChainUserOperation<entryPoint>[]
     entryPoint: entryPoint
 }): Promise<UserOperation<GetEntryPointVersion<entryPoint>>[]> {
-    const userOpHashes = multiUserOps.map((multiUserOp, index) => {
+    const userOpHashes = multiUserOps.map((multiUserOp, _index) => {
         return getUserOperationHash({
             userOperation: {
                 ...multiUserOp.userOperation,

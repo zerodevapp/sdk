@@ -116,7 +116,7 @@ export async function toMultiChainValidator<
             })
             return signature
         },
-        async getDummySignature(userOperation) {
+        async getDummySignature(_userOperation) {
             return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
         },
         async getMultiUserOpDummySignature(userOperation, numOfUserOps) {
