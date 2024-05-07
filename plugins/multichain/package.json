@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/multi-chain-validator",
-    "version": "5.2.0-alpha-1",
+    "version": "5.2.0-alpha-2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
