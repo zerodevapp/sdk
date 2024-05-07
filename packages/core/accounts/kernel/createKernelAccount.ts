@@ -333,12 +333,12 @@ export async function createKernelAccount<
 
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     let getMultiUserOpDummySignature: any
-    if (kernelPluginManager.source === "MultiChainValidator") {
+    if (kernelPluginManager.sudoValidator?.source === "MultiChainValidator") {
         getMultiUserOpDummySignature = async (
             userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
             numOfUserOps: number
         ) => {
-            return await kernelPluginManager.getMultiUserOpDummySignature?.(
+            return await kernelPluginManager.sudoValidator?.getMultiUserOpDummySignature?.(
                 userOperation,
                 numOfUserOps
             )

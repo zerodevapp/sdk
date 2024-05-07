@@ -7,7 +7,7 @@ import type {
     UserOperation,
     UserOperationWithBigIntAsHex
 } from "permissionless/types/userOperation"
-import type { Address, Hex, LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount, CustomSource } from "viem"
 import type { PartialBy } from "viem/types/utils"
 import type { VALIDATOR_TYPE } from "../constants.js"
 export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
@@ -155,12 +155,20 @@ export type ValidatorInitData = {
 
 export type KernelPluginManager<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint> & {
+        sudoValidator?: KernelValidator<entryPoint>
+        activeValidator: KernelValidator<entryPoint>
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
         getAction(): Action
         getValidityData(): PluginValidityData
         getIdentifier(isSudo?: boolean): Hex
         encodeModuleInstallCallData: (accountAddress: Address) => Promise<Hex>
+        getPluginsEnableTypedData: (
+            accountAddress: Address
+        ) => Promise<Parameters<CustomSource["signTypedData"]>[0]>
+        signUserOperationWithActiveValidator: (
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        ) => Promise<Hex>
     }
 
 export type PluginInstallData<entryPoint extends EntryPoint> =

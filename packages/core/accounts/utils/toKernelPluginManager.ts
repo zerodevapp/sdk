@@ -99,8 +99,9 @@ export async function toKernelPluginManager<
                     return ValidatorMode.plugin
                 }
 
-                const enableSignature =
-                    await getPluginEnableSignature(accountAddress)
+                const enableSignature = await getPluginEnableSignature(
+                    accountAddress
+                )
                 if (!enableSignature) {
                     throw new Error("Enable signature not set")
                 }
@@ -124,8 +125,9 @@ export async function toKernelPluginManager<
             if (await isPluginEnabled(accountAddress, action.selector)) {
                 return userOpSignature
             }
-            const enableSignature =
-                await getPluginEnableSignature(accountAddress)
+            const enableSignature = await getPluginEnableSignature(
+                accountAddress
+            )
             return getEncodedPluginsDataV2({
                 accountAddress,
                 action,
@@ -206,7 +208,39 @@ export async function toKernelPluginManager<
         ])
     }
 
+    const getPluginsEnableTypedData = async (accountAddress: Address) => {
+        if (!action) {
+            throw new Error("Action data must be set")
+        }
+        if (!sudo)
+            throw new Error(
+                "sudo validator not set -- need it to enable the validator"
+            )
+        if (!regular) throw new Error("regular validator not set")
+
+        const { version } = await accountMetadata(
+            client,
+            accountAddress,
+            entryPointAddress
+        )
+
+        const validatorNonce = await getKernelV3Nonce(client, accountAddress)
+
+        const typedData = await getPluginsEnableTypedDataV2({
+            accountAddress,
+            chainId,
+            kernelVersion: version,
+            action,
+            validator: regular,
+            validatorNonce
+        })
+
+        return typedData
+    }
+
     return {
+        sudoValidator: sudo,
+        activeValidator,
         ...activeValidator,
         getIdentifier,
         encodeModuleInstallCallData: async (accountAddress: Address) => {
@@ -228,8 +262,9 @@ export async function toKernelPluginManager<
             throw new Error("EntryPoint v0.7 not supported yet")
         },
         signUserOperation: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.signUserOperation(userOperation)
+            const userOpSig = await activeValidator.signUserOperation(
+                userOperation
+            )
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -256,8 +291,9 @@ export async function toKernelPluginManager<
             validUntil
         }),
         getDummySignature: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.getDummySignature(userOperation)
+            const userOpSig = await activeValidator.getDummySignature(
+                userOperation
+            )
             if (entryPointVersion === "v0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -332,6 +368,7 @@ export async function toKernelPluginManager<
             return encodedNonceKey
         },
         getPluginEnableSignature,
+        getPluginsEnableTypedData,
         getValidatorInitData: async () => {
             if (validatorInitData) return validatorInitData
             return {
@@ -343,6 +380,9 @@ export async function toKernelPluginManager<
 
                 identifier: pad(getIdentifier(true), { size: 21, dir: "right" })
             }
+        },
+        signUserOperationWithActiveValidator: async (userOperation) => {
+            return activeValidator.signUserOperation(userOperation)
         }
     }
 }
