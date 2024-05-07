@@ -7,7 +7,7 @@ import type {
     UserOperation,
     UserOperationWithBigIntAsHex
 } from "permissionless/types/userOperation"
-import type { Address, Hex, LocalAccount, CustomSource } from "viem"
+import type { Address, CustomSource, Hex, LocalAccount } from "viem"
 import type { PartialBy } from "viem/types/utils"
 import type { VALIDATOR_TYPE } from "../constants.js"
 export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
