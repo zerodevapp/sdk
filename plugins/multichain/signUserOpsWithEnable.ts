@@ -32,12 +32,12 @@ export type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
  * @returns Signed user operations
  */
 export const signUserOpsWithEnable = async ({
-    multiChainUserOpConfigs
+    multiChainUserOpConfigsForEnable
 }: {
-    multiChainUserOpConfigs: MultiChainUserOpConfigForEnable<EntryPoint>[]
+    multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<EntryPoint>[]
 }): Promise<UserOperation<GetEntryPointVersion<EntryPoint>>[]> => {
     const pluginEnableTypedDatas = await Promise.all(
-        multiChainUserOpConfigs.map(async (config) => {
+        multiChainUserOpConfigsForEnable.map(async (config) => {
             return config.account.kernelPluginManager.getPluginsEnableTypedData(
                 config.account.address
             )
@@ -55,7 +55,7 @@ export const signUserOpsWithEnable = async ({
     const merkleRoot = merkleTree.getHexRoot() as Hex
 
     const ecdsaSig =
-        await multiChainUserOpConfigs[0].account.kernelPluginManager.sudoValidator?.signMessage(
+        await multiChainUserOpConfigsForEnable[0].account.kernelPluginManager.sudoValidator?.signMessage(
             {
                 message: {
                     raw: merkleRoot
@@ -69,7 +69,7 @@ export const signUserOpsWithEnable = async ({
         )
     }
 
-    const enableSigs = multiChainUserOpConfigs.map((_, index) => {
+    const enableSigs = multiChainUserOpConfigsForEnable.map((_, index) => {
         const merkleProof = merkleTree.getHexProof(leaves[index]) as Hex[]
         const encodedMerkleProof = encodeAbiParameters(
             [{ name: "proof", type: "bytes32[]" }],
@@ -79,7 +79,7 @@ export const signUserOpsWithEnable = async ({
     })
 
     const userOpSignatures = await Promise.all(
-        multiChainUserOpConfigs.map(async (config) => {
+        multiChainUserOpConfigsForEnable.map(async (config) => {
             return config.account.kernelPluginManager.signUserOperationWithActiveValidator(
                 config.userOp
             )
@@ -94,7 +94,7 @@ export const signUserOpsWithEnable = async ({
     }
 
     const finalSignatures = await Promise.all(
-        multiChainUserOpConfigs.map(async (config, index) => {
+        multiChainUserOpConfigsForEnable.map(async (config, index) => {
             return await getEncodedPluginsDataWithoutValidator({
                 enableSignature: enableSigs[index],
                 userOpSignature: userOpSignatures[index],
@@ -107,7 +107,7 @@ export const signUserOpsWithEnable = async ({
         })
     )
 
-    return multiChainUserOpConfigs.map((config, index) => {
+    return multiChainUserOpConfigsForEnable.map((config, index) => {
         return {
             ...config.userOp,
             signature: finalSignatures[index]
