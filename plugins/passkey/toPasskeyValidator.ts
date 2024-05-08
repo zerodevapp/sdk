@@ -10,7 +10,6 @@ import {
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
@@ -456,7 +455,7 @@ export async function createPasskeyValidator<
 }
 
 export async function getPasskeyValidator<
-    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE,
+    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
