@@ -46,7 +46,7 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
-describe("Permission kernel Account", () => {
+describe("Remote Signer", () => {
     let remoteSignerAddress: Address
     let publicClient: PublicClient
     let bundlerClient: BundlerClient<EntryPoint>

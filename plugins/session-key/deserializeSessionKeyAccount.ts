@@ -5,7 +5,7 @@ import {
 } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -22,6 +22,7 @@ export const deserializeSessionKeyAccount = async <
 >(
     client: Parameters<typeof createKernelAccount>[0],
     entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
     sessionKeyAccountParams: string,
     sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
 ): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
@@ -52,6 +53,7 @@ export const deserializeSessionKeyAccount = async <
         validatorInitData,
         action: params.action,
         entryPoint: entryPointAddress,
+        kernelVersion,
         ...params.validityData
     })
 
@@ -59,7 +61,8 @@ export const deserializeSessionKeyAccount = async <
         plugins: kernelPluginManager,
         index,
         deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     }) as unknown as KernelSmartAccount<
         entryPoint,
         Transport,

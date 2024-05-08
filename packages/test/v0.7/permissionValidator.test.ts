@@ -57,6 +57,7 @@ import {
     getSignerToRootPermissionKernelAccount,
     getSignerToRootPermissionWithSecondaryValidatorKernelAccount,
     getZeroDevPaymasterClient,
+    kernelVersion,
     sleep
 } from "./utils"
 
@@ -735,6 +736,7 @@ describe("Permission kernel Account", () => {
             const deserilizedAccount = await deserializePermissionAccount(
                 publicClient,
                 getEntryPoint(),
+                kernelVersion,
                 serializedAccount
             )
 

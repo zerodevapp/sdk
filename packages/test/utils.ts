@@ -67,6 +67,7 @@ export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const index = 5438533232332340n
 const DEFAULT_PROVIDER = "STACKUP"
 const projectId = config["v0.6"].sepolia.projectId
+export const kernelVersion = "0.2.4"
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
     if (!factoryAddress) {
@@ -141,7 +142,8 @@ export const getEcdsaKernelAccountWithPrivateKey = async <
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" }
+        signer: { ...signer, source: "local" as "local" | "external" },
+        kernelVersion
     })
 
     return createKernelAccount(publicClient, {
@@ -149,7 +151,8 @@ export const getEcdsaKernelAccountWithPrivateKey = async <
         plugins: {
             sudo: ecdsaValidatorPlugin
         },
-        index
+        index,
+        kernelVersion
     }) as unknown as KernelSmartAccount<entryPoint>
 }
 
@@ -184,14 +187,14 @@ export const getSignerToEcdsaKernelV2Account = async (): Promise<
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         signer,
         validatorAddress: "0x417f5a41305ddc99d18b5e176521b468b2a31b86",
-        entryPoint: getEntryPoint()
+        entryPoint: getEntryPoint(),
+        kernelVersion
     })
 
     return createKernelV2Account(publicClient, {
         entryPoint: getEntryPoint(),
         plugins: {
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     }) as unknown as KernelSmartAccount<EntryPoint>
@@ -213,7 +216,8 @@ export const getSignerToSessionKeyKernelV2Account = async (): Promise<
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: { ...signer, source: "local" as "local" | "external" },
-        validatorAddress: "0x417f5a41305ddc99d18b5e176521b468b2a31b86"
+        validatorAddress: "0x417f5a41305ddc99d18b5e176521b468b2a31b86",
+        kernelVersion: "0.0.2"
     })
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
@@ -241,8 +245,7 @@ export const getSignerToSessionKeyKernelV2Account = async (): Promise<
         entryPoint: getEntryPoint(),
         plugins: {
             regular: sessionKeyPlugin,
-            sudo: ecdsaValidatorPlugin,
-            entryPoint: getEntryPoint()
+            sudo: ecdsaValidatorPlugin
         },
         index
     })
@@ -295,7 +298,8 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
                 regular: plugin,
                 sudo: weigthedECDSAPlugin
             },
-            index
+            index,
+            kernelVersion
         })
     } else {
         return await createKernelAccount(publicClient, {
@@ -303,7 +307,8 @@ export const getSignersToWeightedEcdsaKernelAccount = async (
             plugins: {
                 sudo: weigthedECDSAPlugin
             },
-            index
+            index,
+            kernelVersion
         })
     }
 }
@@ -332,7 +337,8 @@ export const getRecoveryKernelAccount = async (
             regular: recoveryPlugin,
             action: getRecoveryAction(getEntryPoint())
         },
-        index
+        index,
+        kernelVersion
     })
 }
 
@@ -351,7 +357,8 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
     const sessionKeyEmptyAccount = addressToEmptyAccount(sessionKey.address)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" }
+        signer: { ...signer, source: "local" as "local" | "external" },
+        kernelVersion
     })
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(publicClient, {
@@ -381,7 +388,8 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
             regular: sessionKeyPlugin,
             sudo: ecdsaValidatorPlugin
         },
-        index
+        index,
+        kernelVersion
     })
 
     const serializedSessionKeyAccountParams =
@@ -390,6 +398,7 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
     return await deserializeSessionKeyAccount(
         publicClient,
         getEntryPoint(),
+        kernelVersion,
         serializedSessionKeyAccountParams,
         sessionKey
     )
@@ -409,7 +418,8 @@ export const getSignerToModularPermissionKernelAccount = async (
     const sessionKey = privateKeyToAccount(sessionPrivateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" }
+        signer: { ...signer, source: "local" as "local" | "external" },
+        kernelVersion
     })
 
     const ecdsaModularSigner = toECDSASigner({ signer: sessionKey })
@@ -428,7 +438,8 @@ export const getSignerToModularPermissionKernelAccount = async (
             regular: modularPermissionPlugin,
             sudo: ecdsaValidatorPlugin
         },
-        index
+        index,
+        kernelVersion
     })
 }
 
@@ -445,7 +456,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" }
+        signer: { ...signer, source: "local" as "local" | "external" },
+        kernelVersion
     })
 
     return await createKernelAccount(publicClient, {
@@ -455,7 +467,8 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
             sudo: ecdsaValidatorPlugin,
             action
         },
-        index
+        index,
+        kernelVersion
     })
 }
 

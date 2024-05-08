@@ -1,9 +1,10 @@
 import {
     constants,
-    KERNEL_ADDRESSES,
     KernelAccountAbi,
-    KernelV3InitAbi
+    KernelV3InitAbi,
+    validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
@@ -23,24 +24,27 @@ import {
     toHex,
     zeroAddress
 } from "viem"
-import {
-    ECDSA_VALIDATOR_ADDRESS_V06,
-    ECDSA_VALIDATOR_ADDRESS_V07
-} from "./constants.js"
+import { kernelVersionToEcdsaValidatorMap } from "./constants"
 
 const getInitCodeHash = async <entryPoint extends EntryPoint>(
     publicClient: PublicClient,
-    entryPointAddress: entryPoint
+    entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>
 ): Promise<Hex> => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
+    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+    const addresses = constants.KernelVersionToAddressesMap[kernelVersion]
     if (entryPointVersion === "v0.6") {
-        return await initCodeHashV0_6(publicClient)
+        return await initCodeHashV0_6(publicClient, addresses.factoryAddress)
     }
-    return initCodeHashV0_7(KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7)
+    return initCodeHashV0_7(addresses.accountImplementationAddress)
 }
-const initCodeHashV0_6 = async (publicClient: PublicClient) => {
+const initCodeHashV0_6 = async (
+    publicClient: PublicClient,
+    factoryAddress: Address
+) => {
     const factoryContract = getContract({
-        address: KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6,
+        address: factoryAddress,
         abi: [
             {
                 type: "function",
@@ -78,12 +82,16 @@ const initCodeHashV0_7 = (implementationAddress: Address) => {
     return hash
 }
 
-const generateSaltForV06 = (eoaAddress: Address, index: bigint) => {
+const generateSaltForV06 = (
+    eoaAddress: Address,
+    index: bigint,
+    validatorAddress: Address
+) => {
     const encodedIndex = toHex(index, { size: 32 })
     const initData = encodeFunctionData({
         abi: KernelAccountAbi,
         functionName: "initialize",
-        args: [ECDSA_VALIDATOR_ADDRESS_V06, eoaAddress]
+        args: [validatorAddress, eoaAddress]
     })
     const encodedSalt = concat([initData, encodedIndex])
     const salt = BigInt(keccak256(encodedSalt))
@@ -97,17 +105,15 @@ const generateSaltForV07 = (
     eoaAddress: Address,
     index: bigint,
     hookAddress: Address,
-    hookData: Hex
+    hookData: Hex,
+    validatorAddress: Address
 ) => {
     const encodedIndex = toHex(index, { size: 32 })
     const initData = encodeFunctionData({
         abi: KernelV3InitAbi,
         functionName: "initialize",
         args: [
-            concatHex([
-                constants.VALIDATOR_TYPE.SECONDARY,
-                ECDSA_VALIDATOR_ADDRESS_V07
-            ]),
+            concatHex([constants.VALIDATOR_TYPE.SECONDARY, validatorAddress]),
             hookAddress,
             eoaAddress,
             hookData
@@ -119,6 +125,7 @@ const generateSaltForV07 = (
 
 export type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> = {
     entryPointAddress: entryPoint
+    kernelVersion: GetKernelVersion<entryPoint>
     eoaAddress: Address
     index: bigint
     hookAddress?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
@@ -133,7 +140,17 @@ export type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> = {
 export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
     params: GetKernelAddressFromECDSAParams<entryPoint>
 ) {
+    if (params.kernelVersion === "0.0.2") {
+    }
     const entryPointVersion = getEntryPointVersion(params.entryPointAddress)
+    validateKernelVersionWithEntryPoint(
+        params.entryPointAddress,
+        params.kernelVersion
+    )
+    const kernelAddresses =
+        constants.KernelVersionToAddressesMap[params.kernelVersion]
+    const ecdsaValidatorAddress =
+        kernelVersionToEcdsaValidatorMap[params.kernelVersion]
     const bytecodeHash = await (async () => {
         if ("initCodeHash" in params && params.initCodeHash) {
             return params.initCodeHash
@@ -141,14 +158,19 @@ export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
         if ("publicClient" in params && params.publicClient) {
             return await getInitCodeHash(
                 params.publicClient,
-                params.entryPointAddress
+                params.entryPointAddress,
+                params.kernelVersion
             )
         }
         throw new Error("Either initCodeHash or publicClient must be provided")
     })()
     let salt: Hex
     if (entryPointVersion === "v0.6") {
-        salt = generateSaltForV06(params.eoaAddress, params.index)
+        salt = generateSaltForV06(
+            params.eoaAddress,
+            params.index,
+            ecdsaValidatorAddress
+        )
     } else {
         const hookAddress =
             "hookAddress" in params && params.hookAddress
@@ -160,18 +182,15 @@ export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
             params.eoaAddress,
             params.index,
             hookAddress,
-            hookData
+            hookData,
+            ecdsaValidatorAddress
         )
     }
 
-    const factoryAddress =
-        entryPointVersion === "v0.6"
-            ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
-            : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7
     return getContractAddress({
         bytecodeHash,
         opcode: "CREATE2",
-        from: factoryAddress,
+        from: kernelAddresses.factoryAddress,
         salt
     })
 }

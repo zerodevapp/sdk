@@ -74,7 +74,8 @@ export async function toKernelPluginManager<
         entryPointVersion === "v0.7" &&
         (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||
             action.selector.toLowerCase() !==
-                getActionSelector(entryPointVersion).toLowerCase())
+                getActionSelector(entryPointVersion).toLowerCase()) &&
+        kernelVersion === "0.3.0-beta"
     ) {
         action.hook = {
             address: action.hook?.address ?? ONLY_ENTRYPOINT_HOOK_ADDRESS
@@ -168,7 +169,7 @@ export async function toKernelPluginManager<
         const { version } = await accountMetadata(
             client,
             accountAddress,
-            entryPointAddress
+            kernelVersion
         )
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {

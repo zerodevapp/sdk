@@ -1,5 +1,9 @@
 import type { EntryPointVersion } from "permissionless/types/entrypoint"
-import type { Address, Hex } from "viem"
+import { type Address, type Hex, zeroAddress } from "viem"
+import type {
+    KERNEL_V3_VERSION_TYPE,
+    KERNEL_VERSION_TYPE
+} from "./types/kernel"
 
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
@@ -11,6 +15,60 @@ export const KernelImplToVersionMap: { [key: Address]: string } = {
     "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
     "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
     "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27": "0.3.0-beta"
+}
+
+export const FACTORY_ADDRESS_V0_6 = "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3"
+export const FACTORY_ADDRESS_V0_6_INIT_CODE_HASH =
+    "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73"
+
+export const KernelVersionToAddressesMap: {
+    [key in KERNEL_VERSION_TYPE]: {
+        accountImplementationAddress: Address
+        factoryAddress: Address
+        metaFactoryAddress?: key extends KERNEL_V3_VERSION_TYPE
+            ? Address
+            : never
+        initCodeHash?: Hex
+    }
+} = {
+    "0.0.2": {
+        accountImplementationAddress: zeroAddress,
+        factoryAddress: "0xaee9762ce625e0a8f7b184670fb57c37bfe1d0f1"
+    },
+    "0.2.2": {
+        accountImplementationAddress:
+            "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5",
+        factoryAddress: FACTORY_ADDRESS_V0_6,
+        initCodeHash: FACTORY_ADDRESS_V0_6_INIT_CODE_HASH
+    },
+    "0.2.3": {
+        accountImplementationAddress:
+            "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab",
+        factoryAddress: FACTORY_ADDRESS_V0_6,
+        initCodeHash: FACTORY_ADDRESS_V0_6_INIT_CODE_HASH
+    },
+    "0.2.4": {
+        accountImplementationAddress:
+            "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
+        factoryAddress: FACTORY_ADDRESS_V0_6,
+        initCodeHash: FACTORY_ADDRESS_V0_6_INIT_CODE_HASH
+    },
+    "0.3.0-beta": {
+        accountImplementationAddress:
+            "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27",
+        factoryAddress: "0x6723b44Abeec4E71eBE3232BD5B455805baDD22f",
+        metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
+        initCodeHash:
+            "0x6fe6e6ea30eddce942b9618033ab8429f9ddac594053bec8a6744fffc71976e2"
+    },
+    "0.3.1": {
+        accountImplementationAddress:
+            "0xec9aA3A41D6bAf3cDb2268ef7a8B116EA74925Ef",
+        factoryAddress: "0xB52f3C04AeAF9364FBf68310a8128aabb40C9ABb",
+        metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
+        initCodeHash:
+            "0xf51eea38f87ea60f2233b67c3592a801f74962f2a4f01d80848fb53f0e7c0004"
+    }
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =

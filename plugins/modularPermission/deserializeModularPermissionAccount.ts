@@ -1,7 +1,7 @@
 import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types"
 import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
@@ -23,6 +23,7 @@ export const deserializeModularPermissionAccount = async <
 >(
     client: Parameters<typeof createKernelAccount>[0],
     entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
@@ -61,6 +62,7 @@ export const deserializeModularPermissionAccount = async <
             validatorInitData,
             action: params.action,
             entryPoint: entryPointAddress,
+            kernelVersion,
             ...params.validityData
         }
     )
@@ -69,7 +71,8 @@ export const deserializeModularPermissionAccount = async <
         plugins: kernelPluginManager,
         index,
         deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 }
 

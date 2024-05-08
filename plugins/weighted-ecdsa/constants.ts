@@ -1,4 +1,3 @@
-import { constants } from "@zerodev/sdk"
 import type { Action } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -20,10 +19,7 @@ export const getRecoveryAction = (entryPoint: EntryPoint): Action => {
     }
     return {
         address: RECOVERY_ACTION_ADDRESS_V07,
-        selector: RECOVERY_ACTION_SELECTOR,
-        hook: {
-            address: constants.ONLY_ENTRYPOINT_HOOK_ADDRESS
-        }
+        selector: RECOVERY_ACTION_SELECTOR
     }
 }
 

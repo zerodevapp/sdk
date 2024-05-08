@@ -48,6 +48,7 @@ import {
     findUserOperationEvent,
     getEntryPoint,
     getKernelBundlerClient,
+    kernelVersion,
     waitForNonceUpdate
 } from "./utils.js"
 
@@ -122,7 +123,8 @@ describe("fallback client e2e", () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
-                signer
+                signer,
+                kernelVersion
             }
         )
 
@@ -130,7 +132,8 @@ describe("fallback client e2e", () => {
             entryPoint: getEntryPoint(),
             plugins: {
                 sudo: ecdsaValidatorPlugin
-            }
+            },
+            kernelVersion
         })
 
         unavailableServer = await createHttpServer((_req, res) => {

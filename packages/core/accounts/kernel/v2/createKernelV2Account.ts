@@ -149,7 +149,10 @@ export async function createKernelV2Account<
         deployedAccountAddress
     }: {
         plugins:
-            | KernelPluginManagerParams<entryPoint>
+            | Omit<
+                  KernelPluginManagerParams<entryPoint>,
+                  "entryPoint" | "kernelVersion"
+              >
             | KernelPluginManager<entryPoint>
         entryPoint: entryPoint
         index?: bigint
@@ -169,7 +172,7 @@ export async function createKernelV2Account<
               regular: plugins.regular,
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
-              kernelVersion: "0.0.2" ?? plugins.kernelVersion,
+              kernelVersion: "0.0.2",
               entryPoint: entryPointAddress
           })
     // Helper to generate the init code for the smart account

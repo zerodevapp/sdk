@@ -1,6 +1,6 @@
 import { OAuthExtension } from "@magic-ext/oauth"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import { Magic } from "magic-sdk"
 import { providerToSmartAccountSigner } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -46,9 +46,11 @@ export async function getSocialValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         entryPoint: entryPointAddress,
+        kernelVersion,
         projectId
     }: {
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         projectId: string
     }
 ): Promise<KernelValidator<entryPoint, "SocialValidator">> {
@@ -64,7 +66,8 @@ export async function getSocialValidator<
 
     const ecdsaValidator = await signerToEcdsaValidator(client, {
         signer: smartAccountSigner,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     return {

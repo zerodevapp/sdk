@@ -1,6 +1,6 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { ECDSA_VALIDATOR_ADDRESS_V07 } from "@zerodev/ecdsa-validator"
+import { kernelVersionToEcdsaValidatorMap } from "@zerodev/ecdsa-validator/constants.js"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { type BundlerClient, bundlerActions } from "permissionless"
@@ -11,20 +11,18 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
-    decodeErrorResult,
     encodeFunctionData,
     parseAbi,
-    parseEther,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
     getEntryPoint,
     getKernelAccountClient,
-    getPimlicoPaymasterClient,
     getPublicClient,
     getRecoveryKernelAccount,
-    getZeroDevPaymasterClient
+    getZeroDevPaymasterClient,
+    kernelVersion
 } from "./utils.js"
 
 dotenv.config()
@@ -111,8 +109,14 @@ describe("Recovery kernel Account", () => {
                     callData: encodeFunctionData({
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
-                        args: [ECDSA_VALIDATOR_ADDRESS_V07, newSigner.address]
-                    })
+                        args: [
+                            kernelVersionToEcdsaValidatorMap[kernelVersion],
+                            newSigner.address
+                        ]
+                    }),
+                    preVerificationGas: 84700n,
+                    callGasLimit: 1273781n,
+                    verificationGasLimit: 726789n
                 }
             })
             console.log("userOpHash:", userOpHash)
@@ -139,7 +143,10 @@ describe("Recovery kernel Account", () => {
                     callData: encodeFunctionData({
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
-                        args: [ECDSA_VALIDATOR_ADDRESS_V07, newSigner.address]
+                        args: [
+                            kernelVersionToEcdsaValidatorMap[kernelVersion],
+                            newSigner.address
+                        ]
                     })
                 }
             })

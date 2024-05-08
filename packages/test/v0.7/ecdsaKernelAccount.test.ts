@@ -57,6 +57,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getZeroDevPaymasterClient,
     index,
+    kernelVersion,
     mintToAccount,
     waitForNonceUpdate
 } from "./utils.js"
@@ -155,12 +156,12 @@ describe("ECDSA kernel Account", () => {
     test("getKernelAddressFromECDSA util should return valid account address", async () => {
         const generatedAccountAddress = await getKernelAddressFromECDSA({
             entryPointAddress: ENTRYPOINT_ADDRESS_V07,
+            kernelVersion,
             eoaAddress: ownerAccount.address,
             index: index,
             initCodeHash:
-                constants.KernelFactoryToInitCodeHashMap[
-                    KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7
-                ]
+                constants.KernelVersionToAddressesMap[kernelVersion]
+                    .initCodeHash ?? "0x"
         })
         console.log(
             "Generate accountAddress using getKernelAddressFromECDSA: ",
@@ -840,7 +841,8 @@ describe("ECDSA kernel Account", () => {
                 publicClient,
                 {
                     entryPoint: getEntryPoint(),
-                    signer
+                    signer,
+                    kernelVersion
                 }
             )
             const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
@@ -851,7 +853,8 @@ describe("ECDSA kernel Account", () => {
                         sudo: ecdsaValidatorPlugin
                     },
                     deployedAccountAddress,
-                    index
+                    index,
+                    kernelVersion
                 }
             )
 

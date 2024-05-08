@@ -30,12 +30,15 @@ import {
     validateTypedData,
     zeroAddress
 } from "viem"
+import { KernelVersionToAddressesMap } from "../../constants.js"
 import type {
+    GetKernelVersion,
     KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../types/kernel.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
+import { validateKernelVersionWithEntryPoint } from "../../utils.js"
 import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../utils/index.js"
 import {
     isKernelPluginManager,
@@ -65,14 +68,18 @@ export type KernelSmartAccount<
 
 export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     plugins:
-        | Omit<KernelPluginManagerParams<entryPoint>, "entryPoint">
+        | Omit<
+              KernelPluginManagerParams<entryPoint>,
+              "entryPoint" | "kernelVersion"
+          >
         | KernelPluginManager<entryPoint>
     entryPoint: entryPoint
     index?: bigint
     factoryAddress?: Address
-    accountLogicAddress?: Address
-    factoryStakerAddress?: Address
+    accountImplementationAddress?: Address
+    metaFactoryAddress?: Address
     deployedAccountAddress?: Address
+    kernelVersion: GetKernelVersion<entryPoint>
 }
 
 /**
@@ -157,21 +164,21 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
  * Get the account initialization code for a kernel smart account
  * @param index
  * @param factoryAddress
- * @param accountLogicAddress
+ * @param accountImplementationAddress
  * @param ecdsaValidatorAddress
  */
 const getAccountInitCode = async <entryPoint extends EntryPoint>({
     index,
     factoryAddress,
-    accountLogicAddress,
-    factoryStakerAddress,
+    accountImplementationAddress,
+    metaFactoryAddress,
     entryPoint: entryPointAddress,
     kernelPluginManager
 }: {
     index: bigint
     factoryAddress: Address
-    accountLogicAddress: Address
-    factoryStakerAddress: Address
+    accountImplementationAddress: Address
+    metaFactoryAddress?: Address
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
 }): Promise<Hex> => {
@@ -189,13 +196,13 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
             encodeFunctionData({
                 abi: createAccountAbi,
                 functionName: "createAccount",
-                args: [accountLogicAddress, initialisationData, index]
+                args: [accountImplementationAddress, initialisationData, index]
             }) as Hex
         ])
     }
 
     return concatHex([
-        factoryStakerAddress,
+        metaFactoryAddress ?? zeroAddress,
         encodeFunctionData({
             abi: KernelFactoryStakerAbi,
             functionName: "deployWithFactory",
@@ -247,6 +254,37 @@ const getAccountAddress = async <
     })
 }
 
+const getDefaultAddresses = <entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
+    {
+        accountImplementationAddress,
+        factoryAddress,
+        metaFactoryAddress
+    }: {
+        accountImplementationAddress?: Address
+        factoryAddress?: Address
+        metaFactoryAddress?: Address
+    }
+) => {
+    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+
+    const addresses = KernelVersionToAddressesMap[kernelVersion]
+    if (!addresses) {
+        throw new Error(
+            `No addresses found for kernel version ${kernelVersion}`
+        )
+    }
+
+    return {
+        accountImplementationAddress:
+            accountImplementationAddress ??
+            addresses.accountImplementationAddress,
+        factoryAddress: factoryAddress ?? addresses.factoryAddress,
+        metaFactoryAddress: metaFactoryAddress ?? addresses.metaFactoryAddress
+    }
+}
+
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -254,7 +292,7 @@ const getAccountAddress = async <
  * @param entryPoint
  * @param index
  * @param factoryAddress
- * @param accountLogicAddress
+ * @param accountImplementationAddress
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
@@ -268,23 +306,30 @@ export async function createKernelAccount<
         plugins,
         entryPoint: entryPointAddress,
         index = 0n,
-        factoryAddress,
-        accountLogicAddress,
-        factoryStakerAddress = KERNEL_ADDRESSES.FACTORY_STAKER,
-        deployedAccountAddress
+        factoryAddress: _factoryAddress,
+        accountImplementationAddress: _accountImplementationAddress,
+        metaFactoryAddress: _metaFactoryAddress,
+        deployedAccountAddress,
+        kernelVersion
     }: CreateKernelAccountParameters<entryPoint>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    accountLogicAddress =
-        accountLogicAddress ??
-        (entryPointVersion === "v0.6"
-            ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
-            : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7)
-    factoryAddress =
-        factoryAddress ??
-        (entryPointVersion === "v0.6"
-            ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
-            : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7)
+    const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
+        getDefaultAddresses(entryPointAddress, kernelVersion, {
+            accountImplementationAddress: _accountImplementationAddress,
+            factoryAddress: _factoryAddress,
+            metaFactoryAddress: _metaFactoryAddress
+        })
+    // accountImplementationAddress =
+    //     accountImplementationAddress ??
+    //     (entryPointVersion === "v0.6"
+    //         ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
+    //         : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7)
+    // factoryAddress =
+    //     factoryAddress ??
+    //     (entryPointVersion === "v0.6"
+    //         ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
+    //         : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7)
 
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins
@@ -293,17 +338,18 @@ export async function createKernelAccount<
               regular: plugins.regular,
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
-              entryPoint: entryPointAddress
+              entryPoint: entryPointAddress,
+              kernelVersion
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
-        if (!accountLogicAddress || !factoryAddress)
+        if (!accountImplementationAddress || !factoryAddress)
             throw new Error("Missing account logic address or factory address")
         return getAccountInitCode<entryPoint>({
             index,
             factoryAddress,
-            accountLogicAddress,
-            factoryStakerAddress,
+            accountImplementationAddress,
+            metaFactoryAddress,
             entryPoint: entryPointAddress,
             kernelPluginManager
         })
@@ -374,7 +420,7 @@ export async function createKernelAccount<
                     getEntryPointVersion(entryPointAddress)
                 return entryPointVersion === "v0.6"
                     ? factoryAddress
-                    : factoryStakerAddress
+                    : metaFactoryAddress
             },
 
             async getFactoryData() {
@@ -396,7 +442,7 @@ export async function createKernelAccount<
                 const { name, chainId, version } = await accountMetadata(
                     client,
                     accountAddress,
-                    entryPointAddress
+                    kernelVersion
                 )
                 const wrappedMessageHash = await eip712WrapHash(messageHash, {
                     name,
@@ -447,7 +493,7 @@ export async function createKernelAccount<
                 const { name, chainId, version } = await accountMetadata(
                     client,
                     accountAddress,
-                    entryPointAddress
+                    kernelVersion
                 )
                 const wrappedMessageHash = await eip712WrapHash(typedHash, {
                     name,

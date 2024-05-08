@@ -47,7 +47,8 @@ import {
     getSessionKeyToSessionKeyKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
-    getZeroDevPaymasterClient
+    getZeroDevPaymasterClient,
+    kernelVersion
 } from "./utils.js"
 
 describe("Session Key kernel Account", async () => {
@@ -592,6 +593,7 @@ describe("Session Key kernel Account", async () => {
             account: await deserializeSessionKeyAccount(
                 publicClient,
                 getEntryPoint(),
+                kernelVersion,
                 serializedSessionKeyAccountParams
             ),
             middleware: {

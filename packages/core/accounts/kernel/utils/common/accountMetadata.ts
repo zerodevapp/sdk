@@ -1,4 +1,3 @@
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -9,7 +8,7 @@ import {
     publicActions
 } from "viem"
 import { KERNEL_NAME } from "../../../../constants.js"
-import { getKernelVersion } from "../../../../utils.js"
+import type { KERNEL_VERSION_TYPE } from "../../../../types/kernel.js"
 import { EIP1271Abi } from "../../abi/EIP1271Abi.js"
 
 type AccountMetadata = {
@@ -23,7 +22,7 @@ export const accountMetadata = async <
 >(
     client: Client<TTransport, TChain, undefined>,
     accountAddress: Address,
-    entryPointAddress: EntryPoint
+    kernelVersion: KERNEL_VERSION_TYPE
 ): Promise<AccountMetadata> => {
     try {
         const domain = await client.request({
@@ -54,7 +53,7 @@ export const accountMetadata = async <
     } catch (error) {}
     return {
         name: KERNEL_NAME,
-        version: getKernelVersion(entryPointAddress),
+        version: kernelVersion,
         chainId: client.chain
             ? BigInt(client.chain.id)
             : BigInt(await client.extend(publicActions).getChainId())
