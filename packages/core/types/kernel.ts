@@ -134,10 +134,6 @@ export type KernelValidator<
         userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
         pluginEnableSignature?: Hex
     ): Promise<Hex>
-    getMultiUserOpDummySignature?(
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        numOfUserOps: number
-    ): Promise<Hex>
     signUserOperation: (
         userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
         pluginEnableSignature?: Hex

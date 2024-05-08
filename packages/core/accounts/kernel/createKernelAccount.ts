@@ -12,9 +12,7 @@ import {
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     ENTRYPOINT_ADDRESS_V07_TYPE,
-    EntryPoint,
-    GetEntryPointVersion,
-    UserOperation
+    EntryPoint
 } from "permissionless/types"
 import {
     type Address,
@@ -63,10 +61,6 @@ export type KernelSmartAccount<
     generateInitCode: () => Promise<Hex>
     encodeCallData: (args: KernelEncodeCallDataArgs) => Promise<Hex>
     encodeModuleInstallCallData: () => Promise<Hex>
-    getMultiUserOpDummySignature?: (
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        numOfUserOps: number
-    ) => Promise<Hex>
 }
 
 export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
@@ -331,20 +325,6 @@ export async function createKernelAccount<
         accountAddress
     )
 
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    let getMultiUserOpDummySignature: any
-    if (kernelPluginManager.sudoValidator?.source === "MultiChainValidator") {
-        getMultiUserOpDummySignature = async (
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-            numOfUserOps: number
-        ) => {
-            return await kernelPluginManager.sudoValidator?.getMultiUserOpDummySignature?.(
-                userOperation,
-                numOfUserOps
-            )
-        }
-    }
-
     return {
         kernelPluginManager,
         generateInitCode,
@@ -353,7 +333,6 @@ export async function createKernelAccount<
                 accountAddress
             )
         },
-        getMultiUserOpDummySignature,
         ...toSmartAccount({
             address: accountAddress,
             publicKey: accountAddress,

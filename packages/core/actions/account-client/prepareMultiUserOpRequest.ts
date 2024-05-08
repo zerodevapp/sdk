@@ -24,10 +24,11 @@ import type {
     LocalAccount,
     Transport
 } from "viem"
-import { estimateFeesPerGas } from "viem/actions"
+import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
 import { type EncodeDeployDataParameters, getAction } from "viem/utils"
 import type { KernelSmartAccount } from "../../accounts"
+import { getMultiUserOpDummySignature } from "../../accounts/kernel/utils/plugins/multi-chain/getMultiUserOpDummySignature.js"
 
 export type SmartAccount<
     entryPoint extends EntryPoint,
@@ -57,10 +58,6 @@ export type SmartAccount<
     ) => Promise<Hex>
     getDummySignature(
         userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-    ): Promise<Hex>
-    getMultiUserOpDummySignature(
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        numOfUserOps: number
     ): Promise<Hex>
     encodeDeployCallData: ({
         abi,
@@ -159,10 +156,14 @@ export async function prepareMultiUserOpRequest<
             estimateGas.maxPriorityFeePerGas
     }
 
+    const chainId = await getChainId(client)
+
     if (userOperation.signature === "0x") {
-        userOperation.signature = await account.getMultiUserOpDummySignature(
+        userOperation.signature = await getMultiUserOpDummySignature(
             userOperation,
-            numOfUserOps
+            numOfUserOps,
+            account.entryPoint,
+            chainId
         )
     }
 
