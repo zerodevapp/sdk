@@ -2,7 +2,7 @@ import {
     type Action,
     type KernelSmartAccount,
     KernelV3AccountAbi,
-    getEncodedPluginsData
+    getEncodedPluginsDataWithoutValidator
 } from "@zerodev/sdk"
 import MerkleTree from "merkletreejs"
 import type { UserOperation } from "permissionless"
@@ -95,12 +95,14 @@ export const signUserOpsWithEnable = async ({
 
     const finalSignatures = await Promise.all(
         multiChainUserOpConfigs.map(async (config, index) => {
-            return await getEncodedPluginsData({
-                accountAddress: config.account.address,
+            return await getEncodedPluginsDataWithoutValidator({
                 enableSignature: enableSigs[index],
                 userOpSignature: userOpSignatures[index],
                 action,
-                validator: config.account.kernelPluginManager.activeValidator
+                enableData:
+                    await config.account.kernelPluginManager.getEnableData(
+                        config.account.address
+                    )
             })
         })
     )
