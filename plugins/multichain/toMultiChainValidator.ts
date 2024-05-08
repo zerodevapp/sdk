@@ -1,6 +1,5 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import MerkleTree from "merkletreejs"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -17,10 +16,7 @@ import {
     type Hex,
     type LocalAccount,
     type Transport,
-    type TypedDataDefinition,
-    concatHex,
-    encodeAbiParameters,
-    keccak256
+    type TypedDataDefinition
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
