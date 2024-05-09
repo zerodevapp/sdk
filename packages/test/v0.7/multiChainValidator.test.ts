@@ -43,6 +43,7 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
+import { prepareMultiUserOpRequest } from "../../../plugins/multichain/index.js"
 import { signUserOps } from "../../../plugins/multichain/signUserOps"
 import { signUserOpsWithEnable } from "../../../plugins/multichain/signUserOpsWithEnable"
 import { toMultiChainValidator } from "../../../plugins/multichain/toMultiChainValidator"
@@ -63,7 +64,6 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils"
-import { prepareMultiUserOpRequest } from "../../../plugins/multichain/index.js"
 
 const requiredEnvVars = [
     "TEST_PRIVATE_KEY",
