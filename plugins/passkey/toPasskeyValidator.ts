@@ -2,12 +2,7 @@ import { Buffer } from "buffer"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import {
-    ENTRYPOINT_ADDRESS_V06,
-    ENTRYPOINT_ADDRESS_V07,
-    type UserOperation,
-    getUserOperationHash
-} from "permissionless"
+import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type {
     EntryPoint,
@@ -43,47 +38,18 @@ import {
     uint8ArrayToHexString
 } from "./utils.js"
 
-type WebAuthnData = {
-    x: bigint
-    y: bigint
-    usePrecompiled?: boolean // only for v0.6
-}
-
 const createEnableData = (
     pubKeyX: string,
     pubKeyY: string,
-    chainId: number,
-    authenticatorIdHash: Hex,
-    entryPoint: EntryPoint
+    authenticatorIdHash: Hex
 ) => {
-    const includeUsePrecompiled = entryPoint === ENTRYPOINT_ADDRESS_V06
-
-    const webAuthnDataComponents = [
-        { name: "x", type: "uint256" },
-        { name: "y", type: "uint256" }
-    ]
-
-    if (includeUsePrecompiled) {
-        webAuthnDataComponents.push({ name: "usePrecompiled", type: "bool" })
-    }
-
-    // Explicitly define the structure of the first element in dataToEncode as WebAuthnData
-    const dataToEncode: [WebAuthnData, Hex] = [
-        {
-            x: BigInt(`0x${pubKeyX}`),
-            y: BigInt(`0x${pubKeyY}`)
-        },
-        authenticatorIdHash
-    ]
-
-    if (includeUsePrecompiled) {
-        dataToEncode[0].usePrecompiled = isRIP7212SupportedNetwork(chainId)
-    }
-
     return encodeAbiParameters(
         [
             {
-                components: webAuthnDataComponents,
+                components: [
+                    { name: "x", type: "uint256" },
+                    { name: "y", type: "uint256" }
+                ],
                 name: "webAuthnData",
                 type: "tuple"
             },
@@ -92,29 +58,17 @@ const createEnableData = (
                 type: "bytes32"
             }
         ],
-        dataToEncode
+        [
+            {
+                x: BigInt(`0x${pubKeyX}`),
+                y: BigInt(`0x${pubKeyY}`)
+            },
+            authenticatorIdHash
+        ]
     )
 }
 
-const createDummySignatrue = (entryPoint: EntryPoint) => {
-    if (entryPoint === ENTRYPOINT_ADDRESS_V06) {
-        return encodeAbiParameters(
-            [
-                { name: "authenticatorData", type: "bytes" },
-                { name: "clientDataJSON", type: "string" },
-                { name: "responseTypeLocation", type: "uint256" },
-                { name: "r", type: "uint256" },
-                { name: "s", type: "uint256" }
-            ],
-            [
-                "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-                '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
-                1n,
-                44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-                9910254599581058084911561569808925251374718953855182016200087235935345969636n
-            ]
-        )
-    }
+const createDummySignatrue = () => {
     return encodeAbiParameters(
         [
             { name: "authenticatorData", type: "bytes" },
@@ -138,7 +92,6 @@ const createDummySignatrue = (entryPoint: EntryPoint) => {
 const doSignMessage = async (
     message: SignableMessage,
     passkeyServerUrl: string,
-    entryPoint: EntryPoint,
     chainId: number
 ) => {
     // convert SignMessage to string
@@ -225,12 +178,9 @@ const doSignMessage = async (
         { name: "clientDataJSON", type: "string" },
         { name: "responseTypeLocation", type: "uint256" },
         { name: "r", type: "uint256" },
-        { name: "s", type: "uint256" }
+        { name: "s", type: "uint256" },
+        { name: "usePrecompiled", type: "bool" }
     ]
-
-    if (entryPoint === ENTRYPOINT_ADDRESS_V07) {
-        signatureComponents.push({ name: "usePrecompiled", type: "bool" })
-    }
 
     return encodeAbiParameters(signatureComponents, [
         authenticatorDataHex,
@@ -238,9 +188,7 @@ const doSignMessage = async (
         beforeType,
         BigInt(r),
         BigInt(s),
-        ...(entryPoint === ENTRYPOINT_ADDRESS_V07
-            ? [isRIP7212SupportedNetwork(chainId)]
-            : [])
+        isRIP7212SupportedNetwork(chainId)
     ])
 }
 
@@ -253,12 +201,12 @@ export async function createPasskeyValidator<
     {
         passkeyName,
         passkeyServerUrl,
-        entryPoint: entryPointAddress = ENTRYPOINT_ADDRESS_V06 as entryPoint,
+        entryPoint: entryPointAddress,
         validatorAddress
     }: {
         passkeyName: string
         passkeyServerUrl: string
-        entryPoint?: entryPoint
+        entryPoint: entryPoint
         validatorAddress?: Address
     }
 ): Promise<
@@ -354,12 +302,7 @@ export async function createPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                entryPointAddress,
-                chainId
-            )
+            return doSignMessage(message, passkeyServerUrl, chainId)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -398,13 +341,7 @@ export async function createPasskeyValidator<
             return validatorAddress ?? getValidatorAddress(entryPointAddress)
         },
         async getEnableData() {
-            return createEnableData(
-                pubKeyX,
-                pubKeyY,
-                chainId,
-                authenticatorIdHash,
-                entryPointAddress
-            )
+            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
         },
         async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
             if (customNonceKey) {
@@ -431,7 +368,7 @@ export async function createPasskeyValidator<
             return signature
         },
         async getDummySignature() {
-            return createDummySignatrue(entryPointAddress)
+            return createDummySignatrue()
         },
         async isEnabled(
             _kernelAccountAddress: Address,
@@ -551,12 +488,7 @@ export async function getPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                entryPointAddress,
-                chainId
-            )
+            return doSignMessage(message, passkeyServerUrl, chainId)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -594,13 +526,7 @@ export async function getPasskeyValidator<
         getIdentifier: () =>
             validatorAddress ?? getValidatorAddress(entryPointAddress),
         async getEnableData() {
-            return createEnableData(
-                pubKeyX,
-                pubKeyY,
-                chainId,
-                authenticatorIdHash,
-                entryPointAddress
-            )
+            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
         },
         async getNonceKey() {
             return 0n
@@ -624,7 +550,7 @@ export async function getPasskeyValidator<
             return signature
         },
         async getDummySignature() {
-            return createDummySignatrue(entryPointAddress)
+            return createDummySignatrue()
         },
         async isEnabled(
             _kernelAccountAddress: Address,
@@ -681,12 +607,7 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                entryPointAddress,
-                chainId
-            )
+            return doSignMessage(message, passkeyServerUrl, chainId)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -723,13 +644,7 @@ export async function deserializePasskeyValidator<
         source: "WebAuthnValidator",
         getIdentifier: () => validatorAddress,
         async getEnableData() {
-            return createEnableData(
-                pubKeyX,
-                pubKeyY,
-                chainId,
-                authenticatorIdHash,
-                entryPointAddress
-            )
+            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
         },
         async getNonceKey() {
             return 0n
@@ -753,7 +668,7 @@ export async function deserializePasskeyValidator<
             return signature
         },
         async getDummySignature() {
-            return createDummySignatrue(entryPointAddress)
+            return createDummySignatrue()
         },
 
         async isEnabled(
