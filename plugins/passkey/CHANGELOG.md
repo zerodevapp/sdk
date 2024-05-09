@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.2.5
+
+### Patch Changes
+
+-   Remove usePrecompiled from enable data
+
 ## 5.2.4
 
 ### Patch Changes
