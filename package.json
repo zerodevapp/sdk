@@ -1,5 +1,9 @@
 {
-    "workspaces": ["packages/*", "templates/*", "plugins/*"],
+    "workspaces": [
+        "packages/*",
+        "templates/*",
+        "plugins/*"
+    ],
     "private": true,
     "author": "ZeroDev",
     "type": "module",
@@ -33,8 +37,5 @@
     },
     "simple-git-hooks": {
         "pre-commit": "bun run format && bun run lint:fix"
-    },
-    "dependencies": {
-        "merkletreejs": "^0.3.11"
     }
 }

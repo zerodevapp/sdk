@@ -18,7 +18,8 @@ import { ethers } from "ethers"
 import {
     type BundlerClient,
     ENTRYPOINT_ADDRESS_V07,
-    bundlerActions
+    bundlerActions,
+    deepHexlify
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types/entrypoint"
@@ -62,6 +63,7 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils"
+import { prepareMultiUserOpRequest } from "../../../plugins/multichain/index.js"
 
 const requiredEnvVars = [
     "TEST_PRIVATE_KEY",
@@ -840,38 +842,54 @@ describe("MultiChainValidator", () => {
                     entryPoint: getEntryPoint()
                 })
 
-            const sepoliaUserOp =
-                await sepoliaZerodevKernelClient.prepareMultiUserOpRequest(
-                    {
-                        userOperation: {
-                            callData: await sepoliaKernelAccount.encodeCallData(
+            const sepoliaUserOp = await prepareMultiUserOpRequest({
+                client: sepoliaZerodevKernelClient,
+                args: {
+                    userOperation: {
+                        callData: await sepoliaKernelAccount.encodeCallData({
+                            to: zeroAddress,
+                            value: BigInt(0),
+                            data: "0x"
+                        })
+                    },
+                    middleware: {
+                        sponsorUserOperation: async ({ userOperation }) => {
+                            return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
                                 {
-                                    to: zeroAddress,
-                                    value: BigInt(0),
-                                    data: "0x"
+                                    userOperation,
+                                    entryPoint: getEntryPoint()
                                 }
                             )
                         }
-                    },
-                    2
-                )
+                    }
+                },
+                numOfUserOps: 2
+            })
 
-            const optimismSepoliaUserOp =
-                await optimismSepoliaZerodevKernelClient.prepareMultiUserOpRequest(
-                    {
-                        userOperation: {
-                            callData:
-                                await optimismSepoliaKernelAccount.encodeCallData(
-                                    {
-                                        to: zeroAddress,
-                                        value: BigInt(0),
-                                        data: "0x"
-                                    }
-                                )
-                        }
+            const optimismSepoliaUserOp = await prepareMultiUserOpRequest({
+                client: optimismSepoliaZerodevKernelClient,
+                args: {
+                    userOperation: {
+                        callData:
+                            await optimismSepoliaKernelAccount.encodeCallData({
+                                to: zeroAddress,
+                                value: BigInt(0),
+                                data: "0x"
+                            })
                     },
-                    2
-                )
+                    middleware: {
+                        sponsorUserOperation: async ({ userOperation }) => {
+                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
+                                {
+                                    userOperation,
+                                    entryPoint: getEntryPoint()
+                                }
+                            )
+                        }
+                    }
+                },
+                numOfUserOps: 2
+            })
 
             const signedUserOps = await signUserOps({
                 account: sepoliaKernelAccount,
@@ -894,11 +912,10 @@ describe("MultiChainValidator", () => {
                     bundlerActions(getEntryPoint())
                 )
 
-            const sepoliaUserOpHash =
-                await sepoliaZerodevKernelClient.sendSignedUserOperation({
-                    userOperation: signedUserOps[0],
-                    entryPoint: getEntryPoint()
-                })
+            const sepoliaUserOpHash = await sepoliaZerodevKernelClient.request({
+                method: "eth_sendUserOperation",
+                params: [deepHexlify(signedUserOps[0]), getEntryPoint()]
+            })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaBundlerClient.waitForUserOperationReceipt({
@@ -906,12 +923,10 @@ describe("MultiChainValidator", () => {
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.sendSignedUserOperation(
-                    {
-                        userOperation: signedUserOps[1],
-                        entryPoint: getEntryPoint()
-                    }
-                )
+                await optimismSepoliaZerodevKernelClient.request({
+                    method: "eth_sendUserOperation",
+                    params: [deepHexlify(signedUserOps[1]), getEntryPoint()]
+                })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaBundlerClient.waitForUserOperationReceipt({
@@ -1073,11 +1088,10 @@ describe("MultiChainValidator", () => {
                     bundlerActions(getEntryPoint())
                 )
 
-            const sepoliaUserOpHash =
-                await sepoliaZerodevKernelClient.sendSignedUserOperation({
-                    userOperation: signedEnableUserOps[0],
-                    entryPoint: getEntryPoint()
-                })
+            const sepoliaUserOpHash = await sepoliaZerodevKernelClient.request({
+                method: "eth_sendUserOperation",
+                params: [deepHexlify(signedEnableUserOps[0]), getEntryPoint()]
+            })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaBundlerClient.waitForUserOperationReceipt({
@@ -1085,12 +1099,13 @@ describe("MultiChainValidator", () => {
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.sendSignedUserOperation(
-                    {
-                        userOperation: signedEnableUserOps[1],
-                        entryPoint: getEntryPoint()
-                    }
-                )
+                await optimismSepoliaZerodevKernelClient.request({
+                    method: "eth_sendUserOperation",
+                    params: [
+                        deepHexlify(signedEnableUserOps[1]),
+                        getEntryPoint()
+                    ]
+                })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaBundlerClient.waitForUserOperationReceipt({

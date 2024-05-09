@@ -1,9 +1,16 @@
 import {
+    type KernelAccountClient,
+    type KernelSmartAccount,
+    getUserOperationGasPrice,
+    hasPimlicoAsProvider
+} from "@zerodev/sdk"
+import {
     AccountOrClientNotFoundError,
     type UserOperation,
     estimateUserOperationGas,
     parseAccount
 } from "permissionless"
+import type { SmartAccount } from "permissionless/accounts"
 import type {
     PrepareUserOperationRequestParameters,
     PrepareUserOperationRequestReturnType,
@@ -15,59 +22,11 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import type {
-    Abi,
-    Address,
-    Chain,
-    Client,
-    Hex,
-    LocalAccount,
-    Transport
-} from "viem"
+import type { Chain, Transport } from "viem"
 import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
-import { type EncodeDeployDataParameters, getAction } from "viem/utils"
-import type { KernelSmartAccount } from "../../accounts"
-import { getMultiUserOpDummySignature } from "../../accounts/kernel/utils/plugins/multi-chain/getMultiUserOpDummySignature.js"
-
-export type SmartAccount<
-    entryPoint extends EntryPoint,
-    TSource extends string = string,
-    transport extends Transport = Transport,
-    chain extends Chain | undefined = Chain | undefined,
-    TAbi extends Abi | readonly unknown[] = Abi
-> = LocalAccount<TSource> & {
-    client: Client<transport, chain>
-    entryPoint: entryPoint
-    getNonce: () => Promise<bigint>
-    getInitCode: () => Promise<Hex>
-    getFactory: () => Promise<Address | undefined>
-    getFactoryData: () => Promise<Hex | undefined>
-    encodeCallData: (
-        args:
-            | {
-                  to: Address
-                  value: bigint
-                  data: Hex
-              }
-            | {
-                  to: Address
-                  value: bigint
-                  data: Hex
-              }[]
-    ) => Promise<Hex>
-    getDummySignature(
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-    ): Promise<Hex>
-    encodeDeployCallData: ({
-        abi,
-        args,
-        bytecode
-    }: EncodeDeployDataParameters<TAbi>) => Promise<Hex>
-    signUserOperation: (
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-    ) => Promise<Hex>
-}
+import { getAction } from "viem/utils"
+import { getMultiUserOpDummySignature } from "./getMultiUserOpDummySignature.js"
 
 export async function prepareMultiUserOpRequest<
     entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE,
@@ -76,14 +35,19 @@ export async function prepareMultiUserOpRequest<
     TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
         | KernelSmartAccount<entryPoint>
         | undefined
->(
-    client: Client<TTransport, TChain, TSmartAccount>,
+>({
+    client,
+    args,
+    numOfUserOps,
+    stateOverrides
+}: {
+    client: KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount>
     args: Prettify<
         PrepareUserOperationRequestParameters<entryPoint, TSmartAccount>
-    >,
-    numOfUserOps: number,
+    >
+    numOfUserOps: number
     stateOverrides?: StateOverrides
-): Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>> {
+}): Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>> {
     const {
         account: account_ = client.account,
         userOperation: partialUserOperation,
@@ -95,6 +59,17 @@ export async function prepareMultiUserOpRequest<
     const account = parseAccount(
         account_
     ) as SmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+
+    if (client.transport?.url && hasPimlicoAsProvider(client.transport.url)) {
+        if (
+            middleware &&
+            typeof middleware !== "function" &&
+            !middleware.gasPrice
+        ) {
+            const gasPrice = () => getUserOperationGasPrice(client)
+            middleware.gasPrice = gasPrice
+        }
+    }
 
     const [sender, nonce, factory, factoryData, callData, gasEstimation] =
         await Promise.all([

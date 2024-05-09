@@ -51,4 +51,6 @@ export {
     getCustomNonceKeyFromString
 } from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"
-export { getEncodedPluginsDataWithoutValidator } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsDataWithoutValidator.js"
+export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
+export { hasPimlicoAsProvider } from "./clients/utils.js"
+export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"

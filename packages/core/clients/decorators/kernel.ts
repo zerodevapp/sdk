@@ -1,21 +1,12 @@
-import {
-    type SmartAccountActions,
-    type sendUserOperation,
-    smartAccountActions
-} from "permissionless"
-import type {
-    Middleware,
-    PrepareUserOperationRequestReturnType
-} from "permissionless/actions/smartAccount"
+import { type SmartAccountActions, smartAccountActions } from "permissionless"
+import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
-import type { Chain, Client, Hash, Transport } from "viem"
+import type { Chain, Client, Transport } from "viem"
 import type { KernelSmartAccount } from "../../accounts/index.js"
 import {
     type GetUserOperationGasPriceReturnType,
     getUserOperationGasPrice
 } from "../../actions/account-client/getUserOperationGasPrice.js"
-import { prepareMultiUserOpRequest } from "../../actions/account-client/prepareMultiUserOpRequest.js"
-import { sendSignedUserOperation } from "../../actions/account-client/sendSignedUserOperation.js"
 import type {
     SignUserOperationParameters,
     SignUserOperationReturnType
@@ -96,35 +87,6 @@ export type KernelAccountClientActions<
     getUserOperationGasPrice: () => Promise<
         Prettify<GetUserOperationGasPriceReturnType>
     >
-    /**
-     *
-     * @returns
-     */
-    prepareMultiUserOpRequest: (
-        args: Prettify<
-            Parameters<
-                typeof prepareMultiUserOpRequest<
-                    entryPoint,
-                    Transport,
-                    TChain,
-                    TSmartAccount
-                >
-            >[1]
-        >,
-        numOfUserOps: number
-    ) => Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>>
-    sendSignedUserOperation: <TTransport extends Transport>(
-        args: Prettify<
-            Parameters<
-                typeof sendUserOperation<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >
-            >[1]
-        >
-    ) => Promise<Hash>
 }
 
 export function kernelAccountClientActions<entryPoint extends EntryPoint>({
@@ -148,14 +110,6 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                     middleware
                 } as SignUserOperationParameters<entryPoint, TSmartAccount>
             ),
-        getUserOperationGasPrice: async () => getUserOperationGasPrice(client),
-        prepareMultiUserOpRequest: async (args, numOfUserOps) =>
-            prepareMultiUserOpRequest(
-                client,
-                { ...args, middleware },
-                numOfUserOps
-            ),
-        sendSignedUserOperation: async (args) =>
-            sendSignedUserOperation(client, args)
+        getUserOperationGasPrice: async () => getUserOperationGasPrice(client)
     })
 }

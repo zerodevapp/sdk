@@ -9,7 +9,13 @@
     "type": "module",
     "sideEffects": false,
     "description": "A utility library for working with ERC-4337",
-    "keywords": ["ethereum", "erc-4337", "eip-4337", "paymaster", "bundler"],
+    "keywords": [
+        "ethereum",
+        "erc-4337",
+        "eip-4337",
+        "paymaster",
+        "bundler"
+    ],
     "license": "MIT",
     "files": [
         "_esm",
@@ -85,14 +91,30 @@
     },
     "typesVersions": {
         "*": {
-            "accounts": ["./_types/accounts/index.d.ts"],
-            "plugins": ["./_types/plugins/index.d.ts"],
-            "actions": ["./_types/actions/index.d.ts"],
-            "types": ["./_types/types/index.d.ts"],
-            "actions/kernel": ["./_types/actions/kernel/index.d.ts"],
-            "clients": ["./_types/clients/index.d.ts"],
-            "clients/kernel": ["./_types/clients/kernel/index.d.ts"],
-            "providers": ["./_types/providers/index.d.ts"]
+            "accounts": [
+                "./_types/accounts/index.d.ts"
+            ],
+            "plugins": [
+                "./_types/plugins/index.d.ts"
+            ],
+            "actions": [
+                "./_types/actions/index.d.ts"
+            ],
+            "types": [
+                "./_types/types/index.d.ts"
+            ],
+            "actions/kernel": [
+                "./_types/actions/kernel/index.d.ts"
+            ],
+            "clients": [
+                "./_types/clients/index.d.ts"
+            ],
+            "clients/kernel": [
+                "./_types/clients/kernel/index.d.ts"
+            ],
+            "providers": [
+                "./_types/providers/index.d.ts"
+            ]
         }
     },
     "peerDependencies": {
@@ -100,7 +122,6 @@
         "permissionless": "^0.1.18"
     },
     "dependencies": {
-        "semver": "^7.6.0",
-        "merkletreejs": "^0.3.11"
+        "semver": "^7.6.0"
     }
 }
