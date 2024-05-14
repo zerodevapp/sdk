@@ -90,7 +90,11 @@ export const createKernelAccountClient = <
                 ...opts,
                 retryCount: 0
             })
-            if (!shouldIncludePimlicoProvider  || isProviderSet(_bundlerTransport.value?.url, "ALCHEMY")) return _bundlerTransport
+            if (
+                !shouldIncludePimlicoProvider ||
+                isProviderSet(_bundlerTransport.value?.url, "ALCHEMY")
+            )
+                return _bundlerTransport
             _bundlerTransport = http(
                 setPimlicoAsProvider(_bundlerTransport.value?.url)
             )({ ...opts, retryCount: 0 })
