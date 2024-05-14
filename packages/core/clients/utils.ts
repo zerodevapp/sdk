@@ -16,13 +16,13 @@ export const setPimlicoAsProvider = (urlString: string): string => {
     return url.toString()
 }
 
-export const hasPimlicoAsProvider = (urlString: string): boolean => {
+export const isProviderSet = (urlString: string, provider: string): boolean => {
     const url = new URL(urlString)
     const params = url.searchParams
-    const provider =
+    const _provider =
         params.get("provider") ??
         params.get("bundlerProvider") ??
         params.get("paymasterProvider")
-    if (provider === "PIMLICO") return true
+    if (_provider === provider) return true
     return false
 }

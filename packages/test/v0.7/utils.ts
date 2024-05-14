@@ -61,7 +61,7 @@ import type { AddressInfo } from "net"
 
 // export const index = 43244782332432423423n
 export const index = 4323343754343332434365532464445487823332432423423n
-const DEFAULT_PROVIDER = "PIMLICO"
+const DEFAULT_PROVIDER = "ALCHEMY"
 const projectId = config["v0.7"].sepolia.projectId
 
 export const findUserOperationEvent = (logs: Log[]): boolean => {
@@ -148,7 +148,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         chain: chain,
         transport: http(
             // currently the ERC20 paymaster must be used with StackUp
-            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?paymasterProvider=${DEFAULT_PROVIDER}`
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?provider=${DEFAULT_PROVIDER}`
         ),
         entryPoint: getEntryPoint()
     })
@@ -180,7 +180,7 @@ const getPaymasterRpc = (): string => {
         )
     }
 
-    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}`
+    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
@@ -288,7 +288,7 @@ const getBundlerRpc = (provider?: string): string => {
         )
     }
 
-    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}`
+    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
 export const waitForUserOperationTransaction = async (

@@ -14,7 +14,7 @@ import {
     type ZeroDevPaymasterClientActions,
     zerodevPaymasterActions
 } from "./decorators/kernel.js"
-import { setPimlicoAsProvider } from "./utils.js"
+import { isProviderSet, setPimlicoAsProvider } from "./utils.js"
 
 export type ZeroDevPaymasterClient<entryPoint extends EntryPoint> = Client<
     Transport,
@@ -65,7 +65,7 @@ export const createZeroDevPaymasterClient = <
                 ...opts,
                 retryCount: 0
             })
-            if (!shouldIncludePimlicoProvider) return _transport
+            if (!shouldIncludePimlicoProvider || isProviderSet(_transport.value?.url, "ALCHEMY")) return _transport
             _transport = http(setPimlicoAsProvider(_transport.value?.url))({
                 ...opts,
                 retryCount: 0
