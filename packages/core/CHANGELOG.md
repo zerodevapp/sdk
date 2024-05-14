@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.12
+
+### Patch Changes
+
+- Fixed Alchemy provider support for EntryPoint v0.7
+
 ## 5.2.10
 
 ### Patch Changes
