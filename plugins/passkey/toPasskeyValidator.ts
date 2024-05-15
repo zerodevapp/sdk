@@ -92,7 +92,8 @@ const createDummySignatrue = () => {
 const doSignMessage = async (
     message: SignableMessage,
     passkeyServerUrl: string,
-    chainId: number
+    chainId: number,
+    credentials: RequestCredentials = "include"
 ) => {
     // convert SignMessage to string
     let messageContent: string
@@ -126,7 +127,7 @@ const doSignMessage = async (
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: formattedMessage, userId }),
-            credentials: "include"
+            credentials
         }
     )
     const signInitiateResult = await signInitiateResponse.json()
@@ -147,7 +148,7 @@ const doSignMessage = async (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cred, userId }),
-        credentials: "include"
+        credentials
     })
 
     const verifyResult = await verifyResponse.json()
@@ -208,7 +209,8 @@ export async function createPasskeyValidator<
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
-    }
+    },
+    credentials: RequestCredentials = "include"
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
@@ -226,7 +228,7 @@ export async function createPasskeyValidator<
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ username: passkeyName }),
-            credentials: "include"
+            credentials
         }
     )
     const registerOptionsResult = await registerOptionsResponse.json()
@@ -259,7 +261,7 @@ export async function createPasskeyValidator<
                 username: passkeyName,
                 cred: registerCred
             }),
-            credentials: "include"
+            credentials
         }
     )
 
@@ -405,7 +407,8 @@ export async function getPasskeyValidator<
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
-    }
+    },
+    credentials: RequestCredentials = "include"
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
@@ -419,7 +422,7 @@ export async function getPasskeyValidator<
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include"
+            credentials
         }
     )
     const loginOptions = await loginOptionsResponse.json()
@@ -440,7 +443,7 @@ export async function getPasskeyValidator<
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ cred: loginCred }),
-            credentials: "include"
+            credentials
         }
     )
 
