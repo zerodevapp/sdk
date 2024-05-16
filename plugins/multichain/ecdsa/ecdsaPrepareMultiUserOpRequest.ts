@@ -26,9 +26,9 @@ import type { Chain, Transport } from "viem"
 import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
 import { getAction } from "viem/utils"
-import { getMultiUserOpDummySignature } from "./getMultiUserOpDummySignature.js"
+import { ecdsaGetMultiUserOpDummySignature } from "./ecdsaGetMultiUserOpDummySignature.js"
 
-export async function prepareMultiUserOpRequest<
+export async function ecdsaPrepareMultiUserOpRequest<
     entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
@@ -134,7 +134,7 @@ export async function prepareMultiUserOpRequest<
     const chainId = await getChainId(client)
 
     if (userOperation.signature === "0x") {
-        userOperation.signature = await getMultiUserOpDummySignature(
+        userOperation.signature = await ecdsaGetMultiUserOpDummySignature(
             userOperation,
             numOfUserOps,
             account.entryPoint,

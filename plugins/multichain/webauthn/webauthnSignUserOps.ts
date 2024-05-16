@@ -1,18 +1,24 @@
 import type { KernelSmartAccount } from "@zerodev/sdk"
-import MerkleTree from "merkletreejs"
+import { MerkleTree } from "merkletreejs"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import { type Hex, concatHex, encodeAbiParameters, keccak256 } from "viem"
+import {
+    type Hex,
+    concatHex,
+    encodeAbiParameters,
+    keccak256,
+    hashMessage
+} from "viem"
 
-export type MultiChainUserOperation<entryPoint extends EntryPoint> = {
+type MultiChainUserOperation<entryPoint extends EntryPoint> = {
     userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
     chainId: number
 }
 
-export async function signUserOps<entryPoint extends EntryPoint>({
+export async function webauthnSignUserOps<entryPoint extends EntryPoint>({
     account,
     multiUserOps,
     entryPoint: entryPointAddress
@@ -38,9 +44,11 @@ export async function signUserOps<entryPoint extends EntryPoint>({
 
     const merkleRoot = merkleTree.getHexRoot() as Hex
 
-    const ecdsaSig = await account.kernelPluginManager.signMessage({
+    const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
+
+    const passkeySig = await account.kernelPluginManager.signMessage({
         message: {
-            raw: merkleRoot
+            raw: toEthSignedMessageHash
         }
     })
 
@@ -51,10 +59,24 @@ export async function signUserOps<entryPoint extends EntryPoint>({
     const multiChainSigs = multiUserOps.map((_, index) => {
         const merkleProof = merkleProofs[index]
         const encodedMerkleProof = encodeAbiParameters(
-            [{ name: "proof", type: "bytes32[]" }],
+            [{ name: "merkleData", type: "bytes32[]" }],
             [merkleProof]
         )
-        return concatHex([ecdsaSig, merkleRoot, encodedMerkleProof])
+
+        const merkleData = concatHex([merkleRoot, encodedMerkleProof])
+        return encodeAbiParameters(
+            [
+                {
+                    name: "merkleData",
+                    type: "bytes"
+                },
+                {
+                    name: "signature",
+                    type: "bytes"
+                }
+            ],
+            [merkleData, passkeySig]
+        )
     })
 
     const signedMultiUserOps = multiUserOps.map((multiUserOp, index) => {

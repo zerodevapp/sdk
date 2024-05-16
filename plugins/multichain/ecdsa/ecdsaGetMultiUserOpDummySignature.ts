@@ -1,4 +1,4 @@
-import MerkleTree from "merkletreejs"
+import { MerkleTree } from "merkletreejs"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import type {
     EntryPoint,
@@ -6,7 +6,9 @@ import type {
 } from "permissionless/types/entrypoint"
 import { type Hex, concatHex, encodeAbiParameters, keccak256 } from "viem"
 
-export const getMultiUserOpDummySignature = <entryPoint extends EntryPoint>(
+export const ecdsaGetMultiUserOpDummySignature = <
+    entryPoint extends EntryPoint
+>(
     userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
     numOfUserOps: number,
     entryPoint: entryPoint,

@@ -21,9 +21,9 @@ import type {
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { MULTI_CHAIN_VALIDATOR_ADDRESS } from "./constants.js"
+import { MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS } from "../constants.js"
 
-export async function toMultiChainValidator<
+export async function toMultiChainECDSAValidator<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
@@ -40,8 +40,8 @@ export async function toMultiChainValidator<
         entryPoint: entryPoint
         validatorAddress?: Address
     }
-): Promise<KernelValidator<entryPoint, "MultiChainValidator">> {
-    validatorAddress = validatorAddress ?? MULTI_CHAIN_VALIDATOR_ADDRESS
+): Promise<KernelValidator<entryPoint, "MultiChainECDSAValidator">> {
+    validatorAddress = validatorAddress ?? MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -82,9 +82,9 @@ export async function toMultiChainValidator<
         ...account,
         validatorType: "SECONDARY",
         address: validatorAddress,
-        source: "MultiChainValidator",
+        source: "MultiChainECDSAValidator",
         getIdentifier() {
-            return validatorAddress ?? MULTI_CHAIN_VALIDATOR_ADDRESS
+            return validatorAddress ?? MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS
         },
         async getEnableData() {
             return viemSigner.address

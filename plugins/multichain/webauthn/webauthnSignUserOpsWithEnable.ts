@@ -4,7 +4,7 @@ import {
     KernelV3AccountAbi,
     getEncodedPluginsData
 } from "@zerodev/sdk"
-import MerkleTree from "merkletreejs"
+import { MerkleTree } from "merkletreejs"
 import type { UserOperation } from "permissionless"
 import type {
     EntryPoint,
@@ -18,10 +18,11 @@ import {
     hashTypedData,
     keccak256,
     toFunctionSelector,
-    zeroAddress
+    zeroAddress,
+    hashMessage
 } from "viem"
 
-export type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
+type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
     account: KernelSmartAccount<EntryPoint>
     userOp: UserOperation<GetEntryPointVersion<entryPoint>>
 }
@@ -31,7 +32,7 @@ export type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
  * @dev Sign user operations with enable signatures for multi-chain validator
  * @returns Signed user operations
  */
-export const signUserOpsWithEnable = async ({
+export const webauthnSignUserOpsWithEnable = async ({
     multiChainUserOpConfigsForEnable
 }: {
     multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<EntryPoint>[]
@@ -54,18 +55,20 @@ export const signUserOpsWithEnable = async ({
 
     const merkleRoot = merkleTree.getHexRoot() as Hex
 
-    const ecdsaSig =
+    const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
+
+    const passkeySig =
         await multiChainUserOpConfigsForEnable[0].account.kernelPluginManager.sudoValidator?.signMessage(
             {
                 message: {
-                    raw: merkleRoot
+                    raw: toEthSignedMessageHash
                 }
             }
         )
 
-    if (!ecdsaSig) {
+    if (!passkeySig) {
         throw new Error(
-            "No ecdsaSig, check if the sudo validator is multi-chain validator"
+            "No passkeySig, check if the sudo validator is multi-chain validator"
         )
     }
 
@@ -75,7 +78,21 @@ export const signUserOpsWithEnable = async ({
             [{ name: "proof", type: "bytes32[]" }],
             [merkleProof]
         )
-        return concatHex([ecdsaSig, merkleRoot, encodedMerkleProof])
+        const merkleData = concatHex([merkleRoot, encodedMerkleProof])
+
+        return encodeAbiParameters(
+            [
+                {
+                    name: "merkleData",
+                    type: "bytes"
+                },
+                {
+                    name: "signature",
+                    type: "bytes"
+                }
+            ],
+            [merkleData, passkeySig]
+        )
     })
 
     const userOpSignatures = await Promise.all(
