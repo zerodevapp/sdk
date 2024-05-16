@@ -15,11 +15,11 @@ import {
     concatHex,
     encodeAbiParameters,
     getAbiItem,
+    hashMessage,
     hashTypedData,
     keccak256,
     toFunctionSelector,
-    zeroAddress,
-    hashMessage
+    zeroAddress
 } from "viem"
 
 type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {

@@ -9,8 +9,8 @@ import {
     type Hex,
     concatHex,
     encodeAbiParameters,
-    keccak256,
-    hashMessage
+    hashMessage,
+    keccak256
 } from "viem"
 
 type MultiChainUserOperation<entryPoint extends EntryPoint> = {

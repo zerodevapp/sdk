@@ -1,4 +1,4 @@
-import { type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
@@ -8,21 +8,21 @@ import type {
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
 import {
-    encodeAbiParameters,
     type Address,
     type Chain,
     type Client,
     type Hex,
+    type SignTypedDataParameters,
+    type SignableMessage,
     type Transport,
     type TypedDataDefinition,
-    hashTypedData,
-    validateTypedData,
-    type SignTypedDataParameters,
+    encodeAbiParameters,
     getTypesForEIP712Domain,
-    type SignableMessage
+    hashTypedData,
+    validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { signMessage, getChainId } from "viem/actions"
+import { getChainId, signMessage } from "viem/actions"
 import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "../constants.js"
 import type { WebAuthnKey } from "./toWebAuthnAccount.js"
 import {
