@@ -66,6 +66,34 @@ export const serializeMultiChainPermissionAccounts = async <
 
     const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
 
+    let signature: Hex = "0x"
+    if (
+        params[0].account.kernelPluginManager.sudoValidator?.source ===
+        "MultiChainECDSAValidator"
+    ) {
+        signature =
+            await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
+                {
+                    message: {
+                        raw: merkleRoot
+                    }
+                }
+            )
+    }
+    if (
+        params[0].account.kernelPluginManager.sudoValidator?.source ===
+        "MultiChainWebAuthnValidator"
+    ) {
+        signature =
+            await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
+                {
+                    message: {
+                        raw: toEthSignedMessageHash
+                    }
+                }
+            )
+    }
+
     // get enable signatures for multi-chain validator
     const enableSignatures = await Promise.all(
         params.map(async (param, index) => {
@@ -83,41 +111,12 @@ export const serializeMultiChainPermissionAccounts = async <
                 param.account.kernelPluginManager.sudoValidator.source ===
                 "MultiChainECDSAValidator"
             ) {
-                const ecdsaSig =
-                    await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
-                        {
-                            message: {
-                                raw: merkleRoot
-                            }
-                        }
-                    )
-
-                if (!ecdsaSig) {
-                    throw new Error(
-                        "No enable signature, check if the sudo validator is MultiChainECDSAValidator"
-                    )
-                }
-
-                return concatHex([ecdsaSig, merkleRoot, encodedMerkleProof])
+                return concatHex([signature, merkleRoot, encodedMerkleProof])
             }
             if (
                 param.account.kernelPluginManager.sudoValidator.source ===
                 "MultiChainWebAuthnValidator"
             ) {
-                const webauthnSig =
-                    await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
-                        {
-                            message: {
-                                raw: toEthSignedMessageHash
-                            }
-                        }
-                    )
-
-                if (!webauthnSig) {
-                    throw new Error(
-                        "No enable signature, check if the sudo validator is MultiChainWebAuthnValidator"
-                    )
-                }
                 const merkleData = concatHex([merkleRoot, encodedMerkleProof])
                 return encodeAbiParameters(
                     [
@@ -130,7 +129,7 @@ export const serializeMultiChainPermissionAccounts = async <
                             type: "bytes"
                         }
                     ],
-                    [merkleData, webauthnSig]
+                    [merkleData, signature]
                 )
             }
             throw new Error("Unknown multi-chain validator")
