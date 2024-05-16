@@ -2,7 +2,7 @@ import {
     type KernelAccountClient,
     type KernelSmartAccount,
     getUserOperationGasPrice,
-    hasPimlicoAsProvider
+    isProviderSet
 } from "@zerodev/sdk"
 import {
     AccountOrClientNotFoundError,
@@ -60,7 +60,10 @@ export async function webauthnPrepareMultiUserOpRequest<
         account_
     ) as SmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
 
-    if (client.transport?.url && hasPimlicoAsProvider(client.transport.url)) {
+    if (
+        client.transport?.url &&
+        isProviderSet(client.transport.url, "PIMLICO")
+    ) {
         if (
             middleware &&
             typeof middleware !== "function" &&

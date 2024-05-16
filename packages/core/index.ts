@@ -52,5 +52,5 @@ export {
 } from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"
 export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
-export { hasPimlicoAsProvider } from "./clients/utils.js"
+export { isProviderSet } from "./clients/utils.js"
 export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"
