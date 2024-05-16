@@ -58,6 +58,7 @@ import {
     getZeroDevPaymasterClient,
     index,
     mintToAccount,
+    validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils.js"
 
@@ -73,17 +74,6 @@ const requiredEnvVars = [
     "ZERODEV_BUNDLER_RPC_HOST",
     "ZERODEV_PAYMASTER_RPC_HOST"
 ]
-
-const validateEnvironmentVariables = (envVars: string[]): void => {
-    const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
-    if (unsetEnvVars.length > 0) {
-        throw new Error(
-            `The following environment variables are not set: ${unsetEnvVars.join(
-                ", "
-            )}`
-        )
-    }
-}
 
 validateEnvironmentVariables(requiredEnvVars)
 

@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/permissions",
-    "version": "5.2.7-alpha-5",
+    "name": "@zerodev/multi-chain-validator",
+    "version": "5.2.0-alpha-16",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -34,30 +34,14 @@
         "lint": "biome check .",
         "lint:fix": "bun run lint --apply"
     },
-    "exports": {
-        ".": {
-            "types": "./_types/index.d.ts",
-            "import": "./_esm/index.js",
-            "default": "./_cjs/index.js"
-        },
-        "./policies": {
-            "types": "./_types/policies/index.d.ts",
-            "import": "./_esm/policies/index.js",
-            "default": "./_cjs/policies/index.js"
-        },
-        "./signers": {
-            "types": "./_types/signers/index.d.ts",
-            "import": "./_esm/signers/index.js",
-            "default": "./_cjs/signers/index.js"
-        }
-    },
-    "dependencies": {
-        "merkletreejs": "^0.3.11",
-        "@simplewebauthn/browser": "^9.0.1"
-    },
     "peerDependencies": {
         "viem": "^2.9.17",
         "@zerodev/sdk": "^5.2.12-alpha-3",
         "permissionless": "^0.1.18"
+    },
+    "dependencies": {
+        "@simplewebauthn/browser": "^9.0.1",
+        "@simplewebauthn/typescript-types": "^8.3.4",
+        "merkletreejs": "^0.3.11"
     }
 }
