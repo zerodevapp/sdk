@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/permissions",
-    "version": "5.2.7-alpha-1",
+    "version": "5.2.7-alpha-5",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -57,7 +57,7 @@
     },
     "peerDependencies": {
         "viem": "^2.9.17",
-        "@zerodev/sdk": "^5.2.1",
+        "@zerodev/sdk": "^5.2.12-alpha-3",
         "permissionless": "^0.1.18"
     }
 }
