@@ -43,27 +43,27 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
-import { prepareMultiUserOpRequest } from "../../../plugins/multichain/index.js"
-import { signUserOps } from "../../../plugins/multichain/signUserOps"
-import { signUserOpsWithEnable } from "../../../plugins/multichain/signUserOpsWithEnable"
-import { toMultiChainValidator } from "../../../plugins/multichain/toMultiChainValidator"
-import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount"
-import { toSudoPolicy } from "../../../plugins/permission/policies"
-import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts"
-import { toECDSASigner } from "../../../plugins/permission/signers"
-import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
+import { ecdsaPrepareMultiUserOpRequest } from "../../../plugins/multichain/ecdsa/ecdsaPrepareMultiUserOpRequest.js"
+import { ecdsaSignUserOps } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOps.js"
+import { ecdsaSignUserOpsWithEnable } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOpsWithEnable.js"
+import { toMultiChainECDSAValidator } from "../../../plugins/multichain/ecdsa/toMultiChainECDSAValidator.js"
+import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
+import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
+import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
+import { toECDSASigner } from "../../../plugins/permission/signers/index.js"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
-import { GreeterAbi, GreeterBytecode } from "../abis/Greeter"
+import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
-import { TOKEN_ACTION_ADDRESS, config } from "../config"
-import { Test_ERC20Address } from "../utils"
+import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
+import { Test_ERC20Address } from "../utils.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
     mintToAccount,
     validateEnvironmentVariables,
     waitForNonceUpdate
-} from "./utils"
+} from "./utils.js"
 
 const requiredEnvVars = [
     "TEST_PRIVATE_KEY",
@@ -100,7 +100,7 @@ const OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL =
 
 const PRIVATE_KEY = process.env.TEST_PRIVATE_KEY
 
-describe("MultiChainValidator", () => {
+describe("MultiChainECDSAValidator", () => {
     let sepoliaPublicClient: PublicClient
     let optimismSepoliaPublicClient: PublicClient
 
@@ -108,8 +108,11 @@ describe("MultiChainValidator", () => {
     let opSepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<EntryPoint>
 
     let signer: PrivateKeyAccount
-    let sepoliaMultiChainValidatorPlugin: KernelValidator<EntryPoint, string>
-    let optimismSepoliaMultiChainValidatorPlugin: KernelValidator<
+    let sepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
+        EntryPoint,
+        string
+    >
+    let optimismsepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
         EntryPoint,
         string
     >
@@ -151,25 +154,21 @@ describe("MultiChainValidator", () => {
 
         signer = privateKeyToAccount(PRIVATE_KEY as Hex)
 
-        sepoliaMultiChainValidatorPlugin = await toMultiChainValidator(
-            sepoliaPublicClient,
-            {
+        sepoliaMultiChainECDSAValidatorPlugin =
+            await toMultiChainECDSAValidator(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
                 signer
-            }
-        )
-        optimismSepoliaMultiChainValidatorPlugin = await toMultiChainValidator(
-            optimismSepoliaPublicClient,
-            {
+            })
+        optimismsepoliaMultiChainECDSAValidatorPlugin =
+            await toMultiChainECDSAValidator(optimismSepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
                 signer
-            }
-        )
+            })
 
         account = await createKernelAccount(sepoliaPublicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                sudo: sepoliaMultiChainValidatorPlugin
+                sudo: sepoliaMultiChainECDSAValidatorPlugin
             }
         })
 
@@ -218,15 +217,15 @@ describe("MultiChainValidator", () => {
     test(
         "Should validate message signatures for undeployed accounts (6492)",
         async () => {
-            const multiChainValidatorPluginWithRandomSigner =
-                await toMultiChainValidator(sepoliaPublicClient, {
+            const multiChainECDSAValidatorPluginWithRandomSigner =
+                await toMultiChainECDSAValidator(sepoliaPublicClient, {
                     entryPoint: getEntryPoint(),
                     signer: privateKeyToAccount(generatePrivateKey())
                 })
             const account = await createKernelAccount(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
                 plugins: {
-                    sudo: multiChainValidatorPluginWithRandomSigner
+                    sudo: multiChainECDSAValidatorPluginWithRandomSigner
                 }
             })
             const message = "hello world"
@@ -288,7 +287,7 @@ describe("MultiChainValidator", () => {
             })
 
             const multiChainValidatorPluginWithRandomSigner =
-                await toMultiChainValidator(sepoliaPublicClient, {
+                await toMultiChainECDSAValidator(sepoliaPublicClient, {
                     entryPoint: getEntryPoint(),
                     signer: privateKeyToAccount(generatePrivateKey())
                 })
@@ -783,7 +782,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: sepoliaMultiChainValidatorPlugin
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin
                     }
                 }
             )
@@ -793,7 +792,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: optimismSepoliaMultiChainValidatorPlugin
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin
                     }
                 }
             )
@@ -842,7 +841,7 @@ describe("MultiChainValidator", () => {
                     entryPoint: getEntryPoint()
                 })
 
-            const sepoliaUserOp = await prepareMultiUserOpRequest({
+            const sepoliaUserOp = await ecdsaPrepareMultiUserOpRequest({
                 client: sepoliaZerodevKernelClient,
                 args: {
                     userOperation: {
@@ -866,7 +865,7 @@ describe("MultiChainValidator", () => {
                 numOfUserOps: 2
             })
 
-            const optimismSepoliaUserOp = await prepareMultiUserOpRequest({
+            const optimismSepoliaUserOp = await ecdsaPrepareMultiUserOpRequest({
                 client: optimismSepoliaZerodevKernelClient,
                 args: {
                     userOperation: {
@@ -891,7 +890,7 @@ describe("MultiChainValidator", () => {
                 numOfUserOps: 2
             })
 
-            const signedUserOps = await signUserOps({
+            const signedUserOps = await ecdsaSignUserOps({
                 account: sepoliaKernelAccount,
                 multiUserOps: [
                     { userOperation: sepoliaUserOp, chainId: sepolia.id },
@@ -978,7 +977,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: sepoliaMultiChainValidatorPlugin,
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin,
                         regular: sepoliaPermissionPlugin
                     }
                 }
@@ -989,7 +988,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: optimismSepoliaMultiChainValidatorPlugin,
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
                         regular: optimismSepoliaPermissionPlugin
                     }
                 }
@@ -1066,7 +1065,7 @@ describe("MultiChainValidator", () => {
                     }
                 )
 
-            const signedEnableUserOps = await signUserOpsWithEnable({
+            const signedEnableUserOps = await ecdsaSignUserOpsWithEnable({
                 multiChainUserOpConfigsForEnable: [
                     {
                         account: sepoliaKernelAccount,
@@ -1189,7 +1188,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: sepoliaMultiChainValidatorPlugin,
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin,
                         regular: sepoliaPermissionPlugin
                     }
                 }
@@ -1200,7 +1199,7 @@ describe("MultiChainValidator", () => {
                 {
                     entryPoint: getEntryPoint(),
                     plugins: {
-                        sudo: optimismSepoliaMultiChainValidatorPlugin,
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
                         regular: optimismSepoliaPermissionPlugin
                     }
                 }
