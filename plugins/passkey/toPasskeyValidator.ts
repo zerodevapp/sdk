@@ -305,7 +305,12 @@ export async function createPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId, credentials)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -494,7 +499,12 @@ export async function getPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId, credentials)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -615,7 +625,12 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId, credentials as RequestCredentials)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials as RequestCredentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
