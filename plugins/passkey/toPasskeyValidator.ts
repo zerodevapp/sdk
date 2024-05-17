@@ -305,7 +305,7 @@ export async function createPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(message, passkeyServerUrl, chainId, credentials)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -383,6 +383,7 @@ export async function createPasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress:
                     validatorAddress ?? getValidatorAddress(entryPointAddress),
@@ -493,7 +494,7 @@ export async function getPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(message, passkeyServerUrl, chainId, credentials)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -566,6 +567,7 @@ export async function getPasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress:
                     validatorAddress ?? getValidatorAddress(entryPointAddress),
@@ -597,6 +599,7 @@ export async function deserializePasskeyValidator<
 > {
     const {
         passkeyServerUrl,
+        credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
@@ -612,7 +615,7 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(message, passkeyServerUrl, chainId, credentials as RequestCredentials)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -685,6 +688,7 @@ export async function deserializePasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,
