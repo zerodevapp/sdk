@@ -203,14 +203,15 @@ export async function createPasskeyValidator<
         passkeyName,
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress
+        validatorAddress,
+        credentials = "include"
     }: {
         passkeyName: string
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
-    },
-    credentials: RequestCredentials = "include"
+        credentials?: RequestCredentials
+    }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
@@ -402,13 +403,14 @@ export async function getPasskeyValidator<
     {
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress
+        validatorAddress,
+        credentials = "include"
     }: {
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
-    },
-    credentials: RequestCredentials = "include"
+        credentials?: RequestCredentials
+    }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
         getSerializedData: () => string
