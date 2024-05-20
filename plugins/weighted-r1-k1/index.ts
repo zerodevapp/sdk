@@ -1,24 +1,38 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import {
-    createWeightedValidator
-    // getCurrentSigners,
-    // getUpdateConfigCall
-} from "./toWeightedECDSAValidatorPlugin.js"
+    type ApproveUserOperationParameters,
+    approveUserOperation
+} from "./actions/approveUserOperation.js"
 import {
-    toECDSASigner,
-    type ECDSASignerParams
+    type WeightedKernelAccountClientActions,
+    weightedKernelAccountClientActions
+} from "./clients/decorators/weightedKernelAccountClient.js"
+import {
+    type WeightedKernelAccountClient,
+    createWeightedKernelAccountClient
+} from "./clients/weightedKernelAccountClient.js"
+import {
+    type ECDSASignerParams,
+    toECDSASigner
 } from "./signers/toECDSASigner.js"
-import { toWebAuthnPubKey, WebAuthnMode } from "./signers/toWebAuthnPubKey.js"
+import { WebAuthnMode, toWebAuthnPubKey } from "./signers/toWebAuthnPubKey.js"
 import {
-    toWebAuthnSigner,
     type WebAuthnKey,
-    type WebAuthnModularSignerParams
+    type WebAuthnModularSignerParams,
+    toWebAuthnSigner
 } from "./signers/toWebAuthnSigner.js"
+import {
+    type WeightedSigner,
+    type WeightedValidatorConfig,
+    createWeightedValidator,
+    getValidatorAddress
+} from "./toWeightedECDSAValidatorPlugin.js"
 
 export {
     createWeightedValidator,
-    // getUpdateConfigCall,
-    // getCurrentSigners,
+    type WeightedValidatorConfig,
+    type WeightedSigner,
+    getValidatorAddress,
     type KernelValidator,
     toECDSASigner,
     type ECDSASignerParams,
@@ -26,6 +40,13 @@ export {
     type WebAuthnKey,
     WebAuthnMode,
     type WebAuthnModularSignerParams,
-    toWebAuthnSigner
+    toWebAuthnSigner,
+    type ApproveUserOperationParameters,
+    approveUserOperation,
+    type WeightedKernelAccountClient,
+    createWeightedKernelAccountClient,
+    type WeightedKernelAccountClientActions,
+    weightedKernelAccountClientActions
 }
 export * from "./constants.js"
+export * from "./utils.js"

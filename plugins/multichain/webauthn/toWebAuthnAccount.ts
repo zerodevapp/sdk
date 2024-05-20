@@ -1,5 +1,5 @@
 import { type Hex, keccak256 } from "viem"
-import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils"
+import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
 
 export enum WebAuthnMode {
     Register = "register",

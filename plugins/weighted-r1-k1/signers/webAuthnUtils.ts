@@ -2,10 +2,10 @@ import { p256 } from "@noble/curves/p256"
 import {
     type Hex,
     bytesToBigInt,
-    hexToBytes,
     concatHex,
-    toHex,
-    pad
+    hexToBytes,
+    pad,
+    toHex
 } from "viem"
 import type { WebAuthnKey } from "./toWebAuthnSigner.js"
 

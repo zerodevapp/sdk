@@ -1,4 +1,4 @@
-import { KernelAccountAbi } from "@zerodev/sdk"
+import { constants, KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
@@ -16,18 +16,21 @@ import {
     type Chain,
     type Client,
     type Hex,
+    type LocalAccount,
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
-    keccak256,
-    parseAbiParameters,
-    type LocalAccount,
     zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
-import { concatHex, getAction, toHex } from "viem/utils"
-import { type SIGNER_TYPE, WEIGHTED_VALIDATOR_ADDRESS_V07 } from "./index.js"
+import { concatHex, decodeAbiParameters, getAction, toHex } from "viem/utils"
+import {
+    DUMMY_WEBAUTHN_SIG,
+    SIGNER_TYPE,
+    WEIGHTED_VALIDATOR_ADDRESS_V07,
+    encodeSignatures
+} from "./index.js"
 import type { WebAuthnKey } from "./signers/toWebAuthnSigner.js"
 import { encodeWebAuthnPubKey } from "./signers/webAuthnUtils.js"
 
@@ -38,10 +41,9 @@ export type WeightedSigner = {
     type: SIGNER_TYPE
 }
 
-export interface WeightedECDSAValidatorConfig {
+export interface WeightedValidatorConfig {
     threshold: number
     signers: Array<{
-        type: SIGNER_TYPE
         publicKey: WebAuthnKey | Address
         weight: number
     }>
@@ -78,11 +80,11 @@ export async function createWeightedValidator<
     {
         config,
         entryPoint: entryPointAddress,
-        signers: _signers,
+        signer,
         validatorAddress
     }: {
-        config?: WeightedECDSAValidatorConfig
-        signers: WeightedSigner[]
+        config?: WeightedValidatorConfig
+        signer: WeightedSigner
         entryPoint: entryPoint
         validatorAddress?: Address
     }
@@ -121,29 +123,28 @@ export async function createWeightedValidator<
               .sort(sortByPublicKey)
         : []
 
-    // sort signers by address in descending order
-    const signers = _signers.sort(sortByPublicKey)
-
     // Fetch chain id
     const chainId = await getChainId(client)
+
+    const getIndexOfSigner = () => {
+        return configSigners.findIndex(
+            (_signer) =>
+                _signer.publicKey.toLowerCase() ===
+                signer.getPublicKey().toLowerCase()
+        )
+    }
 
     const account = toAccount({
         address: zeroAddress, // note that this address is not used
         async signMessage({ message }) {
-            // Sign the hash with all signers and pack the signatures
-            let signatures = ""
+            const signature = await signer.account.signMessage({
+                message
+            })
 
-            for (const signer of signers) {
-                const signature = await signer.account.signMessage({
-                    message
-                })
-                // Remove the '0x' prefix
-                signatures += signature.startsWith("0x")
-                    ? signature.substring(2)
-                    : signature
-            }
-
-            return `0x${signatures}`
+            return concatHex([
+                toHex(getIndexOfSigner(), { size: 1 }),
+                signature
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -154,17 +155,12 @@ export async function createWeightedValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            let signatures = ""
-            for (const signer of signers) {
-                const signature = await signer.account.signTypedData(typedData)
-                // Remove the '0x' prefix from subsequent signatures
-                signatures += signature.startsWith("0x")
-                    ? signature.substring(2)
-                    : signature
-            }
+            const signature = await signer.account.signTypedData(typedData)
 
-            // Prepend '0x' to the packed signatures
-            return `0x${signatures}`
+            return concatHex([
+                toHex(getIndexOfSigner(), { size: 1 }),
+                signature
+            ])
         }
     })
 
@@ -175,18 +171,8 @@ export async function createWeightedValidator<
         source: "WeightedValidator",
         getIdentifier: () =>
             validatorAddress ?? getValidatorAddress(entryPointAddress),
-
         async getEnableData() {
             if (!config) return "0x"
-            console.log(
-                configSigners.map((cfg) =>
-                    concatHex([
-                        cfg.type,
-                        toHex(cfg.weight, { size: 3 }),
-                        cfg.publicKey
-                    ])
-                )
-            )
             return concatHex([
                 toHex(config.threshold, { size: 3 }),
                 toHex(config.delay || 0, { size: 6 }),
@@ -195,7 +181,9 @@ export async function createWeightedValidator<
                     [
                         configSigners.map((cfg) =>
                             concatHex([
-                                cfg.type,
+                                cfg.publicKey.length === 42
+                                    ? SIGNER_TYPE.ECDSA
+                                    : SIGNER_TYPE.PASSKEY,
                                 toHex(cfg.weight, { size: 3 }),
                                 cfg.publicKey
                             ])
@@ -214,42 +202,13 @@ export async function createWeightedValidator<
         async signUserOperation(
             userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
         ) {
-            const callDataAndNonceHash = keccak256(
-                encodeAbiParameters(
-                    parseAbiParameters("address, bytes, uint256"),
-                    [
-                        userOperation.sender,
-                        userOperation.callData,
-                        userOperation.nonce
-                    ]
+            let signatures: readonly Hex[] = []
+            if (userOperation.signature !== "0x") {
+                ;[signatures] = decodeAbiParameters(
+                    [{ name: "signatures", type: "bytes[]" }],
+                    userOperation.signature
                 )
-            )
-
-            const signatures: Hex[] = []
-            // n - 1 signers sign for callDataAndNonceHash
-            for (let i = 0; i < signers.length - 1; i++) {
-                const signer = signers[i]
-                const signature = await signer.account.signTypedData({
-                    domain: {
-                        name: "WeightedValidator",
-                        version: "0.0.1",
-                        chainId,
-                        verifyingContract: validatorAddress
-                    },
-                    types: {
-                        Approve: [
-                            { name: "callDataAndNonceHash", type: "bytes32" }
-                        ]
-                    },
-                    primaryType: "Approve",
-                    message: {
-                        callDataAndNonceHash
-                    }
-                })
-                console.log(`Sig[${i}]: `, signature)
-                signatures[i] = signature
             }
-
             // last signer signs for userOpHash
             const userOpHash = getUserOperationHash({
                 userOperation: {
@@ -260,80 +219,35 @@ export async function createWeightedValidator<
                 chainId: chainId
             })
 
-            const lastSignature = await signers[
-                signers.length - 1
-            ].account.signMessage({
+            const lastSignature = await account.signMessage({
                 message: { raw: userOpHash }
             })
-            console.log("LastSig: ", lastSignature)
 
-            signatures.push(lastSignature)
-
-            return encodeAbiParameters(
-                [{ name: "signatures", type: "bytes[]" }],
-                [
-                    signatures.map((sig, idx) =>
-                        concatHex([toHex(idx, { size: 1 }), sig])
-                    )
-                ]
-            )
+            return encodeSignatures([...signatures, lastSignature])
         },
 
-        // Get simple dummy signature
-        // Equivalent to signUserOperation for now
         async getDummySignature(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+            _userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
         ) {
-            const callDataAndNonceHash = keccak256(
-                encodeAbiParameters(
-                    parseAbiParameters("address, bytes, uint256"),
-                    [
-                        userOperation.sender,
-                        userOperation.callData,
-                        userOperation.nonce
-                    ]
-                )
+            const signatures: readonly Hex[] = configSigners.map(
+                (signer, index) =>
+                    signer.publicKey.length === 42
+                        ? concatHex([
+                              toHex(index || 0, { size: 1 }),
+                              constants.DUMMY_ECDSA_SIG
+                          ])
+                        : concatHex([
+                              toHex(index || 0, { size: 1 }),
+                              DUMMY_WEBAUTHN_SIG
+                          ])
             )
 
-            const signatures: Hex[] = []
-            // n - 1 signers sign for callDataAndNonceHash
-            for (let i = 0; i < signers.length - 1; i++) {
-                const signer = signers[i]
-                const signature = await signer.account.signTypedData({
-                    domain: {
-                        name: "WeightedValidator",
-                        version: "0.0.1",
-                        chainId,
-                        verifyingContract: validatorAddress
-                    },
-                    types: {
-                        Approve: [
-                            { name: "callDataAndNonceHash", type: "bytes32" }
-                        ]
-                    },
-                    primaryType: "Approve",
-                    message: {
-                        callDataAndNonceHash
-                    }
-                })
-                console.log(`Sig[${i}]: `, signature)
-                signatures[i] = signature
-            }
+            const lastSignature = concatHex([
+                toHex(getIndexOfSigner(), { size: 1 }),
+                await signer.getDummySignature()
+            ])
 
-            signatures.push(signers[signers.length - 1].getDummySignature())
-            console.log(
-                "LastSig: ",
-                signers[signers.length - 1].getDummySignature()
-            )
-
-            return encodeAbiParameters(
-                [{ name: "signatures", type: "bytes[]" }],
-                [
-                    signatures.map((sig, idx) =>
-                        concatHex([toHex(idx, { size: 1 }), sig])
-                    )
-                ]
-            )
+            return encodeSignatures([...signatures, lastSignature])
         },
 
         async isEnabled(
@@ -365,7 +279,7 @@ export async function createWeightedValidator<
 // [TODO]
 // export function getUpdateConfigCall<entryPoint extends EntryPoint>(
 //     entryPointAddress: entryPoint,
-//     newConfig: WeightedECDSAValidatorConfig
+//     newConfig: WeightedValidatorConfig
 // ): {
 //     to: Address
 //     value: bigint

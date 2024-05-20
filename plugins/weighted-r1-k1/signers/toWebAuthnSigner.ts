@@ -16,6 +16,8 @@ import {
 import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
+import { SIGNER_TYPE } from "../constants.js"
+import type { WeightedSigner } from "../toWeightedECDSAValidatorPlugin.js"
 import { WebAuthnMode, toWebAuthnPubKey } from "./toWebAuthnPubKey.js"
 import {
     b64ToBytes,
@@ -25,8 +27,6 @@ import {
     parseAndNormalizeSig,
     uint8ArrayToHexString
 } from "./webAuthnUtils.js"
-import type { WeightedSigner } from "../toWeightedECDSAValidatorPlugin.js"
-import { SIGNER_TYPE } from "../constants.js"
 
 export type WebAuthnKey = {
     pubX: bigint

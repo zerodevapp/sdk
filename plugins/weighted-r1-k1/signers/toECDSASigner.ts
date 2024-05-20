@@ -6,8 +6,8 @@ import {
 } from "permissionless/accounts"
 import type { Address, LocalAccount, TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
-import type { WeightedSigner } from "../toWeightedECDSAValidatorPlugin.js"
 import { SIGNER_TYPE } from "../constants.js"
+import type { WeightedSigner } from "../toWeightedECDSAValidatorPlugin.js"
 
 export type ECDSASignerParams<
     TSource extends string = "custom",
