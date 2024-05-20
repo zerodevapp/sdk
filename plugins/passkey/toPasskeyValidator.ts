@@ -92,7 +92,8 @@ const createDummySignatrue = () => {
 const doSignMessage = async (
     message: SignableMessage,
     passkeyServerUrl: string,
-    chainId: number
+    chainId: number,
+    credentials: RequestCredentials = "include"
 ) => {
     // convert SignMessage to string
     let messageContent: string
@@ -126,7 +127,7 @@ const doSignMessage = async (
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: formattedMessage, userId }),
-            credentials: "include"
+            credentials
         }
     )
     const signInitiateResult = await signInitiateResponse.json()
@@ -147,7 +148,7 @@ const doSignMessage = async (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cred, userId }),
-        credentials: "include"
+        credentials
     })
 
     const verifyResult = await verifyResponse.json()
@@ -202,12 +203,14 @@ export async function createPasskeyValidator<
         passkeyName,
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress
+        validatorAddress,
+        credentials = "include"
     }: {
         passkeyName: string
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
+        credentials?: RequestCredentials
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -226,7 +229,7 @@ export async function createPasskeyValidator<
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ username: passkeyName }),
-            credentials: "include"
+            credentials
         }
     )
     const registerOptionsResult = await registerOptionsResponse.json()
@@ -259,7 +262,7 @@ export async function createPasskeyValidator<
                 username: passkeyName,
                 cred: registerCred
             }),
-            credentials: "include"
+            credentials
         }
     )
 
@@ -302,7 +305,12 @@ export async function createPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -380,6 +388,7 @@ export async function createPasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress:
                     validatorAddress ?? getValidatorAddress(entryPointAddress),
@@ -400,11 +409,13 @@ export async function getPasskeyValidator<
     {
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress
+        validatorAddress,
+        credentials = "include"
     }: {
         passkeyServerUrl: string
         entryPoint: entryPoint
         validatorAddress?: Address
+        credentials?: RequestCredentials
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -419,7 +430,7 @@ export async function getPasskeyValidator<
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include"
+            credentials
         }
     )
     const loginOptions = await loginOptionsResponse.json()
@@ -440,7 +451,7 @@ export async function getPasskeyValidator<
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ cred: loginCred }),
-            credentials: "include"
+            credentials
         }
     )
 
@@ -488,7 +499,12 @@ export async function getPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -561,6 +577,7 @@ export async function getPasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress:
                     validatorAddress ?? getValidatorAddress(entryPointAddress),
@@ -592,6 +609,7 @@ export async function deserializePasskeyValidator<
 > {
     const {
         passkeyServerUrl,
+        credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
@@ -607,7 +625,12 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(message, passkeyServerUrl, chainId)
+            return doSignMessage(
+                message,
+                passkeyServerUrl,
+                chainId,
+                credentials as RequestCredentials
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -680,6 +703,7 @@ export async function deserializePasskeyValidator<
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
+                credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,

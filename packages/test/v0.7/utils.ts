@@ -64,6 +64,17 @@ export const index = 4323343754343332434365532464445487823332432423423n
 const DEFAULT_PROVIDER = "ALCHEMY"
 const projectId = config["v0.7"].sepolia.projectId
 
+export const validateEnvironmentVariables = (envVars: string[]): void => {
+    const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
+    if (unsetEnvVars.length > 0) {
+        throw new Error(
+            `The following environment variables are not set: ${unsetEnvVars.join(
+                ", "
+            )}`
+        )
+    }
+}
+
 export const findUserOperationEvent = (logs: Log[]): boolean => {
     return logs.some((log) => {
         try {

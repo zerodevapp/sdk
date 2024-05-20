@@ -30,7 +30,8 @@ export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccou
 export {
     type KernelValidator,
     type ZeroDevPaymasterRpcSchema,
-    type KernelPluginManager
+    type KernelPluginManager,
+    type Action
 } from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
 export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"
@@ -50,3 +51,6 @@ export {
     getCustomNonceKeyFromString
 } from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"
+export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
+export { isProviderSet } from "./clients/utils.js"
+export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"
