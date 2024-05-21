@@ -1,4 +1,6 @@
+import { Buffer } from "buffer"
 import { type Hex, keccak256 } from "viem"
+import type { WebAuthnKey } from "./toWebAuthnSigner.js"
 import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
 
 export enum WebAuthnMode {
@@ -6,28 +8,15 @@ export enum WebAuthnMode {
     Login = "login"
 }
 
-export type WebAuthnKey = {
-    pubX: bigint
-    pubY: bigint
-    authenticatorIdHash: Hex
-}
-
-export type WebAuthnAccountParams = {
-    passkeyName: string
-    passkeyServerUrl: string
-    webAuthnKey?: WebAuthnKey
-    mode?: WebAuthnMode
-}
-
-export const toWebAuthnKey = async ({
+export const toWebAuthnPubKey = async ({
     passkeyName,
     passkeyServerUrl,
-    webAuthnKey,
-    mode = WebAuthnMode.Register
-}: WebAuthnAccountParams): Promise<WebAuthnKey> => {
-    if (webAuthnKey) {
-        return webAuthnKey
-    }
+    mode = WebAuthnMode.Login
+}: {
+    passkeyName: string
+    passkeyServerUrl: string
+    mode: WebAuthnMode
+}): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     let authenticatorIdHash: Hex
     if (mode === WebAuthnMode.Login) {
@@ -75,6 +64,9 @@ export const toWebAuthnKey = async ({
         // Import the key
         pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
     } else {
+        if (!passkeyName) {
+            throw new Error("No passkey name provided")
+        }
         // Get registration options
         const registerOptionsResponse = await fetch(
             `${passkeyServerUrl}/register/options`,
@@ -129,10 +121,10 @@ export const toWebAuthnKey = async ({
         // Import the key
         pubKey = registerCred.response.publicKey
     }
-
     if (!pubKey) {
         throw new Error("No public key returned from registration credential")
     }
+
     const spkiDer = Buffer.from(pubKey, "base64")
     const key = await crypto.subtle.importKey(
         "spki",
