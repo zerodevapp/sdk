@@ -1,4 +1,3 @@
-import { constants, KernelAccountAbi } from "@zerodev/sdk"
 import type { KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
@@ -24,11 +23,12 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
-import { concatHex, decodeAbiParameters, getAction, toHex } from "viem/utils"
+import { concatHex, getAction, toHex } from "viem/utils"
+import { WeightedValidatorAbi } from "./abi.js"
 import {
-    DUMMY_WEBAUTHN_SIG,
     SIGNER_TYPE,
     WEIGHTED_VALIDATOR_ADDRESS_V07,
+    decodeSignatures,
     encodeSignatures
 } from "./index.js"
 import type { WebAuthnKey } from "./signers/toWebAuthnSigner.js"
@@ -95,14 +95,14 @@ export async function createWeightedValidator<
         throw new Error("Validator address not provided")
     }
     // Check if sum of weights is equal or greater than threshold
+    let totalWeight = 0
     if (config) {
-        let sum = 0
         for (const signer of config.signers) {
-            sum += signer.weight
+            totalWeight += signer.weight
         }
-        if (sum < config.threshold) {
+        if (totalWeight < config.threshold) {
             throw new Error(
-                `Sum of weights (${sum}) is less than threshold (${config.threshold})`
+                `Sum of weights (${totalWeight}) is less than threshold (${config.threshold})`
             )
         }
     }
@@ -204,10 +204,7 @@ export async function createWeightedValidator<
         ) {
             let signatures: readonly Hex[] = []
             if (userOperation.signature !== "0x") {
-                ;[signatures] = decodeAbiParameters(
-                    [{ name: "signatures", type: "bytes[]" }],
-                    userOperation.signature
-                )
+                signatures = decodeSignatures(userOperation.signature)
             }
             // last signer signs for userOpHash
             const userOpHash = getUserOperationHash({
@@ -227,20 +224,12 @@ export async function createWeightedValidator<
         },
 
         async getDummySignature(
-            _userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
         ) {
-            const signatures: readonly Hex[] = configSigners.map(
-                (signer, index) =>
-                    signer.publicKey.length === 42
-                        ? concatHex([
-                              toHex(index || 0, { size: 1 }),
-                              constants.DUMMY_ECDSA_SIG
-                          ])
-                        : concatHex([
-                              toHex(index || 0, { size: 1 }),
-                              DUMMY_WEBAUTHN_SIG
-                          ])
-            )
+            let signatures: readonly Hex[] = []
+            if (userOperation.signature !== "0x") {
+                signatures = decodeSignatures(userOperation.signature)
+            }
 
             const lastSignature = concatHex([
                 toHex(getIndexOfSigner(), { size: 1 }),
@@ -252,22 +241,57 @@ export async function createWeightedValidator<
 
         async isEnabled(
             kernelAccountAddress: Address,
-            selector: Hex
+            _selector: Hex
         ): Promise<boolean> {
             try {
-                const execDetail = await getAction(
-                    client,
-                    readContract,
-                    "readContract"
-                )({
-                    abi: KernelAccountAbi,
-                    address: kernelAccountAddress,
-                    functionName: "getExecution",
-                    args: [selector]
-                })
+                const [_totalWeight, _threshold, _delay, _guradiansLength] =
+                    await getAction(
+                        client,
+                        readContract,
+                        "readContract"
+                    )({
+                        abi: WeightedValidatorAbi,
+                        address:
+                            validatorAddress ??
+                            getValidatorAddress(entryPointAddress),
+                        functionName: "weightedStorage",
+                        args: [kernelAccountAddress]
+                    })
+                const guardiansStrg = await Promise.all(
+                    configSigners.map(async (_, index) => {
+                        return getAction(
+                            client,
+                            readContract,
+                            "readContract"
+                        )({
+                            abi: WeightedValidatorAbi,
+                            address:
+                                validatorAddress ??
+                                getValidatorAddress(entryPointAddress),
+                            functionName: "guardian",
+                            args: [BigInt(index), kernelAccountAddress]
+                        })
+                    })
+                )
+                let isGuardiansSet = false
+                for (const [index, signer] of configSigners.entries()) {
+                    const [guardianType, weight, encodedPublicKey] =
+                        guardiansStrg[index]
+                    isGuardiansSet =
+                        guardianType ===
+                            (signer.publicKey.length === 42
+                                ? SIGNER_TYPE.ECDSA
+                                : SIGNER_TYPE.PASSKEY) &&
+                        weight === signer.weight &&
+                        encodedPublicKey.toLowerCase() ===
+                            signer.publicKey.toLowerCase()
+                }
                 return (
-                    execDetail.validator.toLowerCase() ===
-                    validatorAddress?.toLowerCase()
+                    _totalWeight === totalWeight &&
+                    _threshold === config?.threshold &&
+                    _delay === (config.delay || 0) &&
+                    _guradiansLength === configSigners.length &&
+                    isGuardiansSet
                 )
             } catch (error) {
                 return false

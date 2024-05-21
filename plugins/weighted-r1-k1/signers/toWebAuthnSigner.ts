@@ -17,7 +17,7 @@ import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
 import { SIGNER_TYPE } from "../constants.js"
-import type { WeightedSigner } from "../toWeightedECDSAValidatorPlugin.js"
+import type { WeightedSigner } from "../toWeightedValidatorPlugin.js"
 import { WebAuthnMode, toWebAuthnPubKey } from "./toWebAuthnPubKey.js"
 import {
     b64ToBytes,

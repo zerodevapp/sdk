@@ -15,7 +15,7 @@ import {
 } from "permissionless/utils"
 import type { Chain, Client, Hex, Transport } from "viem"
 import { encodeAbiParameters, keccak256, parseAbiParameters } from "viem/utils"
-import { getValidatorAddress } from "../toWeightedECDSAValidatorPlugin.js"
+import { getValidatorAddress } from "../toWeightedValidatorPlugin.js"
 
 export type ApproveUserOperationParameters<
     entryPoint extends EntryPoint,

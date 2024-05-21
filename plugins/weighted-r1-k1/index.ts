@@ -4,6 +4,10 @@ import {
     approveUserOperation
 } from "./actions/approveUserOperation.js"
 import {
+    type SendUserOperationWithSignaturesParameters,
+    sendUserOperationWithSignatures
+} from "./actions/sendUserOperationWithSignatures.js"
+import {
     type WeightedKernelAccountClientActions,
     weightedKernelAccountClientActions
 } from "./clients/decorators/weightedKernelAccountClient.js"
@@ -26,7 +30,7 @@ import {
     type WeightedValidatorConfig,
     createWeightedValidator,
     getValidatorAddress
-} from "./toWeightedECDSAValidatorPlugin.js"
+} from "./toWeightedValidatorPlugin.js"
 
 export {
     createWeightedValidator,
@@ -43,6 +47,8 @@ export {
     toWebAuthnSigner,
     type ApproveUserOperationParameters,
     approveUserOperation,
+    type SendUserOperationWithSignaturesParameters,
+    sendUserOperationWithSignatures,
     type WeightedKernelAccountClient,
     createWeightedKernelAccountClient,
     type WeightedKernelAccountClientActions,
