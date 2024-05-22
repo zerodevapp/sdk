@@ -63,6 +63,7 @@ export const createFallbackKernelAccountClient = <
                         if (typeof modification === "function") {
                             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                             ;(proxyClient as any)[key] = async (
+                                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                                 ...args: any[]
                             ) => {
                                 return await modification(...args)
