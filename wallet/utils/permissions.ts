@@ -1,5 +1,6 @@
 import { toCallPolicy, toTimestampPolicy } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
+import { type Address, toHex } from "viem"
 import type { IssuePermissionsParams, SessionType } from "../types"
 
 export const validatePermissions = (
@@ -43,9 +44,14 @@ export const getPolicies = (
 
 export const isSessionValid = (
     sessionId: `0x${string}` | undefined,
-    permission: SessionType | undefined
+    permission: SessionType | undefined,
+    address: Address,
+    chainId: number
 ): boolean => {
-    console.log("sessionId", sessionId)
-    console.log("permission", permission)
-    return false
+    if (!sessionId || !permission) return false
+
+    const selectedPermission = permission[address]?.[toHex(chainId)]
+    if (!selectedPermission) return false
+
+    return selectedPermission.sessionId === sessionId
 }

@@ -2,9 +2,7 @@ import type { EntryPoint } from "permissionless/types"
 import type { Address, Hex } from "viem"
 
 export type PaymasterServiceCapability = {
-    paymasterService: {
-        url: string
-    }
+    url: string
 }
 
 // wallet_sendCalls
@@ -61,7 +59,7 @@ export type IssuePermissionsResult = {
 export type SessionType = {
     [address: Address]: {
         [chainId: Hex]: {
-            permissionId: Hex
+            sessionId: Hex
             entryPoint: EntryPoint
             signerPrivateKey: Hex
             approval: string

@@ -208,4 +208,71 @@ describe("KernelEIP1193Provider", () => {
         },
         TEST_TIMEOUT
     )
+
+    test(
+        "should issue permisssions",
+        async () => {
+            const provider = createProvider(kernelClient)
+            const chainId = toHex(kernelClient.chain.id)
+            const paymasterUrl = getZeroDevPaymasterRpc()
+
+            // timestamp policy only
+            const sessionId = await provider.request({
+                method: "wallet_issuePermissions",
+                params: [
+                    {
+                        permissions: [],
+                        expiry: Math.floor(Date.now().valueOf() / 1000) + 86400
+                    }
+                ]
+            })
+            expect(sessionId).toBeDefined()
+            console.log("sessionId", sessionId)
+
+            const userOpHash = (await provider.request({
+                method: "wallet_sendCalls",
+                params: [
+                    {
+                        version: "1.0",
+                        chainId: chainId,
+                        from: account.address,
+                        calls: [
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            },
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            }
+                        ],
+                        capabilities: {
+                            paymasterService: {
+                                url: paymasterUrl
+                            },
+                            permissions: {
+                                sessionId: sessionId
+                            }
+                        }
+                    }
+                ]
+            })) as Hex
+
+            const transaction = await bundlerClient.waitForUserOperationReceipt(
+                {
+                    hash: userOpHash
+                }
+            )
+            console.log(
+                "transferTransactionHash",
+                `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
+            )
+            await publicClient.waitForTransactionReceipt({
+                hash: transaction.receipt.transactionHash
+            })
+        },
+        TEST_TIMEOUT
+    )
 })

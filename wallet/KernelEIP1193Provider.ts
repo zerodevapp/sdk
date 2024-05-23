@@ -1,5 +1,6 @@
 import { EventEmitter } from "events"
 import {
+    deserializePermissionAccount,
     serializePermissionAccount,
     toPermissionValidator
 } from "@zerodev/permissions"
@@ -57,15 +58,6 @@ export class KernelEIP1193Provider<
         Chain,
         KernelSmartAccount<entryPoint>
     >
-
-    private sessionKernelClient:
-        | KernelAccountClient<
-              entryPoint,
-              Transport,
-              Chain,
-              KernelSmartAccount<entryPoint>
-          >
-        | undefined
     private bundlerClient: BundlerClient<entryPoint>
 
     constructor(kernelClient: KernelAccountClient<entryPoint>) {
@@ -82,8 +74,6 @@ export class KernelEIP1193Provider<
             Chain,
             KernelSmartAccount<entryPoint>
         >
-        this.sessionKernelClient = undefined
-        this.sessionKernelClient
 
         const capabilities = {
             [kernelClient.account.address]: {
@@ -233,12 +223,13 @@ export class KernelEIP1193Provider<
         params: [SendCallsParams]
     ): Promise<SendCallsResult> {
         const accountAddress = this.kernelClient.account.address
+        const accountChainId = this.kernelClient.chain.id
 
         const { calls, capabilities, from, chainId } = params[0]
         if (from !== accountAddress) {
             throw new Error("invalid account address")
         }
-        if (Number(chainId) !== this.kernelClient.chain.id) {
+        if (Number(chainId) !== accountChainId) {
             throw new Error("invalid chain id")
         }
 
@@ -250,24 +241,57 @@ export class KernelEIP1193Provider<
         >
         const permission = this.getItemFromStorage(
             WALLET_PERMISSION_STORAGE_KEY
+        ) as SessionType
+        const paymasterService = await this.getPaymasterService(
+            capabilities?.paymasterService,
+            this.kernelClient.chain
         )
+
         if (
-            permission &&
             isSessionValid(
                 capabilities?.permissions?.sessionId,
-                permission as SessionType
+                permission,
+                accountAddress,
+                accountChainId
             ) &&
-            this.sessionKernelClient
+            this.kernelClient?.account?.client
         ) {
-            console.log("session found, using session client.")
+            const sessionSigner = await toECDSASigner({
+                signer: privateKeyToAccount(
+                    permission[accountAddress][toHex(accountChainId)]
+                        .signerPrivateKey
+                )
+            })
+            const sessionKeyAccount = await deserializePermissionAccount(
+                this.kernelClient.account.client as any,
+                this.kernelClient.account.entryPoint,
+                permission[accountAddress][toHex(accountChainId)].approval,
+                sessionSigner
+            )
 
-            kernelAccountClient = this.sessionKernelClient
+            const kernelClient = createKernelAccountClient({
+                account: sessionKeyAccount,
+                chain: this.kernelClient.chain,
+                entryPoint: this.kernelClient.account.entryPoint,
+                bundlerTransport: http(this.kernelClient.transport.url),
+                middleware: {
+                    sponsorUserOperation: paymasterService
+                }
+            })
+
+            kernelAccountClient = kernelClient
         } else {
-            console.log("No session found, using default client.")
-            kernelAccountClient = this.kernelClient
+            kernelAccountClient = createKernelAccountClient({
+                account: this.kernelClient.account,
+                chain: this.kernelClient.chain,
+                entryPoint: this.kernelClient.account.entryPoint,
+                bundlerTransport: http(this.kernelClient.transport.url),
+                middleware: {
+                    sponsorUserOperation: paymasterService
+                }
+            })
         }
 
-        kernelAccountClient
         const encodedeCall = await kernelAccountClient.account.encodeCallData(
             calls.map((call) => ({
                 to: call.to ?? kernelAccountClient.account.address,
@@ -279,12 +303,6 @@ export class KernelEIP1193Provider<
         return await kernelAccountClient.sendUserOperation({
             userOperation: {
                 callData: encodedeCall
-            },
-            middleware: {
-                sponsorUserOperation: await this.getPaymasterService(
-                    capabilities?.paymasterService,
-                    kernelAccountClient.chain
-                )
             }
         })
     }
@@ -387,17 +405,10 @@ export class KernelEIP1193Provider<
             }
         })
 
-        this.sessionKernelClient = createKernelAccountClient({
-            account: sessionKeyAccountWithSig,
-            chain: this.kernelClient.chain,
-            entryPoint: this.kernelClient.account.entryPoint,
-            bundlerTransport: http(client.transport.url)
-        })
-
         this.storeItemToStorage(WALLET_PERMISSION_STORAGE_KEY, {
             [this.kernelClient.account.address]: {
                 [toHex(this.kernelClient.chain.id)]: {
-                    permissionId: permissionValidator.getIdentifier(),
+                    sessionId: permissionValidator.getIdentifier(),
                     entryPoint: this.kernelClient.account.entryPoint,
                     signerPrivateKey: sessionPrivateKey,
                     approval: await serializePermissionAccount(
@@ -413,32 +424,28 @@ export class KernelEIP1193Provider<
         paymaster: PaymasterServiceCapability | undefined,
         chain: Chain
     ) {
-        if (!paymaster) return undefined
+        if (!paymaster?.url) return undefined
 
         // verifying paymaster
-        if (paymaster.paymasterService?.url) {
-            return async ({
-                userOperation,
-                entryPoint
-            }: {
-                userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+        return async ({
+            userOperation,
+            entryPoint
+        }: {
+            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+            entryPoint: entryPoint
+        }) => {
+            const paymasterClient = createZeroDevPaymasterClient({
+                chain: chain,
+                entryPoint: entryPoint,
+                transport: http(paymaster.url)
+            })
+            return paymasterClient.sponsorUserOperation({
+                userOperation:
+                    userOperation as SponsorUserOperationParameters<entryPoint>["userOperation"],
                 entryPoint: entryPoint
-            }) => {
-                const paymasterClient = createZeroDevPaymasterClient({
-                    chain: chain,
-                    entryPoint: entryPoint,
-                    transport: http(paymaster.paymasterService.url)
-                })
-                return paymasterClient.sponsorUserOperation({
-                    userOperation:
-                        userOperation as SponsorUserOperationParameters<entryPoint>["userOperation"],
-                    entryPoint: entryPoint
-                }) as Promise<SponsorUserOperationReturnType<entryPoint>>
-            }
+            }) as Promise<SponsorUserOperationReturnType<entryPoint>>
         }
         // TODO: other paymaster services
-
-        return undefined
     }
 
     private getItemFromStorage<T>(key: string): T | undefined {
