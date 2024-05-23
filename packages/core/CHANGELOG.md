@@ -1,5 +1,17 @@
 # @zerodev/sdk
 
+## 5.2.14
+
+### Patch Changes
+
+- Added entrypoint v0.7 support in signUserOperation action
+
+## 5.2.12
+
+### Patch Changes
+
+- Fixed Alchemy provider support for EntryPoint v0.7
+
 ## 5.2.10
 
 ### Patch Changes

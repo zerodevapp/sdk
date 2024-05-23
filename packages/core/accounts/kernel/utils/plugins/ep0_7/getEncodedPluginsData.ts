@@ -1,9 +1,4 @@
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint"
 import {
-    type Address,
     type Hex,
     concat,
     encodeAbiParameters,
@@ -11,22 +6,19 @@ import {
     zeroAddress
 } from "viem"
 import { CALL_TYPE } from "../../../../../constants.js"
-import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
+import type { Action } from "../../../../../types/kernel.js"
 
-export const getEncodedPluginsData = async <
-    entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V06_TYPE
->({
-    accountAddress,
+export const getEncodedPluginsData = async ({
     enableSignature,
     userOpSignature,
     action,
-    validator
+    enableData
 }: {
-    accountAddress: Address
     enableSignature: Hex
     userOpSignature: Hex
-} & Kernel2_0_plugins<entryPoint>) => {
-    const enableData = await validator.getEnableData(accountAddress)
+    action: Action
+    enableData: Hex
+}) => {
     return concat([
         zeroAddress, // hook address 20 bytes
         encodeAbiParameters(

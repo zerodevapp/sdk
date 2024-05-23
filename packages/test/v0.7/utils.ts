@@ -65,6 +65,17 @@ export const kernelVersion = "0.3.0-beta"
 const DEFAULT_PROVIDER = "PIMLICO"
 const projectId = config["v0.7"].sepolia.projectId
 
+export const validateEnvironmentVariables = (envVars: string[]): void => {
+    const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
+    if (unsetEnvVars.length > 0) {
+        throw new Error(
+            `The following environment variables are not set: ${unsetEnvVars.join(
+                ", "
+            )}`
+        )
+    }
+}
+
 export const findUserOperationEvent = (logs: Log[]): boolean => {
     return logs.some((log) => {
         try {
@@ -151,7 +162,7 @@ export const getZeroDevERC20PaymasterClient = () => {
         chain: chain,
         transport: http(
             // currently the ERC20 paymaster must be used with StackUp
-            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?paymasterProvider=${DEFAULT_PROVIDER}`
+            `${process.env.ZERODEV_PAYMASTER_RPC_HOST}/${projectId}?provider=${DEFAULT_PROVIDER}`
         ),
         entryPoint: getEntryPoint()
     })
@@ -183,7 +194,7 @@ const getPaymasterRpc = (): string => {
         )
     }
 
-    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}`
+    return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
@@ -291,7 +302,7 @@ const getBundlerRpc = (provider?: string): string => {
         )
     }
 
-    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}`
+    return `${zeroDevBundlerRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
 export const waitForUserOperationTransaction = async (

@@ -17,7 +17,7 @@ import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
-import { hasPimlicoAsProvider, setPimlicoAsProvider } from "./utils.js"
+import { isProviderSet, setPimlicoAsProvider } from "./utils.js"
 
 export type KernelAccountClient<
     entryPoint extends EntryPoint,
@@ -90,7 +90,11 @@ export const createKernelAccountClient = <
                 ...opts,
                 retryCount: 0
             })
-            if (!shouldIncludePimlicoProvider) return _bundlerTransport
+            if (
+                !shouldIncludePimlicoProvider ||
+                isProviderSet(_bundlerTransport.value?.url, "ALCHEMY")
+            )
+                return _bundlerTransport
             _bundlerTransport = http(
                 setPimlicoAsProvider(_bundlerTransport.value?.url)
             )({ ...opts, retryCount: 0 })
@@ -104,7 +108,7 @@ export const createKernelAccountClient = <
         (!middleware ||
             (typeof middleware !== "function" && !middleware.gasPrice)) &&
         client.transport?.url &&
-        hasPimlicoAsProvider(client.transport.url)
+        isProviderSet(client.transport.url, "PIMLICO")
     ) {
         const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {
