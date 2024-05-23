@@ -78,7 +78,7 @@ export type KernelAccountClientActions<
                 TSmartAccount
             >
         >[1]
-    ) => Promise<SignUserOperationReturnType>
+    ) => Promise<SignUserOperationReturnType<entryPoint>>
     /**
      * Returns the live gas prices that you can use to send a user operation.
      *

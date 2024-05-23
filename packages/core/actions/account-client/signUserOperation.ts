@@ -1,13 +1,10 @@
 import type { SmartAccount } from "permissionless/accounts/types"
 import {
-    type Middleware,
     prepareUserOperationRequest
 } from "permissionless/actions/smartAccount"
 import type {
     EntryPoint,
-    GetAccountParameter,
     GetEntryPointVersion,
-    PartialBy,
     Prettify,
     UserOperation
 } from "permissionless/types"
@@ -17,30 +14,20 @@ import {
 } from "permissionless/utils"
 import type { Chain, Client, Transport } from "viem"
 import { getAction } from "viem/utils"
+import {
+    PrepareUserOperationRequestParameters,
+    PrepareUserOperationRequestReturnType
+} from "permissionless/actions/smartAccount/prepareUserOperationRequest";
+
 
 export type SignUserOperationParameters<
     entryPoint extends EntryPoint,
     TAccount extends SmartAccount<entryPoint> | undefined =
         | SmartAccount<entryPoint>
         | undefined
-> = {
-    userOperation: PartialBy<
-        UserOperation<"v0.6">,
-        | "nonce"
-        | "sender"
-        | "initCode"
-        | "signature"
-        | "callGasLimit"
-        | "maxFeePerGas"
-        | "maxPriorityFeePerGas"
-        | "preVerificationGas"
-        | "verificationGasLimit"
-        | "paymasterAndData"
-    >
-} & GetAccountParameter<entryPoint, TAccount> &
-    Middleware<entryPoint>
+> = PrepareUserOperationRequestParameters<entryPoint, TAccount>
 
-export type SignUserOperationReturnType = UserOperation<"v0.6">
+export type SignUserOperationReturnType<entryPoint extends EntryPoint> = PrepareUserOperationRequestReturnType<entryPoint>
 
 export async function signUserOperation<
     entryPoint extends EntryPoint,
@@ -52,7 +39,7 @@ export async function signUserOperation<
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: Prettify<SignUserOperationParameters<entryPoint, TAccount>>
-): Promise<SignUserOperationReturnType> {
+): Promise<SignUserOperationReturnType<entryPoint>> {
     const { account: account_ = client.account } = args
     if (!account_) throw new AccountOrClientNotFoundError()
 
@@ -68,5 +55,5 @@ export async function signUserOperation<
         userOperation as UserOperation<GetEntryPointVersion<entryPoint>>
     )
 
-    return userOperation as SignUserOperationReturnType
+    return userOperation as SignUserOperationReturnType<entryPoint>
 }
