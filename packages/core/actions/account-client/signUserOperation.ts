@@ -1,7 +1,9 @@
 import type { SmartAccount } from "permissionless/accounts/types"
-import {
-    prepareUserOperationRequest
-} from "permissionless/actions/smartAccount"
+import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
+import type {
+    PrepareUserOperationRequestParameters,
+    PrepareUserOperationRequestReturnType
+} from "permissionless/actions/smartAccount/prepareUserOperationRequest"
 import type {
     EntryPoint,
     GetEntryPointVersion,
@@ -14,11 +16,6 @@ import {
 } from "permissionless/utils"
 import type { Chain, Client, Transport } from "viem"
 import { getAction } from "viem/utils"
-import {
-    PrepareUserOperationRequestParameters,
-    PrepareUserOperationRequestReturnType
-} from "permissionless/actions/smartAccount/prepareUserOperationRequest";
-
 
 export type SignUserOperationParameters<
     entryPoint extends EntryPoint,
@@ -27,7 +24,8 @@ export type SignUserOperationParameters<
         | undefined
 > = PrepareUserOperationRequestParameters<entryPoint, TAccount>
 
-export type SignUserOperationReturnType<entryPoint extends EntryPoint> = PrepareUserOperationRequestReturnType<entryPoint>
+export type SignUserOperationReturnType<entryPoint extends EntryPoint> =
+    PrepareUserOperationRequestReturnType<entryPoint>
 
 export async function signUserOperation<
     entryPoint extends EntryPoint,
