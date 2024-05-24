@@ -1,10 +1,7 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk"
-import { KernelEIP1193Provider } from "@zerodev/wallet"
-import {
-    ENTRYPOINT_ADDRESS_V07,
-    walletClientToSmartAccountSigner
-} from "permissionless"
+import { walletClientToSmartAccountSigner } from "permissionless"
+import type { EntryPoint } from "permissionless/types"
 import {
     http,
     createClient,
@@ -12,12 +9,24 @@ import {
     custom,
     walletActions
 } from "viem"
+import type { CreateConnectorFn } from "wagmi"
 import type { GetWalletClientReturnType } from "wagmi/actions"
+import {
+    KernelEIP1193Provider,
+    type KernelEIP1193Provider as KernelEIP1193ProviderType
+} from "./KernelEIP1193Provider"
+import type { ZeroDevVersion } from "./types"
+import { getEntryPointFromZeroDevVersion } from "./utils/provider"
 
-export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
+export const wrapSmartWallet = (
+    walletFunction: CreateConnectorFn,
+    projectId: string,
+    version: ZeroDevVersion
+): CreateConnectorFn => {
     return (config: any) => {
+        const entryPoint = getEntryPointFromZeroDevVersion(version)
         const wallet = walletFunction(config)
-        let kernelProvider: any
+        let kernelProvider: KernelEIP1193ProviderType<EntryPoint> | null
 
         return new Proxy(wallet, {
             set(target, prop, value, receiver) {
@@ -25,11 +34,6 @@ export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
             },
             get(target, prop, receiver) {
                 const source = Reflect.get(target, prop, receiver)
-                if (prop === "setup") {
-                    return async (params: any) => {
-                        return target.setup(params)
-                    }
-                }
                 if (prop === "connect") {
                     return async (params: any) => {
                         await target.connect(params)
@@ -40,12 +44,18 @@ export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
                         const chain = config.chains.find(
                             (c: any) => c.id === chainId
                         )
+                        if (!chain) {
+                            throw new Error("Chain not found")
+                        }
                         const walletClient = createClient({
                             account: accounts[0],
                             chain,
                             name: "Connector Client",
                             transport: (opts) =>
-                                custom(provider)({ ...opts, retryCount: 0 })
+                                custom(provider as any)({
+                                    ...opts,
+                                    retryCount: 0
+                                })
                         }).extend(walletActions) as GetWalletClientReturnType
 
                         const publicClient = createPublicClient({
@@ -57,7 +67,7 @@ export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
                         const ecdsaValidator = await signerToEcdsaValidator(
                             publicClient,
                             {
-                                entryPoint: ENTRYPOINT_ADDRESS_V07,
+                                entryPoint: entryPoint,
                                 signer: walletClientToSmartAccountSigner(
                                     walletClient
                                 )
@@ -66,7 +76,7 @@ export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
                         const kernelAccount = await createKernelAccount(
                             publicClient,
                             {
-                                entryPoint: ENTRYPOINT_ADDRESS_V07,
+                                entryPoint: entryPoint,
                                 plugins: {
                                     sudo: ecdsaValidator
                                 }
@@ -75,7 +85,7 @@ export const wrapSmartWallet = (walletFunction: any, projectId: string) => {
                         const kernelClient = createKernelAccountClient({
                             account: kernelAccount,
                             chain,
-                            entryPoint: ENTRYPOINT_ADDRESS_V07,
+                            entryPoint: entryPoint,
                             bundlerTransport: http(
                                 `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
                             )

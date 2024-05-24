@@ -7,5 +7,6 @@ export type {
     ShowCallsParams,
     IssuePermissionsParams,
     IssuePermissionsResult,
-    SessionType
+    SessionType,
+    ZeroDevVersion
 } from "./provider.js"

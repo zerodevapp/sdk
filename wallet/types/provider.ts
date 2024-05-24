@@ -66,3 +66,5 @@ export type SessionType = {
         }
     }
 }
+
+export type ZeroDevVersion = "v2" | "v3"
