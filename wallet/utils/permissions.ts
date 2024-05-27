@@ -53,5 +53,5 @@ export const isSessionValid = (
     const selectedPermission = permission[address]?.[toHex(chainId)]
     if (!selectedPermission) return false
 
-    return selectedPermission.sessionId === sessionId
+    return !!selectedPermission.find((p) => p.sessionId === sessionId)
 }

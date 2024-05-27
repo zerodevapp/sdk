@@ -34,16 +34,11 @@ import type {
     GetCallsResult,
     IssuePermissionsParams,
     PaymasterServiceCapability,
-    PermissionsType,
     SendCallsParams,
     SendCallsResult,
     SessionType
 } from "./types"
-import {
-    getPolicies,
-    isSessionValid,
-    validatePermissions
-} from "./utils/permissions"
+import { getPolicies, validatePermissions } from "./utils/permissions"
 import { KernelLocalStorage } from "./utils/storage"
 
 const WALLET_CAPABILITIES_STORAGE_KEY = "WALLET_CAPABILITIES"
@@ -254,25 +249,18 @@ export class KernelEIP1193Provider<
             this.kernelClient.chain
         )
 
-        if (
-            isSessionValid(
-                capabilities?.permissions?.sessionId,
-                permission,
-                accountAddress,
-                accountChainId
-            ) &&
-            this.kernelClient?.account?.client
-        ) {
+        const sessionId = capabilities?.permissions?.sessionId
+        const session = permission[accountAddress][toHex(accountChainId)]?.find(
+            (session) => session.sessionId === sessionId
+        )
+        if (session && this.kernelClient?.account?.client) {
             const sessionSigner = await toECDSASigner({
-                signer: privateKeyToAccount(
-                    permission[accountAddress][toHex(accountChainId)]
-                        .signerPrivateKey
-                )
+                signer: privateKeyToAccount(session.signerPrivateKey)
             })
             const sessionKeyAccount = await deserializePermissionAccount(
                 this.kernelClient.account.client as any,
                 this.kernelClient.account.entryPoint,
-                permission[accountAddress][toHex(accountChainId)].approval,
+                session.approval,
                 sessionSigner
             )
 
@@ -424,7 +412,7 @@ export class KernelEIP1193Provider<
         const address = this.kernelClient.account.address
         const chainId = toHex(this.kernelClient.chain.id)
 
-        const mergedPermissions: PermissionsType = { ...createdPermissions }
+        const mergedPermissions: SessionType = { ...createdPermissions }
 
         if (!mergedPermissions[address]) {
             mergedPermissions[address] = {}

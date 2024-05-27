@@ -63,7 +63,7 @@ export type SessionType = {
             entryPoint: EntryPoint
             signerPrivateKey: Hex
             approval: string
-        }
+        }[]
     }
 }
 
