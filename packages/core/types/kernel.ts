@@ -143,6 +143,11 @@ export type KernelValidator<
     getIdentifier: () => Hex
 }
 
+export type KernelValidatorHook = {
+    getEnableData(accountAddress?: Address): Promise<Hex>
+    getIdentifier: () => Hex
+}
+
 export type ValidatorInitData = {
     validatorAddress: Address
     enableData: Hex
@@ -152,6 +157,7 @@ export type ValidatorInitData = {
 export type KernelPluginManager<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint> & {
         sudoValidator?: KernelValidator<entryPoint>
+        hook?: KernelValidatorHook
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
         getAction(): Action
@@ -182,6 +188,7 @@ export type PluginInstallData<entryPoint extends EntryPoint> =
 export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     sudo?: KernelValidator<entryPoint>
     regular?: KernelValidator<entryPoint>
+    hook?: KernelValidatorHook
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     action?: Action

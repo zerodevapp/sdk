@@ -149,7 +149,14 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     return encodeFunctionData({
         abi: KernelV3InitAbi,
         functionName: "initialize",
-        args: [identifier, zeroAddress, enableData, "0x"]
+        args: [
+            identifier,
+            // kernelPluginManager.hook?.getIdentifier() ?? zeroAddress,
+            zeroAddress,
+            enableData,
+            // (await kernelPluginManager.hook?.getEnableData()) ?? "0x"
+            "0x"
+        ]
     })
 }
 
@@ -291,6 +298,7 @@ export async function createKernelAccount<
         : await toKernelPluginManager<entryPoint>(client, {
               sudo: plugins.sudo,
               regular: plugins.regular,
+              hook: plugins.hook,
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               entryPoint: entryPointAddress

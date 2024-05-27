@@ -1,4 +1,11 @@
-import { type Hex, concatHex, encodeFunctionData, toHex } from "viem"
+import {
+    type Hex,
+    concatHex,
+    encodeFunctionData,
+    toHex,
+    toFunctionSelector,
+    getAbiItem
+} from "viem"
 import { CALL_TYPE } from "../../../../constants.js"
 import { getExecMode } from "../../../../utils.js"
 import { KernelV3ExecuteAbi } from "../../abi/kernel_v_3_0_0/KernelAccountAbi.js"
@@ -18,6 +25,9 @@ export const encodeExecuteCall = <TOptions extends EncodeExecuteOptions>(
     args: EncodeExecuteCallArgs<TOptions>,
     options: TOptions
 ) => {
+    console.log("encodeExecuteCall")
+    console.log("args", args)
+    console.log("options", options)
     let calldata: Hex
     if ("calldata" in args) {
         calldata = args.calldata
@@ -30,9 +40,27 @@ export const encodeExecuteCall = <TOptions extends EncodeExecuteOptions>(
             args.data
         ])
     }
-    return encodeFunctionData({
-        abi: KernelV3ExecuteAbi,
-        functionName: "execute",
-        args: [getExecMode(options), calldata]
-    })
+
+    const executeUserOpSig = toFunctionSelector(
+        getAbiItem({ abi: KernelV3ExecuteAbi, name: "executeUserOp" })
+    )
+
+    return concatHex([
+        executeUserOpSig,
+        encodeFunctionData({
+            abi: KernelV3ExecuteAbi,
+            functionName: "execute",
+            args: [getExecMode(options), calldata]
+        })
+    ])
+
+    // [0:4] - executeUserOp function signature
+    // [4:8] - execute function signature
+    // [8:] - execute function arguments
+
+    // return encodeFunctionData({
+    //     abi: KernelV3ExecuteAbi,
+    //     functionName: "execute",
+    //     args: [getExecMode(options), calldata]
+    // })
 }

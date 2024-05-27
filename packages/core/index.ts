@@ -29,6 +29,7 @@ export {
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"
 export {
     type KernelValidator,
+    type KernelValidatorHook,
     type ZeroDevPaymasterRpcSchema,
     type KernelPluginManager,
     type Action

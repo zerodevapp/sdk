@@ -22,6 +22,7 @@ export const encodeCallData = async <
 
     // Default to `call`
     if (!tx.callType || tx.callType === "call") {
+        console.log("calling encodeExecuteSingleCall")
         return encodeExecuteSingleCall(tx, {
             execType: EXEC_TYPE.DEFAULT
         })

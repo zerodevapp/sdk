@@ -1,0 +1,2 @@
+export const SPENDING_LIMIT_HOOK_V07 =
+    "0xb0b2895749d6b10506c62d555d13b70c7baa34ff"
