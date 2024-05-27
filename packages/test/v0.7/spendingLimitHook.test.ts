@@ -11,10 +11,10 @@ import {
     KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccount,
+    KernelV3ExecuteAbi,
     createKernelAccount,
     getCustomNonceKeyFromString,
-    verifyEIP6492Signature,
-    KernelV3ExecuteAbi
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
@@ -35,15 +35,19 @@ import {
     type PublicClient,
     type Transport,
     decodeEventLog,
+    decodeFunctionData,
     encodeFunctionData,
     erc20Abi,
     getContract,
     hashMessage,
     hashTypedData,
-    zeroAddress,
-    decodeFunctionData
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import { toSpendingLimitHook } from "../../../plugins/hooks/toSpendingLimitHook.js"
+import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
+import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
@@ -63,10 +67,6 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils.js"
-import { toSpendingLimitHook } from "../../../plugins/hooks/toSpendingLimitHook.js"
-import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
-import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
-import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
 
 dotenv.config()
 

@@ -12,8 +12,8 @@ import {
     zeroAddress
 } from "viem"
 import { CALL_TYPE, VALIDATOR_TYPE } from "../../../../../constants.js"
+import type { KernelValidatorHook } from "../../../../../types/kernel.js"
 import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
-import { type KernelValidatorHook } from "../../../../../types/kernel.js"
 
 export const getPluginsEnableTypedData = async <
     entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE
