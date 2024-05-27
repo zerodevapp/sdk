@@ -34,6 +34,7 @@ import type {
     GetCallsResult,
     IssuePermissionsParams,
     PaymasterServiceCapability,
+    PermissionsType,
     SendCallsParams,
     SendCallsResult,
     SessionType
@@ -411,18 +412,33 @@ export class KernelEIP1193Provider<
             }
         })
 
-        this.storeItemToStorage(WALLET_PERMISSION_STORAGE_KEY, {
-            [this.kernelClient.account.address]: {
-                [toHex(this.kernelClient.chain.id)]: {
-                    sessionId: permissionValidator.getIdentifier(),
-                    entryPoint: this.kernelClient.account.entryPoint,
-                    signerPrivateKey: sessionPrivateKey,
-                    approval: await serializePermissionAccount(
-                        sessionKeyAccountWithSig
-                    )
-                }
-            }
-        })
+        const createdPermissions =
+            this.getItemFromStorage(WALLET_PERMISSION_STORAGE_KEY) || {}
+        const newPermission = {
+            sessionId: permissionValidator.getIdentifier(),
+            entryPoint: this.kernelClient.account.entryPoint,
+            signerPrivateKey: sessionPrivateKey,
+            approval: await serializePermissionAccount(sessionKeyAccountWithSig)
+        }
+
+        const address = this.kernelClient.account.address
+        const chainId = toHex(this.kernelClient.chain.id)
+
+        const mergedPermissions: PermissionsType = { ...createdPermissions }
+
+        if (!mergedPermissions[address]) {
+            mergedPermissions[address] = {}
+        }
+
+        if (!mergedPermissions[address][chainId]) {
+            mergedPermissions[address][chainId] = []
+        }
+
+        mergedPermissions[address][chainId].push(newPermission)
+        this.storeItemToStorage(
+            WALLET_PERMISSION_STORAGE_KEY,
+            mergedPermissions
+        )
         return {
             grantedPermissions: permissions.map((permission) => ({
                 type: permission.type,
