@@ -127,6 +127,8 @@ export class KernelEIP1193Provider<
                 return this.handleWalletIssuePermissions(
                     params as [IssuePermissionsParams]
                 )
+            case "wallet_switchEthereumChain":
+                return this.handleSwitchEthereumChain()
             default:
                 return this.kernelClient.transport.request({ method, params })
         }
@@ -217,6 +219,10 @@ export class KernelEIP1193Provider<
             message: typedData.message,
             primaryType: typedData.primaryType
         })
+    }
+
+    private async handleSwitchEthereumChain() {
+        throw new Error("Not implemented.")
     }
 
     private async handleWalletSendcalls(
@@ -362,8 +368,8 @@ export class KernelEIP1193Provider<
                 .permissions.permissionTypes
 
         validatePermissions(params[0], capabilities)
-
         const policies = getPolicies(params[0])
+        const permissions = params[0].permissions
 
         // signer
         const sessionPrivateKey = generatePrivateKey()
@@ -417,7 +423,14 @@ export class KernelEIP1193Provider<
                 }
             }
         })
-        return permissionValidator.getIdentifier()
+        return {
+            grantedPermissions: permissions.map((permission) => ({
+                type: permission.type,
+                data: permission.data
+            })),
+            expiry: params[0].expiry,
+            permissionsContext: permissionValidator.getIdentifier()
+        }
     }
 
     private async getPaymasterService(
