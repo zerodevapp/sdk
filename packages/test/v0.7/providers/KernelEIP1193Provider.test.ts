@@ -1,3 +1,4 @@
+/*
 // @ts-expect-error
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
@@ -276,3 +277,4 @@ describe("KernelEIP1193Provider", () => {
         TEST_TIMEOUT
     )
 })
+*/

@@ -82,7 +82,7 @@ export class KernelEIP1193Provider<
                     },
                     permissions: {
                         supported: true,
-                        permissionTypes: ["sudo", "call-contract"]
+                        permissionTypes: ["contract-call"]
                     }
                 }
             }
@@ -250,9 +250,9 @@ export class KernelEIP1193Provider<
         )
 
         const sessionId = capabilities?.permissions?.sessionId
-        const session = permission[accountAddress][toHex(accountChainId)]?.find(
-            (session) => session.sessionId === sessionId
-        )
+        const session = permission?.[accountAddress]?.[
+            toHex(accountChainId)
+        ]?.find((session) => session.sessionId === sessionId)
         if (session && this.kernelClient?.account?.client) {
             const sessionSigner = await toECDSASigner({
                 signer: privateKeyToAccount(session.signerPrivateKey)

@@ -27,7 +27,7 @@ export const getPolicies = (
 ): Policy[] => {
     const policies = permissionsParams.permissions
         .map((permission) => {
-            if (permission.type === "call-contract") {
+            if (permission.type === "contract-call") {
                 return toCallPolicy(permission.data)
             }
             return undefined
