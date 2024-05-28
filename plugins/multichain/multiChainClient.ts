@@ -1,28 +1,28 @@
 import {
-    isProviderSet,
-    setPimlicoAsProvider,
     type KernelAccountClient,
     type KernelSmartAccount,
     type SmartAccountClientConfig,
     getUserOperationGasPrice,
-    kernelAccountClientActions
+    isProviderSet,
+    kernelAccountClientActions,
+    setPimlicoAsProvider
 } from "@zerodev/sdk"
-import type { SmartAccount } from "permissionless/accounts"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import {
-    http,
-    type Chain,
-    type Transport,
-    createClient,
-    type Client
-} from "viem"
-import type { StateOverrides } from "permissionless/types/bundler"
 import { getEntryPointVersion } from "permissionless"
+import type { SmartAccount } from "permissionless/accounts"
 import type {
     Middleware,
     PrepareUserOperationRequestReturnType
 } from "permissionless/actions/smartAccount"
-import { prepareMultiUserOpRequest, ValidatorType } from "./actions"
+import type { EntryPoint, Prettify } from "permissionless/types"
+import type { StateOverrides } from "permissionless/types/bundler"
+import {
+    http,
+    type Chain,
+    type Client,
+    type Transport,
+    createClient
+} from "viem"
+import { type ValidatorType, prepareMultiUserOpRequest } from "./actions"
 
 export type KernelAccountMultiChainClientActions<
     entryPoint extends EntryPoint,

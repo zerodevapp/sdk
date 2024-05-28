@@ -43,10 +43,15 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
+import { ValidatorType } from "../../../plugins/multichain/actions/type.js"
 import { ecdsaPrepareMultiUserOpRequest } from "../../../plugins/multichain/ecdsa/ecdsaPrepareMultiUserOpRequest.js"
 import { ecdsaSignUserOps } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOps.js"
 import { ecdsaSignUserOpsWithEnable } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOpsWithEnable.js"
 import { toMultiChainECDSAValidator } from "../../../plugins/multichain/ecdsa/toMultiChainECDSAValidator.js"
+import {
+    type KernelMultiChainClient,
+    createKernelMultiChainClient
+} from "../../../plugins/multichain/multiChainClient.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
@@ -64,11 +69,6 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils.js"
-import {
-    KernelMultiChainClient,
-    createKernelMultiChainClient
-} from "../../../plugins/multichain/multiChainClient.js"
-import { ValidatorType } from "../../../plugins/multichain/actions/type.js"
 
 const requiredEnvVars = [
     "TEST_PRIVATE_KEY",
