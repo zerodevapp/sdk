@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/multi-chain-validator",
-    "version": "5.2.1",
+    "version": "5.2.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -36,7 +36,7 @@
     },
     "peerDependencies": {
         "viem": "^2.9.17",
-        "@zerodev/sdk": "^5.2.13",
+        "@zerodev/sdk": "^5.2.15",
         "permissionless": "^0.1.18"
     },
     "dependencies": {

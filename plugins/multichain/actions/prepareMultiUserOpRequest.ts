@@ -1,10 +1,4 @@
 import {
-    type KernelAccountClient,
-    type KernelSmartAccount,
-    getUserOperationGasPrice,
-    isProviderSet
-} from "@zerodev/sdk"
-import {
     AccountOrClientNotFoundError,
     type UserOperation,
     estimateUserOperationGas,
@@ -22,32 +16,28 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import type { Chain, Transport } from "viem"
+import type { Chain, Client, Transport } from "viem"
 import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
 import { getAction } from "viem/utils"
-import { ecdsaGetMultiUserOpDummySignature } from "./ecdsaGetMultiUserOpDummySignature.js"
+import { ecdsaGetMultiUserOpDummySignature } from "../ecdsa/ecdsaGetMultiUserOpDummySignature.js"
+import { webauthnGetMultiUserOpDummySignature } from "../webauthn/webauthnGetMultiUserOpDummySignature.js"
+import { ValidatorType } from "./type.js"
 
-export async function ecdsaPrepareMultiUserOpRequest<
+export async function prepareMultiUserOpRequest<
     entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends SmartAccount<entryPoint> | undefined =
+        | SmartAccount<entryPoint>
         | undefined
->({
-    client,
-    args,
-    numOfUserOps,
-    stateOverrides
-}: {
-    client: KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount>
-    args: Prettify<
-        PrepareUserOperationRequestParameters<entryPoint, TSmartAccount>
-    >
-    numOfUserOps: number
+>(
+    client: Client<TTransport, TChain, TAccount>,
+    args: Prettify<PrepareUserOperationRequestParameters<entryPoint, TAccount>>,
+    validatorType: ValidatorType,
+    numOfUserOps: number,
     stateOverrides?: StateOverrides
-}): Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>> {
+): Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>> {
     const {
         account: account_ = client.account,
         userOperation: partialUserOperation,
@@ -59,20 +49,6 @@ export async function ecdsaPrepareMultiUserOpRequest<
     const account = parseAccount(
         account_
     ) as SmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
-
-    if (
-        client.transport?.url &&
-        isProviderSet(client.transport.url, "PIMLICO")
-    ) {
-        if (
-            middleware &&
-            typeof middleware !== "function" &&
-            !middleware.gasPrice
-        ) {
-            const gasPrice = () => getUserOperationGasPrice(client)
-            middleware.gasPrice = gasPrice
-        }
-    }
 
     const [sender, nonce, factory, factoryData, callData, gasEstimation] =
         await Promise.all([
@@ -137,12 +113,23 @@ export async function ecdsaPrepareMultiUserOpRequest<
     const chainId = await getChainId(client)
 
     if (userOperation.signature === "0x") {
-        userOperation.signature = await ecdsaGetMultiUserOpDummySignature(
-            userOperation,
-            numOfUserOps,
-            account.entryPoint,
-            chainId
-        )
+        if (validatorType === ValidatorType.ECDSA) {
+            userOperation.signature = await ecdsaGetMultiUserOpDummySignature(
+                userOperation,
+                numOfUserOps,
+                account.entryPoint,
+                chainId
+            )
+        }
+        if (validatorType === ValidatorType.WEBAUTHN) {
+            userOperation.signature =
+                await webauthnGetMultiUserOpDummySignature(
+                    userOperation,
+                    numOfUserOps,
+                    account.entryPoint,
+                    chainId
+                )
+        }
     }
 
     if (
