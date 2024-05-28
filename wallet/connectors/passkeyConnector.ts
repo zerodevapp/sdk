@@ -5,7 +5,6 @@ import {
 } from "@wagmi/core"
 import {
     createPasskeyValidator,
-    deserializePasskeyValidator,
     getPasskeyValidator
 } from "@zerodev/passkey-validator"
 import {
@@ -102,23 +101,10 @@ export function passkeyConnector(
                     transport: http()
                 })
                 if (passkeySigner) {
-                    if (passkeySigner.isConnected) {
-                        passkeyValidator = await deserializePasskeyValidator(
-                            publicClient,
-                            {
-                                serializedData: passkeySigner.signer,
-                                entryPoint
-                            }
-                        )
-                    } else {
-                        passkeyValidator = await getPasskeyValidator(
-                            publicClient,
-                            {
-                                passkeyServerUrl: `${ZERODEV_PASSKEY_URL}/${projectId}`,
-                                entryPoint: entryPoint
-                            }
-                        )
-                    }
+                    passkeyValidator = await getPasskeyValidator(publicClient, {
+                        passkeyServerUrl: `${ZERODEV_PASSKEY_URL}/${projectId}`,
+                        entryPoint: entryPoint
+                    })
                 } else {
                     passkeyValidator = await createPasskeyValidator(
                         publicClient,
