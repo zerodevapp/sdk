@@ -93,11 +93,17 @@ export class KernelEIP1193Provider<
         )
     }
 
+    getChainId() {
+        return this.handleGetChainId()
+    }
+
     async request({
         method,
         params = []
     }: EIP1193Parameters): ReturnType<EIP1193RequestFn> {
         switch (method) {
+            case "eth_chainId":
+                return this.handleGetChainId()
             case "eth_requestAccounts":
                 return this.handleEthRequestAccounts()
             case "eth_accounts":
@@ -128,6 +134,10 @@ export class KernelEIP1193Provider<
             default:
                 return this.kernelClient.transport.request({ method, params })
         }
+    }
+
+    private handleGetChainId() {
+        return this.kernelClient.chain.id
     }
 
     private async handleEthRequestAccounts(): Promise<string[]> {
