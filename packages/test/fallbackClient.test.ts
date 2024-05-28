@@ -674,8 +674,6 @@ describe("fallback client e2e", () => {
                     }
                 )
 
-                console.log("userOpHash", userOpHash)
-
                 const bundlerClient = fallbackKernelClient.extend(
                     bundlerActions(getEntryPoint())
                 )
@@ -684,7 +682,8 @@ describe("fallback client e2e", () => {
                     hash: userOpHash
                 })
 
-                console.log("result", result)
+                expect(result).toBeDefined();
+                expect(result.success).toBe(true);
             },
             TEST_TIMEOUT
         )
