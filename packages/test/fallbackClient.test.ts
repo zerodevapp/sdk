@@ -682,8 +682,8 @@ describe("fallback client e2e", () => {
                     hash: userOpHash
                 })
 
-                expect(result).toBeDefined();
-                expect(result.success).toBe(true);
+                expect(result).toBeDefined()
+                expect(result.success).toBe(true)
             },
             TEST_TIMEOUT
         )
