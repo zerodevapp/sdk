@@ -1,4 +1,13 @@
-import { toCallPolicy, toTimestampPolicy } from "@zerodev/permissions/policies"
+import {
+    type RateLimitPolicyParams,
+    type SignatureCallerPolicyParams,
+    toCallPolicy,
+    toGasPolicy,
+    toRateLimitPolicy,
+    toSignatureCallerPolicy,
+    toSudoPolicy,
+    toTimestampPolicy
+} from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
 import { type Address, toHex } from "viem"
 import type { IssuePermissionsParams, SessionType } from "../types"
@@ -27,10 +36,24 @@ export const getPolicies = (
 ): Policy[] => {
     const policies = permissionsParams.permissions
         .map((permission) => {
-            if (permission.type === "contract-call") {
-                return toCallPolicy(permission.data)
+            switch (permission.type) {
+                case "sudo":
+                    return toSudoPolicy({})
+                case "contract-call":
+                    return toCallPolicy(permission.data)
+                case "rate-limit":
+                    return toRateLimitPolicy(
+                        permission.data as RateLimitPolicyParams
+                    )
+                case "gas-limit":
+                    return toGasPolicy(permission.data)
+                case "signature":
+                    return toSignatureCallerPolicy(
+                        permission.data as SignatureCallerPolicyParams
+                    )
+                default:
+                    return undefined
             }
-            return undefined
         })
         .concat([
             toTimestampPolicy({

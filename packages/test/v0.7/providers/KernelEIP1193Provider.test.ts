@@ -1,4 +1,3 @@
-/*
 // @ts-expect-error
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
@@ -11,6 +10,7 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
+    parseEther,
     toHex,
     zeroAddress
 } from "viem"
@@ -228,7 +228,6 @@ describe("KernelEIP1193Provider", () => {
                 ]
             })
             expect(sessionId).toBeDefined()
-            console.log("sessionId", sessionId)
 
             const userOpHash = (await provider.request({
                 method: "wallet_sendCalls",
@@ -260,6 +259,163 @@ describe("KernelEIP1193Provider", () => {
                     }
                 ]
             })) as Hex
+            console.log("userOpHash", userOpHash)
+
+            const transaction = await bundlerClient.waitForUserOperationReceipt(
+                {
+                    hash: userOpHash
+                }
+            )
+            console.log(
+                "transferTransactionHash",
+                `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
+            )
+            await publicClient.waitForTransactionReceipt({
+                hash: transaction.receipt.transactionHash
+            })
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should issue permisssions with sudo policies",
+        async () => {
+            const provider = createProvider(kernelClient)
+            const chainId = toHex(kernelClient.chain.id)
+            const paymasterUrl = getZeroDevPaymasterRpc()
+
+            // timestamp policy only
+            const sessionId = await provider.request({
+                method: "wallet_issuePermissions",
+                params: [
+                    {
+                        permissions: [
+                            {
+                                type: "sudo",
+                                data: {},
+                                required: true
+                            }
+                        ],
+                        expiry: Math.floor(Date.now().valueOf() / 1000) + 86400
+                    }
+                ]
+            })
+            expect(sessionId).toBeDefined()
+
+            const userOpHash = (await provider.request({
+                method: "wallet_sendCalls",
+                params: [
+                    {
+                        version: "1.0",
+                        chainId: chainId,
+                        from: account.address,
+                        calls: [
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            },
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            }
+                        ],
+                        capabilities: {
+                            paymasterService: {
+                                url: paymasterUrl
+                            },
+                            permissions: {
+                                sessionId: sessionId
+                            }
+                        }
+                    }
+                ]
+            })) as Hex
+            console.log("userOpHash", userOpHash)
+
+            const transaction = await bundlerClient.waitForUserOperationReceipt(
+                {
+                    hash: userOpHash
+                }
+            )
+            console.log(
+                "transferTransactionHash",
+                `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
+            )
+            await publicClient.waitForTransactionReceipt({
+                hash: transaction.receipt.transactionHash
+            })
+        },
+        TEST_TIMEOUT
+    )
+
+    test.only(
+        "should issue permisssions with multiple policies",
+        async () => {
+            const provider = createProvider(kernelClient)
+            const chainId = toHex(kernelClient.chain.id)
+            const paymasterUrl = getZeroDevPaymasterRpc()
+
+            // timestamp policy only
+            const sessionId = await provider.request({
+                method: "wallet_issuePermissions",
+                params: [
+                    {
+                        permissions: [
+                            {
+                                type: "rate-limit",
+                                data: {
+                                    count: 5,
+                                    interval: 60 * 60 // one hour
+                                },
+                                required: true
+                            },
+                            {
+                                type: "gas-limit",
+                                data: {
+                                    allowed: parseEther("0.1")
+                                },
+                                required: true
+                            }
+                        ],
+                        expiry: Math.floor(Date.now().valueOf() / 1000) + 86400
+                    }
+                ]
+            })
+            expect(sessionId).toBeDefined()
+
+            const userOpHash = (await provider.request({
+                method: "wallet_sendCalls",
+                params: [
+                    {
+                        version: "1.0",
+                        chainId: chainId,
+                        from: account.address,
+                        calls: [
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            },
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            }
+                        ],
+                        capabilities: {
+                            paymasterService: {
+                                url: paymasterUrl
+                            },
+                            permissions: {
+                                sessionId: sessionId
+                            }
+                        }
+                    }
+                ]
+            })) as Hex
+            console.log("userOpHash", userOpHash)
 
             const transaction = await bundlerClient.waitForUserOperationReceipt(
                 {
@@ -277,4 +433,3 @@ describe("KernelEIP1193Provider", () => {
         TEST_TIMEOUT
     )
 })
-*/
