@@ -1,4 +1,3 @@
-/*
 // @ts-expect-error
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
@@ -228,7 +227,6 @@ describe("KernelEIP1193Provider", () => {
                 ]
             })
             expect(sessionId).toBeDefined()
-            console.log("sessionId", sessionId)
 
             const userOpHash = (await provider.request({
                 method: "wallet_sendCalls",
@@ -277,4 +275,3 @@ describe("KernelEIP1193Provider", () => {
         TEST_TIMEOUT
     )
 })
-*/

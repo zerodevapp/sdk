@@ -43,6 +43,6 @@
     "peerDependencies": {
         "wagmi": "^2.9.0",
         "viem": "^2.9.17",
-        "permissionless": "^0.1.18"
+        "permissionless": "^0.1.29"
     }
 }
