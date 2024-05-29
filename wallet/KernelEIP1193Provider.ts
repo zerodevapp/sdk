@@ -92,7 +92,13 @@ export class KernelEIP1193Provider<
                     },
                     permissions: {
                         supported: true,
-                        permissionTypes: ["contract-call"]
+                        permissionTypes: [
+                            "sudo",
+                            "contract-call",
+                            "rate-limit",
+                            "gas-limit",
+                            "signature"
+                        ]
                     }
                 }
             }
