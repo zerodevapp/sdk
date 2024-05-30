@@ -7,13 +7,23 @@ import {
 import { toECDSASigner } from "@zerodev/permissions/signers"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk"
-import type {
-    SponsorUserOperationParameters,
-    SponsorUserOperationReturnType
-} from "@zerodev/sdk/actions"
+import type { SponsorUserOperationReturnType } from "@zerodev/sdk/actions"
 import { createZeroDevPaymasterClient } from "@zerodev/sdk/clients"
-import { type BundlerClient, bundlerActions } from "permissionless"
+import {
+    type BundlerClient,
+    ENTRYPOINT_ADDRESS_V06,
+    type EstimateUserOperationGasReturnType,
+    bundlerActions
+} from "permissionless"
+import {
+    type GetPaymasterDataParameters,
+    type GetPaymasterDataReturnType,
+    type GetPaymasterStubDataReturnType,
+    paymasterActionsEip7677
+} from "permissionless/experimental"
 import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint,
     GetEntryPointVersion,
     UserOperation
@@ -82,7 +92,13 @@ export class KernelEIP1193Provider<
                     },
                     permissions: {
                         supported: true,
-                        permissionTypes: ["contract-call"]
+                        permissionTypes: [
+                            "sudo",
+                            "contract-call",
+                            "rate-limit",
+                            "gas-limit",
+                            "signature"
+                        ]
                     }
                 }
             }
@@ -466,11 +482,81 @@ export class KernelEIP1193Provider<
                 entryPoint: entryPoint,
                 transport: http(paymaster.url)
             })
-            return paymasterClient.sponsorUserOperation({
-                userOperation:
-                    userOperation as SponsorUserOperationParameters<entryPoint>["userOperation"],
-                entryPoint: entryPoint
-            }) as Promise<SponsorUserOperationReturnType<entryPoint>>
+            const paymasterEip7677Client = paymasterClient.extend(
+                paymasterActionsEip7677(entryPoint)
+            )
+
+            // 1. get stub data from paymasterService
+            const stubData = await paymasterEip7677Client.getPaymasterStubData({
+                userOperation: userOperation,
+                chain: chain
+            })
+            const stubUserOperation = {
+                ...userOperation,
+                ...stubData
+            }
+            const hexStubUserOperation = Object.fromEntries(
+                Object.entries(stubUserOperation).map(([key, value]) => {
+                    if (typeof value === "bigint") return [key, toHex(value)]
+                    return [key, value]
+                })
+            )
+
+            // 2. estimate userOp gas
+            const gas = (await this.kernelClient.request({
+                method: "eth_estimateUserOperationGas",
+                params: [hexStubUserOperation as any, entryPoint]
+            })) as EstimateUserOperationGasReturnType<entryPoint>
+
+            const userOperationWithGas = {
+                ...stubUserOperation,
+                callGasLimit: gas.callGasLimit,
+                verificationGasLimit: gas.verificationGasLimit,
+                preVerificationGas: gas.preVerificationGas
+            } as GetPaymasterDataParameters<entryPoint>["userOperation"]
+
+            // 3. get paymaster data
+            const paymasterData = await paymasterEip7677Client.getPaymasterData(
+                {
+                    userOperation: userOperationWithGas,
+                    chain: chain
+                }
+            )
+
+            if (entryPoint === ENTRYPOINT_ADDRESS_V06) {
+                const paymasterDataV06 =
+                    paymasterData as GetPaymasterDataReturnType<ENTRYPOINT_ADDRESS_V06_TYPE>
+                return {
+                    callGasLimit: BigInt(gas.callGasLimit),
+                    verificationGasLimit: BigInt(gas.verificationGasLimit),
+                    preVerificationGas: BigInt(gas.preVerificationGas),
+                    paymasterAndData: paymasterDataV06?.paymasterAndData,
+                    maxFeePerGas: BigInt(userOperation.maxFeePerGas),
+                    maxPriorityFeePerGas: BigInt(
+                        userOperation.maxPriorityFeePerGas
+                    )
+                } as SponsorUserOperationReturnType<entryPoint>
+            }
+            const stubDataV07 =
+                stubData as GetPaymasterStubDataReturnType<ENTRYPOINT_ADDRESS_V07_TYPE>
+            const paymasterDataV07 =
+                paymasterData as GetPaymasterDataReturnType<ENTRYPOINT_ADDRESS_V07_TYPE>
+
+            return {
+                callGasLimit: BigInt(gas.callGasLimit),
+                verificationGasLimit: BigInt(gas.verificationGasLimit),
+                preVerificationGas: BigInt(gas.preVerificationGas),
+                paymaster: paymasterDataV07.paymaster,
+                paymasterData: paymasterDataV07.paymasterData,
+                paymasterVerificationGasLimit:
+                    stubDataV07.paymasterVerificationGasLimit &&
+                    BigInt(stubDataV07.paymasterVerificationGasLimit),
+                paymasterPostOpGasLimit:
+                    stubDataV07?.paymasterPostOpGasLimit &&
+                    BigInt(stubDataV07.paymasterPostOpGasLimit),
+                maxFeePerGas: BigInt(userOperation.maxFeePerGas),
+                maxPriorityFeePerGas: BigInt(userOperation.maxPriorityFeePerGas)
+            } as SponsorUserOperationReturnType<entryPoint>
         }
         // TODO: other paymaster services
     }

@@ -4,13 +4,16 @@ import { walletClientToSmartAccountSigner } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
 import {
     http,
+    type Account,
+    type Chain,
+    type Transport,
+    type WalletClient,
     createClient,
     createPublicClient,
     custom,
     walletActions
 } from "viem"
 import type { CreateConnectorFn } from "wagmi"
-import type { GetWalletClientReturnType } from "wagmi/actions"
 import {
     KernelEIP1193Provider,
     type KernelEIP1193Provider as KernelEIP1193ProviderType
@@ -56,7 +59,11 @@ export const wrapSmartWallet = (
                                     ...opts,
                                     retryCount: 0
                                 })
-                        }).extend(walletActions) as GetWalletClientReturnType
+                        }).extend(walletActions) as WalletClient<
+                            Transport,
+                            Chain,
+                            Account
+                        >
 
                         const publicClient = createPublicClient({
                             chain,
