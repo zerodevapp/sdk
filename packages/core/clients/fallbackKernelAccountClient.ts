@@ -1,5 +1,5 @@
-import type { KernelAccountClient } from "@zerodev/sdk"
-import type { KernelSmartAccount } from "@zerodev/sdk/accounts"
+import type { KernelAccountClient } from "./kernelAccountClient.js"
+import type { KernelSmartAccount } from "../accounts/index.js"
 import type { EntryPoint } from "permissionless/types"
 import type { Chain, Transport } from "viem"
 
