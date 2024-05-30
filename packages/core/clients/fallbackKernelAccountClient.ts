@@ -14,10 +14,6 @@ export const createFallbackKernelAccountClient = <
     >,
     onError?: (error: Error, clientUrl: string) => Promise<void>
 ): KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount> => {
-    // Map to store methods extended at runtime.
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    const extendedMethods = new Map<PropertyKey, any>()
-
     // Function to create a fallback method for a given property.
     // This method will try each client in sequence until one succeeds or all fail.
     function createFallbackMethod(prop: PropertyKey) {
@@ -72,11 +68,6 @@ export const createFallbackKernelAccountClient = <
                     }
                     return proxyClient // Consider whether to return a new instance
                 }
-            }
-
-            // Return an extended method if it exists.
-            if (extendedMethods.has(prop)) {
-                return extendedMethods.get(prop)
             }
 
             const value = Reflect.get(_target, prop, receiver)
