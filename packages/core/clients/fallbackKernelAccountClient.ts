@@ -17,7 +17,7 @@ export const createFallbackKernelAccountClient = <
     // Function to create a fallback method for a given property.
     // This method will try each client in sequence until one succeeds or all fail.
     function createFallbackMethod(prop: PropertyKey) {
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        // biome-ignore lint/suspicious/noExplicitAny: expected any
         return async (...args: any[]) => {
             for (let i = 0; i < clients.length; i++) {
                 try {
@@ -46,16 +46,16 @@ export const createFallbackKernelAccountClient = <
     const proxyClient = new Proxy(clients[0], {
         get(_target, prop, receiver) {
             if (prop === "extend") {
-                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                // biome-ignore lint/suspicious/noExplicitAny: expected any
                 return (fn: any) => {
                     const modifications = fn(proxyClient)
                     for (const [key, modification] of Object.entries(
                         modifications
                     )) {
                         if (typeof modification === "function") {
-                            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                            // biome-ignore lint/suspicious/noExplicitAny: expected any
                             ;(proxyClient as any)[key] = async (
-                                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                                // biome-ignore lint/suspicious/noExplicitAny: expected any
                                 ...args: any[]
                             ) => {
                                 return modification(...args)
@@ -66,7 +66,7 @@ export const createFallbackKernelAccountClient = <
                             )
                         }
                     }
-                    return proxyClient // Consider whether to return a new instance
+                    return proxyClient
                 }
             }
 
