@@ -143,6 +143,11 @@ class WalletConnectKernelService {
         await this.wcWallet.sendSessionResponse(topic, errorResponse)
     }
 
+    getActiveSessions() {
+        if (!this.wcWallet) return
+        return this.wcWallet.getActiveSessions()
+    }
+
     async handleKernelRequest(event: Web3WalletTypes.SessionRequest) {
         if (!this.kernelProvider) {
             throw new Error("Kernel provider not initialized")
