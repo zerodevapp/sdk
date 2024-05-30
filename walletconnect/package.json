@@ -1,5 +1,5 @@
 {
-    "name": "@zerodev/walletconnet",
+    "name": "@zerodev/walletconnect",
     "version": "0.0.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
