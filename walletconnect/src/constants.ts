@@ -25,7 +25,7 @@ export const KERNEL_COMPATIBLE_METHODS = [
     "wallet_sendCalls",
     "wallet_getCallStatus",
     "wallet_issuePermissions",
-    "wallet_switchEthereumChain",
+    "wallet_switchEthereumChain"
 ]
 
 export const KERNEL_COMPATIBLE_EVENTS = ["chainChanged", "accountsChanged"]

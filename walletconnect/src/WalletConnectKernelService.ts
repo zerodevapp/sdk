@@ -1,20 +1,20 @@
-import { KernelEIP1193Provider } from "@zerodev/wallet";
-import type { KernelAccountClient } from "@zerodev/sdk";
-import type { EntryPoint } from "permissionless/types";
-import WalletConnectWallet from "./WalletConnectWallet";
-import type { SessionTypes } from "@walletconnect/types";
-import type { Web3WalletTypes } from "@walletconnect/web3wallet";
-import { hexToUtf8 } from "@walletconnect/encoding";
-import { stripEip155Prefix } from "./constants";
-import { formatJsonRpcError } from "@walletconnect/jsonrpc-utils";
-import { getSdkError } from "@walletconnect/utils";
+import { hexToUtf8 } from "@walletconnect/encoding"
+import { formatJsonRpcError } from "@walletconnect/jsonrpc-utils"
+import type { SessionTypes } from "@walletconnect/types"
+import { getSdkError } from "@walletconnect/utils"
+import type { Web3WalletTypes } from "@walletconnect/web3wallet"
+import type { KernelAccountClient } from "@zerodev/sdk"
+import { KernelEIP1193Provider } from "@zerodev/wallet"
+import type { EntryPoint } from "permissionless/types"
+import WalletConnectWallet from "./WalletConnectWallet"
+import { stripEip155Prefix } from "./constants"
 
 class WalletConnectKernelService {
-    private wcWallet: WalletConnectWallet | undefined;
-    private kernelProvider: KernelEIP1193Provider<EntryPoint> | undefined;
+    private wcWallet: WalletConnectWallet | undefined
+    private kernelProvider: KernelEIP1193Provider<EntryPoint> | undefined
 
     constructor() {
-        this.wcWallet = new WalletConnectWallet();
+        this.wcWallet = new WalletConnectWallet()
     }
 
     async init({
@@ -23,57 +23,68 @@ class WalletConnectKernelService {
         kernelClient,
         kernelProvider
     }: {
-        walletConnectProjectId: string;
-        walletConnectMetadata: any;
-        kernelClient?: KernelAccountClient<EntryPoint>;
-        kernelProvider?: KernelEIP1193Provider<EntryPoint>;
+        walletConnectProjectId: string
+        walletConnectMetadata: any
+        kernelClient?: KernelAccountClient<EntryPoint>
+        kernelProvider?: KernelEIP1193Provider<EntryPoint>
     }) {
-        if (!this.wcWallet) return;
+        if (!this.wcWallet) return
         if (!kernelClient && !kernelProvider) {
             throw new Error("Kernel client or provider must be provided")
         }
-        await this.wcWallet.init({ projectId: walletConnectProjectId, metadata: walletConnectMetadata });
+        await this.wcWallet.init({
+            projectId: walletConnectProjectId,
+            metadata: walletConnectMetadata
+        })
         if (kernelProvider) {
-            this.kernelProvider = kernelProvider;
+            this.kernelProvider = kernelProvider
         } else if (kernelClient) {
-            this.kernelProvider = new KernelEIP1193Provider(kernelClient);
+            this.kernelProvider = new KernelEIP1193Provider(kernelClient)
         }
     }
 
     async connect(uri: string) {
-        if (!this.wcWallet) return;
+        if (!this.wcWallet) return
         if (uri && !uri.startsWith("wc:")) {
-            throw new Error("Invalid pairing code");
+            throw new Error("Invalid pairing code")
         }
-        await this.wcWallet.connect(uri);
+        await this.wcWallet.connect(uri)
     }
 
     async disconnect(session: SessionTypes.Struct) {
-        if (!this.wcWallet) return;
-        await this.wcWallet.disconnectSession(session);
+        if (!this.wcWallet) return
+        await this.wcWallet.disconnectSession(session)
     }
 
-    onSessionRequest(handler: (request: Web3WalletTypes.SessionRequest) => void) {
-        if (!this.wcWallet) return;
-        this.wcWallet.onRequest(handler);
+    onSessionRequest(
+        handler: (request: Web3WalletTypes.SessionRequest) => void
+    ) {
+        if (!this.wcWallet) return
+        this.wcWallet.onRequest(handler)
     }
 
-    onSessionProposal(handler: (proposal: Web3WalletTypes.SessionProposal) => void) {
-        if (!this.wcWallet) return;
-        this.wcWallet.onSessionPropose(handler);
+    onSessionProposal(
+        handler: (proposal: Web3WalletTypes.SessionProposal) => void
+    ) {
+        if (!this.wcWallet) return
+        this.wcWallet.onSessionPropose(handler)
     }
 
     onSessionAdd(handler: () => void) {
-        if (!this.wcWallet) return;
-        this.wcWallet.onSessionAdd(handler);
+        if (!this.wcWallet) return
+        this.wcWallet.onSessionAdd(handler)
     }
 
     onSessionDelete(handler: () => void) {
-        if (!this.wcWallet) return;
-        this.wcWallet.onSessionDelete(handler);
+        if (!this.wcWallet) return
+        this.wcWallet.onSessionDelete(handler)
     }
 
-    async approveSessionProposal(proposal: Web3WalletTypes.SessionProposal, chainId: string, address: string) {
+    async approveSessionProposal(
+        proposal: Web3WalletTypes.SessionProposal,
+        chainId: string,
+        address: string
+    ) {
         if (!this.wcWallet) return
         await this.wcWallet.approveSession(proposal, chainId, address)
     }
@@ -83,7 +94,10 @@ class WalletConnectKernelService {
         await this.wcWallet.rejectSession(proposal)
     }
 
-    async approveSessionRequest(request: Web3WalletTypes.SessionRequest, chainId: string) {
+    async approveSessionRequest(
+        request: Web3WalletTypes.SessionRequest,
+        chainId: string
+    ) {
         if (!this.wcWallet) return
 
         const { topic } = request
@@ -94,7 +108,10 @@ class WalletConnectKernelService {
 
         const getResponse = () => {
             // Get error if wrong chain
-            if (!session || Number.parseInt(requestChainId) !== Number.parseInt(chainId)) {
+            if (
+                !session ||
+                Number.parseInt(requestChainId) !== Number.parseInt(chainId)
+            ) {
                 const error = getSdkError("UNSUPPORTED_CHAINS")
                 return formatJsonRpcError(request.id, error)
             }
@@ -166,4 +183,4 @@ class WalletConnectKernelService {
     }
 }
 
-export default WalletConnectKernelService;
+export default WalletConnectKernelService
