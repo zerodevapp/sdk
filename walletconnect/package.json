@@ -40,10 +40,14 @@
         "@walletconnect/jsonrpc-utils": "^1.0.8",
         "@walletconnect/types": "^2.13.1",
         "@walletconnect/web3wallet": "^1.12.1",
-        "@zerodev/wallet": "^0.0.7"
+        "@zerodev/wallet": "^0.0.7",
+        "lodash": "^4.17.21"
     },
     "peerDependencies": {
         "viem": "^2.9.17",
         "permissionless": "^0.1.29"
+    },
+    "devDependencies": {
+        "@types/lodash": "^4.17.4"
     }
 }

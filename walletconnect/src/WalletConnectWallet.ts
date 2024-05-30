@@ -5,7 +5,7 @@ import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils"
 import { Web3Wallet } from "@walletconnect/web3wallet"
 import type Web3WalletType from "@walletconnect/web3wallet"
 import type { Web3WalletTypes } from "@walletconnect/web3wallet"
-import uniq from "lodash/uniq"
+import { uniq } from "lodash"
 import {
     EIP155,
     KERNEL_COMPATIBLE_EVENTS,
