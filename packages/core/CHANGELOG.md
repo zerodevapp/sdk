@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.16
+
+### Patch Changes
+
+-   Fixed fallbackKernelClient support for the extend function
+
 ## 5.2.15
 
 ### Patch Changes
