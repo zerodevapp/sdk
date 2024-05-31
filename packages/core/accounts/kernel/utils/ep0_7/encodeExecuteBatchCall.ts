@@ -8,7 +8,8 @@ import {
 
 export const encodeExecuteBatchCall = (
     args: CallArgs[],
-    options: Omit<EncodeExecuteOptions, "callType">
+    options: Omit<EncodeExecuteOptions, "callType">,
+    includeHooks?: boolean
 ) => {
     const calldata = encodeAbiParameters(
         [
@@ -46,6 +47,7 @@ export const encodeExecuteBatchCall = (
         {
             callType: CALL_TYPE.BATCH,
             execType: options.execType
-        }
+        },
+        includeHooks
     )
 }

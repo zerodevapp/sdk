@@ -7,10 +7,15 @@ import {
 
 export const encodeExecuteDelegateCall = (
     args: DelegateCallArgs,
-    options: Omit<EncodeExecuteOptions, "callType">
+    options: Omit<EncodeExecuteOptions, "callType">,
+    includeHooks?: boolean
 ) => {
-    return encodeExecuteCall(args, {
-        callType: CALL_TYPE.DELEGATE_CALL,
-        execType: options.execType
-    })
+    return encodeExecuteCall(
+        args,
+        {
+            callType: CALL_TYPE.DELEGATE_CALL,
+            execType: options.execType
+        },
+        includeHooks
+    )
 }

@@ -71,7 +71,6 @@ export async function toKernelPluginManager<
         selector: action?.selector ?? getActionSelector(entryPointVersion),
         address: action?.address ?? zeroAddress
     }
-    console.log("action", action)
     if (
         entryPointVersion === "v0.7" &&
         (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||

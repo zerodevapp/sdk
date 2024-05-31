@@ -23,11 +23,9 @@ type EncodeExecuteCallArgs<TOptions> =
 
 export const encodeExecuteCall = <TOptions extends EncodeExecuteOptions>(
     args: EncodeExecuteCallArgs<TOptions>,
-    options: TOptions
+    options: TOptions,
+    includeHooks = false
 ) => {
-    console.log("encodeExecuteCall")
-    console.log("args", args)
-    console.log("options", options)
     let calldata: Hex
     if ("calldata" in args) {
         calldata = args.calldata
@@ -45,22 +43,24 @@ export const encodeExecuteCall = <TOptions extends EncodeExecuteOptions>(
         getAbiItem({ abi: KernelV3ExecuteAbi, name: "executeUserOp" })
     )
 
-    return concatHex([
-        executeUserOpSig,
-        encodeFunctionData({
-            abi: KernelV3ExecuteAbi,
-            functionName: "execute",
-            args: [getExecMode(options), calldata]
-        })
-    ])
+    // The calldata using hook plugin should be as follows:
+    // [0:4] - `executeUserOp` function signature
+    // [4:8] - `execute` function signature
+    // [8:] - `execute` function arguments
+    if (includeHooks) {
+        return concatHex([
+            executeUserOpSig,
+            encodeFunctionData({
+                abi: KernelV3ExecuteAbi,
+                functionName: "execute",
+                args: [getExecMode(options), calldata]
+            })
+        ])
+    }
 
-    // [0:4] - executeUserOp function signature
-    // [4:8] - execute function signature
-    // [8:] - execute function arguments
-
-    // return encodeFunctionData({
-    //     abi: KernelV3ExecuteAbi,
-    //     functionName: "execute",
-    //     args: [getExecMode(options), calldata]
-    // })
+    return encodeFunctionData({
+        abi: KernelV3ExecuteAbi,
+        functionName: "execute",
+        args: [getExecMode(options), calldata]
+    })
 }

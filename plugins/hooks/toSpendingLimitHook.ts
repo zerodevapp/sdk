@@ -2,10 +2,8 @@ import type { KernelValidatorHook } from "@zerodev/sdk"
 import {
     type Address,
     concatHex,
-    decodeAbiParameters,
     encodeAbiParameters,
-    encodePacked,
-    zeroAddress
+    encodePacked
 } from "viem"
 import { SPENDING_LIMIT_HOOK_V07 } from "./constants"
 
@@ -41,6 +39,9 @@ export async function toSpendingLimitHook({
                 [encodedLimits]
             )
 
+            // hookData is encoded into (1bytes flag + actual hookdata)
+            // flag is for identifying if the hook has to be initialized or not
+            // 0xff means you want to explicitly call install hook
             return concatHex(["0xaa", encodedData])
         }
     }

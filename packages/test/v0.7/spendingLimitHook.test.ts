@@ -50,6 +50,7 @@ import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
@@ -91,38 +92,53 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
-describe("ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
-    let ownerAccount: PrivateKeyAccount
+describe("Spending Limit Hook", () => {
+    let accountWithSudo: KernelSmartAccount<EntryPoint>
+    let accountWithRegular: KernelSmartAccount<EntryPoint>
+    let ownerAccount1: PrivateKeyAccount
+    let ownerAccount2: PrivateKeyAccount
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
-    let kernelClient: KernelAccountClient<
+    let kernelClientWithSudo: KernelAccountClient<
         EntryPoint,
         Transport,
         Chain,
         KernelSmartAccount<EntryPoint>
     >
-    let owner: Address
+    let kernelClientWithRegular: KernelAccountClient<
+        EntryPoint,
+        Transport,
+        Chain,
+        KernelSmartAccount<EntryPoint>
+    >
 
     beforeAll(async () => {
         // const ownerPrivateKey = process.env.TEST_PRIVATE_KEY
-        const ownerPrivateKey =
-            "0x7630514d0cd998019c9cd4ee19a0048d6451c821ccf7927ae5e29a67104a3d91"
+        // const ownerPrivateKey =
+        //     "0x7630514d0cd998019c9cd4ee19a0048d6451c821ccf7927ae5e29a67104a3d92"
+        const ownerPrivateKey1 = generatePrivateKey()
+        const ownerPrivateKey2 = generatePrivateKey()
         publicClient = await getPublicClient()
-        if (!ownerPrivateKey) {
-            throw new Error("TEST_PRIVATE_KEY is not set")
-        }
-        ownerAccount = privateKeyToAccount(ownerPrivateKey as Hex)
-        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+        ownerAccount1 = privateKeyToAccount(ownerPrivateKey1)
+        ownerAccount2 = privateKeyToAccount(ownerPrivateKey2)
+
+        const ecdsaValidatorPlugin1 = await signerToEcdsaValidator(
             publicClient,
             {
-                signer: ownerAccount,
+                signer: ownerAccount1,
+                entryPoint: getEntryPoint()
+            }
+        )
+
+        const ecdsaValidatorPlugin2 = await signerToEcdsaValidator(
+            publicClient,
+            {
+                signer: ownerAccount2,
                 entryPoint: getEntryPoint()
             }
         )
 
         const ecdsaSigner = await toECDSASigner({
-            signer: ownerAccount
+            signer: ownerAccount2
         })
 
         const sudoPolicy = await toSudoPolicy({})
@@ -134,46 +150,190 @@ describe("ECDSA kernel Account", () => {
         })
 
         const spendingLimitHook = await toSpendingLimitHook({
-            limits: [{ token: zeroAddress, allowance: BigInt(10000) }]
+            limits: [{ token: Test_ERC20Address, allowance: BigInt(4337) }]
         })
-        console.log("spendingLimitHook", spendingLimitHook.getIdentifier())
 
-        account = await createKernelAccount(publicClient, {
+        accountWithSudo = await createKernelAccount(publicClient, {
             entryPoint: getEntryPoint(),
             plugins: {
-                sudo: ecdsaValidatorPlugin,
+                sudo: ecdsaValidatorPlugin1,
+                hook: spendingLimitHook
+            }
+        })
+
+        accountWithRegular = await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                sudo: ecdsaValidatorPlugin2,
                 regular: permissoinPlugin,
                 hook: spendingLimitHook
             }
         })
 
-        console.log("account", account.address)
+        console.log("accountWithSudo", accountWithSudo.address)
+        console.log("accountWithRegular", accountWithRegular.address)
 
-        owner = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex).address
-        kernelClient = await getKernelAccountClient({
-            account
-            // middleware: {
-            //     sponsorUserOperation: async ({ userOperation }) => {
-            //         const zeroDevPaymaster = getZeroDevPaymasterClient()
-            //         return zeroDevPaymaster.sponsorUserOperation({
-            //             userOperation,
-            //             entryPoint: getEntryPoint()
-            //         })
-            //     }
-            // }
+        kernelClientWithSudo = await getKernelAccountClient({
+            account: accountWithSudo,
+            middleware: {
+                sponsorUserOperation: async ({ userOperation }) => {
+                    const zeroDevPaymaster = getZeroDevPaymasterClient()
+                    return zeroDevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint: getEntryPoint()
+                    })
+                }
+            }
         })
-        bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
+
+        kernelClientWithRegular = await getKernelAccountClient({
+            account: accountWithRegular,
+            middleware: {
+                sponsorUserOperation: async ({ userOperation }) => {
+                    const zeroDevPaymaster = getZeroDevPaymasterClient()
+                    return zeroDevPaymaster.sponsorUserOperation({
+                        userOperation,
+                        entryPoint: getEntryPoint()
+                    })
+                }
+            }
+        })
+
+        const amountToMint = 10000n
+        await mintToAccount(
+            publicClient,
+            kernelClientWithSudo,
+            kernelClientWithSudo.account.address,
+            amountToMint
+        )
+        await mintToAccount(
+            publicClient,
+            kernelClientWithRegular,
+            kernelClientWithRegular.account.address,
+            amountToMint
+        )
     })
 
     test(
-        "test hook",
+        "Account with sudo validator can't send a ERC20 trnasfer transaction exceeding the allowance of spending limit hook",
         async () => {
-            const txHash = await kernelClient.sendTransaction({
-                to: zeroAddress,
-                value: BigInt(0),
-                data: "0x"
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount1.address, amountToTransfer]
             })
-            console.log("txHash", txHash)
+
+            await expect(
+                kernelClientWithSudo.sendTransaction({
+                    to: Test_ERC20Address,
+                    data: transferData
+                })
+            ).rejects.toThrow()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Account with sudo validator can send a ERC20 transfer transaction with a spending limit hook",
+        async () => {
+            const amountToTransfer = 4337n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount1.address, amountToTransfer]
+            })
+
+            const response = await kernelClientWithSudo.sendTransaction({
+                to: Test_ERC20Address,
+                data: transferData
+            })
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(66)
+            expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Account with sudo validator can't send a ERC20 transfer transaction after using all allowance of spending limit hook",
+        async () => {
+            const amountToTransfer = 4337n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount1.address, amountToTransfer]
+            })
+
+            await expect(
+                kernelClientWithSudo.sendTransaction({
+                    to: Test_ERC20Address,
+                    data: transferData
+                })
+            ).rejects.toThrow()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Account with regular validator can't send a ERC20 trnasfer transaction exceeding the allowance of spending limit hook",
+        async () => {
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount2.address, amountToTransfer]
+            })
+
+            await expect(
+                kernelClientWithRegular.sendTransaction({
+                    to: Test_ERC20Address,
+                    data: transferData
+                })
+            ).rejects.toThrow()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Account with regular validator can send a ERC20 transfer transaction with a spending limit hook",
+        async () => {
+            const amountToTransfer = 4337n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount2.address, amountToTransfer]
+            })
+
+            const response = await kernelClientWithRegular.sendTransaction({
+                to: Test_ERC20Address,
+                data: transferData
+            })
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(66)
+            expect(response).toMatch(/^0x[0-9a-fA-F]{64}$/)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Account with regular validator can't send a ERC20 transfer transaction after using all allowance of spending limit hook",
+        async () => {
+            const amountToTransfer = 4337n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [ownerAccount2.address, amountToTransfer]
+            })
+
+            await expect(
+                kernelClientWithRegular.sendTransaction({
+                    to: Test_ERC20Address,
+                    data: transferData
+                })
+            ).rejects.toThrow()
         },
         TEST_TIMEOUT
     )
