@@ -129,10 +129,12 @@ export const KERNEL_ADDRESSES: {
 
 const getKernelInitData = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
-    kernelPluginManager
+    kernelPluginManager,
+    initHook
 }: {
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
+    initHook: boolean
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const { enableData, identifier, validatorAddress } =
@@ -149,7 +151,16 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     return encodeFunctionData({
         abi: KernelV3InitAbi,
         functionName: "initialize",
-        args: [identifier, zeroAddress, enableData, "0x"]
+        args: [
+            identifier,
+            initHook && kernelPluginManager.hook
+                ? kernelPluginManager.hook?.getIdentifier()
+                : zeroAddress,
+            enableData,
+            initHook && kernelPluginManager.hook
+                ? await kernelPluginManager.hook?.getEnableData()
+                : "0x"
+        ]
     })
 }
 
@@ -166,7 +177,8 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     accountLogicAddress,
     factoryStakerAddress,
     entryPoint: entryPointAddress,
-    kernelPluginManager
+    kernelPluginManager,
+    initHook
 }: {
     index: bigint
     factoryAddress: Address
@@ -174,11 +186,13 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     factoryStakerAddress: Address
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
+    initHook: boolean
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPoint>({
         entryPoint: entryPointAddress,
-        kernelPluginManager
+        kernelPluginManager,
+        initHook
     })
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -291,10 +305,22 @@ export async function createKernelAccount<
         : await toKernelPluginManager<entryPoint>(client, {
               sudo: plugins.sudo,
               regular: plugins.regular,
+              hook: plugins.hook,
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               entryPoint: entryPointAddress
           })
+
+    // initHook flag is activated only if both the hook and sudo validator are given
+    // if the hook is given with regular plugins, then consider it as a hook for regular plugins
+    const initHook = Boolean(
+        isKernelPluginManager<entryPoint>(plugins)
+            ? plugins.hook &&
+                  plugins.getIdentifier() ===
+                      plugins.sudoValidator?.getIdentifier()
+            : plugins.hook && !plugins.regular
+    )
+
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
         if (!accountLogicAddress || !factoryAddress)
@@ -305,7 +331,8 @@ export async function createKernelAccount<
             accountLogicAddress,
             factoryStakerAddress,
             entryPoint: entryPointAddress,
-            kernelPluginManager
+            kernelPluginManager,
+            initHook
         })
     }
 
@@ -357,6 +384,10 @@ export async function createKernelAccount<
                 }
                 if (entryPointVersion === "v0.6") {
                     return encodeCallDataEpV06(tx)
+                }
+
+                if (plugins.hook) {
+                    return encodeCallDataEpV07(tx, true)
                 }
                 return encodeCallDataEpV07(tx)
             },

@@ -7,7 +7,7 @@ NC='\033[0m' # No Color
 
 # Define the list of directories containing package.json files that should be built.
 # Assuming that all packages are directly under the 'packages' and 'plugins' directories.
-DIRECTORIES=("packages/*" "plugins/*", "wallet")
+DIRECTORIES=("packages/*" "plugins/*" "wallet")
 
 # Arrays to keep track of build statuses
 SUCCEEDED=()

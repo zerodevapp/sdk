@@ -51,6 +51,7 @@ export async function toKernelPluginManager<
     {
         sudo,
         regular,
+        hook,
         pluginEnableSignature,
         validatorInitData,
         action,
@@ -130,7 +131,8 @@ export async function toKernelPluginManager<
                 enableSignature,
                 userOpSignature,
                 action,
-                enableData: await regular.getEnableData(accountAddress)
+                enableData: await regular.getEnableData(accountAddress),
+                hook
             })
         } else if (sudo) {
             return userOpSignature
@@ -190,6 +192,7 @@ export async function toKernelPluginManager<
             chainId,
             kernelVersion: version,
             action,
+            hook,
             validator: regular,
             validatorNonce
         })
@@ -238,6 +241,7 @@ export async function toKernelPluginManager<
     return {
         sudoValidator: sudo,
         ...activeValidator,
+        hook,
         getIdentifier,
         encodeModuleInstallCallData: async (accountAddress: Address) => {
             if (!action) {
