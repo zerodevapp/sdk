@@ -34,13 +34,6 @@ export const getPluginsEnableTypedData = async <
 } & Kernel2_0_plugins<entryPoint>): Promise<
     Parameters<CustomSource["signTypedData"]>[0]
 > => {
-    console.log("getPluginsEnableTypedData")
-    console.log("hook?.getIdentifier()", hook?.getIdentifier())
-    console.log(
-        "(await hook?.getEnableData(accountAddress))",
-        await hook?.getEnableData(accountAddress)
-    )
-
     return {
         domain: {
             name: "Kernel",
