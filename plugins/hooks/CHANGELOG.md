@@ -1,7 +1,13 @@
-# @zerodev/ecdsa-validator
+# @zerodev/hooks
 
-## 5.2.3
+## 5.2.1
 
 ### Patch Changes
 
-- Update permissionless@0.1.18
+-   Fixed export issue
+
+## 5.2.0
+
+### Patch Changes
+
+-   Added spending limit hook
