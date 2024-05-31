@@ -8,7 +8,9 @@ import type { Chain, Client, Transport } from "viem"
 
 export async function isAuthorized({
     projectId
-}: { projectId: string }): Promise<boolean> {
+}: {
+    projectId: string
+}): Promise<boolean> {
     try {
         const magic = await getMagic({ projectId })
 

@@ -1,7 +1,8 @@
 export {
     createKernelAccount,
-    createKernelV1Account,
-    createKernelV2Account,
+    createKernelAccountV0_2,
+    createKernelAccountV1,
+    type KernelSmartAccountV1,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,

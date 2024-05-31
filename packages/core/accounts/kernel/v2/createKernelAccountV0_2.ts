@@ -135,7 +135,7 @@ const getAccountAddress = async <
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
-export async function createKernelV2Account<
+export async function createKernelAccountV0_2<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined

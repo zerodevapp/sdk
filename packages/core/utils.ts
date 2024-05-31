@@ -45,7 +45,7 @@ export enum KERNEL_FEATURES {
     ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH = "ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH"
 }
 
-const KERNEL_FEATURES_BY_VERSION: Record<KERNEL_FEATURES, string> = {
+export const KERNEL_FEATURES_BY_VERSION: Record<KERNEL_FEATURES, string> = {
     [KERNEL_FEATURES.ERC1271_SIG_WRAPPER]: ">=0.2.3 || >=0.3.0-beta",
     [KERNEL_FEATURES.ERC1271_WITH_VALIDATOR]: ">=0.3.0-beta",
     [KERNEL_FEATURES.ERC1271_SIG_WRAPPER_WITH_WRAPPED_HASH]: ">=0.3.0-beta"
@@ -142,4 +142,8 @@ export const validateKernelVersionWithEntryPoint = <
             "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0-beta for EntryPointV0.7"
         )
     }
+}
+
+export const satisfiesRange = (version: string, range: string): boolean => {
+    return satisfies(version, range)
 }

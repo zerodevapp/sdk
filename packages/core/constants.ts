@@ -3,7 +3,7 @@ import { type Address, type Hex, zeroAddress } from "viem"
 import type {
     KERNEL_V3_VERSION_TYPE,
     KERNEL_VERSION_TYPE
-} from "./types/kernel"
+} from "./types/kernel.js"
 
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
@@ -63,11 +63,11 @@ export const KernelVersionToAddressesMap: {
     },
     "0.3.1": {
         accountImplementationAddress:
-            "0xec9aA3A41D6bAf3cDb2268ef7a8B116EA74925Ef",
-        factoryAddress: "0xB52f3C04AeAF9364FBf68310a8128aabb40C9ABb",
+            "0x8549e78dF3C7850A7735f04ADbDC8A2962Db1EB8",
+        factoryAddress: "0x8ba061431fBAF2A766a773A9C044C92d13A07D7e",
         metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
         initCodeHash:
-            "0xf51eea38f87ea60f2233b67c3592a801f74962f2a4f01d80848fb53f0e7c0004"
+            "0xc5a51f3c59926dfa1c80e5918d287a4d56df9c48ec0e4c5be1a6ca2f6894a58c"
     }
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"

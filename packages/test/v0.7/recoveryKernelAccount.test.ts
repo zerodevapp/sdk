@@ -1,10 +1,10 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { kernelVersionToEcdsaValidatorMap } from "@zerodev/ecdsa-validator/constants.js"
+import { getValidatorAddress } from "@zerodev/ecdsa-validator/index.js"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { type BundlerClient, bundlerActions } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -47,14 +47,14 @@ const TEST_TIMEOUT = 1000000
 const recoveryExecutorFunction =
     "function doRecovery(address _validator, bytes calldata _data)"
 describe("Recovery kernel Account", () => {
-    let recoveryAccount: KernelSmartAccount<EntryPoint>
+    let recoveryAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let recoveryKernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
     let accountAddress: Address
     let newSigner: PrivateKeyAccount
@@ -100,7 +100,7 @@ describe("Recovery kernel Account", () => {
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
                         args: [
-                            kernelVersionToEcdsaValidatorMap[kernelVersion],
+                            getValidatorAddress(getEntryPoint(), kernelVersion),
                             newSigner.address
                         ]
                     }),
@@ -134,7 +134,7 @@ describe("Recovery kernel Account", () => {
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
                         args: [
-                            kernelVersionToEcdsaValidatorMap[kernelVersion],
+                            getValidatorAddress(getEntryPoint(), kernelVersion),
                             newSigner.address
                         ]
                     })

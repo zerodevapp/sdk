@@ -1,4 +1,4 @@
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
@@ -34,10 +34,12 @@ export async function toMultiChainECDSAValidator<
     {
         signer,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "MultiChainECDSAValidator">> {
@@ -80,6 +82,7 @@ export async function toMultiChainECDSAValidator<
 
     return {
         ...account,
+        supportedKernelVersions: ">=0.3.0-beta",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "MultiChainECDSAValidator",

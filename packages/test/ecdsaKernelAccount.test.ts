@@ -8,7 +8,6 @@ import {
 import {
     constants,
     EIP1271Abi,
-    KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccount,
     createKernelAccount,
@@ -19,13 +18,9 @@ import {
 import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V06,
-    ENTRYPOINT_ADDRESS_V07
-} from "permissionless"
+import { type BundlerClient, ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -102,15 +97,15 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let ownerAccount: PrivateKeyAccount
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,

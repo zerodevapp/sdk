@@ -1,4 +1,5 @@
 import { validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
+import { satisfiesRange } from "@zerodev/sdk"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
@@ -10,19 +11,20 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import type {
-    Address,
-    Chain,
-    Client,
-    Hex,
-    LocalAccount,
-    Transport,
-    TypedDataDefinition
+import {
+    type Address,
+    type Chain,
+    type Client,
+    type Hex,
+    type LocalAccount,
+    type Transport,
+    type TypedDataDefinition,
+    zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { kernelVersionToEcdsaValidatorMap } from "./constants.js"
+import { kernelVersionRangeToValidator } from "./constants.js"
 
 export const getValidatorAddress = <entryPoint extends EntryPoint>(
     entryPointAddress: entryPoint,
@@ -30,9 +32,17 @@ export const getValidatorAddress = <entryPoint extends EntryPoint>(
     validatorAddress?: Address
 ): Address => {
     validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
-    const ecdsaValidatorAddress =
-        kernelVersionToEcdsaValidatorMap[kernelVersion]
-    return validatorAddress ?? ecdsaValidatorAddress
+    const ecdsaValidatorAddress = Object.entries(
+        kernelVersionRangeToValidator
+    ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]
+
+    if (!ecdsaValidatorAddress && !validatorAddress) {
+        throw new Error(
+            `Validator not found for Kernel version: ${kernelVersion}`
+        )
+    }
+
+    return validatorAddress ?? ecdsaValidatorAddress ?? zeroAddress
 }
 
 export async function signerToEcdsaValidator<
@@ -98,6 +108,7 @@ export async function signerToEcdsaValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ECDSAValidator",

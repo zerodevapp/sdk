@@ -24,7 +24,7 @@ import {
     toHex,
     zeroAddress
 } from "viem"
-import { kernelVersionToEcdsaValidatorMap } from "./constants"
+import { getValidatorAddress } from "./toECDSAValidatorPlugin.js"
 
 const getInitCodeHash = async <entryPoint extends EntryPoint>(
     publicClient: PublicClient,
@@ -149,8 +149,10 @@ export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
     )
     const kernelAddresses =
         constants.KernelVersionToAddressesMap[params.kernelVersion]
-    const ecdsaValidatorAddress =
-        kernelVersionToEcdsaValidatorMap[params.kernelVersion]
+    const ecdsaValidatorAddress = getValidatorAddress(
+        params.entryPointAddress,
+        params.kernelVersion
+    )
     const bytecodeHash = await (async () => {
         if ("initCodeHash" in params && params.initCodeHash) {
             return params.initCodeHash

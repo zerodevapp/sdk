@@ -9,7 +9,7 @@ import {
     getERC20PaymasterApproveCall
 } from "@zerodev/sdk"
 import { gasTokenAddresses } from "@zerodev/sdk"
-import { KernelV1SmartAccount } from "@zerodev/sdk/accounts/kernel/v1/createKernelV1Account.js"
+import { KernelSmartAccountV1 } from "@zerodev/sdk/accounts/kernel/v1/createKernelAccountV1.js"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import type { BundlerClient } from "permissionless"
@@ -17,7 +17,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import type { UserOperation } from "permissionless/types/userOperation.js"
 import {
     type Address,
@@ -87,14 +87,14 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account v1", () => {
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
 
     beforeAll(async () => {

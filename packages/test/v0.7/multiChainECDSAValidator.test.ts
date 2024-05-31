@@ -22,7 +22,10 @@ import {
     deepHexlify
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type {
+    ENTRYPOINT_ADDRESS_V07_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint"
 import {
     http,
     type Address,
@@ -60,6 +63,7 @@ import { Test_ERC20Address } from "../utils.js"
 import {
     findUserOperationEvent,
     getEntryPoint,
+    kernelVersion,
     mintToAccount,
     validateEnvironmentVariables,
     waitForNonceUpdate
@@ -104,27 +108,27 @@ describe("MultiChainECDSAValidator", () => {
     let sepoliaPublicClient: PublicClient
     let optimismSepoliaPublicClient: PublicClient
 
-    let sepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<EntryPoint>
-    let opSepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<EntryPoint>
+    let sepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let opSepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<ENTRYPOINT_ADDRESS_V07_TYPE>
 
     let signer: PrivateKeyAccount
     let sepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         string
     >
     let optimismsepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         string
     >
 
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,
         typeof kernelClient,
@@ -157,16 +161,19 @@ describe("MultiChainECDSAValidator", () => {
         sepoliaMultiChainECDSAValidatorPlugin =
             await toMultiChainECDSAValidator(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer
             })
         optimismsepoliaMultiChainECDSAValidatorPlugin =
             await toMultiChainECDSAValidator(optimismSepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer
             })
 
         account = await createKernelAccount(sepoliaPublicClient, {
             entryPoint: getEntryPoint(),
+            kernelVersion,
             plugins: {
                 sudo: sepoliaMultiChainECDSAValidatorPlugin
             }
@@ -220,10 +227,12 @@ describe("MultiChainECDSAValidator", () => {
             const multiChainECDSAValidatorPluginWithRandomSigner =
                 await toMultiChainECDSAValidator(sepoliaPublicClient, {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: privateKeyToAccount(generatePrivateKey())
                 })
             const account = await createKernelAccount(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 plugins: {
                     sudo: multiChainECDSAValidatorPluginWithRandomSigner
                 }
@@ -289,10 +298,12 @@ describe("MultiChainECDSAValidator", () => {
             const multiChainValidatorPluginWithRandomSigner =
                 await toMultiChainECDSAValidator(sepoliaPublicClient, {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: privateKeyToAccount(generatePrivateKey())
                 })
             const account = await createKernelAccount(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 plugins: {
                     sudo: multiChainValidatorPluginWithRandomSigner
                 }
@@ -781,6 +792,7 @@ describe("MultiChainECDSAValidator", () => {
                 sepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: sepoliaMultiChainECDSAValidatorPlugin
                     }
@@ -791,6 +803,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: optimismsepoliaMultiChainECDSAValidatorPlugin
                     }
@@ -958,6 +971,7 @@ describe("MultiChainECDSAValidator", () => {
                 sepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: sepoliaEcdsaModularSigner,
                     policies: [sudoPolicy]
                 }
@@ -967,6 +981,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: optimismSepoliaEcdsaModularSigner,
                     policies: [sudoPolicy]
                 }
@@ -976,6 +991,7 @@ describe("MultiChainECDSAValidator", () => {
                 sepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: sepoliaMultiChainECDSAValidatorPlugin,
                         regular: sepoliaPermissionPlugin
@@ -987,6 +1003,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
                         regular: optimismSepoliaPermissionPlugin
@@ -1169,6 +1186,7 @@ describe("MultiChainECDSAValidator", () => {
                 sepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: sepoliaEmptySessionKeySigner,
                     policies: [sudoPolicy]
                 }
@@ -1178,6 +1196,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     signer: optimismSepoliaEmptySessionKeySigner,
                     policies: [sudoPolicy]
                 }
@@ -1187,6 +1206,7 @@ describe("MultiChainECDSAValidator", () => {
                 sepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: sepoliaMultiChainECDSAValidatorPlugin,
                         regular: sepoliaPermissionPlugin
@@ -1198,6 +1218,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaPublicClient,
                 {
                     entryPoint: getEntryPoint(),
+                    kernelVersion,
                     plugins: {
                         sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
                         regular: optimismSepoliaPermissionPlugin
@@ -1239,6 +1260,7 @@ describe("MultiChainECDSAValidator", () => {
                 await deserializePermissionAccount(
                     sepoliaPublicClient,
                     getEntryPoint(),
+                    kernelVersion,
                     sepoliaApproval,
                     sepoliaSessionKeySigner
                 )
@@ -1247,6 +1269,7 @@ describe("MultiChainECDSAValidator", () => {
                 await deserializePermissionAccount(
                     optimismSepoliaPublicClient,
                     getEntryPoint(),
+                    kernelVersion,
                     optimismSepoliaApproval,
                     optimismSepoliaSessionKeySigner
                 )

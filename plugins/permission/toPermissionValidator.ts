@@ -34,8 +34,9 @@ export async function toPermissionValidator<
         signer,
         policies,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         flag = PolicyFlags.FOR_ALL_VALIDATION
-    }: PermissionPluginParams
+    }: PermissionPluginParams<entryPoint>
 ): Promise<PermissionPlugin<entryPoint>> {
     const chainId = await getChainId(client)
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
@@ -78,6 +79,7 @@ export async function toPermissionValidator<
 
     return {
         ...signer.account,
+        supportedKernelVersions: ">=0.3.0-beta",
         validatorType: "PERMISSION",
         address: zeroAddress,
         source: "PermissionValidator",

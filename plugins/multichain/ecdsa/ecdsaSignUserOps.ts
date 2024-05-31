@@ -17,7 +17,7 @@ export async function ecdsaSignUserOps<entryPoint extends EntryPoint>({
     multiUserOps,
     entryPoint: entryPointAddress
 }: {
-    account: KernelSmartAccount<EntryPoint>
+    account: KernelSmartAccount<entryPoint>
     multiUserOps: MultiChainUserOperation<entryPoint>[]
     entryPoint: entryPoint
 }): Promise<UserOperation<GetEntryPointVersion<entryPoint>>[]> {

@@ -126,6 +126,7 @@ export type KernelValidator<
     Name extends string = string
 > = LocalAccount<Name> & {
     validatorType: ValidatorType
+    supportedKernelVersions: string
     getNonceKey: (
         accountAddress?: Address,
         customNonceKey?: bigint

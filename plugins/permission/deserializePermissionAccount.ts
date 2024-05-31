@@ -7,7 +7,7 @@ import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
-import type { Hex } from "viem"
+import type { Chain, Client, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import {
@@ -25,9 +25,11 @@ import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 
 export const deserializePermissionAccount = async <
-    entryPoint extends EntryPoint
+    entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Parameters<typeof createKernelAccount>[0],
+    client: Client<TTransport, TChain, undefined>,
     entryPointAddress: entryPoint,
     kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,
@@ -56,32 +58,30 @@ export const deserializePermissionAccount = async <
                 createPolicyFromParams(policy)
             ) || []
         ),
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
         params.accountParams.initCode
     )
 
-    const kernelPluginManager = await toKernelPluginManager<entryPoint>(
-        client,
-        {
-            regular: modularPermissionPlugin,
-            pluginEnableSignature: params.enableSignature,
-            validatorInitData,
-            action: params.action,
-            entryPoint: entryPointAddress,
-            kernelVersion,
-            ...params.validityData
-        }
-    )
+    const kernelPluginManager = await toKernelPluginManager(client, {
+        regular: modularPermissionPlugin,
+        pluginEnableSignature: params.enableSignature,
+        validatorInitData,
+        action: params.action,
+        entryPoint: entryPointAddress,
+        kernelVersion,
+        ...params.validityData
+    })
 
-    return createKernelAccount<entryPoint>(client, {
+    return createKernelAccount(client, {
+        entryPoint: entryPointAddress,
+        kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress,
-        kernelVersion
+        deployedAccountAddress: params.accountParams.accountAddress
     })
 }
 

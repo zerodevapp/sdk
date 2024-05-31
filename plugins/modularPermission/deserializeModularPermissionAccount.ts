@@ -47,32 +47,30 @@ export const deserializeModularPermissionAccount = async <
         ),
         validUntil: params.modularPermissionParams.validUntil || 0,
         validAfter: params.modularPermissionParams.validAfter || 0,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
         params.accountParams.initCode
     )
 
-    const kernelPluginManager = await toKernelPluginManager<entryPoint>(
-        client,
-        {
-            regular: modularPermissionPlugin,
-            pluginEnableSignature: params.enableSignature,
-            validatorInitData,
-            action: params.action,
-            entryPoint: entryPointAddress,
-            kernelVersion,
-            ...params.validityData
-        }
-    )
+    const kernelPluginManager = await toKernelPluginManager(client, {
+        regular: modularPermissionPlugin,
+        pluginEnableSignature: params.enableSignature,
+        validatorInitData,
+        action: params.action,
+        entryPoint: entryPointAddress,
+        kernelVersion,
+        ...params.validityData
+    })
 
-    return createKernelAccount<entryPoint>(client, {
+    return createKernelAccount(client, {
+        entryPoint: entryPointAddress,
+        kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress,
-        kernelVersion
+        deployedAccountAddress: params.accountParams.accountAddress
     })
 }
 

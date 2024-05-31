@@ -21,7 +21,10 @@ import {
     createPimlicoPaymasterClient
 } from "permissionless/clients/pimlico"
 import { createStackupPaymasterClient } from "permissionless/clients/stackup"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type {
+    ENTRYPOINT_ADDRESS_V06_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint"
 import {
     http,
     type Address,
@@ -97,17 +100,17 @@ describe("fallback client e2e", () => {
     const STACKUP_PAYMASTER_RPC_URL = process.env.STACKUP_PAYMASTER_RPC_URL
 
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
-    let kernelAccount: KernelSmartAccount<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
+    let kernelAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let unavailableServer: { close: () => Promise<unknown>; url: string }
 
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,
         KernelAccountClient<
-            EntryPoint,
+            ENTRYPOINT_ADDRESS_V06_TYPE,
             Transport,
             Chain,
-            KernelSmartAccount<EntryPoint>
+            KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
         >,
         Address
     >
@@ -144,10 +147,10 @@ describe("fallback client e2e", () => {
 
     describe("when all clients are available", async () => {
         let fallbackKernelClient: KernelAccountClient<
-            EntryPoint,
+            ENTRYPOINT_ADDRESS_V06_TYPE,
             Transport,
             Chain,
-            KernelSmartAccount<EntryPoint>
+            KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
         >
 
         beforeAll(() => {
@@ -230,12 +233,7 @@ describe("fallback client e2e", () => {
                 zerodevKernelClient,
                 pimlicoKernelClient,
                 stackupKernelClient
-            ]) as KernelAccountClient<
-                EntryPoint,
-                Transport,
-                Chain,
-                KernelSmartAccount<EntryPoint>
-            >
+            ])
         })
 
         test("Account address should be a valid Ethereum address", async () => {

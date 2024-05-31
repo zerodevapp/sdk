@@ -39,7 +39,7 @@ import {
 } from "../../utils/multisend.js"
 import type { KernelSmartAccount } from "../createKernelAccount.js"
 
-export type KernelV1SmartAccount<
+export type KernelSmartAccountV1<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
@@ -90,7 +90,7 @@ const KERNEL_V1_ADDRESSES: {
     ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
 
-export async function createKernelV1Account<
+export async function createKernelAccountV1<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
@@ -107,7 +107,7 @@ export async function createKernelV1Account<
         entrypoint: entryPoint
         index?: bigint
     }
-): Promise<KernelV1SmartAccount<entryPoint, TTransport, TChain>> {
+): Promise<KernelSmartAccountV1<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
     if (

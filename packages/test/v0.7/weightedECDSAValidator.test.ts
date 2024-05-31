@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import type { BundlerClient } from "permissionless"
 import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
 import {
     type Chain,
     type PublicClient,
@@ -29,16 +29,16 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Weighted ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
-    let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
+    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
 
     beforeAll(async () => {
         account = await getSignersToWeightedEcdsaKernelAccount()

@@ -40,7 +40,8 @@ export const deserializeSessionKeyAccount = async <
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
         validatorData: params.sessionKeyParams,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
@@ -63,11 +64,7 @@ export const deserializeSessionKeyAccount = async <
         deployedAccountAddress: params.accountParams.accountAddress,
         entryPoint: entryPointAddress,
         kernelVersion
-    }) as unknown as KernelSmartAccount<
-        entryPoint,
-        Transport,
-        Chain | undefined
-    >
+    })
 }
 
 export const decodeParamsFromInitCode = (initCode: Hex) => {

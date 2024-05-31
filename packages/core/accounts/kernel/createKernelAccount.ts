@@ -320,16 +320,6 @@ export async function createKernelAccount<
             factoryAddress: _factoryAddress,
             metaFactoryAddress: _metaFactoryAddress
         })
-    // accountImplementationAddress =
-    //     accountImplementationAddress ??
-    //     (entryPointVersion === "v0.6"
-    //         ? KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_6
-    //         : KERNEL_ADDRESSES.ACCOUNT_LOGIC_V0_7)
-    // factoryAddress =
-    //     factoryAddress ??
-    //     (entryPointVersion === "v0.6"
-    //         ? KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_6
-    //         : KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7)
 
     const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
         ? plugins

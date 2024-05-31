@@ -1,6 +1,6 @@
 import { Buffer } from "buffer"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -203,12 +203,14 @@ export async function createPasskeyValidator<
         passkeyName,
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress,
+        kernelVersion,
+        validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
         passkeyName: string
         passkeyServerUrl: string
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
         credentials?: RequestCredentials
     }
@@ -217,8 +219,11 @@ export async function createPasskeyValidator<
         getSerializedData: () => string
     }
 > {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    const validatorAddress = getValidatorAddress(
+        entryPointAddress,
+        kernelVersion,
+        _validatorAddress
+    )
 
     // Get registration options
     const registerOptionsResponse = await fetch(
@@ -342,11 +347,12 @@ export async function createPasskeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
         getIdentifier() {
-            return validatorAddress ?? getValidatorAddress(entryPointAddress)
+            return validatorAddress
         },
         async getEnableData() {
             return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
@@ -390,8 +396,7 @@ export async function createPasskeyValidator<
                 passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
-                validatorAddress:
-                    validatorAddress ?? getValidatorAddress(entryPointAddress),
+                validatorAddress,
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
@@ -409,11 +414,13 @@ export async function getPasskeyValidator<
     {
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress,
+        kernelVersion,
+        validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
         passkeyServerUrl: string
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
         credentials?: RequestCredentials
     }
@@ -422,8 +429,11 @@ export async function getPasskeyValidator<
         getSerializedData: () => string
     }
 > {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    const validatorAddress = getValidatorAddress(
+        entryPointAddress,
+        kernelVersion,
+        _validatorAddress
+    )
     // Get login options
     const loginOptionsResponse = await fetch(
         `${passkeyServerUrl}/login/options`,
@@ -536,11 +546,11 @@ export async function getPasskeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
-        getIdentifier: () =>
-            validatorAddress ?? getValidatorAddress(entryPointAddress),
+        getIdentifier: () => validatorAddress,
         async getEnableData() {
             return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
         },
@@ -579,8 +589,7 @@ export async function getPasskeyValidator<
                 passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
-                validatorAddress:
-                    validatorAddress ?? getValidatorAddress(entryPointAddress),
+                validatorAddress,
                 pubKeyX,
                 pubKeyY,
                 authenticatorIdHash
@@ -597,10 +606,12 @@ export async function deserializePasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         serializedData,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     }: {
         serializedData: string
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -662,6 +673,7 @@ export async function deserializePasskeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",

@@ -21,7 +21,10 @@ import {
     createPimlicoBundlerClient,
     createPimlicoPaymasterClient
 } from "permissionless/clients/pimlico"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type {
+    ENTRYPOINT_ADDRESS_V07_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint"
 import {
     http,
     type Address,
@@ -50,8 +53,6 @@ import { EntryPointAbi } from "../abis/EntryPoint"
 
 import type { Action } from "@zerodev/sdk/types/kernel.js"
 import type { SmartAccountSigner } from "permissionless/accounts/types.js"
-import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
-import { serializePermissionAccount } from "../../../plugins/permission/serializePermissionAccount.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
@@ -61,7 +62,7 @@ import type { AddressInfo } from "net"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
-export const kernelVersion = "0.3.0-beta"
+export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
 const projectId = config["v0.7"].sepolia.projectId
 
@@ -98,21 +99,15 @@ export const waitForNonceUpdate = async (): Promise<void> => {
     return sleep(10000)
 }
 
-export const getEntryPoint = (): EntryPoint => {
+export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
     return ENTRYPOINT_ADDRESS_V07
 }
 
-export const getEcdsaKernelAccountWithRandomSigner = async (): Promise<
-    KernelSmartAccount<EntryPoint>
-> => {
+export const getEcdsaKernelAccountWithRandomSigner = async () => {
     return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async <
-    entryPoint extends EntryPoint
->(
-    privateKey: Hex
-): Promise<KernelSmartAccount<entryPoint>> => {
+const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
@@ -132,13 +127,13 @@ const getEcdsaKernelAccountWithPrivateKey = async <
         },
         index,
         kernelVersion
-    }) as unknown as KernelSmartAccount<entryPoint>
+    })
 }
 
 export const getKernelBundlerClient = (
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     provider?: any
-): BundlerClient<EntryPoint> => {
+) => {
     const chain = getTestingChain()
 
     return createBundlerClient({
@@ -258,33 +253,25 @@ export const getTestingChain = (): Chain => {
     return chain
 }
 
-export const getKernelAccountClient = async <entryPoint extends EntryPoint>({
+export const getKernelAccountClient = async ({
     account,
     middleware
-}: Middleware<entryPoint> & {
-    account?: KernelSmartAccount<entryPoint>
+}: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
+    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
 } = {}) => {
     const chain = getTestingChain()
-    const resolvedAccount =
-        account ?? (await getSignerToEcdsaKernelAccount<entryPoint>())
+    const resolvedAccount = account ?? (await getSignerToEcdsaKernelAccount())
 
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
         bundlerTransport: http(getBundlerRpc()),
         middleware,
-        entryPoint: getEntryPoint() as entryPoint
-    }) as unknown as KernelAccountClient<
-        entryPoint,
-        Transport,
-        Chain,
-        KernelSmartAccount<entryPoint>
-    >
+        entryPoint: getEntryPoint()
+    })
 }
 
-export const getSignerToEcdsaKernelAccount = async <
-    entryPoint extends EntryPoint
->(): Promise<KernelSmartAccount<entryPoint>> => {
+export const getSignerToEcdsaKernelAccount = async () => {
     const privateKey = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey) {
         throw new Error("TEST_PRIVATE_KEY environment variable not set")
@@ -331,7 +318,7 @@ export const waitForUserOperationTransaction = async (
 
 // WeightedECDSAValidator utils
 export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
-    KernelSmartAccount<EntryPoint>
+    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
 > => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     const privateKey2 = process.env.TEST_PRIVATE_KEY2 as Hex
@@ -347,6 +334,7 @@ export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
         publicClient,
         {
             entryPoint: getEntryPoint(),
+            kernelVersion,
             config: {
                 threshold: 100,
                 delay: 0,
@@ -398,6 +386,7 @@ export const getRecoveryKernelAccount = async (
     })
     const recoveryPlugin = await createWeightedECDSAValidator(publicClient, {
         entryPoint: getEntryPoint(),
+        kernelVersion,
         config: {
             threshold: 100,
             delay: 0,
@@ -421,7 +410,7 @@ export const getRecoveryKernelAccount = async (
 export const getSignerToPermissionKernelAccount = async (
     policies: Policy[],
     action?: Action
-): Promise<KernelSmartAccount<EntryPoint>> => {
+): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey1) {
         throw new Error(
@@ -434,6 +423,7 @@ export const getSignerToPermissionKernelAccount = async (
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
+        kernelVersion,
         signer: ecdsaModularSigner,
         policies
     })
@@ -465,7 +455,7 @@ export const getSignerToPermissionKernelAccount = async (
 export const getSessionKeySignerToPermissionKernelAccount = async (
     policies: Policy[],
     sessionKeySigner: PrivateKeyAccount
-): Promise<KernelSmartAccount<EntryPoint>> => {
+): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey1) {
         throw new Error(
@@ -477,6 +467,7 @@ export const getSessionKeySignerToPermissionKernelAccount = async (
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
+        kernelVersion,
         signer: ecdsaModularSigner,
         policies
     })
@@ -507,13 +498,14 @@ export const getSessionKeySignerToPermissionKernelAccount = async (
 
 export const getSignerToRootPermissionKernelAccount = async (
     policies: Policy[]
-): Promise<KernelSmartAccount<EntryPoint>> => {
+): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>> => {
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
     const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
+        kernelVersion,
         signer: ecdsaModularSigner,
         policies
     })
@@ -535,13 +527,16 @@ export const getSignerToRootPermissionKernelAccount = async (
 }
 
 export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
-    async (policies: Policy[]): Promise<KernelSmartAccount<EntryPoint>> => {
+    async (
+        policies: Policy[]
+    ): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>> => {
         const publicClient = await getPublicClient()
         const signer1 = privateKeyToAccount(generatePrivateKey())
         const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
 
         const permissionPlugin = await toPermissionValidator(publicClient, {
             entryPoint: getEntryPoint(),
+            kernelVersion,
             signer: ecdsaModularSigner,
             policies
         })
@@ -553,6 +548,7 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: ecdsaModularSigner2,
                 policies
             }
@@ -576,13 +572,13 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
         return account
     }
 
-export async function mintToAccount(
+export async function mintToAccount<entryPoint extends EntryPoint>(
     publicClient: PublicClient,
     ecdsaSmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        entryPoint,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<entryPoint>
     >,
     target: Address,
     amount: bigint
@@ -645,11 +641,9 @@ export function createHttpServer(
     })
 }
 
-export const getEcdsaKernelAccountWithRemoteSigner = async <
-    entryPoint extends EntryPoint
->(
+export const getEcdsaKernelAccountWithRemoteSigner = async (
     remoteSigner: SmartAccountSigner
-): Promise<KernelSmartAccount<entryPoint>> => {
+) => {
     const publicClient = await getPublicClient()
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -664,17 +658,18 @@ export const getEcdsaKernelAccountWithRemoteSigner = async <
         },
         index,
         kernelVersion
-    }) as unknown as KernelSmartAccount<entryPoint>
+    })
 }
 
 export const getPermissionKernelAccountWithRemoteSigner = async (
     remoteSigner: SmartAccountSigner,
     policies: Policy[]
-): Promise<KernelSmartAccount<EntryPoint>> => {
+): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>> => {
     const publicClient = await getPublicClient()
     const ecdsaSigner = toECDSASigner({ signer: remoteSigner })
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
+        kernelVersion,
         signer: ecdsaSigner,
         policies
     })

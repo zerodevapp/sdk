@@ -22,7 +22,7 @@ import {
 } from "viem"
 
 export type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
-    account: KernelSmartAccount<EntryPoint>
+    account: KernelSmartAccount<entryPoint>
     userOp: UserOperation<GetEntryPointVersion<entryPoint>>
 }
 
@@ -31,11 +31,13 @@ export type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
  * @dev Sign user operations with enable signatures for multi-chain validator
  * @returns Signed user operations
  */
-export const ecdsaSignUserOpsWithEnable = async ({
+export const ecdsaSignUserOpsWithEnable = async <
+    entryPoint extends EntryPoint
+>({
     multiChainUserOpConfigsForEnable
 }: {
-    multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<EntryPoint>[]
-}): Promise<UserOperation<GetEntryPointVersion<EntryPoint>>[]> => {
+    multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<entryPoint>[]
+}): Promise<UserOperation<GetEntryPointVersion<entryPoint>>[]> => {
     const pluginEnableTypedDatas = await Promise.all(
         multiChainUserOpConfigsForEnable.map(async (config) => {
             return config.account.kernelPluginManager.getPluginsEnableTypedData(

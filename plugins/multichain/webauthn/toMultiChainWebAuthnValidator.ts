@@ -1,5 +1,5 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -43,11 +43,13 @@ export async function toMultiChainWebAuthnValidator<
         passkeyServerUrl,
         webAuthnKey,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         validatorAddress
     }: {
         passkeyServerUrl: string
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "MultiChainWebAuthnValidator">> {
@@ -191,6 +193,7 @@ export async function toMultiChainWebAuthnValidator<
 
     return {
         ...account,
+        supportedKernelVersions: ">=0.3.0-beta",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "MultiChainWebAuthnValidator",
