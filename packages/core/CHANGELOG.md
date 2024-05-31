@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.17
+
+### Patch Changes
+
+-   Added hook plugin support
+
 ## 5.2.16
 
 ### Patch Changes
