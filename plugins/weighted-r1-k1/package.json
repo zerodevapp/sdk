@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/passkey-validator",
-    "version": "5.2.7",
+    "name": "@zerodev/weighted-validator",
+    "version": "5.2.0-alpha-0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
