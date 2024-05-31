@@ -40,19 +40,23 @@ export const wrapSmartWallet = (
                 if (prop === "connect") {
                     return async (params: any) => {
                         await target.connect(params)
-
-                        const provider = await target.getProvider()
-                        const accounts = await target.getAccounts()
                         const chainId = await target.getChainId()
                         const chain = config.chains.find(
                             (c: any) => c.id === chainId
                         )
                         if (!chain) {
-                            throw new Error("Chain not found")
+                            await target.switchChain?.({
+                                chainId: config.chains[0].id
+                            })
                         }
+                        const connetedChain = chain ?? config.chains[0]
+
+                        const provider = await target.getProvider()
+                        const accounts = await target.getAccounts()
+
                         const walletClient = createClient({
                             account: accounts[0],
-                            chain,
+                            chain: connetedChain,
                             name: "Connector Client",
                             transport: (opts) =>
                                 custom(provider as any)({
@@ -66,7 +70,7 @@ export const wrapSmartWallet = (
                         >
 
                         const publicClient = createPublicClient({
-                            chain,
+                            chain: connetedChain,
                             transport: http(
                                 `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
                             )
@@ -91,7 +95,7 @@ export const wrapSmartWallet = (
                         )
                         const kernelClient = createKernelAccountClient({
                             account: kernelAccount,
-                            chain,
+                            chain: connetedChain,
                             entryPoint: entryPoint,
                             bundlerTransport: http(
                                 `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
@@ -101,7 +105,7 @@ export const wrapSmartWallet = (
 
                         return {
                             accounts: [kernelAccount.address],
-                            chainId: chain.id
+                            chainId: connetedChain.id
                         }
                     }
                 }
