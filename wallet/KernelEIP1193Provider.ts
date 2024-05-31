@@ -12,6 +12,7 @@ import { createZeroDevPaymasterClient } from "@zerodev/sdk/clients"
 import {
     type BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
+    ENTRYPOINT_ADDRESS_V07,
     type EstimateUserOperationGasReturnType,
     bundlerActions
 } from "permissionless"
@@ -81,6 +82,22 @@ export class KernelEIP1193Provider<
             KernelSmartAccount<entryPoint>
         >
 
+        const permissions =
+            kernelClient.account.entryPoint === ENTRYPOINT_ADDRESS_V07
+                ? {
+                      supported: true,
+                      permissionTypes: [
+                          "sudo",
+                          "contract-call",
+                          "rate-limit",
+                          "gas-limit",
+                          "signature"
+                      ]
+                  }
+                : {
+                      supported: false
+                  }
+
         const capabilities = {
             [kernelClient.account.address]: {
                 [toHex(kernelClient.chain.id)]: {
@@ -90,16 +107,7 @@ export class KernelEIP1193Provider<
                     paymasterService: {
                         supported: true
                     },
-                    permissions: {
-                        supported: true,
-                        permissionTypes: [
-                            "sudo",
-                            "contract-call",
-                            "rate-limit",
-                            "gas-limit",
-                            "signature"
-                        ]
-                    }
+                    permissions
                 }
             }
         }
