@@ -6,28 +6,33 @@ import {
     zeroAddress
 } from "viem"
 import { CALL_TYPE } from "../../../../../constants.js"
-import type { Action } from "../../../../../types/kernel.js"
+import type {
+    Action,
+    KernelValidatorHook
+} from "../../../../../types/kernel.js"
 
 export const getEncodedPluginsData = async ({
     enableSignature,
     userOpSignature,
     action,
-    enableData
+    enableData,
+    hook
 }: {
     enableSignature: Hex
     userOpSignature: Hex
     action: Action
     enableData: Hex
+    hook?: KernelValidatorHook
 }) => {
     return concat([
-        zeroAddress, // hook address 20 bytes
+        hook?.getIdentifier() ?? zeroAddress, // hook address 20 bytes
         encodeAbiParameters(
             parseAbiParameters(
                 "bytes validatorData, bytes hookData, bytes selectorData, bytes enableSig, bytes userOpSig"
             ),
             [
                 enableData,
-                "0x",
+                (await hook?.getEnableData()) ?? "0x",
                 concat([
                     action.selector,
                     action.address,

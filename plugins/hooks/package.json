@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/wallet",
-    "version": "0.0.8",
+    "name": "@zerodev/hooks",
+    "version": "5.2.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -24,7 +24,7 @@
     "scripts": {
         "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
         "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
-        "build:esm": "tsc --project ./tsconfig.build.json --module es2020 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
         "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
         "clean": "rimraf _esm _cjs _types",
         "changeset": "changeset",
@@ -34,15 +34,9 @@
         "lint": "biome check .",
         "lint:fix": "bun run lint --apply"
     },
-    "dependencies": {
-        "@zerodev/sdk": "^5.2.1",
-        "@zerodev/ecdsa-validator": "^5.2.3",
-        "@zerodev/permissions": "^5.2.9",
-        "@zerodev/passkey-validator": "^5.2.7"
-    },
     "peerDependencies": {
-        "wagmi": "^2.9.0",
         "viem": "^2.9.17",
-        "permissionless": "^0.1.29"
+        "@zerodev/sdk": "^5.2.17",
+        "permissionless": "^0.1.18"
     }
 }
