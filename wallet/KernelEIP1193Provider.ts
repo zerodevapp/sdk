@@ -268,6 +268,12 @@ export class KernelEIP1193Provider<
         if (Number(chainId) !== accountChainId) {
             throw new Error("invalid chain id")
         }
+        if (
+            this.kernelClient.account.entryPoint !== ENTRYPOINT_ADDRESS_V07 &&
+            capabilities?.permissions
+        ) {
+            throw new Error("Permissions not supported with kernel v2")
+        }
 
         let kernelAccountClient: KernelAccountClient<
             entryPoint,
@@ -386,6 +392,9 @@ export class KernelEIP1193Provider<
     private async handleWalletIssuePermissions(
         params: [IssuePermissionsParams]
     ) {
+        if (this.kernelClient.account.entryPoint !== ENTRYPOINT_ADDRESS_V07) {
+            throw new Error("Permissions not supported with kernel v2")
+        }
         const capabilities =
             this.handleWalletCapabilities()[toHex(this.kernelClient.chain.id)]
                 .permissions.permissionTypes
