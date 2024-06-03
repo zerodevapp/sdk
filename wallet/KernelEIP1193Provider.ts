@@ -12,6 +12,7 @@ import { createZeroDevPaymasterClient } from "@zerodev/sdk/clients"
 import {
     type BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
+    ENTRYPOINT_ADDRESS_V07,
     type EstimateUserOperationGasReturnType,
     bundlerActions
 } from "permissionless"
@@ -81,6 +82,22 @@ export class KernelEIP1193Provider<
             KernelSmartAccount<entryPoint>
         >
 
+        const permissions =
+            kernelClient.account.entryPoint === ENTRYPOINT_ADDRESS_V07
+                ? {
+                      supported: true,
+                      permissionTypes: [
+                          "sudo",
+                          "contract-call",
+                          "rate-limit",
+                          "gas-limit",
+                          "signature"
+                      ]
+                  }
+                : {
+                      supported: false
+                  }
+
         const capabilities = {
             [kernelClient.account.address]: {
                 [toHex(kernelClient.chain.id)]: {
@@ -90,16 +107,7 @@ export class KernelEIP1193Provider<
                     paymasterService: {
                         supported: true
                     },
-                    permissions: {
-                        supported: true,
-                        permissionTypes: [
-                            "sudo",
-                            "contract-call",
-                            "rate-limit",
-                            "gas-limit",
-                            "signature"
-                        ]
-                    }
+                    permissions
                 }
             }
         }
@@ -260,6 +268,12 @@ export class KernelEIP1193Provider<
         if (Number(chainId) !== accountChainId) {
             throw new Error("invalid chain id")
         }
+        if (
+            this.kernelClient.account.entryPoint !== ENTRYPOINT_ADDRESS_V07 &&
+            capabilities?.permissions
+        ) {
+            throw new Error("Permissions not supported with kernel v2")
+        }
 
         let kernelAccountClient: KernelAccountClient<
             entryPoint,
@@ -378,6 +392,9 @@ export class KernelEIP1193Provider<
     private async handleWalletIssuePermissions(
         params: [IssuePermissionsParams]
     ) {
+        if (this.kernelClient.account.entryPoint !== ENTRYPOINT_ADDRESS_V07) {
+            throw new Error("Permissions not supported with kernel v2")
+        }
         const capabilities =
             this.handleWalletCapabilities()[toHex(this.kernelClient.chain.id)]
                 .permissions.permissionTypes
