@@ -13,6 +13,7 @@ export {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType
 } from "./actions/paymaster/sponsorUserOperation.js"
+export { type SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
 export {
     zerodevPaymasterActions,
     type ZeroDevPaymasterClientActions,
@@ -30,6 +31,7 @@ export {
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"
 export {
     type KernelValidator,
+    type KernelValidatorHook,
     type ZeroDevPaymasterRpcSchema,
     type KernelPluginManager,
     type Action
@@ -53,5 +55,5 @@ export {
 } from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"
 export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
-export { isProviderSet } from "./clients/utils.js"
+export { isProviderSet, setPimlicoAsProvider } from "./clients/utils.js"
 export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"

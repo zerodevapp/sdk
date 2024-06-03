@@ -46,10 +46,15 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
+import { ValidatorType } from "../../../plugins/multichain/actions/type.js"
 import { ecdsaPrepareMultiUserOpRequest } from "../../../plugins/multichain/ecdsa/ecdsaPrepareMultiUserOpRequest.js"
 import { ecdsaSignUserOps } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOps.js"
 import { ecdsaSignUserOpsWithEnable } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOpsWithEnable.js"
 import { toMultiChainECDSAValidator } from "../../../plugins/multichain/ecdsa/toMultiChainECDSAValidator.js"
+import {
+    type KernelMultiChainClient,
+    createKernelMultiChainClient
+} from "../../../plugins/multichain/multiChainClient.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
@@ -131,7 +136,7 @@ describe("MultiChainECDSAValidator", () => {
     let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,
-        typeof kernelClient,
+        typeof multiChainKernelClient,
         Address
     >
     let owner: Address
@@ -179,7 +184,7 @@ describe("MultiChainECDSAValidator", () => {
             }
         })
 
-        kernelClient = createKernelAccountClient({
+        multiChainKernelClient = createKernelMultiChainClient({
             account: account,
             chain: sepolia,
             bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
@@ -193,12 +198,14 @@ describe("MultiChainECDSAValidator", () => {
             },
             entryPoint: getEntryPoint()
         })
-        bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
+        bundlerClient = multiChainKernelClient.extend(
+            bundlerActions(getEntryPoint())
+        )
 
         greeterContract = getContract({
             abi: GreeterAbi,
             address: process.env.GREETER_ADDRESS as Address,
-            client: kernelClient
+            client: multiChainKernelClient
         })
         owner = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex).address
     })
@@ -346,7 +353,7 @@ describe("MultiChainECDSAValidator", () => {
         "Client signMessage should return a valid signature",
         async () => {
             // to make sure kernel is deployed
-            const tx = await kernelClient.sendTransaction({
+            const tx = await multiChainKernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"
@@ -354,7 +361,7 @@ describe("MultiChainECDSAValidator", () => {
             console.log("tx", tx)
 
             const message = "hello world"
-            const response = await kernelClient.signMessage({
+            const response = await multiChainKernelClient.signMessage({
                 message
             })
             console.log("hashMessage(message)", hashMessage(message))
@@ -389,7 +396,7 @@ describe("MultiChainECDSAValidator", () => {
         "Client signMessage should return a valid signature",
         async () => {
             // to make sure kernel is deployed
-            const tx = await kernelClient.sendTransaction({
+            const tx = await multiChainKernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"
@@ -397,7 +404,7 @@ describe("MultiChainECDSAValidator", () => {
             console.log("tx", tx)
 
             const message = "hello world"
-            const response = await kernelClient.signMessage({
+            const response = await multiChainKernelClient.signMessage({
                 message
             })
             console.log("hashMessage(message)", hashMessage(message))
@@ -458,7 +465,7 @@ describe("MultiChainECDSAValidator", () => {
                 message
             })
 
-            const response = await kernelClient.signTypedData({
+            const response = await multiChainKernelClient.signTypedData({
                 domain,
                 primaryType,
                 types,
@@ -482,12 +489,15 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client deploy contract",
         async () => {
-            const response = await kernelClient.sendUserOperation({
+            const response = await multiChainKernelClient.sendUserOperation({
                 userOperation: {
-                    callData: await kernelClient.account.encodeDeployCallData({
-                        abi: GreeterAbi,
-                        bytecode: GreeterBytecode
-                    })
+                    callData:
+                        await multiChainKernelClient.account.encodeDeployCallData(
+                            {
+                                abi: GreeterAbi,
+                                bytecode: GreeterBytecode
+                            }
+                        )
                 }
             })
 
@@ -511,7 +521,7 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Smart account client send multiple transactions",
         async () => {
-            const response = await kernelClient.sendTransactions({
+            const response = await multiChainKernelClient.sendTransactions({
                 transactions: [
                     {
                         to: zeroAddress,
@@ -571,33 +581,34 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
-            const userOp = await kernelClient.signUserOperation({
+            const userOp = await multiChainKernelClient.signUserOperation({
                 userOperation: {
-                    callData: await kernelClient.account.encodeCallData([
-                        {
-                            to: process.env.GREETER_ADDRESS as Address,
-                            value: 0n,
-                            data: encodeFunctionData({
-                                abi: GreeterAbi,
-                                functionName: "setGreeting",
-                                args: ["hello world"]
-                            })
-                        },
-                        {
-                            to: process.env.GREETER_ADDRESS as Address,
-                            value: 0n,
-                            data: encodeFunctionData({
-                                abi: GreeterAbi,
-                                functionName: "setGreeting",
-                                args: ["hello world 2"]
-                            })
-                        }
-                    ])
+                    callData:
+                        await multiChainKernelClient.account.encodeCallData([
+                            {
+                                to: process.env.GREETER_ADDRESS as Address,
+                                value: 0n,
+                                data: encodeFunctionData({
+                                    abi: GreeterAbi,
+                                    functionName: "setGreeting",
+                                    args: ["hello world"]
+                                })
+                            },
+                            {
+                                to: process.env.GREETER_ADDRESS as Address,
+                                value: 0n,
+                                data: encodeFunctionData({
+                                    abi: GreeterAbi,
+                                    functionName: "setGreeting",
+                                    args: ["hello world 2"]
+                                })
+                            }
+                        ])
                 }
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const userOpHash = await kernelClient.sendUserOperation({
+            const userOpHash = await multiChainKernelClient.sendUserOperation({
                 userOperation: userOp
             })
             expect(userOpHash).toHaveLength(66)
@@ -617,27 +628,32 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send UserOp with delegatecall",
         async () => {
-            const accountAddress = kernelClient.account.address
+            const accountAddress = multiChainKernelClient.account.address
             const amountToMint = 10000000n
             const amountToTransfer = 4337n
             await mintToAccount(
                 sepoliaPublicClient,
-                kernelClient,
+                multiChainKernelClient,
                 accountAddress,
                 amountToMint
             )
-            const userOpHash = await kernelClient.sendUserOperation({
+            const userOpHash = await multiChainKernelClient.sendUserOperation({
                 userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to: TOKEN_ACTION_ADDRESS,
-                        value: 0n,
-                        data: encodeFunctionData({
-                            abi: TokenActionsAbi,
-                            functionName: "transferERC20Action",
-                            args: [Test_ERC20Address, amountToTransfer, owner]
-                        }),
-                        callType: "delegatecall"
-                    })
+                    callData:
+                        await multiChainKernelClient.account.encodeCallData({
+                            to: TOKEN_ACTION_ADDRESS,
+                            value: 0n,
+                            data: encodeFunctionData({
+                                abi: TokenActionsAbi,
+                                functionName: "transferERC20Action",
+                                args: [
+                                    Test_ERC20Address,
+                                    amountToTransfer,
+                                    owner
+                                ]
+                            }),
+                            callType: "delegatecall"
+                        })
                 }
             })
             const transaction = await bundlerClient.waitForUserOperationReceipt(
@@ -688,13 +704,14 @@ describe("MultiChainECDSAValidator", () => {
 
             const nonce = await account.getNonce(customNonceKey)
 
-            const userOpHash = await kernelClient.sendUserOperation({
+            const userOpHash = await multiChainKernelClient.sendUserOperation({
                 userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
-                        value: 0n,
-                        data: "0x"
-                    }),
+                    callData:
+                        await multiChainKernelClient.account.encodeCallData({
+                            to: zeroAddress,
+                            value: 0n,
+                            data: "0x"
+                        }),
                     nonce
                 }
             })
@@ -710,11 +727,12 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send Transaction with paymaster",
         async () => {
-            const transactionHash = await kernelClient.sendTransaction({
-                to: zeroAddress,
-                value: 0n,
-                data: "0x"
-            })
+            const transactionHash =
+                await multiChainKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                })
             console.log("transactionHash", transactionHash)
 
             expect(transactionHash).toBeString()
@@ -734,7 +752,7 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send multiple Transactions with paymaster",
         async () => {
-            const response = await kernelClient.sendTransactions({
+            const response = await multiChainKernelClient.sendTransactions({
                 transactions: [
                     {
                         to: zeroAddress,
@@ -819,7 +837,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaKernelAccount.address
             )
 
-            const sepoliaZerodevKernelClient = createKernelAccountClient({
+            const sepoliaZerodevKernelClient = createKernelMultiChainClient({
                 account: sepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
@@ -837,7 +855,7 @@ describe("MultiChainECDSAValidator", () => {
             })
 
             const optimismSepoliaZerodevKernelClient =
-                createKernelAccountClient({
+                createKernelMultiChainClient({
                     account: optimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
@@ -854,54 +872,41 @@ describe("MultiChainECDSAValidator", () => {
                     entryPoint: getEntryPoint()
                 })
 
-            const sepoliaUserOp = await ecdsaPrepareMultiUserOpRequest({
-                client: sepoliaZerodevKernelClient,
-                args: {
-                    userOperation: {
-                        callData: await sepoliaKernelAccount.encodeCallData({
-                            to: zeroAddress,
-                            value: BigInt(0),
-                            data: "0x"
-                        })
-                    },
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                {
-                                    userOperation,
-                                    entryPoint: getEntryPoint()
-                                }
-                            )
+            const sepoliaUserOp =
+                await sepoliaZerodevKernelClient.prepareMultiUserOpRequest(
+                    {
+                        userOperation: {
+                            callData:
+                                await sepoliaZerodevKernelClient.account.encodeCallData(
+                                    {
+                                        to: zeroAddress,
+                                        value: BigInt(0),
+                                        data: "0x"
+                                    }
+                                )
                         }
-                    }
-                },
-                numOfUserOps: 2
-            })
+                    },
+                    ValidatorType.ECDSA,
+                    2
+                )
 
-            const optimismSepoliaUserOp = await ecdsaPrepareMultiUserOpRequest({
-                client: optimismSepoliaZerodevKernelClient,
-                args: {
-                    userOperation: {
-                        callData:
-                            await optimismSepoliaKernelAccount.encodeCallData({
-                                to: zeroAddress,
-                                value: BigInt(0),
-                                data: "0x"
-                            })
-                    },
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                {
-                                    userOperation,
-                                    entryPoint: getEntryPoint()
-                                }
-                            )
+            const optimismSepoliaUserOp =
+                await optimismSepoliaZerodevKernelClient.prepareMultiUserOpRequest(
+                    {
+                        userOperation: {
+                            callData:
+                                await optimismSepoliaZerodevKernelClient.account.encodeCallData(
+                                    {
+                                        to: zeroAddress,
+                                        value: BigInt(0),
+                                        data: "0x"
+                                    }
+                                )
                         }
-                    }
-                },
-                numOfUserOps: 2
-            })
+                    },
+                    ValidatorType.ECDSA,
+                    2
+                )
 
             const signedUserOps = await ecdsaSignUserOps({
                 account: sepoliaKernelAccount,
@@ -924,10 +929,10 @@ describe("MultiChainECDSAValidator", () => {
                     bundlerActions(getEntryPoint())
                 )
 
-            const sepoliaUserOpHash = await sepoliaZerodevKernelClient.request({
-                method: "eth_sendUserOperation",
-                params: [deepHexlify(signedUserOps[0]), getEntryPoint()]
-            })
+            const sepoliaUserOpHash =
+                await sepoliaBundlerClient.sendUserOperation({
+                    userOperation: signedUserOps[0]
+                })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaBundlerClient.waitForUserOperationReceipt({
@@ -935,9 +940,8 @@ describe("MultiChainECDSAValidator", () => {
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.request({
-                    method: "eth_sendUserOperation",
-                    params: [deepHexlify(signedUserOps[1]), getEntryPoint()]
+                await optimismSepoliaBundlerClient.sendUserOperation({
+                    userOperation: signedUserOps[1]
                 })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
@@ -1020,7 +1024,7 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaKernelAccount.address
             )
 
-            const sepoliaZerodevKernelClient = createKernelAccountClient({
+            const sepoliaZerodevKernelClient = createKernelMultiChainClient({
                 account: sepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
@@ -1038,7 +1042,7 @@ describe("MultiChainECDSAValidator", () => {
             })
 
             const optimismSepoliaZerodevKernelClient =
-                createKernelAccountClient({
+                createKernelMultiChainClient({
                     account: optimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
@@ -1104,10 +1108,10 @@ describe("MultiChainECDSAValidator", () => {
                     bundlerActions(getEntryPoint())
                 )
 
-            const sepoliaUserOpHash = await sepoliaZerodevKernelClient.request({
-                method: "eth_sendUserOperation",
-                params: [deepHexlify(signedEnableUserOps[0]), getEntryPoint()]
-            })
+            const sepoliaUserOpHash =
+                await sepoliaBundlerClient.sendUserOperation({
+                    userOperation: signedEnableUserOps[0]
+                })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaBundlerClient.waitForUserOperationReceipt({
@@ -1115,12 +1119,8 @@ describe("MultiChainECDSAValidator", () => {
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.request({
-                    method: "eth_sendUserOperation",
-                    params: [
-                        deepHexlify(signedEnableUserOps[1]),
-                        getEntryPoint()
-                    ]
+                await optimismSepoliaBundlerClient.sendUserOperation({
+                    userOperation: signedEnableUserOps[1]
                 })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)

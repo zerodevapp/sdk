@@ -14,7 +14,7 @@ import {
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
-import type { BundlerClient } from "permissionless"
+import { type BundlerClient, bundlerActions } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     createPimlicoBundlerClient,
@@ -653,6 +653,38 @@ describe("fallback client e2e", () => {
                 }
 
                 expect(eventFound).toBeTrue()
+            },
+            TEST_TIMEOUT
+        )
+
+        test(
+            "fallback client can be extended",
+            async () => {
+                const userOpHash = await fallbackKernelClient.sendUserOperation(
+                    {
+                        userOperation: {
+                            callData:
+                                await fallbackKernelClient.account.encodeCallData(
+                                    {
+                                        to: zeroAddress,
+                                        value: BigInt(0),
+                                        data: "0x"
+                                    }
+                                )
+                        }
+                    }
+                )
+
+                const bundlerClient = fallbackKernelClient.extend(
+                    bundlerActions(getEntryPoint())
+                )
+
+                const result = await bundlerClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
+
+                expect(result).toBeDefined()
+                expect(result.success).toBe(true)
             },
             TEST_TIMEOUT
         )

@@ -12,6 +12,7 @@ import {
     zeroAddress
 } from "viem"
 import { CALL_TYPE, VALIDATOR_TYPE } from "../../../../../constants.js"
+import type { KernelValidatorHook } from "../../../../../types/kernel.js"
 import type { Kernel2_0_plugins } from "../ep0_6/getPluginsEnableTypedData.js"
 
 export const getPluginsEnableTypedData = async <
@@ -21,6 +22,7 @@ export const getPluginsEnableTypedData = async <
     chainId,
     kernelVersion,
     action,
+    hook,
     validator,
     validatorNonce
 }: {
@@ -28,6 +30,7 @@ export const getPluginsEnableTypedData = async <
     chainId: number
     kernelVersion: string
     validatorNonce: number
+    hook?: KernelValidatorHook
 } & Kernel2_0_plugins<entryPoint>): Promise<
     Parameters<CustomSource["signTypedData"]>[0]
 > => {
@@ -54,9 +57,9 @@ export const getPluginsEnableTypedData = async <
                 pad(validator.getIdentifier(), { size: 20, dir: "right" })
             ]),
             nonce: validatorNonce,
-            hook: zeroAddress,
+            hook: hook?.getIdentifier() ?? zeroAddress,
             validatorData: await validator.getEnableData(accountAddress),
-            hookData: "0x",
+            hookData: (await hook?.getEnableData(accountAddress)) ?? "0x",
             selectorData: concat([
                 action.selector,
                 action.address,
