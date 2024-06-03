@@ -2,16 +2,17 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
-    createPasskeyValidator,
     deserializePasskeyValidator,
-    getPasskeyValidator
+    toPasskeyValidator
 } from "./toPasskeyValidator.js"
+import { WebAuthnMode, toWebAuthnKey } from "./toWebAuthnKey.js"
 
 export {
     deserializePasskeyValidator,
-    createPasskeyValidator,
-    getPasskeyValidator,
-    type KernelValidator
+    toPasskeyValidator,
+    toWebAuthnKey,
+    type KernelValidator,
+    WebAuthnMode
 }
 
 export const WEBAUTHN_VALIDATOR_ADDRESS_V06 =

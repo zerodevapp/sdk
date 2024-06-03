@@ -58,8 +58,8 @@ type PasskeyValidatorSerializedData = {
     credentials: string
     entryPoint: Hex
     validatorAddress: Hex
-    pubKeyX: string
-    pubKeyY: string
+    pubKeyX: bigint
+    pubKeyY: bigint
     authenticatorIdHash: Hex
 }
 
