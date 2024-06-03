@@ -2,8 +2,8 @@ import type { KernelValidator } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import {
-    toPasskeyValidator,
-    deserializePasskeyValidator
+    deserializePasskeyValidator,
+    toPasskeyValidator
 } from "./toPasskeyValidator.js"
 import { WebAuthnMode, toWebAuthnKey } from "./toWebAuthnKey.js"
 

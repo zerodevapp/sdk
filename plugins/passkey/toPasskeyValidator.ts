@@ -26,6 +26,7 @@ import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { getValidatorAddress } from "./index.js"
+import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
     deserializePasskeyValidatorData,
@@ -35,7 +36,6 @@ import {
     serializePasskeyValidatorData,
     uint8ArrayToHexString
 } from "./utils.js"
-import type { WebAuthnKey } from "./toWebAuthnKey.js"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
