@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/social-validator",
-    "version": "5.0.1",
+    "version": "5.1.0-alpha-0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
