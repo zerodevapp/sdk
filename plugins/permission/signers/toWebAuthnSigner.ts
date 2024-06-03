@@ -4,7 +4,6 @@ import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accoun
 import {
     type Chain,
     type Client,
-    type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type Transport,
@@ -18,7 +17,7 @@ import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
 import { WEBAUTHN_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
-import { WebAuthnMode, toWebAuthnPubKey } from "./toWebAuthnPubKey.js"
+import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
     findQuoteIndices,
@@ -27,17 +26,9 @@ import {
     uint8ArrayToHexString
 } from "./webAuthnUtils.js"
 
-export type WebAuthnKey = {
-    pubX: bigint
-    pubY: bigint
-    authenticatorIdHash: Hex
-}
-
 export type WebAuthnModularSignerParams = ModularSignerParams & {
-    passkeyName: string
     passkeyServerUrl: string
-    pubKey?: WebAuthnKey
-    mode?: WebAuthnMode
+    webAuthnKey: WebAuthnKey
 }
 
 export const toWebAuthnSigner = async <
@@ -47,23 +38,10 @@ export const toWebAuthnSigner = async <
     client: Client<TTransport, TChain, undefined>,
     {
         signerContractAddress = WEBAUTHN_SIGNER_CONTRACT,
-        pubKey,
         passkeyServerUrl,
-        passkeyName,
-        mode = WebAuthnMode.Register
+        webAuthnKey
     }: WebAuthnModularSignerParams
 ): Promise<ModularSigner> => {
-    pubKey =
-        pubKey ??
-        (await toWebAuthnPubKey({
-            passkeyName,
-            passkeyServerUrl,
-            mode
-        }))
-    if (!pubKey) {
-        throw new Error("WebAuthn public key not found")
-    }
-
     const chainId = await getChainId(client)
 
     const signMessageUsingWebAuthn = async (message: SignableMessage) => {
@@ -201,9 +179,6 @@ export const toWebAuthnSigner = async <
         account,
         signerContractAddress,
         getSignerData: () => {
-            if (!pubKey) {
-                throw new Error("WebAuthn public key not found")
-            }
             return encodeAbiParameters(
                 [
                     {
@@ -217,8 +192,8 @@ export const toWebAuthnSigner = async <
                     { name: "authenticatorIdHash", type: "bytes32" }
                 ],
                 [
-                    { pubKeyX: pubKey.pubX, pubKeyY: pubKey.pubY },
-                    pubKey.authenticatorIdHash
+                    { pubKeyX: webAuthnKey.pubX, pubKeyY: webAuthnKey.pubY },
+                    webAuthnKey.authenticatorIdHash
                 ]
             )
         },

@@ -1,6 +1,5 @@
 import { Buffer } from "buffer"
 import { type Hex, keccak256 } from "viem"
-import type { WebAuthnKey } from "./toWebAuthnSigner.js"
 import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
 
 export enum WebAuthnMode {
@@ -8,15 +7,26 @@ export enum WebAuthnMode {
     Login = "login"
 }
 
-export const toWebAuthnPubKey = async ({
+export type WebAuthnKey = {
+    pubX: bigint
+    pubY: bigint
+    authenticatorIdHash: Hex
+}
+
+export const toWebAuthnKey = async ({
     passkeyName,
     passkeyServerUrl,
+    webAuthnKey,
     mode = WebAuthnMode.Login
 }: {
     passkeyName: string
     passkeyServerUrl: string
+    webAuthnKey?: WebAuthnKey
     mode: WebAuthnMode
 }): Promise<WebAuthnKey> => {
+    if (webAuthnKey) {
+        return webAuthnKey
+    }
     let pubKey: string | undefined
     let authenticatorIdHash: Hex
     if (mode === WebAuthnMode.Login) {

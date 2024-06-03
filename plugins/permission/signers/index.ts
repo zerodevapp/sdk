@@ -6,6 +6,6 @@ export {
     toWebAuthnSigner,
     type WebAuthnModularSignerParams
 } from "./toWebAuthnSigner.js"
-export { WebAuthnMode } from "./toWebAuthnPubKey.js"
+export { WebAuthnMode, toWebAuthnKey } from "./toWebAuthnKey.js"
 export { toSignerId } from "./utils/toSignerId.js"
 export { toEmptyECDSASigner } from "./toEmptyECDSASigner.js"
