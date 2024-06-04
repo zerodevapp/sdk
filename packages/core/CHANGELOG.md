@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.2.18
+
+### Patch Changes
+
+-   Added cache for enable signature
+
 ## 5.2.17
 
 ### Patch Changes
