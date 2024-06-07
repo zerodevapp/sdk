@@ -26,8 +26,8 @@ import { getChainId, readContract } from "viem/actions"
 import { concatHex, getAction, toHex } from "viem/utils"
 import { MultiChainWeightedValidatorAbi } from "./abi.js"
 import {
-    SIGNER_TYPE,
     MULTI_CHAIN_WEIGHTED_VALIDATOR_ADDRESS_V07,
+    SIGNER_TYPE,
     decodeSignatures,
     encodeSignatures
 } from "./index.js"

@@ -8,8 +8,8 @@ import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import {
     type ApproveUserOperationParameters,
-    approveUserOperation,
-    type ApproveUserOperationReturnType
+    type ApproveUserOperationReturnType,
+    approveUserOperation
 } from "../../actions/approveUserOperation.js"
 import {
     type SendUserOperationWithApprovalsParameters,
@@ -111,7 +111,10 @@ export function multiChainWeightedKernelAccountClientActions<
                 >(client, {
                     ...args,
                     middleware
-                } as SendUserOperationWithApprovalsParameters<entryPoint, TSmartAccount>)
+                } as SendUserOperationWithApprovalsParameters<
+                    entryPoint,
+                    TSmartAccount
+                >)
         }
     }
 }

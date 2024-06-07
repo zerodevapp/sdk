@@ -1,4 +1,5 @@
 import type { KernelSmartAccount } from "@zerodev/sdk"
+import { MerkleTree } from "merkletreejs"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
@@ -13,11 +14,11 @@ import {
     parseAccount
 } from "permissionless/utils"
 import {
-    publicActions,
     type Chain,
     type Client,
     type Hex,
-    type Transport
+    type Transport,
+    publicActions
 } from "viem"
 import {
     encodeAbiParameters,
@@ -26,7 +27,6 @@ import {
     parseAbiParameters
 } from "viem/utils"
 import { getValidatorAddress } from "../toMultiChainWeightedValidatorPlugin.js"
-import { MerkleTree } from "merkletreejs"
 
 export type ApproveUserOperationParameters<
     entryPoint extends EntryPoint,
