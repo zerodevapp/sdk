@@ -16,6 +16,11 @@ export {
 } from "./account-client/getUserOperationGasPrice.js"
 
 export {
+    uninstallPlugin,
+    type UninstallPluginParameters
+} from "./account-client/uninstallPlugin.js"
+
+export {
     estimateGasInERC20,
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType

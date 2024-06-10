@@ -1,7 +1,7 @@
 import { type SmartAccountActions, smartAccountActions } from "permissionless"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
-import type { Chain, Client, Transport } from "viem"
+import type { Chain, Client, Hash, Transport } from "viem"
 import type { KernelSmartAccount } from "../../accounts/index.js"
 import {
     type GetUserOperationGasPriceReturnType,
@@ -9,9 +9,10 @@ import {
 } from "../../actions/account-client/getUserOperationGasPrice.js"
 import type {
     SignUserOperationParameters,
-    SignUserOperationReturnType
+    SignUserOperationReturnType,
+    UninstallPluginParameters
 } from "../../actions/index.js"
-import { signUserOperation } from "../../actions/index.js"
+import { signUserOperation, uninstallPlugin } from "../../actions/index.js"
 import {
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType,
@@ -87,6 +88,24 @@ export type KernelAccountClientActions<
     getUserOperationGasPrice: () => Promise<
         Prettify<GetUserOperationGasPriceReturnType>
     >
+    /**
+     * Creates, signs, and sends an uninstall kernel plugin transaction to the network.
+     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     *
+     *
+     * @param args - {@link UninstallPermissionParameters}
+     * @returns The [Transaction](https://viem.sh/docs/glossary/terms.html#transaction) hash. {@link SendTransactionReturnType}
+     */
+    uninstallPlugin: <
+        TChainOverride extends Chain | undefined = Chain | undefined
+    >(
+        args: UninstallPluginParameters<
+            entryPoint,
+            TChain,
+            TSmartAccount,
+            TChainOverride
+        >
+    ) => Promise<Hash>
 }
 
 export function kernelAccountClientActions<entryPoint extends EntryPoint>({
@@ -110,6 +129,18 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                     middleware
                 } as SignUserOperationParameters<entryPoint, TSmartAccount>
             ),
-        getUserOperationGasPrice: async () => getUserOperationGasPrice(client)
+        getUserOperationGasPrice: async () => getUserOperationGasPrice(client),
+        uninstallPlugin: async (args) =>
+            uninstallPlugin<entryPoint, TTransport, TChain, TSmartAccount>(
+                client,
+                {
+                    ...args,
+                    middleware
+                } as UninstallPluginParameters<
+                    entryPoint,
+                    TChain,
+                    TSmartAccount
+                >
+            )
     })
 }
