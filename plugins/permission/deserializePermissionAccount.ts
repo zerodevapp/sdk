@@ -15,6 +15,7 @@ import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import type { DecodeFunctionDataReturnType } from "viem/utils/abi/decodeFunctionData.js"
 import {
     toCallPolicy,
     toGasPolicy,
@@ -28,7 +29,6 @@ import { toPermissionValidator } from "./toPermissionValidator.js"
 import type { Policy } from "./types.js"
 import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
-import type { DecodeFunctionDataReturnType } from "viem/utils/abi/decodeFunctionData.js"
 
 export const deserializePermissionAccount = async <
     entryPoint extends EntryPoint,
