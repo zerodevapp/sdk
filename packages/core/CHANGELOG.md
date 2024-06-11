@@ -6,6 +6,18 @@
 
 - Integrated Kernel v3.1 and added kernelVersion param in account and plugins interface
 
+## 5.2.19
+
+### Patch Changes
+
+- Added uninstallPlugin action to kernelAccountClient
+
+## 5.2.18
+
+### Patch Changes
+
+- Added cache for enable signature
+
 ## 5.2.17
 
 ### Patch Changes

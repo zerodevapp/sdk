@@ -572,6 +572,63 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
         return account
     }
 
+export const getSignerToPermissionKernelAccountAndPlugin = async (
+    policies: Policy[]
+) => {
+    const publicClient = await getPublicClient()
+    const signer1 = privateKeyToAccount(generatePrivateKey())
+
+    const ecdsaPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: signer1
+    })
+
+    const privateKey2 = generatePrivateKey()
+    const signer2 = privateKeyToAccount(privateKey2)
+    const ecdsaModularSigner2 = toECDSASigner({ signer: signer2 })
+    const permissionSessionKeyPlugin = await toPermissionValidator(
+        publicClient,
+        {
+            entryPoint: getEntryPoint(),
+            signer: ecdsaModularSigner2,
+            policies
+        }
+    )
+
+    const accountWithSudoAndRegular = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaPlugin,
+            regular: permissionSessionKeyPlugin,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+    const accountWithSudo = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaPlugin,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index
+    })
+    return {
+        accountWithSudoAndRegular,
+        accountWithSudo,
+        plugin: permissionSessionKeyPlugin
+    }
+}
+
 export async function mintToAccount<entryPoint extends EntryPoint>(
     publicClient: PublicClient,
     ecdsaSmartAccountClient: KernelAccountClient<

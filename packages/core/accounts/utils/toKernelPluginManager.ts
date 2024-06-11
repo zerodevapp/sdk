@@ -209,6 +209,7 @@ export async function toKernelPluginManager<
             validatorNonce
         })
         ownerSig = await sudo.signTypedData(typedData)
+        pluginEnableSignature = ownerSig
 
         return ownerSig
     }

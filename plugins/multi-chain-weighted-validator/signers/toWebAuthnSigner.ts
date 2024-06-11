@@ -4,6 +4,7 @@ import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accoun
 import {
     type Chain,
     type Client,
+    type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type Transport,
@@ -15,20 +16,29 @@ import {
 import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
-import { WEBAUTHN_SIGNER_CONTRACT } from "../constants.js"
-import type { ModularSigner, ModularSignerParams } from "../types.js"
-import type { WebAuthnKey } from "./toWebAuthnKey.js"
+import { SIGNER_TYPE } from "../constants.js"
+import type { WeightedSigner } from "../toMultiChainWeightedValidatorPlugin.js"
+import { WebAuthnMode, toWebAuthnPubKey } from "./toWebAuthnPubKey.js"
 import {
     b64ToBytes,
+    encodeWebAuthnPubKey,
     findQuoteIndices,
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
     uint8ArrayToHexString
 } from "./webAuthnUtils.js"
 
-export type WebAuthnModularSignerParams = ModularSignerParams & {
+export type WebAuthnKey = {
+    pubX: bigint
+    pubY: bigint
+    authenticatorIdHash: Hex
+}
+
+export type WebAuthnModularSignerParams = {
+    passkeyName: string
     passkeyServerUrl: string
-    webAuthnKey: WebAuthnKey
+    pubKey?: WebAuthnKey
+    mode?: WebAuthnMode
 }
 
 export const toWebAuthnSigner = async <
@@ -37,11 +47,23 @@ export const toWebAuthnSigner = async <
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        signerContractAddress = WEBAUTHN_SIGNER_CONTRACT,
+        pubKey,
         passkeyServerUrl,
-        webAuthnKey
+        passkeyName,
+        mode = WebAuthnMode.Register
     }: WebAuthnModularSignerParams
-): Promise<ModularSigner> => {
+): Promise<WeightedSigner> => {
+    pubKey =
+        pubKey ??
+        (await toWebAuthnPubKey({
+            passkeyName,
+            passkeyServerUrl,
+            mode
+        }))
+    if (!pubKey) {
+        throw new Error("WebAuthn public key not found")
+    }
+
     const chainId = await getChainId(client)
 
     const signMessageUsingWebAuthn = async (message: SignableMessage) => {
@@ -176,26 +198,11 @@ export const toWebAuthnSigner = async <
     })
 
     return {
+        type: SIGNER_TYPE.PASSKEY,
         account,
-        signerContractAddress,
-        getSignerData: () => {
-            return encodeAbiParameters(
-                [
-                    {
-                        components: [
-                            { name: "pubKeyX", type: "uint256" },
-                            { name: "pubKeyY", type: "uint256" }
-                        ],
-                        name: "WebAuthnSignerData",
-                        type: "tuple"
-                    },
-                    { name: "authenticatorIdHash", type: "bytes32" }
-                ],
-                [
-                    { pubKeyX: webAuthnKey.pubX, pubKeyY: webAuthnKey.pubY },
-                    webAuthnKey.authenticatorIdHash
-                ]
-            )
+        getPublicKey: () => {
+            if (!pubKey) return "0x"
+            return encodeWebAuthnPubKey(pubKey)
         },
         getDummySignature: () => {
             return encodeAbiParameters(

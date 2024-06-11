@@ -67,4 +67,4 @@ export type SessionType = {
     }
 }
 
-export type ZeroDevVersion = "v3"
+export type ZeroDevVersion = "v2" | "v3"

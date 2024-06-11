@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/sdk",
-    "version": "5.3.0-alpha-0",
+    "version": "5.2.19",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",

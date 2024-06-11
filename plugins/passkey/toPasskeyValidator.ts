@@ -1,4 +1,3 @@
-import { Buffer } from "buffer"
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
@@ -21,13 +20,13 @@ import {
     encodeAbiParameters,
     getTypesForEIP712Domain,
     hashTypedData,
-    keccak256,
     validateTypedData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { getValidatorAddress } from "./index.js"
+import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
     deserializePasskeyValidatorData,
@@ -38,64 +37,11 @@ import {
     uint8ArrayToHexString
 } from "./utils.js"
 
-const createEnableData = (
-    pubKeyX: string,
-    pubKeyY: string,
-    authenticatorIdHash: Hex
-) => {
-    return encodeAbiParameters(
-        [
-            {
-                components: [
-                    { name: "x", type: "uint256" },
-                    { name: "y", type: "uint256" }
-                ],
-                name: "webAuthnData",
-                type: "tuple"
-            },
-            {
-                name: "authenticatorIdHash",
-                type: "bytes32"
-            }
-        ],
-        [
-            {
-                x: BigInt(`0x${pubKeyX}`),
-                y: BigInt(`0x${pubKeyY}`)
-            },
-            authenticatorIdHash
-        ]
-    )
-}
-
-const createDummySignatrue = () => {
-    return encodeAbiParameters(
-        [
-            { name: "authenticatorData", type: "bytes" },
-            { name: "clientDataJSON", type: "string" },
-            { name: "responseTypeLocation", type: "uint256" },
-            { name: "r", type: "uint256" },
-            { name: "s", type: "uint256" },
-            { name: "usePrecompiled", type: "bool" }
-        ],
-        [
-            "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-            '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
-            1n,
-            44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-            9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-            false
-        ]
-    )
-}
-
-const doSignMessage = async (
+const signMessageUsingWebAuthn = async (
     message: SignableMessage,
     passkeyServerUrl: string,
-    chainId: number,
-    credentials: RequestCredentials = "include"
+    chainId: number
 ) => {
-    // convert SignMessage to string
     let messageContent: string
     if (typeof message === "string") {
         // message is a string
@@ -127,7 +73,7 @@ const doSignMessage = async (
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: formattedMessage, userId }),
-            credentials
+            credentials: "include"
         }
     )
     const signInitiateResult = await signInitiateResponse.json()
@@ -140,6 +86,7 @@ const doSignMessage = async (
     }
 
     // start authentication (signing)
+
     const { startAuthentication } = await import("@simplewebauthn/browser")
     const cred = await startAuthentication(assertionOptions)
 
@@ -148,7 +95,7 @@ const doSignMessage = async (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cred, userId }),
-        credentials
+        credentials: "include"
     })
 
     const verifyResult = await verifyResponse.json()
@@ -174,40 +121,43 @@ const doSignMessage = async (
     const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
     const { r, s } = parseAndNormalizeSig(signatureHex)
 
-    const signatureComponents = [
-        { name: "authenticatorData", type: "bytes" },
-        { name: "clientDataJSON", type: "string" },
-        { name: "responseTypeLocation", type: "uint256" },
-        { name: "r", type: "uint256" },
-        { name: "s", type: "uint256" },
-        { name: "usePrecompiled", type: "bool" }
-    ]
-
-    return encodeAbiParameters(signatureComponents, [
-        authenticatorDataHex,
-        clientDataJSON,
-        beforeType,
-        BigInt(r),
-        BigInt(s),
-        isRIP7212SupportedNetwork(chainId)
-    ])
+    // encode signature
+    const encodedSignature = encodeAbiParameters(
+        [
+            { name: "authenticatorData", type: "bytes" },
+            { name: "clientDataJSON", type: "string" },
+            { name: "responseTypeLocation", type: "uint256" },
+            { name: "r", type: "uint256" },
+            { name: "s", type: "uint256" },
+            { name: "usePrecompiled", type: "bool" }
+        ],
+        [
+            authenticatorDataHex,
+            clientDataJSON,
+            beforeType,
+            BigInt(r),
+            BigInt(s),
+            isRIP7212SupportedNetwork(chainId)
+        ]
+    )
+    return encodedSignature
 }
 
-export async function createPasskeyValidator<
+export async function toPasskeyValidator<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        passkeyName,
+        webAuthnKey,
         passkeyServerUrl,
         entryPoint: entryPointAddress,
         kernelVersion,
         validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
-        passkeyName: string
+        webAuthnKey: WebAuthnKey
         passkeyServerUrl: string
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
@@ -224,98 +174,14 @@ export async function createPasskeyValidator<
         kernelVersion,
         _validatorAddress
     )
-
-    // Get registration options
-    const registerOptionsResponse = await fetch(
-        `${passkeyServerUrl}/register/options`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: passkeyName }),
-            credentials
-        }
-    )
-    const registerOptionsResult = await registerOptionsResponse.json()
-
-    // save userId to sessionStorage
-    if (window.sessionStorage === undefined) {
-        throw new Error("sessionStorage is not available")
-    }
-    sessionStorage.setItem("userId", registerOptionsResult.userId)
-
-    // Start registration
-    const { startRegistration } = await import("@simplewebauthn/browser")
-    const registerCred = await startRegistration(registerOptionsResult.options)
-
-    // get authenticatorIdHash
-    const authenticatorIdHash = keccak256(
-        uint8ArrayToHexString(b64ToBytes(registerCred.id))
-    )
-
-    // Verify registration
-    const registerVerifyResponse = await fetch(
-        `${passkeyServerUrl}/register/verify`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                userId: registerOptionsResult.userId,
-                username: passkeyName,
-                cred: registerCred
-            }),
-            credentials
-        }
-    )
-
-    const registerVerifyResult = await registerVerifyResponse.json()
-    if (!registerVerifyResult.verified) {
-        throw new Error("Registration not verified")
-    }
-
-    // Import the key
-    const pubKey = registerCred.response.publicKey
-    if (!pubKey) {
-        throw new Error("No public key returned from registration credential")
-    }
-
-    const spkiDer = Buffer.from(pubKey, "base64")
-    const key = await crypto.subtle.importKey(
-        "spki",
-        spkiDer,
-        {
-            name: "ECDSA",
-            namedCurve: "P-256"
-        },
-        true,
-        ["verify"]
-    )
-
-    // Export the key to the raw format
-    const rawKey = await crypto.subtle.exportKey("raw", key)
-    const rawKeyBuffer = Buffer.from(rawKey)
-
-    // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
-    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
-    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
-
     // Fetch chain id
     const chainId = await getChainId(client)
 
-    // build account with passkey
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                chainId,
-                credentials
-            )
+            return signMessageUsingWebAuthn(message, passkeyServerUrl, chainId)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -355,7 +221,29 @@ export async function createPasskeyValidator<
             return validatorAddress
         },
         async getEnableData() {
-            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
+            return encodeAbiParameters(
+                [
+                    {
+                        components: [
+                            { name: "x", type: "uint256" },
+                            { name: "y", type: "uint256" }
+                        ],
+                        name: "webAuthnData",
+                        type: "tuple"
+                    },
+                    {
+                        name: "authenticatorIdHash",
+                        type: "bytes32"
+                    }
+                ],
+                [
+                    {
+                        x: webAuthnKey.pubX,
+                        y: webAuthnKey.pubY
+                    },
+                    webAuthnKey.authenticatorIdHash
+                ]
+            )
         },
         async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
             if (customNonceKey) {
@@ -375,224 +263,48 @@ export async function createPasskeyValidator<
                 chainId: chainId
             })
 
-            const signature = await signMessage(client, {
+            const signature: Hex = await signMessage(client, {
                 account,
                 message: { raw: hash }
             })
             return signature
         },
         async getDummySignature() {
-            return createDummySignatrue()
-        },
-        async isEnabled(
-            _kernelAccountAddress: Address,
-            _selector: Hex
-        ): Promise<boolean> {
-            return false
-        },
-
-        getSerializedData() {
-            return serializePasskeyValidatorData({
-                passkeyServerUrl,
-                credentials,
-                entryPoint: entryPointAddress,
-                validatorAddress,
-                pubKeyX,
-                pubKeyY,
-                authenticatorIdHash
-            })
-        }
-    }
-}
-
-export async function getPasskeyValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<TTransport, TChain, undefined>,
-    {
-        passkeyServerUrl,
-        entryPoint: entryPointAddress,
-        kernelVersion,
-        validatorAddress: _validatorAddress,
-        credentials = "include"
-    }: {
-        passkeyServerUrl: string
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
-        validatorAddress?: Address
-        credentials?: RequestCredentials
-    }
-): Promise<
-    KernelValidator<entryPoint, "WebAuthnValidator"> & {
-        getSerializedData: () => string
-    }
-> {
-    const validatorAddress = getValidatorAddress(
-        entryPointAddress,
-        kernelVersion,
-        _validatorAddress
-    )
-    // Get login options
-    const loginOptionsResponse = await fetch(
-        `${passkeyServerUrl}/login/options`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials
-        }
-    )
-    const loginOptions = await loginOptionsResponse.json()
-
-    // Start authentication (login)
-    const { startAuthentication } = await import("@simplewebauthn/browser")
-    const loginCred = await startAuthentication(loginOptions)
-
-    // get authenticatorIdHash
-    const authenticatorIdHash = keccak256(
-        uint8ArrayToHexString(b64ToBytes(loginCred.id))
-    )
-
-    // Verify authentication
-    const loginVerifyResponse = await fetch(
-        `${passkeyServerUrl}/login/verify`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cred: loginCred }),
-            credentials
-        }
-    )
-
-    const loginVerifyResult = await loginVerifyResponse.json()
-    if (!loginVerifyResult.verification.verified) {
-        throw new Error("Login not verified")
-    }
-
-    if (window.sessionStorage === undefined) {
-        throw new Error("sessionStorage is not available")
-    }
-    sessionStorage.setItem("userId", loginVerifyResult.userId)
-
-    // Import the key
-    const pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
-    if (!pubKey) {
-        throw new Error("No public key returned from login verify credential")
-    }
-
-    const spkiDer = Buffer.from(pubKey, "base64")
-    const key = await crypto.subtle.importKey(
-        "spki",
-        spkiDer,
-        {
-            name: "ECDSA",
-            namedCurve: "P-256"
-        },
-        true,
-        ["verify"]
-    )
-
-    // Export the key to the raw format
-    const rawKey = await crypto.subtle.exportKey("raw", key)
-    const rawKeyBuffer = Buffer.from(rawKey)
-
-    // The first byte is 0x04 (uncompressed), followed by x and y coordinates (32 bytes each for P-256)
-    const pubKeyX = rawKeyBuffer.subarray(1, 33).toString("hex")
-    const pubKeyY = rawKeyBuffer.subarray(33).toString("hex")
-
-    // Fetch chain id
-    const chainId = await getChainId(client)
-
-    // build account with passkey
-    const account: LocalAccount = toAccount({
-        // note that this address will be overwritten by actual address
-        address: "0x0000000000000000000000000000000000000000",
-        async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                chainId,
-                credentials
+            return encodeAbiParameters(
+                [
+                    { name: "authenticatorData", type: "bytes" },
+                    { name: "clientDataJSON", type: "string" },
+                    { name: "responseTypeLocation", type: "uint256" },
+                    { name: "r", type: "uint256" },
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
+                ],
+                [
+                    "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
+                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
+                    1n,
+                    44941127272049826721201904734628716258498742255959991581049806490182030242267n,
+                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
+                    false
+                ]
             )
         },
-        async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
-        },
-        async signTypedData<
-            const TTypedData extends TypedData | Record<string, unknown>,
-            TPrimaryType extends
-                | keyof TTypedData
-                | "EIP712Domain" = keyof TTypedData
-        >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            const { domain, message, primaryType } =
-                typedData as unknown as SignTypedDataParameters
-
-            const types = {
-                EIP712Domain: getTypesForEIP712Domain({ domain }),
-                ...typedData.types
-            }
-
-            validateTypedData({ domain, message, primaryType, types })
-
-            const hash = hashTypedData(typedData)
-            const signature = await signMessage(client, {
-                account,
-                message: hash
-            })
-            return signature
-        }
-    })
-
-    return {
-        ...account,
-        supportedKernelVersions: kernelVersion,
-        validatorType: "SECONDARY",
-        address: validatorAddress,
-        source: "WebAuthnValidator",
-        getIdentifier: () => validatorAddress,
-        async getEnableData() {
-            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
-        },
-        async getNonceKey() {
-            return 0n
-        },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
-            const hash = getUserOperationHash({
-                userOperation: {
-                    ...userOperation,
-                    signature: "0x"
-                },
-                entryPoint: entryPointAddress,
-                chainId: chainId
-            })
-
-            const signature = await signMessage(client, {
-                account,
-                message: { raw: hash }
-            })
-            return signature
-        },
-        async getDummySignature() {
-            return createDummySignatrue()
-        },
         async isEnabled(
             _kernelAccountAddress: Address,
             _selector: Hex
         ): Promise<boolean> {
             return false
         },
+
         getSerializedData() {
             return serializePasskeyValidatorData({
                 passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
-                pubKeyX,
-                pubKeyY,
-                authenticatorIdHash
+                pubKeyX: webAuthnKey.pubX,
+                pubKeyY: webAuthnKey.pubY,
+                authenticatorIdHash: webAuthnKey.authenticatorIdHash
             })
         }
     }
@@ -636,12 +348,7 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return doSignMessage(
-                message,
-                passkeyServerUrl,
-                chainId,
-                credentials as RequestCredentials
-            )
+            return signMessageUsingWebAuthn(message, passkeyServerUrl, chainId)
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -679,7 +386,29 @@ export async function deserializePasskeyValidator<
         source: "WebAuthnValidator",
         getIdentifier: () => validatorAddress,
         async getEnableData() {
-            return createEnableData(pubKeyX, pubKeyY, authenticatorIdHash)
+            return encodeAbiParameters(
+                [
+                    {
+                        components: [
+                            { name: "x", type: "uint256" },
+                            { name: "y", type: "uint256" }
+                        ],
+                        name: "webAuthnData",
+                        type: "tuple"
+                    },
+                    {
+                        name: "authenticatorIdHash",
+                        type: "bytes32"
+                    }
+                ],
+                [
+                    {
+                        x: pubKeyX,
+                        y: pubKeyY
+                    },
+                    authenticatorIdHash
+                ]
+            )
         },
         async getNonceKey() {
             return 0n
@@ -703,7 +432,24 @@ export async function deserializePasskeyValidator<
             return signature
         },
         async getDummySignature() {
-            return createDummySignatrue()
+            return encodeAbiParameters(
+                [
+                    { name: "authenticatorData", type: "bytes" },
+                    { name: "clientDataJSON", type: "string" },
+                    { name: "responseTypeLocation", type: "uint256" },
+                    { name: "r", type: "uint256" },
+                    { name: "s", type: "uint256" },
+                    { name: "usePrecompiled", type: "bool" }
+                ],
+                [
+                    "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
+                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
+                    1n,
+                    44941127272049826721201904734628716258498742255959991581049806490182030242267n,
+                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
+                    false
+                ]
+            )
         },
 
         async isEnabled(

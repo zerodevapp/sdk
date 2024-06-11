@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/wallet",
-    "version": "0.0.9",
+    "name": "@zerodev/multi-chain-weighted-validator",
+    "version": "5.2.0-alpha-1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -35,14 +35,13 @@
         "lint:fix": "bun run lint --apply"
     },
     "dependencies": {
-        "@zerodev/sdk": "^5.2.1",
-        "@zerodev/ecdsa-validator": "^5.2.3",
-        "@zerodev/permissions": "^5.2.9",
-        "@zerodev/passkey-validator": "^5.2.7"
+        "@noble/curves": "^1.3.0",
+        "@simplewebauthn/browser": "^8.3.4",
+        "merkletreejs": "^0.3.11"
     },
     "peerDependencies": {
-        "wagmi": "^2.9.0",
         "viem": "^2.9.17",
-        "permissionless": "^0.1.29"
+        "@zerodev/sdk": "^5.2.1",
+        "permissionless": "^0.1.18"
     }
 }

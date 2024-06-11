@@ -6,6 +6,12 @@
 
 - Integrated Kernel v3.1 and added kernelVersion param in account and plugins interface
 
+## 5.2.8
+
+### Patch Changes
+
+-   Decoupled creating passkey itself and creating the validator
+
 ## 5.2.5
 
 ### Patch Changes

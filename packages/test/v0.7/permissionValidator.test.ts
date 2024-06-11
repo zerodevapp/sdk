@@ -5,6 +5,7 @@ import {
     EIP1271Abi,
     type KernelAccountClient,
     type KernelSmartAccount,
+    KernelV3AccountAbi,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
@@ -18,6 +19,7 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
+    decodeEventLog,
     encodeFunctionData,
     getAbiItem,
     hashMessage,
@@ -28,7 +30,9 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
+    ECDSA_SIGNER_CONTRACT,
     type Policy,
+    SUDO_POLICY_CONTRACT,
     deserializePermissionAccount,
     serializePermissionAccount
 } from "../../../plugins/permission"
@@ -54,6 +58,7 @@ import {
     getSessionKeySignerToPermissionKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToPermissionKernelAccount,
+    getSignerToPermissionKernelAccountAndPlugin,
     getSignerToRootPermissionKernelAccount,
     getSignerToRootPermissionWithSecondaryValidatorKernelAccount,
     getZeroDevPaymasterClient,
@@ -369,6 +374,107 @@ describe("Permission kernel Account", () => {
             expect(response).toBeString()
             expect(response).toHaveLength(SIGNATURE_LENGTH)
             expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client install and uninstall PermissionValidator",
+        async () => {
+            const { accountWithSudo, accountWithSudoAndRegular, plugin } =
+                await getSignerToPermissionKernelAccountAndPlugin([
+                    await toSudoPolicy({})
+                ])
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: accountWithSudoAndRegular,
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Install Transaction hash:", response)
+            const permissionSmartAccountClientSudo =
+                await getKernelAccountClient({
+                    account: accountWithSudo,
+                    middleware: {
+                        sponsorUserOperation: async ({ userOperation }) => {
+                            const zeroDevPaymaster = getZeroDevPaymasterClient()
+                            return zeroDevPaymaster.sponsorUserOperation({
+                                userOperation,
+                                entryPoint: getEntryPoint()
+                            })
+                        }
+                    }
+                })
+
+            const response2 =
+                await permissionSmartAccountClientSudo.uninstallPlugin({
+                    plugin
+                })
+            console.log("Uninstall Transaction hash:", response2)
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: response2
+                })
+
+            let policyAndSignerUninstalled = false
+            for (const log of transactionReceipt.logs) {
+                try {
+                    const event = decodeEventLog({
+                        abi: KernelV3AccountAbi,
+                        ...log
+                    })
+                    if (event.eventName === "ModuleUninstallResult") {
+                        if (
+                            event.args.module === SUDO_POLICY_CONTRACT ||
+                            event.args.module === ECDSA_SIGNER_CONTRACT
+                        ) {
+                            policyAndSignerUninstalled = true
+                        } else {
+                            policyAndSignerUninstalled = false
+                        }
+                    }
+                    console.log(event)
+                } catch (error) {}
+            }
+            expect(policyAndSignerUninstalled).toBeTrue()
+            let errMsg = ""
+            try {
+                await permissionSmartAccountClient.sendUserOperation({
+                    userOperation: {
+                        callData:
+                            await permissionSmartAccountClient.account.encodeCallData(
+                                {
+                                    to: zeroAddress,
+                                    value: 0n,
+                                    data: "0x"
+                                }
+                            )
+                    }
+                })
+            } catch (error) {
+                errMsg = error.message
+            }
+            expect(errMsg).toMatch(
+                "UserOperation reverted during simulation with reason: 0x756688fe"
+            )
         },
         TEST_TIMEOUT
     )

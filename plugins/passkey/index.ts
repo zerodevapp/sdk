@@ -6,16 +6,17 @@ import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import { type Address, zeroAddress } from "viem"
 import {
-    createPasskeyValidator,
     deserializePasskeyValidator,
-    getPasskeyValidator
+    toPasskeyValidator
 } from "./toPasskeyValidator.js"
+import { WebAuthnMode, toWebAuthnKey } from "./toWebAuthnKey.js"
 
 export {
     deserializePasskeyValidator,
-    createPasskeyValidator,
-    getPasskeyValidator,
-    type KernelValidator
+    toPasskeyValidator,
+    toWebAuthnKey,
+    type KernelValidator,
+    WebAuthnMode
 }
 
 // export const WEBAUTHN_VALIDATOR_ADDRESS_V06 =
