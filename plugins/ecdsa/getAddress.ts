@@ -1,11 +1,12 @@
 import {
     constants,
     KernelAccountAbi,
-    KernelV3_1AccountAbi,
     KernelV3InitAbi,
+    KernelV3_1AccountAbi,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
 import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
@@ -26,7 +27,6 @@ import {
     zeroAddress
 } from "viem"
 import { getValidatorAddress } from "./toECDSAValidatorPlugin.js"
-import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
 
 const getInitCodeHash = async <entryPoint extends EntryPoint>(
     publicClient: PublicClient,
