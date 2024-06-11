@@ -1,10 +1,15 @@
 import {
     KernelFactoryStakerAbi,
     KernelV3AccountAbi,
+    KernelV3_1AccountAbi,
     createKernelAccount
 } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
+import type {
+    GetKernelVersion,
+    KERNEL_VERSION_TYPE,
+    ValidatorInitData
+} from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hex, Transport } from "viem"
@@ -23,6 +28,7 @@ import { toPermissionValidator } from "./toPermissionValidator.js"
 import type { Policy } from "./types.js"
 import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
+import type { DecodeFunctionDataReturnType } from "viem/utils/abi/decodeFunctionData.js"
 
 export const deserializePermissionAccount = async <
     entryPoint extends EntryPoint,
@@ -63,7 +69,8 @@ export const deserializePermissionAccount = async <
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
-        params.accountParams.initCode
+        params.accountParams.initCode,
+        kernelVersion
     )
 
     const kernelPluginManager = await toKernelPluginManager(client, {
@@ -104,7 +111,10 @@ export const createPolicyFromParams = async (policy: Policy) => {
     }
 }
 
-export const decodeParamsFromInitCode = (initCode: Hex) => {
+export const decodeParamsFromInitCode = (
+    initCode: Hex,
+    kernelVersion: KERNEL_VERSION_TYPE
+) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
     const deployWithFactoryFunctionData = decodeFunctionData({
@@ -114,10 +124,20 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
     if (!deployWithFactoryFunctionData) throw new Error("Invalid initCode")
     if (deployWithFactoryFunctionData.functionName === "deployWithFactory") {
         index = BigInt(deployWithFactoryFunctionData.args[2])
-        const initializeFunctionData = decodeFunctionData({
-            abi: KernelV3AccountAbi,
-            data: deployWithFactoryFunctionData.args[1]
-        })
+        let initializeFunctionData:
+            | DecodeFunctionDataReturnType<typeof KernelV3AccountAbi>
+            | DecodeFunctionDataReturnType<typeof KernelV3_1AccountAbi>
+        if (kernelVersion === "0.3.0-beta") {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3AccountAbi,
+                data: deployWithFactoryFunctionData.args[1]
+            })
+        } else {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3_1AccountAbi,
+                data: deployWithFactoryFunctionData.args[1]
+            })
+        }
         if (!initializeFunctionData) throw new Error("Invalid initCode")
         if (initializeFunctionData.functionName === "initialize") {
             validatorInitData = {
