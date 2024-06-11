@@ -53,6 +53,7 @@ import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/enc
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
+import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
 
 export type KernelSmartAccount<
     entryPoint extends EntryPoint,
@@ -137,11 +138,13 @@ export const KERNEL_ADDRESSES: {
 const getKernelInitData = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
     kernelPluginManager,
-    initHook
+    initHook,
+    kernelVersion
 }: {
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
+    kernelVersion: GetKernelVersion<entryPoint>
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const { enableData, identifier, validatorAddress } =
@@ -155,8 +158,24 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
         })
     }
 
+    if (kernelVersion === "0.3.0-beta") {
+        return encodeFunctionData({
+            abi: KernelV3InitAbi,
+            functionName: "initialize",
+            args: [
+                identifier,
+                initHook && kernelPluginManager.hook
+                    ? kernelPluginManager.hook?.getIdentifier()
+                    : zeroAddress,
+                enableData,
+                initHook && kernelPluginManager.hook
+                    ? await kernelPluginManager.hook?.getEnableData()
+                    : "0x"
+            ]
+        })
+    }
     return encodeFunctionData({
-        abi: KernelV3InitAbi,
+        abi: KernelV3_1AccountAbi,
         functionName: "initialize",
         args: [
             identifier,
@@ -166,7 +185,8 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
             enableData,
             initHook && kernelPluginManager.hook
                 ? await kernelPluginManager.hook?.getEnableData()
-                : "0x"
+                : "0x",
+            []
         ]
     })
 }
@@ -185,7 +205,8 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     metaFactoryAddress,
     entryPoint: entryPointAddress,
     kernelPluginManager,
-    initHook
+    initHook,
+    kernelVersion
 }: {
     index: bigint
     factoryAddress: Address
@@ -194,12 +215,14 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
+    kernelVersion: GetKernelVersion<entryPoint>
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPoint>({
         entryPoint: entryPointAddress,
         kernelPluginManager,
-        initHook
+        initHook,
+        kernelVersion
     })
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -368,7 +391,8 @@ export async function createKernelAccount<
             metaFactoryAddress,
             entryPoint: entryPointAddress,
             kernelPluginManager,
-            initHook
+            initHook,
+            kernelVersion
         })
     }
 

@@ -1,6 +1,7 @@
 import {
     constants,
     KernelAccountAbi,
+    KernelV3_1AccountAbi,
     KernelV3InitAbi,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
@@ -25,6 +26,7 @@ import {
     zeroAddress
 } from "viem"
 import { getValidatorAddress } from "./toECDSAValidatorPlugin.js"
+import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
 
 const getInitCodeHash = async <entryPoint extends EntryPoint>(
     publicClient: PublicClient,
@@ -106,17 +108,36 @@ const generateSaltForV07 = (
     index: bigint,
     hookAddress: Address,
     hookData: Hex,
-    validatorAddress: Address
+    validatorAddress: Address,
+    kernelVersion: KERNEL_VERSION_TYPE,
+    initConfig: Hex[]
 ) => {
     const encodedIndex = toHex(index, { size: 32 })
-    const initData = encodeFunctionData({
-        abi: KernelV3InitAbi,
+    let initData: Hex
+    if (kernelVersion === "0.3.0-beta") {
+        initData = encodeFunctionData({
+            abi: KernelV3InitAbi,
+            functionName: "initialize",
+            args: [
+                concatHex([
+                    constants.VALIDATOR_TYPE.SECONDARY,
+                    validatorAddress
+                ]),
+                hookAddress,
+                eoaAddress,
+                hookData
+            ]
+        })
+    }
+    initData = encodeFunctionData({
+        abi: KernelV3_1AccountAbi,
         functionName: "initialize",
         args: [
             concatHex([constants.VALIDATOR_TYPE.SECONDARY, validatorAddress]),
             hookAddress,
             eoaAddress,
-            hookData
+            hookData,
+            initConfig
         ]
     })
     const packedData = concatHex([initData, encodedIndex])
@@ -132,6 +153,7 @@ export type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> = {
         ? never
         : Address
     hookData?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE ? never : Hex
+    initConfig?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE ? never : Hex[]
 } & (
     | { publicClient: PublicClient; initCodeHash?: never }
     | { publicClient?: never; initCodeHash: Hex }
@@ -180,12 +202,16 @@ export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
                 : zeroAddress
         const hookData =
             "hookData" in params && params.hookData ? params.hookData : "0x"
+        const initConfig =
+            "initConfig" in params && params.initConfig ? params.initConfig : []
         salt = generateSaltForV07(
             params.eoaAddress,
             params.index,
             hookAddress,
             hookData,
-            ecdsaValidatorAddress
+            ecdsaValidatorAddress,
+            params.kernelVersion,
+            initConfig
         )
     }
 

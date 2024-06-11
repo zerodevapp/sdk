@@ -63,11 +63,11 @@ export const KernelVersionToAddressesMap: {
     },
     "0.3.1": {
         accountImplementationAddress:
-            "0x8549e78dF3C7850A7735f04ADbDC8A2962Db1EB8",
-        factoryAddress: "0x8ba061431fBAF2A766a773A9C044C92d13A07D7e",
+            "0xcA6E20D0ba4cc864f6160DC165A0a477581B594B",
+        factoryAddress: "0x3F95901CA906B541303048213Dd5E5184462922b",
         metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
         initCodeHash:
-            "0xc5a51f3c59926dfa1c80e5918d287a4d56df9c48ec0e4c5be1a6ca2f6894a58c"
+            "0x3b6d83d5f038bb6d9f7754312809f9b6a50119b00047b6b464e278febdc9c78d"
     }
 }
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
