@@ -580,7 +580,8 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
 
     const ecdsaPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
-        signer: signer1
+        signer: signer1,
+        kernelVersion
     })
 
     const privateKey2 = generatePrivateKey()
@@ -591,7 +592,8 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
         {
             entryPoint: getEntryPoint(),
             signer: ecdsaModularSigner2,
-            policies
+            policies,
+            kernelVersion
         }
     )
 
@@ -607,7 +609,8 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
                 )
             }
         },
-        index
+        index,
+        kernelVersion
     })
     const accountWithSudo = await createKernelAccount(publicClient, {
         entryPoint: getEntryPoint(),
@@ -620,7 +623,8 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
                 )
             }
         },
-        index
+        index,
+        kernelVersion
     })
     return {
         accountWithSudoAndRegular,
