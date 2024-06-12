@@ -298,6 +298,7 @@ export class KernelEIP1193Provider<
                 signer: privateKeyToAccount(session.signerPrivateKey)
             })
             const sessionKeyAccount = await deserializePermissionAccount(
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                 this.kernelClient.account.client as any,
                 this.kernelClient.account.entryPoint,
                 session.approval,
@@ -345,6 +346,7 @@ export class KernelEIP1193Provider<
     private handleWalletCapabilities() {
         const capabilities = this.getItemFromStorage(
             WALLET_CAPABILITIES_STORAGE_KEY
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         ) as Record<string, any> | undefined
 
         return capabilities
@@ -522,6 +524,7 @@ export class KernelEIP1193Provider<
             // 2. estimate userOp gas
             const gas = (await this.kernelClient.request({
                 method: "eth_estimateUserOperationGas",
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                 params: [hexStubUserOperation as any, entryPoint]
             })) as EstimateUserOperationGasReturnType<entryPoint>
 

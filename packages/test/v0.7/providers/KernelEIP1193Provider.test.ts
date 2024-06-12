@@ -180,6 +180,7 @@ describe("KernelEIP1193Provider", () => {
             const pendingStatus = (await provider.request({
                 method: "wallet_getCallStatus",
                 params: [userOpHash]
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             })) as any
             expect(pendingStatus.status).toBe("PENDING")
             const transaction = await bundlerClient.waitForUserOperationReceipt(
@@ -197,6 +198,7 @@ describe("KernelEIP1193Provider", () => {
             const confirmedStatus = (await provider.request({
                 method: "wallet_getCallStatus",
                 params: [userOpHash]
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             })) as any
             expect(confirmedStatus.status).toBe("CONFIRMED")
             expect(confirmedStatus.receipts[0].status).toBe("0x1")
