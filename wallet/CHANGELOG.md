@@ -4,6 +4,12 @@
 
 ### Patch Changes
 
+- Lock dependency version
+
+## 0.0.9
+
+### Patch Changes
+
 - Add support for entrypoint v0.6 to KernelEIP1193Provider
 
 ## 0.0.8
