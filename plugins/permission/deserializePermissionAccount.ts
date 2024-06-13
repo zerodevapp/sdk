@@ -127,7 +127,7 @@ export const decodeParamsFromInitCode = (
         let initializeFunctionData:
             | DecodeFunctionDataReturnType<typeof KernelV3AccountAbi>
             | DecodeFunctionDataReturnType<typeof KernelV3_1AccountAbi>
-        if (kernelVersion === "0.3.0-beta") {
+        if (kernelVersion === "0.3.0") {
             initializeFunctionData = decodeFunctionData({
                 abi: KernelV3AccountAbi,
                 data: deployWithFactoryFunctionData.args[1]

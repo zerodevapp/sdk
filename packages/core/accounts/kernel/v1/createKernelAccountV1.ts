@@ -100,11 +100,11 @@ export async function createKernelAccountV1<
     client: Client<TTransport, TChain, undefined>,
     {
         signer,
-        entrypoint: entryPointAddress,
+        entryPoint: entryPointAddress,
         index = 0n
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
-        entrypoint: entryPoint
+        entryPoint: entryPoint
         index?: bigint
     }
 ): Promise<KernelSmartAccountV1<entryPoint, TTransport, TChain>> {

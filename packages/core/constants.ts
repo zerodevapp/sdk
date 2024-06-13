@@ -1,4 +1,3 @@
-import type { EntryPointVersion } from "permissionless/types/entrypoint"
 import { type Address, type Hex, zeroAddress } from "viem"
 import type {
     KERNEL_V3_VERSION_TYPE,
@@ -8,14 +7,14 @@ import type {
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
 
-export const KernelImplToVersionMap: { [key: Address]: string } = {
-    "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C": "0.2.2",
-    "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5": "0.2.2",
-    "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3",
-    "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
-    "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
-    "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27": "0.3.0-beta"
-}
+// export const KernelImplToVersionMap: { [key: Address]: string } = {
+//     "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C": "0.2.2",
+//     "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5": "0.2.2",
+//     "0xD3F582F6B4814E989Ee8E96bc3175320B5A540ab": "0.2.3",
+//     "0x5FC0236D6c88a65beD32EECDC5D60a5CAb377717": "0.2.3",
+//     "0xd3082872F8B06073A021b4602e022d5A070d7cfC": "0.2.4",
+//     "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27": "0.3.0"
+// }
 
 export const FACTORY_ADDRESS_V0_6 = "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3"
 export const FACTORY_ADDRESS_V0_6_INIT_CODE_HASH =
@@ -53,7 +52,7 @@ export const KernelVersionToAddressesMap: {
         factoryAddress: FACTORY_ADDRESS_V0_6,
         initCodeHash: FACTORY_ADDRESS_V0_6_INIT_CODE_HASH
     },
-    "0.3.0-beta": {
+    "0.3.0": {
         accountImplementationAddress:
             "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27",
         factoryAddress: "0x6723b44Abeec4E71eBE3232BD5B455805baDD22f",
@@ -74,10 +73,7 @@ export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
     "0xb230f0A1C7C95fa11001647383c8C7a8F316b900"
 export const KERNEL_NAME = "Kernel"
-export const LATEST_KERNEL_VERSION: { [key in EntryPointVersion]: string } = {
-    "v0.6": "0.2.4",
-    "v0.7": "0.3.0-beta"
-}
+
 export const VALIDATOR_TYPE = {
     SUDO: "0x00",
     SECONDARY: "0x01",

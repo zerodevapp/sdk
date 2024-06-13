@@ -31,7 +31,7 @@ export const kernelVersionRangeToValidator: {
     [key: string]: Address
 } = {
     "0.0.2 - 0.2.4": "0x8012D9ee59176Cb01a4aa80fCFE6f5E8bA58d4fb",
-    "0.3.0-beta || 0.3.1": "0xeD89244160CfE273800B58b1B534031699dFeEEE"
+    "0.3.0 || 0.3.1": "0xeD89244160CfE273800B58b1B534031699dFeEEE"
 }
 
 export const getValidatorAddress = <entryPoint extends EntryPoint>(

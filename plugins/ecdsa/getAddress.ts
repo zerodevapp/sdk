@@ -114,7 +114,7 @@ const generateSaltForV07 = (
 ) => {
     const encodedIndex = toHex(index, { size: 32 })
     let initData: Hex
-    if (kernelVersion === "0.3.0-beta") {
+    if (kernelVersion === "0.3.0") {
         initData = encodeFunctionData({
             abi: KernelV3InitAbi,
             functionName: "initialize",
@@ -128,6 +128,8 @@ const generateSaltForV07 = (
                 hookData
             ]
         })
+        const packedData = concatHex([initData, encodedIndex])
+        return keccak256(packedData)
     }
     initData = encodeFunctionData({
         abi: KernelV3_1AccountAbi,
@@ -162,8 +164,6 @@ export type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> = {
 export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
     params: GetKernelAddressFromECDSAParams<entryPoint>
 ) {
-    if (params.kernelVersion === "0.0.2") {
-    }
     const entryPointVersion = getEntryPointVersion(params.entryPointAddress)
     validateKernelVersionWithEntryPoint(
         params.entryPointAddress,

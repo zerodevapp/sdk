@@ -158,7 +158,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
         })
     }
 
-    if (kernelVersion === "0.3.0-beta") {
+    if (kernelVersion === "0.3.0") {
         return encodeFunctionData({
             abi: KernelV3InitAbi,
             functionName: "initialize",

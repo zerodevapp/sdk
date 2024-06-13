@@ -193,7 +193,7 @@ export async function toMultiChainWebAuthnValidator<
 
     return {
         ...account,
-        supportedKernelVersions: ">=0.3.0-beta",
+        supportedKernelVersions: ">=0.3.0",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "MultiChainWebAuthnValidator",

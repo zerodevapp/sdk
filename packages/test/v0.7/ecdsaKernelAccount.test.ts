@@ -150,9 +150,10 @@ describe("ECDSA kernel Account", () => {
             kernelVersion,
             eoaAddress: ownerAccount.address,
             index: index,
-            initCodeHash:
-                constants.KernelVersionToAddressesMap[kernelVersion]
-                    .initCodeHash ?? "0x"
+            publicClient
+            // initCodeHash:
+            //     constants.KernelVersionToAddressesMap[kernelVersion]
+            //         .initCodeHash ?? "0x"
         })
         console.log(
             "Generate accountAddress using getKernelAddressFromECDSA: ",

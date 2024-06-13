@@ -169,7 +169,7 @@ export async function createMultiChainWeightedValidator<
     return {
         ...account,
         validatorType: "SECONDARY",
-        supportedKernelVersions: ">=0.3.0-beta",
+        supportedKernelVersions: ">=0.3.0",
         address: validatorAddress,
         source: "MultiChainWeightedValidator",
         getIdentifier: () =>

@@ -1,8 +1,4 @@
-import {
-    ENTRYPOINT_ADDRESS_V06,
-    ENTRYPOINT_ADDRESS_V07,
-    getEntryPointVersion
-} from "permissionless"
+import { ENTRYPOINT_ADDRESS_V06, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import { satisfies } from "semver"
 import {
@@ -14,30 +10,11 @@ import {
     hexToSignature,
     isHex,
     pad,
-    signatureToHex,
-    zeroAddress
+    signatureToHex
 } from "viem"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
-import {
-    type CALL_TYPE,
-    type EXEC_TYPE,
-    KernelImplToVersionMap,
-    LATEST_KERNEL_VERSION
-} from "./constants.js"
+import type { CALL_TYPE, EXEC_TYPE } from "./constants.js"
 import type { GetKernelVersion } from "./types/kernel.js"
-
-export const getKernelVersion = <entryPoint extends EntryPoint>(
-    entryPointAddress: entryPoint,
-    kernelImpl?: Address
-): string => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    if (!kernelImpl || kernelImpl === zeroAddress)
-        return LATEST_KERNEL_VERSION[entryPointVersion]
-    for (const [addr, ver] of Object.entries(KernelImplToVersionMap)) {
-        if (addr.toLowerCase() === kernelImpl.toLowerCase()) return ver
-    }
-    return "0.2.1"
-}
 
 export enum KERNEL_FEATURES {
     ERC1271_SIG_WRAPPER = "ERC1271_SIG_WRAPPER",
@@ -136,10 +113,10 @@ export const validateKernelVersionWithEntryPoint = <
         (entryPointAddress === ENTRYPOINT_ADDRESS_V06 &&
             !satisfies(kernelVersion, ">=0.2.2 || <=0.2.4")) ||
         (entryPointAddress === ENTRYPOINT_ADDRESS_V07 &&
-            !satisfies(kernelVersion, ">=0.3.0-beta"))
+            !satisfies(kernelVersion, ">=0.3.0"))
     ) {
         throw new Error(
-            "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0-beta for EntryPointV0.7"
+            "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0 for EntryPointV0.7"
         )
     }
 }

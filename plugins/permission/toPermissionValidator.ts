@@ -79,7 +79,7 @@ export async function toPermissionValidator<
 
     return {
         ...signer.account,
-        supportedKernelVersions: ">=0.3.0-beta",
+        supportedKernelVersions: ">=0.3.0",
         validatorType: "PERMISSION",
         address: zeroAddress,
         source: "PermissionValidator",

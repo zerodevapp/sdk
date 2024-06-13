@@ -53,7 +53,7 @@ export const accountMetadata = async <
     } catch (error) {}
     return {
         name: KERNEL_NAME,
-        version: kernelVersion,
+        version: kernelVersion === "0.3.0" ? "0.3.0-beta" : kernelVersion,
         chainId: client.chain
             ? BigInt(client.chain.id)
             : BigInt(await client.extend(publicActions).getChainId())

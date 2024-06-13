@@ -85,7 +85,7 @@ export async function toKernelPluginManager<
         (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||
             action.selector.toLowerCase() !==
                 getActionSelector(entryPointVersion).toLowerCase()) &&
-        kernelVersion === "0.3.0-beta"
+        kernelVersion === "0.3.0"
     ) {
         action.hook = {
             address: action.hook?.address ?? ONLY_ENTRYPOINT_HOOK_ADDRESS
@@ -186,7 +186,7 @@ export async function toKernelPluginManager<
             const typeData = await getPluginsEnableTypedDataV1({
                 accountAddress,
                 chainId,
-                kernelVersion: kernelVersion ?? version,
+                kernelVersion: version ?? kernelVersion,
                 action,
                 validator: regular,
                 validUntil,

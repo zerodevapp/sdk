@@ -37,7 +37,7 @@ export const getPluginsEnableTypedData = async <
     return {
         domain: {
             name: "Kernel",
-            version: kernelVersion,
+            version: kernelVersion === "0.3.0" ? "0.3.0-beta" : kernelVersion,
             chainId,
             verifyingContract: accountAddress
         },
