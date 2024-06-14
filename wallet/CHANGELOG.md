@@ -1,5 +1,11 @@
 # @zerodev/wallet
 
+## 0.0.10
+
+### Patch Changes
+
+- fix: update @zerodev/passkey-validator@5.2.8
+
 ## 0.0.9
 
 ### Patch Changes
