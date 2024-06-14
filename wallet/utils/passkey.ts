@@ -1,20 +1,6 @@
-import {
-    WEBAUTHN_VALIDATOR_ADDRESS_V06,
-    WEBAUTHN_VALIDATOR_ADDRESS_V07
-} from "@zerodev/passkey-validator"
-import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
-import type { EntryPoint } from "permissionless/types"
-
 export type ZeroDevWalletSigner = {
     isConnected: boolean
     signer: string
-}
-
-export const getWebauthnValidatorAddress = (entryPoint: EntryPoint) => {
-    if (entryPoint === ENTRYPOINT_ADDRESS_V06) {
-        return WEBAUTHN_VALIDATOR_ADDRESS_V06
-    }
-    return WEBAUTHN_VALIDATOR_ADDRESS_V07
 }
 
 export const getZerodevSigner = (): ZeroDevWalletSigner | null => {
