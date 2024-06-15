@@ -1,5 +1,6 @@
 import { type Address, type Hex, zeroAddress } from "viem"
 import type {
+    KERNEL_V2_VERSION_TYPE,
     KERNEL_V3_VERSION_TYPE,
     KERNEL_VERSION_TYPE
 } from "./types/kernel.js"
@@ -69,6 +70,14 @@ export const KernelVersionToAddressesMap: {
             "0x3b6d83d5f038bb6d9f7754312809f9b6a50119b00047b6b464e278febdc9c78d"
     }
 }
+
+export const KERNEL_V0_2: KERNEL_V2_VERSION_TYPE = "0.0.2"
+export const KERNEL_V2_2: KERNEL_V2_VERSION_TYPE = "0.2.2"
+export const KERNEL_V2_3: KERNEL_V2_VERSION_TYPE = "0.2.3"
+export const KERNEL_V2_4: KERNEL_V2_VERSION_TYPE = "0.2.4"
+export const KERNEL_V3_0: KERNEL_V3_VERSION_TYPE = "0.3.0"
+export const KERNEL_V3_1: KERNEL_V3_VERSION_TYPE = "0.3.1"
+
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
     "0xb230f0A1C7C95fa11001647383c8C7a8F316b900"
