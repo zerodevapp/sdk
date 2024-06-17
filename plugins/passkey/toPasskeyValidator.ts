@@ -29,8 +29,10 @@ import { getValidatorAddress } from "./index.js"
 import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
+    base64FromArrayBuffer,
     deserializePasskeyValidatorData,
     findQuoteIndices,
+    hexStringToUint8Array,
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
     serializePasskeyValidatorData,
@@ -77,6 +79,17 @@ const signMessageUsingWebAuthn = async (
         }
     )
     const signInitiateResult = await signInitiateResponse.json()
+
+    const expectedChallenge = base64FromArrayBuffer(
+        hexStringToUint8Array(formattedMessage),
+        true
+    )
+
+    if (signInitiateResult.challenge !== expectedChallenge) {
+        throw new Error(
+            `Server has returned invalid challenge. Expected: ${expectedChallenge}, returned: ${signInitiateResult.challenge}`
+        )
+    }
 
     // prepare assertion options
     const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {

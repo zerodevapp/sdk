@@ -12,6 +12,20 @@ export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     ).join("")}` as `0x${string}`
 }
 
+export const hexStringToUint8Array = (hexString: string): Uint8Array => {
+    const formattedHexString = hexString.startsWith("0x")
+        ? hexString.slice(2)
+        : hexString
+    const byteArray = new Uint8Array(formattedHexString.length / 2)
+    for (let i = 0; i < formattedHexString.length; i += 2) {
+        byteArray[i / 2] = Number.parseInt(
+            formattedHexString.substring(i, i + 2),
+            16
+        )
+    }
+    return byteArray
+}
+
 export const b64ToBytes = (base64: string): Uint8Array => {
     const paddedBase64 = base64
         .replace(/-/g, "+")
@@ -94,4 +108,47 @@ function base64ToBytes(base64: string) {
 function bytesToBase64(bytes: Uint8Array) {
     const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("")
     return btoa(binString)
+}
+
+/**
+ * Convenience function for creating a base64 encoded string from an ArrayBuffer instance
+ * Copied from @hexagon/base64 package (base64.fromArrayBuffer)
+ * @public
+ *
+ * @param {ArrayBuffer} arrBuf - ArrayBuffer to be encoded
+ * @param {boolean} [urlMode] - If set to true, URL mode string will be returned
+ * @returns {string} - Base64 representation of data
+ */
+export const base64FromArrayBuffer = (
+    arrBuf: ArrayBuffer,
+    urlMode: boolean
+): string => {
+    const // Regular base64 characters
+        chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    const // Base64url characters
+        charsUrl =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+    const bytes = new Uint8Array(arrBuf)
+    let result = ""
+
+    const len = bytes.length
+    const target = urlMode ? charsUrl : chars
+
+    for (let i = 0; i < len; i += 3) {
+        result += target[bytes[i] >> 2]
+        result += target[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)]
+        result += target[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)]
+        result += target[bytes[i + 2] & 63]
+    }
+
+    const remainder = len % 3
+    if (remainder === 2) {
+        result = result.substring(0, result.length - 1) + (urlMode ? "" : "=")
+    } else if (remainder === 1) {
+        result = result.substring(0, result.length - 2) + (urlMode ? "" : "==")
+    }
+
+    return result
 }
