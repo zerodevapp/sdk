@@ -423,11 +423,12 @@ export class KernelEIP1193Provider<
             policies: policies
         })
 
+        const sudoValidator =
+            this.kernelClient.account.kernelPluginManager.sudoValidator
         const sessionKeyAccount = await createKernelAccount(client, {
             entryPoint: this.kernelClient.account.entryPoint,
             plugins: {
-                sudo: this.kernelClient.account.kernelPluginManager
-                    .sudoValidator,
+                sudo: sudoValidator,
                 regular: permissionValidator
             }
         })
@@ -438,8 +439,7 @@ export class KernelEIP1193Provider<
         const sessionKeyAccountWithSig = await createKernelAccount(client, {
             entryPoint: this.kernelClient.account.entryPoint,
             plugins: {
-                sudo: this.kernelClient.account.kernelPluginManager
-                    .sudoValidator,
+                sudo: sudoValidator,
                 regular: permissionValidator,
                 pluginEnableSignature: enabledSignature
             }
