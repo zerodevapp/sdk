@@ -1,10 +1,8 @@
-import type { KernelValidator } from "@zerodev/sdk/types"
+import { validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
+import { satisfiesRange } from "@zerodev/sdk"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import {
-    type UserOperation,
-    getEntryPointVersion,
-    getUserOperationHash
-} from "permissionless"
+import { type UserOperation, getUserOperationHash } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccountSigner
@@ -13,28 +11,38 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import type {
-    Address,
-    Chain,
-    Client,
-    Hex,
-    LocalAccount,
-    Transport,
-    TypedDataDefinition
+import {
+    type Address,
+    type Chain,
+    type Client,
+    type Hex,
+    type LocalAccount,
+    type Transport,
+    type TypedDataDefinition,
+    zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { signMessage, signTypedData } from "viem/actions"
 import { getChainId } from "viem/actions"
-import {
-    ECDSA_VALIDATOR_ADDRESS_V06,
-    ECDSA_VALIDATOR_ADDRESS_V07
-} from "./constants.js"
+import { kernelVersionRangeToValidator } from "./constants.js"
 
-export const getValidatorAddress = (entryPointAddress: EntryPoint) => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    return entryPointVersion === "v0.6"
-        ? ECDSA_VALIDATOR_ADDRESS_V06
-        : ECDSA_VALIDATOR_ADDRESS_V07
+export const getValidatorAddress = <entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
+    validatorAddress?: Address
+): Address => {
+    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+    const ecdsaValidatorAddress = Object.entries(
+        kernelVersionRangeToValidator
+    ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]
+
+    if (!ecdsaValidatorAddress && !validatorAddress) {
+        throw new Error(
+            `Validator not found for Kernel version: ${kernelVersion}`
+        )
+    }
+
+    return validatorAddress ?? ecdsaValidatorAddress ?? zeroAddress
 }
 
 export async function signerToEcdsaValidator<
@@ -48,15 +56,20 @@ export async function signerToEcdsaValidator<
     {
         signer,
         entryPoint: entryPointAddress,
-        validatorAddress
+        kernelVersion,
+        validatorAddress: _validatorAddress
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    const validatorAddress = getValidatorAddress(
+        entryPointAddress,
+        kernelVersion,
+        _validatorAddress
+    )
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
@@ -95,11 +108,12 @@ export async function signerToEcdsaValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ECDSAValidator",
         getIdentifier() {
-            return validatorAddress ?? getValidatorAddress(entryPointAddress)
+            return validatorAddress
         },
 
         async getEnableData() {

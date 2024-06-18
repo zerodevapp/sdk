@@ -1,7 +1,8 @@
 export {
     createKernelAccount,
-    createKernelV1Account,
-    createKernelV2Account,
+    createKernelAccountV0_2,
+    createKernelAccountV1,
+    type KernelSmartAccountV1,
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
@@ -42,6 +43,7 @@ export {
     KernelV3ExecuteAbi,
     KernelV3InitAbi
 } from "./accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
+export { KernelV3_1AccountAbi } from "./accounts/kernel/abi/kernel_v_3_1/KernelAccountAbi.js"
 export { KernelV3FactoryAbi } from "./accounts/kernel/abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 export { KernelFactoryStakerAbi } from "./accounts/kernel/abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 export { TokenActionsAbi } from "./accounts/kernel/abi/TokenActionsAbi.js"

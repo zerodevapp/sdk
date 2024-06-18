@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { type BundlerClient, bundlerActions } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Chain,
     type PublicClient,
@@ -51,15 +51,15 @@ const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Recovery kernel Account", () => {
-    let ownerAccount: KernelSmartAccount<EntryPoint>
-    let recoveryAccount: KernelSmartAccount<EntryPoint>
+    let ownerAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+    let recoveryAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let ownerKernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
 
     beforeAll(async () => {

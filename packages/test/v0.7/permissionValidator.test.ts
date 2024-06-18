@@ -11,7 +11,7 @@ import {
 import { ethers } from "ethers"
 import type { BundlerClient } from "permissionless"
 import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -62,6 +62,7 @@ import {
     getSignerToRootPermissionKernelAccount,
     getSignerToRootPermissionWithSecondaryValidatorKernelAccount,
     getZeroDevPaymasterClient,
+    kernelVersion,
     sleep
 } from "./utils"
 
@@ -75,21 +76,21 @@ const TEST_TIMEOUT = 1000000
 
 describe("Permission kernel Account", () => {
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let ecdsaSmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
-    let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
+    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let owner: PrivateKeyAccount
     let gasPolicy: Policy
     let permissionSmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
 
     async function mintToAccount(target: Address, amount: bigint) {
@@ -841,6 +842,7 @@ describe("Permission kernel Account", () => {
             const deserilizedAccount = await deserializePermissionAccount(
                 publicClient,
                 getEntryPoint(),
+                kernelVersion,
                 serializedAccount
             )
 

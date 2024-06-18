@@ -135,7 +135,7 @@ const getAccountAddress = async <
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
-export async function createKernelV2Account<
+export async function createKernelAccountV0_2<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
@@ -149,7 +149,10 @@ export async function createKernelV2Account<
         deployedAccountAddress
     }: {
         plugins:
-            | KernelPluginManagerParams<entryPoint>
+            | Omit<
+                  KernelPluginManagerParams<entryPoint>,
+                  "entryPoint" | "kernelVersion"
+              >
             | KernelPluginManager<entryPoint>
         entryPoint: entryPoint
         index?: bigint
@@ -169,7 +172,7 @@ export async function createKernelV2Account<
               regular: plugins.regular,
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
-              kernelVersion: "0.0.2" ?? plugins.kernelVersion,
+              kernelVersion: "0.0.2",
               entryPoint: entryPointAddress
           })
     // Helper to generate the init code for the smart account

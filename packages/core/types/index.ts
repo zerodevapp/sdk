@@ -8,7 +8,11 @@ export type {
     KernelEncodeCallDataArgs,
     PluginValidityData,
     ZeroDevAccountClientRpcSchema,
-    ZeroDevUserOperationGasPriceWithBigIntAsHex
+    ZeroDevUserOperationGasPriceWithBigIntAsHex,
+    KERNEL_V2_VERSION_TYPE,
+    KERNEL_V3_VERSION_TYPE,
+    KERNEL_VERSION_TYPE,
+    GetKernelVersion
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"

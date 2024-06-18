@@ -1,9 +1,10 @@
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
 import {
     KernelFactoryV2Abi,
-    createKernelV2Account
+    createKernelAccountV0_2
 } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type { GetKernelVersion } from "@zerodev/sdk/types/kernel.js"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Address, Hex } from "viem"
@@ -12,12 +13,12 @@ import { privateKeyToAccount } from "viem/accounts"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
 
-export const deserializeSessionKeyAccountV2 = async <
+export const deserializeSessionKeyAccountV0_2 = async <
     entryPoint extends EntryPoint,
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
-    client: Parameters<typeof createKernelV2Account>[0],
+    client: Parameters<typeof createKernelAccountV0_2>[0],
     entryPointAddress: entryPoint,
     sessionKeyAccountParams: string,
     sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
@@ -31,7 +32,8 @@ export const deserializeSessionKeyAccountV2 = async <
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
         validatorData: params.sessionKeyParams,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion: "0.0.2" as GetKernelVersion<entryPoint>
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCodeV2(
@@ -48,7 +50,7 @@ export const deserializeSessionKeyAccountV2 = async <
         ...params.validityData
     })
 
-    return createKernelV2Account(client, {
+    return createKernelAccountV0_2(client, {
         plugins: kernelPluginManager,
         index,
         deployedAccountAddress: params.accountParams.accountAddress,

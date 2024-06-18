@@ -3,7 +3,6 @@ import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
-    KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccount,
     getERC20PaymasterApproveCall
@@ -12,12 +11,8 @@ import { gasTokenAddresses } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import type { BundlerClient } from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    SmartAccount
-} from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
-import type { UserOperation } from "permissionless/types/userOperation.js"
+import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -43,10 +38,8 @@ import { config } from "./config.js"
 import {
     Test_ERC20Address,
     findUserOperationEvent,
-    getEntryPoint,
     getKernelAccountClient,
     getKernelBundlerClient,
-    getKernelV1Account,
     getPublicClient,
     getSignerToEcdsaKernelV2Account,
     getSignerToSessionKeyKernelV2Account,
@@ -89,15 +82,15 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
-describe("ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
+describe("ECDSA kernel Account v2", () => {
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
     let accountAddress: Address
     let owner: PrivateKeyAccount
@@ -332,7 +325,9 @@ describe("ECDSA kernel Account", () => {
             })
             expect(userOpHash).toHaveLength(66)
 
-            await waitForNonceUpdate()
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )
@@ -353,7 +348,9 @@ describe("ECDSA kernel Account", () => {
 
             expect(userOpHash).toHaveLength(66)
 
-            await waitForNonceUpdate()
+            await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
         },
         TEST_TIMEOUT
     )

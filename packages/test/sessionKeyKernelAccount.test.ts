@@ -15,7 +15,7 @@ import {
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     http,
     type Address,
@@ -47,7 +47,8 @@ import {
     getSessionKeyToSessionKeyKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
-    getZeroDevPaymasterClient
+    getZeroDevPaymasterClient,
+    kernelVersion
 } from "./utils.js"
 
 describe("Session Key kernel Account", async () => {
@@ -72,16 +73,16 @@ describe("Session Key kernel Account", async () => {
     let owner: PrivateKeyAccount
     let accountAddress: Address
     let ecdsaSmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
     let sessionKeySmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
 
     async function mintToAccount(amount: bigint) {
@@ -191,6 +192,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -266,6 +268,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey())
             }
         )
@@ -324,6 +327,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -401,6 +405,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -516,6 +521,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -572,6 +578,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: sessionKeyAccount,
                 validatorData: {
                     permissions: [
@@ -592,6 +599,7 @@ describe("Session Key kernel Account", async () => {
             account: await deserializeSessionKeyAccount(
                 publicClient,
                 getEntryPoint(),
+                kernelVersion,
                 serializedSessionKeyAccountParams
             ),
             middleware: {
@@ -628,6 +636,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     paymaster: anyPaymaster,
@@ -682,6 +691,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [
@@ -713,6 +723,7 @@ describe("Session Key kernel Account", async () => {
             publicClient,
             {
                 entryPoint: getEntryPoint(),
+                kernelVersion,
                 signer: privateKeyToAccount(generatePrivateKey()),
                 validatorData: {
                     permissions: [

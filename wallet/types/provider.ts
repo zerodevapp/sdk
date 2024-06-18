@@ -15,6 +15,7 @@ export type SendCallsParams = {
         data?: `0x${string}` | undefined
         value?: `0x${string}` | undefined // Hex value
     }[]
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     capabilities?: Record<string, any> | undefined
 }
 
@@ -46,6 +47,7 @@ export type ShowCallsParams = string
 export type IssuePermissionsParams = {
     permissions: {
         type: string
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         data: Record<string, any>
         required: boolean
     }[]

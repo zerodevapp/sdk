@@ -1,7 +1,7 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import type { EntryPoint } from "permissionless/_types/types"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/_types/types"
 import {
     type Address,
     type Chain,
@@ -38,10 +38,10 @@ describe("Modular Permission kernel Account", async () => {
     let owner: PrivateKeyAccount
 
     let ecdsaSmartAccountClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
 
     async function mintToAccount(amount: bigint) {

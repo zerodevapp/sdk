@@ -1,5 +1,5 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -153,12 +153,14 @@ export async function toPasskeyValidator<
         webAuthnKey,
         passkeyServerUrl,
         entryPoint: entryPointAddress,
-        validatorAddress,
+        kernelVersion,
+        validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
         webAuthnKey: WebAuthnKey
         passkeyServerUrl: string
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
         credentials?: RequestCredentials
     }
@@ -167,8 +169,11 @@ export async function toPasskeyValidator<
         getSerializedData: () => string
     }
 > {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+    const validatorAddress = getValidatorAddress(
+        entryPointAddress,
+        kernelVersion,
+        _validatorAddress
+    )
     // Fetch chain id
     const chainId = await getChainId(client)
 
@@ -208,11 +213,12 @@ export async function toPasskeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",
         getIdentifier() {
-            return validatorAddress ?? getValidatorAddress(entryPointAddress)
+            return validatorAddress
         },
         async getEnableData() {
             return encodeAbiParameters(
@@ -295,8 +301,7 @@ export async function toPasskeyValidator<
                 passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
-                validatorAddress:
-                    validatorAddress ?? getValidatorAddress(entryPointAddress),
+                validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
                 authenticatorIdHash: webAuthnKey.authenticatorIdHash
@@ -313,10 +318,12 @@ export async function deserializePasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         serializedData,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     }: {
         serializedData: string
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -373,6 +380,7 @@ export async function deserializePasskeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: kernelVersion,
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WebAuthnValidator",

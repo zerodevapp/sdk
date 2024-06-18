@@ -8,7 +8,6 @@ import {
 import {
     constants,
     EIP1271Abi,
-    KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccount,
     createKernelAccount,
@@ -24,7 +23,7 @@ import {
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -33,7 +32,9 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
+    decodeAbiParameters,
     decodeEventLog,
+    decodeFunctionData,
     encodeFunctionData,
     erc20Abi,
     getContract,
@@ -57,6 +58,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getZeroDevPaymasterClient,
     index,
+    kernelVersion,
     mintToAccount,
     validateEnvironmentVariables,
     waitForNonceUpdate
@@ -86,16 +88,16 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let ownerAccount: PrivateKeyAccount
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
-    let pimlicoBundlerClient: PimlicoBundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,
@@ -145,12 +147,12 @@ describe("ECDSA kernel Account", () => {
     test("getKernelAddressFromECDSA util should return valid account address", async () => {
         const generatedAccountAddress = await getKernelAddressFromECDSA({
             entryPointAddress: ENTRYPOINT_ADDRESS_V07,
+            kernelVersion,
             eoaAddress: ownerAccount.address,
             index: index,
             initCodeHash:
-                constants.KernelFactoryToInitCodeHashMap[
-                    KERNEL_ADDRESSES.FACTORY_ADDRESS_V0_7
-                ]
+                constants.KernelVersionToAddressesMap[kernelVersion]
+                    .initCodeHash ?? "0x"
         })
         console.log(
             "Generate accountAddress using getKernelAddressFromECDSA: ",
@@ -830,7 +832,8 @@ describe("ECDSA kernel Account", () => {
                 publicClient,
                 {
                     entryPoint: getEntryPoint(),
-                    signer
+                    signer,
+                    kernelVersion
                 }
             )
             const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
@@ -841,7 +844,8 @@ describe("ECDSA kernel Account", () => {
                         sudo: ecdsaValidatorPlugin
                     },
                     deployedAccountAddress,
-                    index
+                    index,
+                    kernelVersion
                 }
             )
 
