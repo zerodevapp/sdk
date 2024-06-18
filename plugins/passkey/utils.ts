@@ -74,6 +74,7 @@ type PasskeyValidatorSerializedData = {
     validatorAddress: Hex
     pubKeyX: bigint
     pubKeyY: bigint
+    authenticatorId: string
     authenticatorIdHash: Hex
 }
 

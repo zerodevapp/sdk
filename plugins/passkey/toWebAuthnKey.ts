@@ -9,6 +9,7 @@ export enum WebAuthnMode {
 export type WebAuthnKey = {
     pubX: bigint
     pubY: bigint
+    authenticatorId: string
     authenticatorIdHash: Hex
 }
 
@@ -29,7 +30,7 @@ export const toWebAuthnKey = async ({
         return webAuthnKey
     }
     let pubKey: string | undefined
-    let authenticatorIdHash: Hex
+    let authenticatorId: string | undefined
     if (mode === WebAuthnMode.Login) {
         // Get login options
         const loginOptionsResponse = await fetch(
@@ -46,10 +47,7 @@ export const toWebAuthnKey = async ({
         const { startAuthentication } = await import("@simplewebauthn/browser")
         const loginCred = await startAuthentication(loginOptions)
 
-        // get authenticatorIdHash
-        authenticatorIdHash = keccak256(
-            uint8ArrayToHexString(b64ToBytes(loginCred.id))
-        )
+        authenticatorId = loginCred.id
 
         // Verify authentication
         const loginVerifyResponse = await fetch(
@@ -99,10 +97,7 @@ export const toWebAuthnKey = async ({
         const { startRegistration } = await import("@simplewebauthn/browser")
         const registerCred = await startRegistration(registerOptions.options)
 
-        // get authenticatorIdHash
-        authenticatorIdHash = keccak256(
-            uint8ArrayToHexString(b64ToBytes(registerCred.id))
-        )
+        authenticatorId = registerCred.id
 
         // Verify registration
         const registerVerifyResponse = await fetch(
@@ -133,6 +128,15 @@ export const toWebAuthnKey = async ({
     if (!pubKey) {
         throw new Error("No public key returned from registration credential")
     }
+    if (!authenticatorId) {
+        throw new Error(
+            "No authenticator id returned from registration credential"
+        )
+    }
+
+    const authenticatorIdHash = keccak256(
+        uint8ArrayToHexString(b64ToBytes(authenticatorId))
+    )
     const spkiDer = Buffer.from(pubKey, "base64")
     const key = await crypto.subtle.importKey(
         "spki",
@@ -156,6 +160,7 @@ export const toWebAuthnKey = async ({
     return {
         pubX: BigInt(`0x${pubKeyX}`),
         pubY: BigInt(`0x${pubKeyY}`),
+        authenticatorId,
         authenticatorIdHash
     }
 }
