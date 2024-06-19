@@ -21,13 +21,13 @@ import {
     type Transport,
     decodeEventLog,
     encodeFunctionData,
+    erc20Abi,
     getAbiItem,
     hashMessage,
     hashTypedData,
     parseEther,
     toFunctionSelector,
-    zeroAddress,
-    erc20Abi
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
@@ -43,6 +43,7 @@ import {
     toSudoPolicy,
     toTimestampPolicy
 } from "../../../plugins/permission/policies"
+import { toPermission } from "../../../plugins/permission/policies/callPolicyUtils"
 import { toCallPolicy } from "../../../plugins/permission/policies/toCallPolicy"
 import { toRateLimitPolicy } from "../../../plugins/permission/policies/toRateLimitPolicy"
 import { ParamCondition } from "../../../plugins/permission/policies/types"
@@ -66,7 +67,6 @@ import {
     kernelVersion,
     sleep
 } from "./utils"
-import { toPermission } from "../../../plugins/permission/policies/callPolicyUtils"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -865,9 +865,8 @@ describe("Permission kernel Account", () => {
                 account: deserilizedAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
