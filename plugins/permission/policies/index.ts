@@ -8,6 +8,7 @@ export {
     type RateLimitPolicyParams
 } from "./toRateLimitPolicy.js"
 export { toCallPolicy, type CallPolicyParams } from "./toCallPolicy.js"
+export { toPermission } from "./callPolicyUtils.js"
 export { toPolicyId } from "./utils/toPolicyId.js"
 export { toSudoPolicy, type SudoPolicyParams } from "./toSudoPolicy.js"
 export { CallType, ParamCondition } from "./types.js"

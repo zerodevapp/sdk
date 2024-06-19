@@ -26,7 +26,8 @@ import {
     hashTypedData,
     parseEther,
     toFunctionSelector,
-    zeroAddress
+    zeroAddress,
+    erc20Abi
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
@@ -65,6 +66,7 @@ import {
     kernelVersion,
     sleep
 } from "./utils"
+import { toPermission } from "../../../plugins/permission/policies/callPolicyUtils"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -732,7 +734,7 @@ describe("Permission kernel Account", () => {
         async () => {
             const callPolicy = await toCallPolicy({
                 permissions: [
-                    {
+                    toPermission({
                         abi: TEST_ERC20Abi,
                         target: Test_ERC20Address,
                         functionName: "transfer",
@@ -743,7 +745,20 @@ describe("Permission kernel Account", () => {
                             },
                             null
                         ]
-                    }
+                    }),
+                    // to check if it supports multiple permissions with different abis
+                    toPermission({
+                        abi: erc20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transferFrom",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    })
                 ]
             })
 
@@ -811,7 +826,7 @@ describe("Permission kernel Account", () => {
         async () => {
             const callPolicy = await toCallPolicy({
                 permissions: [
-                    {
+                    toPermission({
                         abi: TEST_ERC20Abi,
                         target: Test_ERC20Address,
                         functionName: "transfer",
@@ -822,7 +837,7 @@ describe("Permission kernel Account", () => {
                             },
                             null
                         ]
-                    }
+                    })
                 ]
             })
 
@@ -850,8 +865,9 @@ describe("Permission kernel Account", () => {
                 account: deserilizedAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
+                        (
+                            await pimlicoBundlerClient.getUserOperationGasPrice()
+                        ).fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({

@@ -14,8 +14,16 @@ import type {
     CombinedArgs,
     GeneratePermissionFromArgsParameters,
     ParamRule,
+    Permission,
     PermissionCore
 } from "./types.js"
+
+export function toPermission<
+    TAbi extends Abi | readonly unknown[],
+    TFunctionName extends string | undefined = string
+>(permission: Permission<TAbi, TFunctionName>) {
+    return permission
+}
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],

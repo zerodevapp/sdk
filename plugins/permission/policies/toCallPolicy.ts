@@ -9,21 +9,15 @@ import {
 } from "./callPolicyUtils.js"
 import { CallType, type Permission } from "./types.js"
 
-export type CallPolicyParams<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
-> = PolicyParams & {
-    permissions?: Permission<TAbi, TFunctionName>[]
+export type CallPolicyParams = PolicyParams & {
+    permissions?: Permission<Abi, string>[]
 }
 
-export function toCallPolicy<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
->({
+export function toCallPolicy({
     policyAddress = CALL_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     permissions = []
-}: CallPolicyParams<TAbi, TFunctionName>): Policy {
+}: CallPolicyParams): Policy {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
             abi: perm.abi as Abi,
@@ -58,7 +52,7 @@ export function toCallPolicy<
             policyAddress,
             policyFlag,
             permissions
-        } as unknown as CallPolicyParams<Abi | readonly unknown[], string> & {
+        } as unknown as CallPolicyParams & {
             type: "call"
         }
     }

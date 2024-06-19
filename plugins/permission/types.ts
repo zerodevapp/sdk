@@ -5,7 +5,7 @@ import type {
     PluginValidityData
 } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types/entrypoint"
-import type { Abi, Address, Hex, LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount } from "viem"
 import type { PolicyFlags } from "./constants.js"
 import type {
     CallPolicyParams,
@@ -43,7 +43,7 @@ export type Policy = {
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
-        | (CallPolicyParams<Abi | readonly unknown[], string> & {
+        | (CallPolicyParams & {
               type: "call"
           })
         | (GasPolicyParams & { type: "gas" })
