@@ -25,6 +25,7 @@ import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
 import { KernelAccountAbi } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
 import { getEntryPointVersion, getUserOperationHash } from "permissionless"
 import {
@@ -74,12 +75,14 @@ export async function signerToSessionKeyValidator<
     {
         signer,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
         signer: SmartAccountSigner<TSource, TAddress>
         validatorData?: SessionKeyData<TAbi, TFunctionName>
-        entryPoint: EntryPoint
+        entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<SessionKeyPlugin<entryPoint>> {
@@ -253,6 +256,7 @@ export async function signerToSessionKeyValidator<
 
     return {
         ...account,
+        supportedKernelVersions: "0.0.2 - 0.2.4",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "SessionKeyValidator",

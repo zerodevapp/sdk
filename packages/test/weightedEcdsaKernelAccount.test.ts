@@ -17,7 +17,7 @@ import {
     SignTransactionNotSupportedBySmartAccount,
     SmartAccount
 } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -75,14 +75,14 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Weighted ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<EntryPoint>
+    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let kernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
     >
 
     beforeAll(async () => {

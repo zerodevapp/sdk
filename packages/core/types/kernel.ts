@@ -126,6 +126,7 @@ export type KernelValidator<
     Name extends string = string
 > = LocalAccount<Name> & {
     validatorType: ValidatorType
+    supportedKernelVersions: string
     getNonceKey: (
         accountAddress?: Address,
         customNonceKey?: bigint
@@ -193,7 +194,7 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     validatorInitData?: ValidatorInitData
     action?: Action
     entryPoint: entryPoint
-    kernelVersion?: string
+    kernelVersion: KERNEL_VERSION_TYPE
 } & Partial<PluginValidityData>
 
 export type Hook = {
@@ -238,3 +239,16 @@ export type Execution = {
     value: bigint
     callData: Hex
 }
+
+export type KERNEL_V2_VERSION_TYPE = "0.0.2" | "0.2.2" | "0.2.3" | "0.2.4"
+
+export type KERNEL_V3_VERSION_TYPE = "0.3.0" | "0.3.1"
+
+export type KERNEL_VERSION_TYPE =
+    | KERNEL_V2_VERSION_TYPE
+    | KERNEL_V3_VERSION_TYPE
+
+export type GetKernelVersion<entryPoint extends EntryPoint> =
+    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
+        ? KERNEL_V2_VERSION_TYPE
+        : KERNEL_V3_VERSION_TYPE

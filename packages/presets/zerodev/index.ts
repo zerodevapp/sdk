@@ -6,6 +6,7 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
 import type { Address, Chain, HttpTransport } from "viem"
@@ -63,13 +64,15 @@ export async function createEcdsaKernelAccountClient<
     provider,
     index,
     paymaster = "SPONSOR",
-    entryPointAddress
+    entryPointAddress,
+    kernelVersion
 }: {
     chain: TChain
     projectId: string
     signer: SmartAccountSigner<TSource, TAddress>
     paymaster: PaymasterType
     entryPointAddress: entryPoint
+    kernelVersion: GetKernelVersion<entryPoint>
     provider?: Provider
     index?: bigint
 }): Promise<
@@ -86,7 +89,8 @@ export async function createEcdsaKernelAccountClient<
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
         signer,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const account = await createKernelAccount(publicClient, {
@@ -94,7 +98,8 @@ export async function createEcdsaKernelAccountClient<
             sudo: ecdsaValidator
         },
         index,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     if (!isValidPaymasterType(paymaster)) {

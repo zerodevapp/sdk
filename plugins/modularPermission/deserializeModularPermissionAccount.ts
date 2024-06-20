@@ -1,7 +1,7 @@
 import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
 import type { EntryPoint } from "permissionless/types"
 import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
@@ -23,6 +23,7 @@ export const deserializeModularPermissionAccount = async <
 >(
     client: Parameters<typeof createKernelAccount>[0],
     entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
@@ -46,30 +47,30 @@ export const deserializeModularPermissionAccount = async <
         ),
         validUntil: params.modularPermissionParams.validUntil || 0,
         validAfter: params.modularPermissionParams.validAfter || 0,
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
         params.accountParams.initCode
     )
 
-    const kernelPluginManager = await toKernelPluginManager<entryPoint>(
-        client,
-        {
-            regular: modularPermissionPlugin,
-            pluginEnableSignature: params.enableSignature,
-            validatorInitData,
-            action: params.action,
-            entryPoint: entryPointAddress,
-            ...params.validityData
-        }
-    )
+    const kernelPluginManager = await toKernelPluginManager(client, {
+        regular: modularPermissionPlugin,
+        pluginEnableSignature: params.enableSignature,
+        validatorInitData,
+        action: params.action,
+        entryPoint: entryPointAddress,
+        kernelVersion,
+        ...params.validityData
+    })
 
-    return createKernelAccount<entryPoint>(client, {
+    return createKernelAccount(client, {
+        entryPoint: entryPointAddress,
+        kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress
+        deployedAccountAddress: params.accountParams.accountAddress
     })
 }
 

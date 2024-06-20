@@ -1,4 +1,4 @@
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type UserOperation,
@@ -80,12 +80,14 @@ export async function createWeightedValidator<
     {
         config,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         signer,
         validatorAddress
     }: {
         config?: WeightedValidatorConfig
         signer: WeightedSigner
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "WeightedValidator">> {
@@ -166,6 +168,7 @@ export async function createWeightedValidator<
 
     return {
         ...account,
+        supportedKernelVersions: ">=0.3.0",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "WeightedValidator",

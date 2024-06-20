@@ -24,6 +24,7 @@ class WalletConnectKernelService {
         kernelProvider
     }: {
         walletConnectProjectId: string
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         walletConnectMetadata: any
         kernelClient?: KernelAccountClient<EntryPoint>
         kernelProvider?: KernelEIP1193Provider<EntryPoint>

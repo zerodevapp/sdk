@@ -1,15 +1,21 @@
 import {
     KernelFactoryStakerAbi,
     KernelV3AccountAbi,
+    KernelV3_1AccountAbi,
     createKernelAccount
 } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { ValidatorInitData } from "@zerodev/sdk/types"
+import type {
+    GetKernelVersion,
+    KERNEL_VERSION_TYPE,
+    ValidatorInitData
+} from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
-import type { Hex } from "viem"
+import type { Chain, Client, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import type { DecodeFunctionDataReturnType } from "viem/utils/abi/decodeFunctionData.js"
 import {
     toCallPolicy,
     toGasPolicy,
@@ -25,10 +31,13 @@ import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 
 export const deserializePermissionAccount = async <
-    entryPoint extends EntryPoint
+    entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Parameters<typeof createKernelAccount>[0],
+    client: Client<TTransport, TChain, undefined>,
     entryPointAddress: entryPoint,
+    kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
@@ -55,30 +64,31 @@ export const deserializePermissionAccount = async <
                 createPolicyFromParams(policy)
             ) || []
         ),
-        entryPoint: entryPointAddress
+        entryPoint: entryPointAddress,
+        kernelVersion
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
-        params.accountParams.initCode
+        params.accountParams.initCode,
+        kernelVersion
     )
 
-    const kernelPluginManager = await toKernelPluginManager<entryPoint>(
-        client,
-        {
-            regular: modularPermissionPlugin,
-            pluginEnableSignature: params.enableSignature,
-            validatorInitData,
-            action: params.action,
-            entryPoint: entryPointAddress,
-            ...params.validityData
-        }
-    )
+    const kernelPluginManager = await toKernelPluginManager(client, {
+        regular: modularPermissionPlugin,
+        pluginEnableSignature: params.enableSignature,
+        validatorInitData,
+        action: params.action,
+        entryPoint: entryPointAddress,
+        kernelVersion,
+        ...params.validityData
+    })
 
-    return createKernelAccount<entryPoint>(client, {
+    return createKernelAccount(client, {
+        entryPoint: entryPointAddress,
+        kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress
+        deployedAccountAddress: params.accountParams.accountAddress
     })
 }
 
@@ -101,7 +111,10 @@ export const createPolicyFromParams = async (policy: Policy) => {
     }
 }
 
-export const decodeParamsFromInitCode = (initCode: Hex) => {
+export const decodeParamsFromInitCode = (
+    initCode: Hex,
+    kernelVersion: KERNEL_VERSION_TYPE
+) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
     const deployWithFactoryFunctionData = decodeFunctionData({
@@ -111,10 +124,20 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
     if (!deployWithFactoryFunctionData) throw new Error("Invalid initCode")
     if (deployWithFactoryFunctionData.functionName === "deployWithFactory") {
         index = BigInt(deployWithFactoryFunctionData.args[2])
-        const initializeFunctionData = decodeFunctionData({
-            abi: KernelV3AccountAbi,
-            data: deployWithFactoryFunctionData.args[1]
-        })
+        let initializeFunctionData:
+            | DecodeFunctionDataReturnType<typeof KernelV3AccountAbi>
+            | DecodeFunctionDataReturnType<typeof KernelV3_1AccountAbi>
+        if (kernelVersion === "0.3.0") {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3AccountAbi,
+                data: deployWithFactoryFunctionData.args[1]
+            })
+        } else {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3_1AccountAbi,
+                data: deployWithFactoryFunctionData.args[1]
+            })
+        }
         if (!initializeFunctionData) throw new Error("Invalid initCode")
         if (initializeFunctionData.functionName === "initialize") {
             validatorInitData = {

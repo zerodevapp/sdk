@@ -42,7 +42,7 @@
     },
     "peerDependencies": {
         "wagmi": "^2.9.0",
-        "viem": "^2.9.17",
+        "viem": "^2.15.1",
         "permissionless": "^0.1.29"
     },
     "resolutions": {

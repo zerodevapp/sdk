@@ -1,5 +1,6 @@
 import { getEntryPointVersion } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
+import { satisfies } from "semver"
 import {
     type Address,
     type Chain,
@@ -61,6 +62,14 @@ export async function toKernelPluginManager<
         kernelVersion
     }: KernelPluginManagerParams<entryPoint>
 ): Promise<KernelPluginManager<entryPoint>> {
+    if (
+        (sudo && !satisfies(kernelVersion, sudo?.supportedKernelVersions)) ||
+        (regular && !satisfies(kernelVersion, regular?.supportedKernelVersions))
+    ) {
+        throw new Error(
+            "Either sudo or/and regular validator version mismatch. Update to latest plugin package and use the proper plugin version"
+        )
+    }
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const chainId = await getChainId(client)
     const activeValidator = regular || sudo
@@ -75,7 +84,8 @@ export async function toKernelPluginManager<
         entryPointVersion === "v0.7" &&
         (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||
             action.selector.toLowerCase() !==
-                getActionSelector(entryPointVersion).toLowerCase())
+                getActionSelector(entryPointVersion).toLowerCase()) &&
+        kernelVersion === "0.3.0"
     ) {
         action.hook = {
             address: action.hook?.address ?? ONLY_ENTRYPOINT_HOOK_ADDRESS
@@ -169,14 +179,14 @@ export async function toKernelPluginManager<
         const { version } = await accountMetadata(
             client,
             accountAddress,
-            entryPointAddress
+            kernelVersion
         )
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {
             const typeData = await getPluginsEnableTypedDataV1({
                 accountAddress,
                 chainId,
-                kernelVersion: kernelVersion ?? version,
+                kernelVersion: version ?? kernelVersion,
                 action,
                 validator: regular,
                 validUntil,
@@ -222,7 +232,7 @@ export async function toKernelPluginManager<
         const { version } = await accountMetadata(
             client,
             accountAddress,
-            entryPointAddress
+            kernelVersion
         )
 
         const validatorNonce = await getKernelV3Nonce(client, accountAddress)

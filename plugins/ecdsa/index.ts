@@ -3,9 +3,13 @@ import {
     type GetKernelAddressFromECDSAParams,
     getKernelAddressFromECDSA
 } from "./getAddress.js"
-import { signerToEcdsaValidator } from "./toECDSAValidatorPlugin.js"
+import {
+    getValidatorAddress,
+    signerToEcdsaValidator
+} from "./toECDSAValidatorPlugin.js"
 
 export {
+    getValidatorAddress,
     signerToEcdsaValidator,
     type KernelValidator,
     getKernelAddressFromECDSA,

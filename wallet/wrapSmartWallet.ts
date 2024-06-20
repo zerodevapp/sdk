@@ -26,6 +26,7 @@ export const wrapSmartWallet = (
     projectId: string,
     version: ZeroDevVersion
 ): CreateConnectorFn => {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     return (config: any) => {
         const entryPoint = getEntryPointFromZeroDevVersion(version)
         const wallet = walletFunction(config)
@@ -38,10 +39,12 @@ export const wrapSmartWallet = (
             get(target, prop, receiver) {
                 const source = Reflect.get(target, prop, receiver)
                 if (prop === "connect") {
+                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                     return async (params: any) => {
                         await target.connect(params)
                         const chainId = await target.getChainId()
                         const chain = config.chains.find(
+                            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                             (c: any) => c.id === chainId
                         )
                         if (!chain) {
@@ -59,6 +62,7 @@ export const wrapSmartWallet = (
                             chain: connetedChain,
                             name: "Connector Client",
                             transport: (opts) =>
+                                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                                 custom(provider as any)({
                                     ...opts,
                                     retryCount: 0

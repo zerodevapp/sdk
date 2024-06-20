@@ -1,4 +1,4 @@
-import type { KernelValidator } from "@zerodev/sdk/types"
+import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type UserOperation,
@@ -81,11 +81,13 @@ export async function createMultiChainWeightedValidator<
         config,
         entryPoint: entryPointAddress,
         signer,
-        validatorAddress
+        validatorAddress,
+        kernelVersion: _
     }: {
         config?: WeightedValidatorConfig
         signer: WeightedSigner
         entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<entryPoint, "MultiChainWeightedValidator">> {
@@ -167,6 +169,7 @@ export async function createMultiChainWeightedValidator<
     return {
         ...account,
         validatorType: "SECONDARY",
+        supportedKernelVersions: ">=0.3.0",
         address: validatorAddress,
         source: "MultiChainWeightedValidator",
         getIdentifier: () =>

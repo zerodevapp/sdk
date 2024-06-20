@@ -1,30 +1,28 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { ECDSA_VALIDATOR_ADDRESS_V07 } from "@zerodev/ecdsa-validator"
+import { getValidatorAddress } from "@zerodev/ecdsa-validator/index.js"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import { type BundlerClient, bundlerActions } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
-    decodeErrorResult,
     encodeFunctionData,
     parseAbi,
-    parseEther,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
     getEntryPoint,
     getKernelAccountClient,
-    getPimlicoPaymasterClient,
     getPublicClient,
     getRecoveryKernelAccount,
     getZeroDevPaymasterClient,
+    kernelVersion,
     validateEnvironmentVariables
 } from "./utils.js"
 
@@ -49,14 +47,14 @@ const TEST_TIMEOUT = 1000000
 const recoveryExecutorFunction =
     "function doRecovery(address _validator, bytes calldata _data)"
 describe("Recovery kernel Account", () => {
-    let recoveryAccount: KernelSmartAccount<EntryPoint>
+    let recoveryAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<EntryPoint>
+    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let recoveryKernelClient: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
     let accountAddress: Address
     let newSigner: PrivateKeyAccount
@@ -101,8 +99,14 @@ describe("Recovery kernel Account", () => {
                     callData: encodeFunctionData({
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
-                        args: [ECDSA_VALIDATOR_ADDRESS_V07, newSigner.address]
-                    })
+                        args: [
+                            getValidatorAddress(getEntryPoint(), kernelVersion),
+                            newSigner.address
+                        ]
+                    }),
+                    preVerificationGas: 84700n,
+                    callGasLimit: 1273781n,
+                    verificationGasLimit: 726789n
                 }
             })
             console.log("userOpHash:", userOpHash)
@@ -129,7 +133,10 @@ describe("Recovery kernel Account", () => {
                     callData: encodeFunctionData({
                         abi: parseAbi([recoveryExecutorFunction]),
                         functionName: "doRecovery",
-                        args: [ECDSA_VALIDATOR_ADDRESS_V07, newSigner.address]
+                        args: [
+                            getValidatorAddress(getEntryPoint(), kernelVersion),
+                            newSigner.address
+                        ]
                     })
                 }
             })

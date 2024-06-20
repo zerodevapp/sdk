@@ -25,7 +25,10 @@ import {
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import type { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type {
+    ENTRYPOINT_ADDRESS_V07_TYPE,
+    EntryPoint
+} from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -64,6 +67,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getZeroDevPaymasterClient,
     index,
+    kernelVersion,
     mintToAccount,
     validateEnvironmentVariables,
     waitForNonceUpdate
@@ -93,22 +97,22 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Spending Limit Hook", () => {
-    let accountWithSudo: KernelSmartAccount<EntryPoint>
-    let accountWithRegular: KernelSmartAccount<EntryPoint>
+    let accountWithSudo: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let accountWithRegular: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let ownerAccount1: PrivateKeyAccount
     let ownerAccount2: PrivateKeyAccount
     let publicClient: PublicClient
     let kernelClientWithSudo: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
     let kernelClientWithRegular: KernelAccountClient<
-        EntryPoint,
+        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<EntryPoint>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
 
     beforeAll(async () => {
@@ -125,7 +129,8 @@ describe("Spending Limit Hook", () => {
             publicClient,
             {
                 signer: ownerAccount1,
-                entryPoint: getEntryPoint()
+                entryPoint: getEntryPoint(),
+                kernelVersion
             }
         )
 
@@ -133,7 +138,8 @@ describe("Spending Limit Hook", () => {
             publicClient,
             {
                 signer: ownerAccount2,
-                entryPoint: getEntryPoint()
+                entryPoint: getEntryPoint(),
+                kernelVersion
             }
         )
 
@@ -146,7 +152,8 @@ describe("Spending Limit Hook", () => {
         const permissoinPlugin = await toPermissionValidator(publicClient, {
             signer: ecdsaSigner,
             policies: [sudoPolicy],
-            entryPoint: getEntryPoint()
+            entryPoint: getEntryPoint(),
+            kernelVersion
         })
 
         const spendingLimitHook = await toSpendingLimitHook({
@@ -158,7 +165,8 @@ describe("Spending Limit Hook", () => {
             plugins: {
                 sudo: ecdsaValidatorPlugin1,
                 hook: spendingLimitHook
-            }
+            },
+            kernelVersion
         })
 
         accountWithRegular = await createKernelAccount(publicClient, {
@@ -167,7 +175,8 @@ describe("Spending Limit Hook", () => {
                 sudo: ecdsaValidatorPlugin2,
                 regular: permissoinPlugin,
                 hook: spendingLimitHook
-            }
+            },
+            kernelVersion
         })
 
         console.log("accountWithSudo", accountWithSudo.address)

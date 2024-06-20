@@ -1,4 +1,5 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { getEntryPointVersion, getUserOperationHash } from "permissionless"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
@@ -34,6 +35,7 @@ export async function createPermissionValidator<
     {
         signer,
         entryPoint: entryPointAddress,
+        kernelVersion: _,
         policies,
         validUntil,
         validAfter,
@@ -43,7 +45,8 @@ export async function createPermissionValidator<
         validUntil?: number
         validAfter?: number
         policies: Policy<entryPoint>[]
-        entryPoint: EntryPoint
+        entryPoint: entryPoint
+        kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
 ): Promise<ModularPermissionPlugin<entryPoint>> {
@@ -125,6 +128,7 @@ export async function createPermissionValidator<
 
     return {
         ...signer.account,
+        supportedKernelVersions: "0.0.2 - 0.2.4",
         validatorType: "SECONDARY",
         address: validatorAddress,
         source: "ModularPermissionValidator",

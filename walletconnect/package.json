@@ -44,7 +44,7 @@
         "lodash": "^4.17.21"
     },
     "peerDependencies": {
-        "viem": "^2.9.17",
+        "viem": "^2.15.1",
         "permissionless": "^0.1.29"
     },
     "devDependencies": {
