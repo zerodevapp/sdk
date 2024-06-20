@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.3.1
+
+### Patch Changes
+
+- Update serialization to account for userId
+
 ## 5.3.0
 
 ### Minor Changes
