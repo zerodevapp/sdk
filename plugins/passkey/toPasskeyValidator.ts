@@ -41,7 +41,6 @@ import {
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
-    passkeyServerUrl: string, // Won't be needed here
     chainId: number,
     allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
 ) => {
@@ -64,10 +63,12 @@ const signMessageUsingWebAuthn = async (
         ? messageContent.slice(2)
         : messageContent
 
-    const challenge = base64FromArrayBuffer(
-        hexStringToUint8Array(formattedMessage),
-        true
-    )
+    const uint8Array = hexStringToUint8Array(formattedMessage)
+    const arrayBuffer = new ArrayBuffer(uint8Array.byteLength)
+    const view = new Uint8Array(arrayBuffer)
+    view.set(uint8Array)
+
+    const challenge = base64FromArrayBuffer(arrayBuffer, true)
 
     // prepare assertion options
     const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
@@ -128,14 +129,12 @@ export async function toPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         webAuthnKey,
-        passkeyServerUrl,
         entryPoint: entryPointAddress,
         kernelVersion,
         validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
         webAuthnKey: WebAuthnKey
-        passkeyServerUrl: string
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
@@ -158,12 +157,9 @@ export async function toPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(
-                message,
-                passkeyServerUrl,
-                chainId,
-                [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
-            )
+            return signMessageUsingWebAuthn(message, chainId, [
+                { id: webAuthnKey.authenticatorId, type: "public-key" }
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -284,7 +280,6 @@ export async function toPasskeyValidator<
             }
             const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
-                passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
@@ -319,7 +314,6 @@ export async function deserializePasskeyValidator<
     }
 > {
     const {
-        passkeyServerUrl,
         credentials,
         entryPoint,
         validatorAddress,
@@ -337,12 +331,9 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(
-                message,
-                passkeyServerUrl,
-                chainId,
-                [{ id: authenticatorId, type: "public-key" }]
-            )
+            return signMessageUsingWebAuthn(message, chainId, [
+                { id: authenticatorId, type: "public-key" }
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -458,7 +449,6 @@ export async function deserializePasskeyValidator<
             }
             const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
-                passkeyServerUrl,
                 credentials,
                 entryPoint,
                 validatorAddress,
