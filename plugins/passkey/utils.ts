@@ -75,7 +75,6 @@ type PasskeyValidatorSerializedData = {
     pubKeyY: bigint
     authenticatorId: string
     authenticatorIdHash: Hex
-    userId: string
 }
 
 export const serializePasskeyValidatorData = (
@@ -99,10 +98,6 @@ export const deserializePasskeyValidatorData = (params: string) => {
     const uint8Array = base64ToBytes(params)
     const jsonString = new TextDecoder().decode(uint8Array)
     const parsed = JSON.parse(jsonString) as PasskeyValidatorSerializedData
-    if (window.sessionStorage === undefined) {
-        throw new Error("sessionStorage is not available")
-    }
-    sessionStorage.setItem("userId", parsed.userId)
     return parsed
 }
 

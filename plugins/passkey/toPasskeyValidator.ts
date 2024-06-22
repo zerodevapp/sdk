@@ -273,10 +273,6 @@ export async function toPasskeyValidator<
         },
 
         getSerializedData() {
-            if (window.sessionStorage === undefined) {
-                throw new Error("sessionStorage is not available")
-            }
-            const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
                 credentials,
                 entryPoint: entryPointAddress,
@@ -284,8 +280,7 @@ export async function toPasskeyValidator<
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
                 authenticatorId: webAuthnKey.authenticatorId,
-                authenticatorIdHash: webAuthnKey.authenticatorIdHash,
-                userId: userId ?? ""
+                authenticatorIdHash: webAuthnKey.authenticatorIdHash
             })
         }
     }
@@ -442,10 +437,6 @@ export async function deserializePasskeyValidator<
             return false
         },
         getSerializedData() {
-            if (window.sessionStorage === undefined) {
-                throw new Error("sessionStorage is not available")
-            }
-            const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
                 credentials,
                 entryPoint,
@@ -453,8 +444,7 @@ export async function deserializePasskeyValidator<
                 pubKeyX,
                 pubKeyY,
                 authenticatorId,
-                authenticatorIdHash,
-                userId: userId ?? ""
+                authenticatorIdHash
             })
         }
     }
