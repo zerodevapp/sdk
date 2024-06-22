@@ -121,12 +121,12 @@ function bytesToBase64(bytes: Uint8Array) {
  * Copied from @hexagon/base64 package (base64.fromArrayBuffer)
  * @public
  *
- * @param {ArrayBuffer} arrBuf - ArrayBuffer to be encoded
+ * @param {Uint8Array} uint8Arr - Uint8Array to be encoded
  * @param {boolean} [urlMode] - If set to true, URL mode string will be returned
  * @returns {string} - Base64 representation of data
  */
-export const base64FromArrayBuffer = (
-    arrBuf: ArrayBuffer,
+export const base64FromUint8Array = (
+    uint8Arr: Uint8Array,
     urlMode: boolean
 ): string => {
     const // Regular base64 characters
@@ -136,17 +136,16 @@ export const base64FromArrayBuffer = (
         charsUrl =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
-    const bytes = new Uint8Array(arrBuf)
     let result = ""
 
-    const len = bytes.length
+    const len = uint8Arr.length
     const target = urlMode ? charsUrl : chars
 
     for (let i = 0; i < len; i += 3) {
-        result += target[bytes[i] >> 2]
-        result += target[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)]
-        result += target[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)]
-        result += target[bytes[i + 2] & 63]
+        result += target[uint8Arr[i] >> 2]
+        result += target[((uint8Arr[i] & 3) << 4) | (uint8Arr[i + 1] >> 4)]
+        result += target[((uint8Arr[i + 1] & 15) << 2) | (uint8Arr[i + 2] >> 6)]
+        result += target[uint8Arr[i + 2] & 63]
     }
 
     const remainder = len % 3

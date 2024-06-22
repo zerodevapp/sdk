@@ -29,7 +29,7 @@ import { getValidatorAddress } from "./index.js"
 import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
-    base64FromArrayBuffer,
+    base64FromUint8Array,
     deserializePasskeyValidatorData,
     findQuoteIndices,
     hexStringToUint8Array,
@@ -63,12 +63,10 @@ const signMessageUsingWebAuthn = async (
         ? messageContent.slice(2)
         : messageContent
 
-    const uint8Array = hexStringToUint8Array(formattedMessage)
-    const arrayBuffer = new ArrayBuffer(uint8Array.byteLength)
-    const view = new Uint8Array(arrayBuffer)
-    view.set(uint8Array)
-
-    const challenge = base64FromArrayBuffer(arrayBuffer, true)
+    const challenge = base64FromUint8Array(
+        hexStringToUint8Array(formattedMessage),
+        true
+    )
 
     // prepare assertion options
     const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
