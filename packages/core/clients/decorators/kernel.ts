@@ -84,7 +84,7 @@ export type KernelAccountClientActions<
         >[1]
     ) => Promise<SignUserOperationReturnType<entryPoint>>
     /**
-     * Prepare a user operation with the given transport, chain, and smart account.
+     * Prepare a user operation with the given transport, chain, and smart account without the signature.
      *
      * @param args - Parameters for the prepareUserOperation function
      * @returns A promise that resolves to the result of the prepareUserOperation function
