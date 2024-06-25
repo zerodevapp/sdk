@@ -29,8 +29,10 @@ import { getValidatorAddress } from "./index.js"
 import type { WebAuthnKey } from "./toWebAuthnKey.js"
 import {
     b64ToBytes,
+    base64FromUint8Array,
     deserializePasskeyValidatorData,
     findQuoteIndices,
+    hexStringToUint8Array,
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
     serializePasskeyValidatorData,
@@ -39,8 +41,8 @@ import {
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
-    passkeyServerUrl: string,
-    chainId: number
+    chainId: number,
+    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
 ) => {
     let messageContent: string
     if (typeof message === "string") {
@@ -61,27 +63,15 @@ const signMessageUsingWebAuthn = async (
         ? messageContent.slice(2)
         : messageContent
 
-    if (window.sessionStorage === undefined) {
-        throw new Error("sessionStorage is not available")
-    }
-    const userId = sessionStorage.getItem("userId")
-
-    // initiate signing
-    const signInitiateResponse = await fetch(
-        `${passkeyServerUrl}/sign-initiate`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: formattedMessage, userId }),
-            credentials: "include"
-        }
+    const challenge = base64FromUint8Array(
+        hexStringToUint8Array(formattedMessage),
+        true
     )
-    const signInitiateResult = await signInitiateResponse.json()
 
     // prepare assertion options
     const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
-        challenge: signInitiateResult.challenge,
-        allowCredentials: signInitiateResult.allowCredentials,
+        challenge,
+        allowCredentials,
         userVerification: "required"
     }
 
@@ -90,22 +80,8 @@ const signMessageUsingWebAuthn = async (
     const { startAuthentication } = await import("@simplewebauthn/browser")
     const cred = await startAuthentication(assertionOptions)
 
-    // verify signature from server
-    const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cred, userId }),
-        credentials: "include"
-    })
-
-    const verifyResult = await verifyResponse.json()
-
-    if (!verifyResult.success) {
-        throw new Error("Signature not verified")
-    }
-
     // get authenticator data
-    const authenticatorData = verifyResult.authenticatorData
+    const { authenticatorData } = cred.response
     const authenticatorDataHex = uint8ArrayToHexString(
         b64ToBytes(authenticatorData)
     )
@@ -117,7 +93,7 @@ const signMessageUsingWebAuthn = async (
     const { beforeType } = findQuoteIndices(clientDataJSON)
 
     // get signature r,s
-    const signature = verifyResult.signature
+    const { signature } = cred.response
     const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
     const { r, s } = parseAndNormalizeSig(signatureHex)
 
@@ -151,14 +127,12 @@ export async function toPasskeyValidator<
     client: Client<TTransport, TChain, undefined>,
     {
         webAuthnKey,
-        passkeyServerUrl,
         entryPoint: entryPointAddress,
         kernelVersion,
         validatorAddress: _validatorAddress,
         credentials = "include"
     }: {
         webAuthnKey: WebAuthnKey
-        passkeyServerUrl: string
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
@@ -181,7 +155,9 @@ export async function toPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, passkeyServerUrl, chainId)
+            return signMessageUsingWebAuthn(message, chainId, [
+                { id: webAuthnKey.authenticatorId, type: "public-key" }
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -297,19 +273,14 @@ export async function toPasskeyValidator<
         },
 
         getSerializedData() {
-            if (window.sessionStorage === undefined) {
-                throw new Error("sessionStorage is not available")
-            }
-            const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
-                passkeyServerUrl,
                 credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
-                authenticatorIdHash: webAuthnKey.authenticatorIdHash,
-                userId: userId ?? ""
+                authenticatorId: webAuthnKey.authenticatorId,
+                authenticatorIdHash: webAuthnKey.authenticatorIdHash
             })
         }
     }
@@ -336,12 +307,12 @@ export async function deserializePasskeyValidator<
     }
 > {
     const {
-        passkeyServerUrl,
         credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
         pubKeyY,
+        authenticatorId,
         authenticatorIdHash
     } = deserializePasskeyValidatorData(serializedData)
 
@@ -353,7 +324,9 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, passkeyServerUrl, chainId)
+            return signMessageUsingWebAuthn(message, chainId, [
+                { id: authenticatorId, type: "public-key" }
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -464,19 +437,14 @@ export async function deserializePasskeyValidator<
             return false
         },
         getSerializedData() {
-            if (window.sessionStorage === undefined) {
-                throw new Error("sessionStorage is not available")
-            }
-            const userId = sessionStorage.getItem("userId")
             return serializePasskeyValidatorData({
-                passkeyServerUrl,
                 credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,
                 pubKeyY,
-                authenticatorIdHash,
-                userId: userId ?? ""
+                authenticatorId,
+                authenticatorIdHash
             })
         }
     }
