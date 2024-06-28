@@ -44,7 +44,7 @@ export type GetCallsResult = {
 export type ShowCallsParams = string
 
 // wallet_issuePermissions
-export type IssuePermissionsParams = {
+export type GrantPermissionsParams = {
     permissions: {
         type: string
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -54,7 +54,7 @@ export type IssuePermissionsParams = {
     expiry: number
 }
 
-export type IssuePermissionsResult = {
+export type GrantPermissionsResult = {
     sessionId: string
 }
 
@@ -69,4 +69,4 @@ export type SessionType = {
     }
 }
 
-export type ZeroDevVersion = "v2" | "v3"
+export type ZeroDevVersion = "v2" | "v3" | "v3.1"

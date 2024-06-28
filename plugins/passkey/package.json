@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/passkey-validator",
-    "version": "5.3.2",
+    "version": "5.3.3",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -39,7 +39,7 @@
         "@simplewebauthn/browser": "^8.3.4"
     },
     "peerDependencies": {
-        "viem": "^2.15.1",
+        "viem": "^2.16.3",
         "@zerodev/sdk": "^5.2.1",
         "permissionless": "^0.1.18"
     }

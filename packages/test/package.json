@@ -12,7 +12,7 @@
     },
     "dependencies": {
         "dotenv": "^16.3.1",
-        "viem": "^2.15.1",
+        "viem": "^2.16.3",
         "@zerodev/sdk": "workspace:*",
         "@zerodev/ecdsa-validator": "workspace:*",
         "@zerodev/session-key": "workspace:*",

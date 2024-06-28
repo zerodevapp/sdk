@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.3.0
+
+### Patch Changes
+
+- Update viem to 2.16.3
+
 ## 5.3.0-alpha-1
 
 ### Minor Changes

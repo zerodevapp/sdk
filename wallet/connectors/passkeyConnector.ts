@@ -32,7 +32,10 @@ import {
 import type { ZeroDevVersion } from "../types"
 import { ZERODEV_BUNDLER_URL, ZERODEV_PASSKEY_URL } from "../utils/constants"
 import { getZerodevSigner, setZerodevSigner } from "../utils/passkey"
-import { getEntryPointFromZeroDevVersion } from "../utils/provider"
+import {
+    getEntryPointFromZeroDevVersion,
+    getKernelVersionFromZeroDevVersion
+} from "../utils/provider"
 
 passkeyConnector.type = "passkeyConnector" as const
 export function passkeyConnector(
@@ -87,6 +90,8 @@ export function passkeyConnector(
                 }
 
                 const entryPoint = getEntryPointFromZeroDevVersion(version)
+                const kernelVersion =
+                    getKernelVersionFromZeroDevVersion(version)
                 const passkeySigner = getZerodevSigner()
 
                 const publicClient = createPublicClient({
@@ -106,8 +111,8 @@ export function passkeyConnector(
                     publicClient,
                     {
                         webAuthnKey,
-                        passkeyServerUrl: `${ZERODEV_PASSKEY_URL}/${projectId}`,
-                        entryPoint: entryPoint
+                        entryPoint: entryPoint,
+                        kernelVersion
                     }
                 )
                 const passkeyData = (
@@ -122,6 +127,7 @@ export function passkeyConnector(
 
                 const kernelAccount = await createKernelAccount(publicClient, {
                     entryPoint: entryPoint,
+                    kernelVersion,
                     plugins: {
                         sudo: passkeyValidator
                     }

@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/walletconnect",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -40,11 +40,11 @@
         "@walletconnect/jsonrpc-utils": "^1.0.8",
         "@walletconnect/types": "^2.13.1",
         "@walletconnect/web3wallet": "^1.12.1",
-        "@zerodev/wallet": "^0.0.10",
+        "@zerodev/wallet": "^0.1.0",
         "lodash": "^4.17.21"
     },
     "peerDependencies": {
-        "viem": "^2.15.1",
+        "viem": "^2.16.3",
         "permissionless": "^0.1.29"
     },
     "devDependencies": {

@@ -29,6 +29,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import type {
+    GetKernelVersion,
     KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
@@ -273,6 +274,7 @@ export async function createKernelAccountV0_2<
 
     return {
         ...account,
+        kernelVersion: "0.0.2" as GetKernelVersion<entryPoint>,
         client: client,
         publicKey: accountAddress,
         entryPoint: entryPointAddress,

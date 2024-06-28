@@ -45,7 +45,7 @@ export type KernelSmartAccountV1<
     chain extends Chain | undefined = Chain | undefined
 > = Omit<
     KernelSmartAccount<entryPoint, transport, chain>,
-    "kernelPluginManager"
+    "kernelPluginManager" | "kernelVersion"
 >
 
 const createAccountAbi = [
