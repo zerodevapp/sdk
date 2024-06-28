@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.1
+
+### Patch Changes
+
+- Update viem to 2.16.3
+
 ## 5.3.0
 
 ### Minor Changes

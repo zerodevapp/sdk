@@ -1,5 +1,19 @@
 # @zerodev/wallet
 
+## 0.1.0
+
+### Minor Changes
+
+- Update viem to 2.16.3 and use sdk5.3.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @zerodev/permissions@5.3.1
+  - @zerodev/passkey-validator@5.3.3
+  - @zerodev/sdk@5.3.2
+  - @zerodev/ecdsa-validator@5.3.1
+
 ## 0.0.10
 
 ### Patch Changes

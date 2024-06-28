@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.1.1
+
+### Patch Changes
+
+- Update viem to 2.16.3
+
 ## 5.1.0
 
 ### Minor Changes
