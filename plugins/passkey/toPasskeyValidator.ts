@@ -1,4 +1,7 @@
-import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
+import type {
+    AuthenticationResponseJSON,
+    PublicKeyCredentialRequestOptionsJSON
+} from "@simplewebauthn/typescript-types"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
@@ -42,7 +45,10 @@ import {
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
     chainId: number,
-    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
+    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"],
+    signWithAuthenticator?: (
+        options: PublicKeyCredentialRequestOptionsJSON
+    ) => Promise<AuthenticationResponseJSON>
 ) => {
     let messageContent: string
     if (typeof message === "string") {
@@ -77,8 +83,13 @@ const signMessageUsingWebAuthn = async (
 
     // start authentication (signing)
 
-    const { startAuthentication } = await import("@simplewebauthn/browser")
-    const cred = await startAuthentication(assertionOptions)
+    let cred: AuthenticationResponseJSON
+    if (signWithAuthenticator) {
+        cred = await signWithAuthenticator(assertionOptions)
+    } else {
+        const { startAuthentication } = await import("@simplewebauthn/browser")
+        cred = await startAuthentication(assertionOptions)
+    }
 
     // get authenticator data
     const { authenticatorData } = cred.response
@@ -130,13 +141,17 @@ export async function toPasskeyValidator<
         entryPoint: entryPointAddress,
         kernelVersion,
         validatorAddress: _validatorAddress,
-        credentials = "include"
+        credentials = "include",
+        signWithAuthenticator
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
         credentials?: RequestCredentials
+        signWithAuthenticator?: (
+            options: PublicKeyCredentialRequestOptionsJSON
+        ) => Promise<AuthenticationResponseJSON>
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -155,9 +170,12 @@ export async function toPasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, chainId, [
-                { id: webAuthnKey.authenticatorId, type: "public-key" }
-            ])
+            return signMessageUsingWebAuthn(
+                message,
+                chainId,
+                [{ id: webAuthnKey.authenticatorId, type: "public-key" }],
+                signWithAuthenticator
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -295,11 +313,15 @@ export async function deserializePasskeyValidator<
     {
         serializedData,
         entryPoint: entryPointAddress,
-        kernelVersion
+        kernelVersion,
+        signWithAuthenticator
     }: {
         serializedData: string
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
+        signWithAuthenticator?: (
+            options: PublicKeyCredentialRequestOptionsJSON
+        ) => Promise<AuthenticationResponseJSON>
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -324,9 +346,12 @@ export async function deserializePasskeyValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, chainId, [
-                { id: authenticatorId, type: "public-key" }
-            ])
+            return signMessageUsingWebAuthn(
+                message,
+                chainId,
+                [{ id: authenticatorId, type: "public-key" }],
+                signWithAuthenticator
+            )
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
