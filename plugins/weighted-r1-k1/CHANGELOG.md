@@ -1,6 +1,6 @@
 # @zerodev/weighted-validator
 
-## 5.3.0
+## 5.3.0-alpha-2
 
 ### Patch Changes
 

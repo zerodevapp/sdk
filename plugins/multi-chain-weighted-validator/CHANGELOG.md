@@ -1,6 +1,6 @@
 # @zerodev/multi-chain-weighted-validator
 
-## 5.3.0
+## 5.3.0-alpha-1
 
 ### Patch Changes
 
