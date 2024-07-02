@@ -10,6 +10,7 @@ export enum WebAuthnMode {
 export type WebAuthnKey = {
     pubX: bigint
     pubY: bigint
+    authenticatorId: string
     authenticatorIdHash: Hex
 }
 
@@ -17,18 +18,20 @@ export const toWebAuthnKey = async ({
     passkeyName,
     passkeyServerUrl,
     webAuthnKey,
-    mode = WebAuthnMode.Login
+    mode = WebAuthnMode.Login,
+    credentials = "include"
 }: {
     passkeyName: string
     passkeyServerUrl: string
     webAuthnKey?: WebAuthnKey
     mode: WebAuthnMode
+    credentials?: RequestCredentials
 }): Promise<WebAuthnKey> => {
     if (webAuthnKey) {
         return webAuthnKey
     }
     let pubKey: string | undefined
-    let authenticatorIdHash: Hex
+    let authenticatorId: string | undefined
     if (mode === WebAuthnMode.Login) {
         // Get login options
         const loginOptionsResponse = await fetch(
@@ -36,7 +39,7 @@ export const toWebAuthnKey = async ({
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include"
+                credentials
             }
         )
         const loginOptions = await loginOptionsResponse.json()
@@ -45,10 +48,7 @@ export const toWebAuthnKey = async ({
         const { startAuthentication } = await import("@simplewebauthn/browser")
         const loginCred = await startAuthentication(loginOptions)
 
-        // get authenticatorIdHash
-        authenticatorIdHash = keccak256(
-            uint8ArrayToHexString(b64ToBytes(loginCred.id))
-        )
+        authenticatorId = loginCred.id
 
         // Verify authentication
         const loginVerifyResponse = await fetch(
@@ -57,16 +57,11 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cred: loginCred }),
-                credentials: "include"
+                credentials
             }
         )
 
         const loginVerifyResult = await loginVerifyResponse.json()
-
-        if (window.sessionStorage === undefined) {
-            throw new Error("sessionStorage is not available")
-        }
-        sessionStorage.setItem("userId", loginVerifyResult.userId)
 
         if (!loginVerifyResult.verification.verified) {
             throw new Error("Login not verified")
@@ -74,9 +69,6 @@ export const toWebAuthnKey = async ({
         // Import the key
         pubKey = loginVerifyResult.pubkey // Uint8Array pubkey
     } else {
-        if (!passkeyName) {
-            throw new Error("No passkey name provided")
-        }
         // Get registration options
         const registerOptionsResponse = await fetch(
             `${passkeyServerUrl}/register/options`,
@@ -86,25 +78,16 @@ export const toWebAuthnKey = async ({
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ username: passkeyName }),
-                credentials: "include"
+                credentials
             }
         )
         const registerOptions = await registerOptionsResponse.json()
-
-        // save userId to sessionStorage
-        if (window.sessionStorage === undefined) {
-            throw new Error("sessionStorage is not available")
-        }
-        sessionStorage.setItem("userId", registerOptions.userId)
 
         // Start registration
         const { startRegistration } = await import("@simplewebauthn/browser")
         const registerCred = await startRegistration(registerOptions.options)
 
-        // get authenticatorIdHash
-        authenticatorIdHash = keccak256(
-            uint8ArrayToHexString(b64ToBytes(registerCred.id))
-        )
+        authenticatorId = registerCred.id
 
         // Verify registration
         const registerVerifyResponse = await fetch(
@@ -119,7 +102,7 @@ export const toWebAuthnKey = async ({
                     username: passkeyName,
                     cred: registerCred
                 }),
-                credentials: "include"
+                credentials
             }
         )
 
@@ -135,6 +118,15 @@ export const toWebAuthnKey = async ({
         throw new Error("No public key returned from registration credential")
     }
 
+    if (!authenticatorId) {
+        throw new Error(
+            "No authenticator id returned from registration credential"
+        )
+    }
+
+    const authenticatorIdHash = keccak256(
+        uint8ArrayToHexString(b64ToBytes(authenticatorId))
+    )
     const spkiDer = Buffer.from(pubKey, "base64")
     const key = await crypto.subtle.importKey(
         "spki",
@@ -158,6 +150,7 @@ export const toWebAuthnKey = async ({
     return {
         pubX: BigInt(`0x${pubKeyX}`),
         pubY: BigInt(`0x${pubKeyY}`),
+        authenticatorId,
         authenticatorIdHash
     }
 }
