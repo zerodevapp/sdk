@@ -145,7 +145,7 @@ export class KernelEIP1193Provider<
                 return this.handleWalletCapabilities()
             case "wallet_sendCalls":
                 return this.handleWalletSendcalls(params as [SendCallsParams])
-            case "wallet_getCallStatus":
+            case "wallet_getCallsStatus":
                 return this.handleWalletGetCallStatus(
                     params as [GetCallsParams]
                 )
