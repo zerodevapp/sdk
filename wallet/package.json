@@ -36,7 +36,7 @@
     },
     "dependencies": {
         "@zerodev/ecdsa-validator": "5.3.1",
-        "@zerodev/passkey-validator": "5.3.3",
+        "@zerodev/passkey-validator": "5.3.4",
         "@zerodev/permissions": "5.3.1",
         "@zerodev/sdk": "5.3.2"
     },
