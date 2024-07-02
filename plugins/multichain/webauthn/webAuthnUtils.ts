@@ -52,3 +52,59 @@ export function parseAndNormalizeSig(derSig: Hex): { r: bigint; s: bigint } {
 
 export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
     RIP7212_SUPPORTED_NETWORKS.includes(chainId)
+
+export const hexStringToUint8Array = (hexString: string): Uint8Array => {
+    const formattedHexString = hexString.startsWith("0x")
+        ? hexString.slice(2)
+        : hexString
+    const byteArray = new Uint8Array(formattedHexString.length / 2)
+    for (let i = 0; i < formattedHexString.length; i += 2) {
+        byteArray[i / 2] = Number.parseInt(
+            formattedHexString.substring(i, i + 2),
+            16
+        )
+    }
+    return byteArray
+}
+
+/**
+ * Convenience function for creating a base64 encoded string from an ArrayBuffer instance
+ * Copied from @hexagon/base64 package (base64.fromArrayBuffer)
+ * @public
+ *
+ * @param {Uint8Array} uint8Arr - Uint8Array to be encoded
+ * @param {boolean} [urlMode] - If set to true, URL mode string will be returned
+ * @returns {string} - Base64 representation of data
+ */
+export const base64FromUint8Array = (
+    uint8Arr: Uint8Array,
+    urlMode: boolean
+): string => {
+    const // Regular base64 characters
+        chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    const // Base64url characters
+        charsUrl =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+    let result = ""
+
+    const len = uint8Arr.length
+    const target = urlMode ? charsUrl : chars
+
+    for (let i = 0; i < len; i += 3) {
+        result += target[uint8Arr[i] >> 2]
+        result += target[((uint8Arr[i] & 3) << 4) | (uint8Arr[i + 1] >> 4)]
+        result += target[((uint8Arr[i + 1] & 15) << 2) | (uint8Arr[i + 2] >> 6)]
+        result += target[uint8Arr[i + 2] & 63]
+    }
+
+    const remainder = len % 3
+    if (remainder === 2) {
+        result = result.substring(0, result.length - 1) + (urlMode ? "" : "=")
+    } else if (remainder === 1) {
+        result = result.substring(0, result.length - 2) + (urlMode ? "" : "==")
+    }
+
+    return result
+}
