@@ -129,14 +129,12 @@ export async function toPasskeyValidator<
         webAuthnKey,
         entryPoint: entryPointAddress,
         kernelVersion,
-        validatorAddress: _validatorAddress,
-        credentials = "include"
+        validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
-        credentials?: RequestCredentials
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -274,7 +272,6 @@ export async function toPasskeyValidator<
 
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
@@ -307,7 +304,6 @@ export async function deserializePasskeyValidator<
     }
 > {
     const {
-        credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
@@ -438,7 +434,6 @@ export async function deserializePasskeyValidator<
         },
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,

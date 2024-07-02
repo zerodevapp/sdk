@@ -18,13 +18,15 @@ export type WebAuthnAccountParams = {
     passkeyServerUrl: string
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
+    credentials?: RequestCredentials
 }
 
 export const toWebAuthnKey = async ({
     passkeyName,
     passkeyServerUrl,
     webAuthnKey,
-    mode = WebAuthnMode.Register
+    mode = WebAuthnMode.Register,
+    credentials = "include"
 }: WebAuthnAccountParams): Promise<WebAuthnKey> => {
     if (webAuthnKey) {
         return webAuthnKey
@@ -38,7 +40,7 @@ export const toWebAuthnKey = async ({
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include"
+                credentials
             }
         )
         const loginOptions = await loginOptionsResponse.json()
@@ -56,7 +58,7 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cred: loginCred }),
-                credentials: "include"
+                credentials
             }
         )
 
@@ -77,7 +79,7 @@ export const toWebAuthnKey = async ({
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ username: passkeyName }),
-                credentials: "include"
+                credentials
             }
         )
         const registerOptions = await registerOptionsResponse.json()
@@ -101,7 +103,7 @@ export const toWebAuthnKey = async ({
                     username: passkeyName,
                     cred: registerCred
                 }),
-                credentials: "include"
+                credentials
             }
         )
 
