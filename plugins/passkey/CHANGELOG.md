@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.3.4
+
+### Patch Changes
+
+- Update clientDataJSON value of dummy signature. Refer this [docs](https://chromium.googlesource.com/chromium/src/+/master/content/browser/webauth/client_data_json.md) for more info.
+
 ## 5.3.3
 
 ### Patch Changes
