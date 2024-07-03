@@ -1,5 +1,12 @@
 # @zerodev/permissions
 
+## 5.3.2
+
+### Patch Changes
+
+-   Add ONE_OF condition to CallPolicy, and corresponding contract has been updated.
+-   Should specify CallPolicy contract version with `policyAddress` when using `toCallPolicy`
+
 ## 5.3.1
 
 ### Patch Changes

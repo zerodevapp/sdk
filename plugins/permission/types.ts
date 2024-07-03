@@ -27,7 +27,7 @@ export type ModularSignerParams = {
     signerContractAddress?: Address
 }
 export type PolicyParams = {
-    policyAddress?: Address
+    policyAddress: Address
     policyFlag?: PolicyFlags
 }
 

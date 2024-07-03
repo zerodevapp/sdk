@@ -23,13 +23,14 @@ export enum ParamCondition {
     LESS_THAN = 2,
     GREATER_THAN_OR_EQUAL = 3,
     LESS_THAN_OR_EQUAL = 4,
-    NOT_EQUAL = 5
+    NOT_EQUAL = 5,
+    ONE_OF = 6
 }
 
 export interface ParamRule {
     condition: ParamCondition
     offset: number
-    param: Hex
+    params: Hex | Hex[]
 }
 
 export type PermissionCore = {
@@ -71,10 +72,10 @@ export type GetFunctionArgs<
           args?: readonly unknown[]
       }
     : TArgs extends readonly []
-      ? { args?: never }
-      : {
-            args?: TArgs
-        }
+    ? { args?: never }
+    : {
+          args?: TArgs
+      }
 
 export type Permission<
     TAbi extends Abi | readonly unknown[],
@@ -87,20 +88,40 @@ export type Permission<
 } & (TFunctionName extends string
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-          ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                TAbi,
-                _FunctionName
-            >
-          : never)
+        ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
+              TAbi,
+              _FunctionName
+          >
+        : never)
+
+type ConditionValue<
+    TAbiParameter extends AbiParameter,
+    TAbiParameterKind extends AbiParameterKind
+> =
+    | {
+          condition: ParamCondition.ONE_OF
+          value: AbiParameterToPrimitiveType<TAbiParameter, TAbiParameterKind>[]
+      }
+    | {
+          condition: Exclude<ParamCondition, ParamCondition.ONE_OF>
+          value: AbiParameterToPrimitiveType<TAbiParameter, TAbiParameterKind>
+      }
 
 export type CombinedArgs<
     TAbiParameters extends readonly AbiParameter[],
     TAbiParameterKind extends AbiParameterKind = AbiParameterKind
 > = {
-    [K in keyof TAbiParameters]: {
-        condition: ParamCondition
-        value: AbiParameterToPrimitiveType<TAbiParameters[K], TAbiParameterKind>
-    } | null
+    [K in keyof TAbiParameters]: ConditionValue<
+        TAbiParameters[K],
+        TAbiParameterKind
+    > | null
+}
+
+export type GeneratePermissionWithPolicyAddressParameters<
+    TAbi extends Abi | readonly unknown[],
+    TFunctionName extends string | undefined = string
+> = GeneratePermissionFromArgsParameters<TAbi, TFunctionName> & {
+    policyAddress: Address
 }
 
 export type GeneratePermissionFromArgsParameters<
@@ -114,5 +135,5 @@ export type GeneratePermissionFromArgsParameters<
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
     : _FunctionName extends string
-      ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-      : never)
+    ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+    : never)

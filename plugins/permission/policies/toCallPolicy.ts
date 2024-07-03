@@ -1,7 +1,6 @@
-import type { Abi } from "viem"
+import type { Abi, Address } from "viem"
 import { concatHex, pad } from "viem"
 import { PolicyFlags } from "../constants.js"
-import { CALL_POLICY_CONTRACT } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 import {
     encodePermissionData,
@@ -20,7 +19,7 @@ export function toCallPolicy<
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string
 >({
-    policyAddress = CALL_POLICY_CONTRACT,
+    policyAddress,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     permissions = []
 }: CallPolicyParams<TAbi, TFunctionName>): Policy {
@@ -28,7 +27,8 @@ export function toCallPolicy<
         getPermissionFromABI({
             abi: perm.abi as Abi,
             functionName: perm.functionName as string,
-            args: perm.args as []
+            args: perm.args as [],
+            policyAddress
         })
     )
 
@@ -44,7 +44,10 @@ export function toCallPolicy<
             rules: perm.rules ?? generatedPermissionParams?.[index]?.rules ?? []
         })) ?? []
 
-    const encodedPermissionData = encodePermissionData(permissions)
+    const encodedPermissionData = encodePermissionData(
+        permissions,
+        policyAddress
+    )
 
     return {
         getPolicyData: () => {
