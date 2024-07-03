@@ -1,6 +1,8 @@
 import {
     type Abi,
     type AbiFunction,
+    AbiParameter,
+    type Address,
     type GetAbiItemParameters,
     type Hex,
     encodeAbiParameters,
@@ -8,21 +10,19 @@ import {
     isHex,
     pad,
     toFunctionSelector,
-    toHex,
-    Address,
-    AbiParameter
+    toHex
 } from "viem"
-import {
-    GeneratePermissionWithPolicyAddressParameters,
-    ParamCondition,
-    type CombinedArgs,
-    type ParamRule,
-    type PermissionCore
-} from "./types.js"
 import {
     CALL_POLICY_CONTRACT_V5_3_1,
     CALL_POLICY_CONTRACT_V5_3_2
 } from "../constants.js"
+import {
+    type CombinedArgs,
+    type GeneratePermissionWithPolicyAddressParameters,
+    ParamCondition,
+    type ParamRule,
+    type PermissionCore
+} from "./types.js"
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],
