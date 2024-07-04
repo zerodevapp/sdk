@@ -43,7 +43,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import type {
     GetCallsParams,
     GetCallsResult,
-    IssuePermissionsParams,
+    GrantPermissionsParams,
     PaymasterServiceCapability,
     SendCallsParams,
     SendCallsResult,
@@ -145,13 +145,13 @@ export class KernelEIP1193Provider<
                 return this.handleWalletCapabilities()
             case "wallet_sendCalls":
                 return this.handleWalletSendcalls(params as [SendCallsParams])
-            case "wallet_getCallStatus":
+            case "wallet_getCallsStatus":
                 return this.handleWalletGetCallStatus(
                     params as [GetCallsParams]
                 )
-            case "wallet_issuePermissions":
-                return this.handleWalletIssuePermissions(
-                    params as [IssuePermissionsParams]
+            case "wallet_grantPermissions":
+                return this.handleWalletGrantPermissions(
+                    params as [GrantPermissionsParams]
                 )
             case "wallet_switchEthereumChain":
                 return this.handleSwitchEthereumChain()
@@ -297,13 +297,17 @@ export class KernelEIP1193Provider<
             const sessionSigner = await toECDSASigner({
                 signer: privateKeyToAccount(session.signerPrivateKey)
             })
-            const sessionKeyAccount = await deserializePermissionAccount(
-                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                this.kernelClient.account.client as any,
+            const sessionKeyAccount = (await deserializePermissionAccount(
+                this.kernelClient.account.client as Client<
+                    Transport,
+                    Chain,
+                    undefined
+                >,
                 this.kernelClient.account.entryPoint,
+                this.kernelClient.account.kernelVersion,
                 session.approval,
                 sessionSigner
-            )
+            )) as unknown as KernelSmartAccount<entryPoint, Transport, Chain>
 
             const kernelClient = createKernelAccountClient({
                 account: sessionKeyAccount,
@@ -391,8 +395,8 @@ export class KernelEIP1193Provider<
         }
     }
 
-    private async handleWalletIssuePermissions(
-        params: [IssuePermissionsParams]
+    private async handleWalletGrantPermissions(
+        params: [GrantPermissionsParams]
     ) {
         if (this.kernelClient.account.entryPoint !== ENTRYPOINT_ADDRESS_V07) {
             throw new Error("Permissions not supported with kernel v2")
@@ -419,6 +423,7 @@ export class KernelEIP1193Provider<
 
         const permissionValidator = await toPermissionValidator(client, {
             entryPoint: this.kernelClient.account.entryPoint,
+            kernelVersion: this.kernelClient.account.kernelVersion,
             signer: sessionKeySigner,
             policies: policies
         })
@@ -427,6 +432,7 @@ export class KernelEIP1193Provider<
             this.kernelClient.account.kernelPluginManager.sudoValidator
         const sessionKeyAccount = await createKernelAccount(client, {
             entryPoint: this.kernelClient.account.entryPoint,
+            kernelVersion: this.kernelClient.account.kernelVersion,
             plugins: {
                 sudo: sudoValidator,
                 regular: permissionValidator
@@ -438,6 +444,7 @@ export class KernelEIP1193Provider<
             )
         const sessionKeyAccountWithSig = await createKernelAccount(client, {
             entryPoint: this.kernelClient.account.entryPoint,
+            kernelVersion: this.kernelClient.account.kernelVersion,
             plugins: {
                 sudo: sudoValidator,
                 regular: permissionValidator,

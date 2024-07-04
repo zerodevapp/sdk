@@ -1,5 +1,23 @@
 # @zerodev/passkey-validator
 
+## 5.3.4
+
+### Patch Changes
+
+- Update clientDataJSON value of dummy signature. Refer this [docs](https://chromium.googlesource.com/chromium/src/+/master/content/browser/webauth/client_data_json.md) for more info.
+
+## 5.3.3
+
+### Patch Changes
+
+- Update viem to 2.16.3
+
+## 5.3.2
+
+### Patch Changes
+
+- Removed redundant calls to passkey-server during message signing
+
 ## 5.3.1
 
 ### Patch Changes

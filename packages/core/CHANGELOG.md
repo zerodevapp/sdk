@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.2
+
+### Patch Changes
+
+- Update viem to 2.16.3
+
 ## 5.3.1
 
 ### Patch Changes

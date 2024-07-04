@@ -19,7 +19,10 @@ import {
     type KernelEIP1193Provider as KernelEIP1193ProviderType
 } from "./KernelEIP1193Provider"
 import type { ZeroDevVersion } from "./types"
-import { getEntryPointFromZeroDevVersion } from "./utils/provider"
+import {
+    getEntryPointFromZeroDevVersion,
+    getKernelVersionFromZeroDevVersion
+} from "./utils/provider"
 
 export const wrapSmartWallet = (
     walletFunction: CreateConnectorFn,
@@ -29,6 +32,7 @@ export const wrapSmartWallet = (
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     return (config: any) => {
         const entryPoint = getEntryPointFromZeroDevVersion(version)
+        const kernelVersion = getKernelVersionFromZeroDevVersion(version)
         const wallet = walletFunction(config)
         let kernelProvider: KernelEIP1193ProviderType<EntryPoint> | null
 
@@ -83,6 +87,7 @@ export const wrapSmartWallet = (
                             publicClient,
                             {
                                 entryPoint: entryPoint,
+                                kernelVersion,
                                 signer: walletClientToSmartAccountSigner(
                                     walletClient
                                 )
@@ -92,6 +97,7 @@ export const wrapSmartWallet = (
                             publicClient,
                             {
                                 entryPoint: entryPoint,
+                                kernelVersion,
                                 plugins: {
                                     sudo: ecdsaValidator
                                 }

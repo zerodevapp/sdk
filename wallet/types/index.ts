@@ -5,8 +5,8 @@ export type {
     GetCallsParams,
     GetCallsResult,
     ShowCallsParams,
-    IssuePermissionsParams,
-    IssuePermissionsResult,
+    GrantPermissionsParams,
+    GrantPermissionsResult,
     SessionType,
     ZeroDevVersion
 } from "./provider.js"

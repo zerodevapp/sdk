@@ -10,10 +10,10 @@ import {
 } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
 import { type Address, toHex } from "viem"
-import type { IssuePermissionsParams, SessionType } from "../types"
+import type { GrantPermissionsParams, SessionType } from "../types"
 
 export const validatePermissions = (
-    permissionsParams: IssuePermissionsParams,
+    permissionsParams: GrantPermissionsParams,
     supportedPolicies: string[]
 ) => {
     // check expiry
@@ -32,7 +32,7 @@ export const validatePermissions = (
 }
 
 export const getPolicies = (
-    permissionsParams: IssuePermissionsParams
+    permissionsParams: GrantPermissionsParams
 ): Policy[] => {
     const policies = permissionsParams.permissions
         .map((permission) => {

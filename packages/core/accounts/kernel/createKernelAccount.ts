@@ -60,6 +60,7 @@ export type KernelSmartAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<entryPoint, "kernelSmartAccount", transport, chain> & {
+    kernelVersion: GetKernelVersion<entryPoint>
     kernelPluginManager: KernelPluginManager<entryPoint>
     getNonce: (customNonceKey?: bigint) => Promise<bigint>
     generateInitCode: () => Promise<Hex>
@@ -413,6 +414,7 @@ export async function createKernelAccount<
     )
 
     return {
+        kernelVersion,
         kernelPluginManager,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
