@@ -1,5 +1,17 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import {
+    type WebAuthnKey,
+    b64ToBytes,
+    base64FromUint8Array,
+    deserializePasskeyValidatorData,
+    findQuoteIndices,
+    hexStringToUint8Array,
+    isRIP7212SupportedNetwork,
+    parseAndNormalizeSig,
+    serializePasskeyValidatorData,
+    uint8ArrayToHexString
+} from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -26,18 +38,6 @@ import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { getValidatorAddress } from "./index.js"
-import type { WebAuthnKey } from "./toWebAuthnKey.js"
-import {
-    b64ToBytes,
-    base64FromUint8Array,
-    deserializePasskeyValidatorData,
-    findQuoteIndices,
-    hexStringToUint8Array,
-    isRIP7212SupportedNetwork,
-    parseAndNormalizeSig,
-    serializePasskeyValidatorData,
-    uint8ArrayToHexString
-} from "./utils.js"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
@@ -129,14 +129,12 @@ export async function toPasskeyValidator<
         webAuthnKey,
         entryPoint: entryPointAddress,
         kernelVersion,
-        validatorAddress: _validatorAddress,
-        credentials = "include"
+        validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
-        credentials?: RequestCredentials
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -274,7 +272,6 @@ export async function toPasskeyValidator<
 
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
@@ -307,7 +304,6 @@ export async function deserializePasskeyValidator<
     }
 > {
     const {
-        credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
@@ -438,7 +434,6 @@ export async function deserializePasskeyValidator<
         },
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,

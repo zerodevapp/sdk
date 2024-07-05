@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.3.5
+
+### Patch Changes
+
+- Separated webauthn validator and webauthn key module
+
 ## 5.3.4
 
 ### Patch Changes

@@ -1,5 +1,5 @@
-import { type Hex, keccak256 } from "viem"
-import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
+import { type Hex, concatHex, keccak256, pad, toHex } from "viem"
+import { b64ToBytes, uint8ArrayToHexString } from "./utils.js"
 
 export enum WebAuthnMode {
     Register = "register",
@@ -19,6 +19,14 @@ export type WebAuthnAccountParams = {
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
     credentials?: RequestCredentials
+}
+
+export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
+    return concatHex([
+        toHex(pubKey.pubX, { size: 32 }),
+        toHex(pubKey.pubY, { size: 32 }),
+        pad(pubKey.authenticatorIdHash, { size: 32 })
+    ])
 }
 
 export const toWebAuthnKey = async ({

@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.3
+
+### Patch Changes
+
+- Separated webauthn validator and webauthn key module
+
 ## 5.3.2
 
 ### Patch Changes
