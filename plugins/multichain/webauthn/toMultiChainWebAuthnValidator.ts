@@ -1,5 +1,15 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type { WebAuthnKey } from "@zerodev/webauthn-key"
+import {
+    b64ToBytes,
+    base64FromUint8Array,
+    findQuoteIndices,
+    hexStringToUint8Array,
+    isRIP7212SupportedNetwork,
+    parseAndNormalizeSig,
+    uint8ArrayToHexString
+} from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -25,16 +35,6 @@ import {
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
 import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "../constants.js"
-import type { WebAuthnKey } from "@zerodev/webauthn-key"
-import {
-    b64ToBytes,
-    base64FromUint8Array,
-    findQuoteIndices,
-    hexStringToUint8Array,
-    isRIP7212SupportedNetwork,
-    parseAndNormalizeSig,
-    uint8ArrayToHexString
-} from "@zerodev/webauthn-key"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
