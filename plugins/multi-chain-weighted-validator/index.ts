@@ -20,9 +20,12 @@ import {
     type ECDSASignerParams,
     toECDSASigner
 } from "./signers/toECDSASigner.js"
-import { WebAuthnMode, toWebAuthnPubKey } from "./signers/toWebAuthnPubKey.js"
 import {
     type WebAuthnKey,
+    WebAuthnMode,
+    toWebAuthnKey
+} from "@zerodev/webauthn-key"
+import {
     type WebAuthnModularSignerParams,
     toWebAuthnSigner
 } from "./signers/toWebAuthnSigner.js"
@@ -41,7 +44,7 @@ export {
     type KernelValidator,
     toECDSASigner,
     type ECDSASignerParams,
-    toWebAuthnPubKey,
+    toWebAuthnKey,
     type WebAuthnKey,
     WebAuthnMode,
     type WebAuthnModularSignerParams,

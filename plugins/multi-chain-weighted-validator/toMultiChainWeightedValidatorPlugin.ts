@@ -31,8 +31,8 @@ import {
     decodeSignatures,
     encodeSignatures
 } from "./index.js"
-import type { WebAuthnKey } from "./signers/toWebAuthnSigner.js"
-import { encodeWebAuthnPubKey } from "./signers/webAuthnUtils.js"
+import type { WebAuthnKey } from "@zerodev/webauthn-key"
+import { encodeWebAuthnPubKey } from "./signers/toWebAuthnSigner.js"
 
 export type WeightedSigner = {
     account: LocalAccount

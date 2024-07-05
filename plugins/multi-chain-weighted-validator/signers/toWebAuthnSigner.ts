@@ -4,41 +4,123 @@ import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accoun
 import {
     type Chain,
     type Client,
-    type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type Transport,
     type TypedDataDefinition,
     getTypesForEIP712Domain,
     hashTypedData,
-    validateTypedData
+    validateTypedData,
+    concatHex,
+    toHex,
+    pad
 } from "viem"
 import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
-import { getChainId } from "viem/actions"
+import { getChainId, signMessage } from "viem/actions"
 import { SIGNER_TYPE } from "../constants.js"
 import type { WeightedSigner } from "../toMultiChainWeightedValidatorPlugin.js"
-import { WebAuthnMode, toWebAuthnPubKey } from "./toWebAuthnPubKey.js"
 import {
     b64ToBytes,
-    encodeWebAuthnPubKey,
     findQuoteIndices,
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
-    uint8ArrayToHexString
-} from "./webAuthnUtils.js"
-
-export type WebAuthnKey = {
-    pubX: bigint
-    pubY: bigint
-    authenticatorIdHash: Hex
-}
+    uint8ArrayToHexString,
+    type WebAuthnKey,
+    base64FromUint8Array,
+    hexStringToUint8Array
+} from "@zerodev/webauthn-key"
 
 export type WebAuthnModularSignerParams = {
-    passkeyName: string
-    passkeyServerUrl: string
-    pubKey?: WebAuthnKey
-    mode?: WebAuthnMode
+    webAuthnKey: WebAuthnKey
+}
+
+export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
+    return concatHex([
+        toHex(pubKey.pubX, { size: 32 }),
+        toHex(pubKey.pubY, { size: 32 }),
+        pad(pubKey.authenticatorIdHash, { size: 32 })
+    ])
+}
+
+const signMessageUsingWebAuthn = async (
+    message: SignableMessage,
+    chainId: number,
+    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
+) => {
+    let messageContent: string
+    if (typeof message === "string") {
+        // message is a string
+        messageContent = message
+    } else if ("raw" in message && typeof message.raw === "string") {
+        // message.raw is a Hex string
+        messageContent = message.raw
+    } else if ("raw" in message && message.raw instanceof Uint8Array) {
+        // message.raw is a ByteArray
+        messageContent = message.raw.toString()
+    } else {
+        throw new Error("Unsupported message format")
+    }
+
+    // remove 0x prefix if present
+    const formattedMessage = messageContent.startsWith("0x")
+        ? messageContent.slice(2)
+        : messageContent
+
+    const challenge = base64FromUint8Array(
+        hexStringToUint8Array(formattedMessage),
+        true
+    )
+
+    // prepare assertion options
+    const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
+        challenge,
+        allowCredentials,
+        userVerification: "required"
+    }
+
+    // start authentication (signing)
+
+    const { startAuthentication } = await import("@simplewebauthn/browser")
+    const cred = await startAuthentication(assertionOptions)
+
+    // get authenticator data
+    const { authenticatorData } = cred.response
+    const authenticatorDataHex = uint8ArrayToHexString(
+        b64ToBytes(authenticatorData)
+    )
+
+    // get client data JSON
+    const clientDataJSON = atob(cred.response.clientDataJSON)
+
+    // get challenge and response type location
+    const { beforeType } = findQuoteIndices(clientDataJSON)
+
+    // get signature r,s
+    const { signature } = cred.response
+    const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
+    const { r, s } = parseAndNormalizeSig(signatureHex)
+
+    // encode signature
+    const encodedSignature = encodeAbiParameters(
+        [
+            { name: "authenticatorData", type: "bytes" },
+            { name: "clientDataJSON", type: "string" },
+            { name: "responseTypeLocation", type: "uint256" },
+            { name: "r", type: "uint256" },
+            { name: "s", type: "uint256" },
+            { name: "usePrecompiled", type: "bool" }
+        ],
+        [
+            authenticatorDataHex,
+            clientDataJSON,
+            beforeType,
+            BigInt(r),
+            BigInt(s),
+            isRIP7212SupportedNetwork(chainId)
+        ]
+    )
+    return encodedSignature
 }
 
 export const toWebAuthnSigner = async <
@@ -46,132 +128,17 @@ export const toWebAuthnSigner = async <
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
-    {
-        pubKey,
-        passkeyServerUrl,
-        passkeyName,
-        mode = WebAuthnMode.Register
-    }: WebAuthnModularSignerParams
+    { webAuthnKey }: WebAuthnModularSignerParams
 ): Promise<WeightedSigner> => {
-    pubKey =
-        pubKey ??
-        (await toWebAuthnPubKey({
-            passkeyName,
-            passkeyServerUrl,
-            mode
-        }))
-    if (!pubKey) {
-        throw new Error("WebAuthn public key not found")
-    }
-
     const chainId = await getChainId(client)
 
-    const signMessageUsingWebAuthn = async (message: SignableMessage) => {
-        let messageContent: string
-        if (typeof message === "string") {
-            // message is a string
-            messageContent = message
-        } else if ("raw" in message && typeof message.raw === "string") {
-            // message.raw is a Hex string
-            messageContent = message.raw
-        } else if ("raw" in message && message.raw instanceof Uint8Array) {
-            // message.raw is a ByteArray
-            messageContent = message.raw.toString()
-        } else {
-            throw new Error("Unsupported message format")
-        }
-
-        // remove 0x prefix if present
-        const formattedMessage = messageContent.startsWith("0x")
-            ? messageContent.slice(2)
-            : messageContent
-
-        if (window.sessionStorage === undefined) {
-            throw new Error("sessionStorage is not available")
-        }
-        const userId = sessionStorage.getItem("userId")
-
-        // initiate signing
-        const signInitiateResponse = await fetch(
-            `${passkeyServerUrl}/sign-initiate`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: formattedMessage, userId }),
-                credentials: "include"
-            }
-        )
-        const signInitiateResult = await signInitiateResponse.json()
-
-        // prepare assertion options
-        const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
-            challenge: signInitiateResult.challenge,
-            allowCredentials: signInitiateResult.allowCredentials,
-            userVerification: "required"
-        }
-
-        // start authentication (signing)
-
-        const { startAuthentication } = await import("@simplewebauthn/browser")
-        const cred = await startAuthentication(assertionOptions)
-
-        // verify signature from server
-        const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cred, userId }),
-            credentials: "include"
-        })
-
-        const verifyResult = await verifyResponse.json()
-
-        if (!verifyResult.success) {
-            throw new Error("Signature not verified")
-        }
-
-        // get authenticator data
-        const authenticatorData = verifyResult.authenticatorData
-        const authenticatorDataHex = uint8ArrayToHexString(
-            b64ToBytes(authenticatorData)
-        )
-
-        // get client data JSON
-        const clientDataJSON = atob(cred.response.clientDataJSON)
-
-        // get challenge and response type location
-        const { beforeType } = findQuoteIndices(clientDataJSON)
-
-        // get signature r,s
-        const signature = verifyResult.signature
-        const signatureHex = uint8ArrayToHexString(b64ToBytes(signature))
-        const { r, s } = parseAndNormalizeSig(signatureHex)
-
-        // encode signature
-        const encodedSignature = encodeAbiParameters(
-            [
-                { name: "authenticatorData", type: "bytes" },
-                { name: "clientDataJSON", type: "string" },
-                { name: "responseTypeLocation", type: "uint256" },
-                { name: "r", type: "uint256" },
-                { name: "s", type: "uint256" },
-                { name: "usePrecompiled", type: "bool" }
-            ],
-            [
-                authenticatorDataHex,
-                clientDataJSON,
-                beforeType,
-                BigInt(r),
-                BigInt(s),
-                isRIP7212SupportedNetwork(chainId)
-            ]
-        )
-        return encodedSignature
-    }
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message)
+            return signMessageUsingWebAuthn(message, chainId, [
+                { id: webAuthnKey.authenticatorId, type: "public-key" }
+            ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccount()
@@ -193,7 +160,11 @@ export const toWebAuthnSigner = async <
             validateTypedData({ domain, message, primaryType, types })
 
             const hash = hashTypedData(typedData)
-            return signMessageUsingWebAuthn(hash)
+            const signature = await signMessage(client, {
+                account,
+                message: hash
+            })
+            return signature
         }
     })
 
@@ -201,8 +172,8 @@ export const toWebAuthnSigner = async <
         type: SIGNER_TYPE.PASSKEY,
         account,
         getPublicKey: () => {
-            if (!pubKey) return "0x"
-            return encodeWebAuthnPubKey(pubKey)
+            if (!webAuthnKey) return "0x"
+            return encodeWebAuthnPubKey(webAuthnKey)
         },
         getDummySignature: () => {
             return encodeAbiParameters(
