@@ -1,4 +1,4 @@
-import { type Hex, keccak256, concatHex, toHex, pad } from "viem"
+import { type Hex, concatHex, keccak256, pad, toHex } from "viem"
 import { b64ToBytes, uint8ArrayToHexString } from "./utils.js"
 
 export enum WebAuthnMode {
