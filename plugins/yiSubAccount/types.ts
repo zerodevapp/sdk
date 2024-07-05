@@ -1,0 +1,1 @@
+export type YI_SUB_ACCOUNT_VERSION_TYPE = "0.0.1"

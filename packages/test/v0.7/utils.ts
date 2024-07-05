@@ -59,6 +59,7 @@ import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
+import { createYiSubAccount } from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
@@ -127,6 +128,54 @@ const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
         },
         index,
         kernelVersion
+    })
+}
+
+export const generateRandomBigIntIndex = (): bigint => {
+    const min = 1n
+    const max = 10000000000n
+    return min + (BigInt(Math.floor(Math.random() * Number(max - min))) + min)
+}
+
+export const getUndeployedYiSubAccount = async (
+    withRandomMasterSigner = false
+) => {
+    return getYiSubAccount(withRandomMasterSigner, generateRandomBigIntIndex())
+}
+
+export const getYiSubAccount = async (
+    withRandomMasterSigner = false,
+    subAccountIndex?: bigint
+) => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(
+        withRandomMasterSigner ? generatePrivateKey() : privateKey
+    )
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" },
+        kernelVersion
+    })
+
+    const masterAccount = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin
+        },
+        index,
+        kernelVersion
+    })
+
+    return createYiSubAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        masterAccount,
+        yiSubAccountVersion: "0.0.1",
+        index: subAccountIndex
     })
 }
 
