@@ -40,6 +40,13 @@ export type YiSubAccount<
 > = SmartAccount<entryPoint, "yiSubAccount", transport, chain> & {
     masterAccount: KernelSmartAccount<entryPoint, transport, chain>
     delegationManagerAddress: Address
+    getCallData: (
+        args: Parameters<YiSubAccount<entryPoint>["encodeCallData"]>[0]
+    ) => Promise<{
+        to: Address
+        value: bigint
+        data: Hex
+    }>
 }
 
 const getYiSubAccountInitData = async ({
@@ -227,40 +234,46 @@ export async function createYiSubAccount<
         if (smartAccountDeployed) return "0x"
         return generateInitCode()
     }
+    const getCallData = async (
+        tx: Parameters<YiSubAccount<entryPoint>["encodeCallData"]>[0]
+    ) => {
+        if (Array.isArray(tx)) {
+            throw new Error("Batch call not supported yet")
+        }
+        const data = concatHex([
+            accountAddress,
+            encodeAbiParameters(
+                [
+                    { type: "bytes" },
+                    { type: "bytes" },
+                    { type: "bytes" },
+                    { type: "bytes" }
+                ],
+                [await getInitCode(), "0x", "0x", "0x"]
+            )
+        ])
+        return {
+            to: delegationManagerAddress,
+            data: encodeFunctionData({
+                abi: YiDelegationManagerAbi,
+                functionName: "redeemDelegation",
+                args: [data, tx]
+            }),
+            value: 0n
+        }
+    }
 
     return {
         masterAccount,
         delegationManagerAddress,
+        getCallData,
         ...toSmartAccount({
             client,
             source: "yiSubAccount",
             entryPoint: entryPointAddress,
             address: accountAddress,
             encodeCallData: async (tx) => {
-                if (Array.isArray(tx)) {
-                    throw new Error("Batch call not supported yet")
-                }
-                const data = concatHex([
-                    accountAddress,
-                    encodeAbiParameters(
-                        [
-                            { type: "bytes" },
-                            { type: "bytes" },
-                            { type: "bytes" },
-                            { type: "bytes" }
-                        ],
-                        [await getInitCode(), "0x", "0x", "0x"]
-                    )
-                ])
-                return masterAccount.encodeCallData({
-                    to: delegationManagerAddress,
-                    data: encodeFunctionData({
-                        abi: YiDelegationManagerAbi,
-                        functionName: "redeemDelegation",
-                        args: [data, tx]
-                    }),
-                    value: 0n
-                })
+                return masterAccount.encodeCallData(await getCallData(tx))
             },
             encodeDeployCallData: async (_tx) => {
                 throw new Error("encodeDeployCallData not supported yet")
