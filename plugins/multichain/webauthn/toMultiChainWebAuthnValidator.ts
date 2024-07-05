@@ -25,7 +25,7 @@ import {
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
 import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "../constants.js"
-import type { WebAuthnKey } from "./toWebAuthnAccount.js"
+import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import {
     b64ToBytes,
     base64FromUint8Array,
@@ -34,7 +34,7 @@ import {
     isRIP7212SupportedNetwork,
     parseAndNormalizeSig,
     uint8ArrayToHexString
-} from "./webAuthnUtils.js"
+} from "@zerodev/webauthn-key"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
