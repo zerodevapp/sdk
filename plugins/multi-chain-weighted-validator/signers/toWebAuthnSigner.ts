@@ -1,4 +1,14 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
+import {
+    type WebAuthnKey,
+    b64ToBytes,
+    base64FromUint8Array,
+    findQuoteIndices,
+    hexStringToUint8Array,
+    isRIP7212SupportedNetwork,
+    parseAndNormalizeSig,
+    uint8ArrayToHexString
+} from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
@@ -8,28 +18,18 @@ import {
     type SignTypedDataParameters,
     type Transport,
     type TypedDataDefinition,
+    concatHex,
     getTypesForEIP712Domain,
     hashTypedData,
-    validateTypedData,
-    concatHex,
+    pad,
     toHex,
-    pad
+    validateTypedData
 } from "viem"
 import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
 import { SIGNER_TYPE } from "../constants.js"
 import type { WeightedSigner } from "../toMultiChainWeightedValidatorPlugin.js"
-import {
-    b64ToBytes,
-    findQuoteIndices,
-    isRIP7212SupportedNetwork,
-    parseAndNormalizeSig,
-    uint8ArrayToHexString,
-    type WebAuthnKey,
-    base64FromUint8Array,
-    hexStringToUint8Array
-} from "@zerodev/webauthn-key"
 
 export type WebAuthnModularSignerParams = {
     webAuthnKey: WebAuthnKey

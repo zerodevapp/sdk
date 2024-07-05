@@ -1,5 +1,10 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import {
+    type WebAuthnKey,
+    WebAuthnMode,
+    toWebAuthnKey
+} from "@zerodev/webauthn-key"
+import {
     type ApproveUserOperationParameters,
     type ApproveUserOperationReturnType,
     approveUserOperation
@@ -20,11 +25,6 @@ import {
     type ECDSASignerParams,
     toECDSASigner
 } from "./signers/toECDSASigner.js"
-import {
-    type WebAuthnKey,
-    WebAuthnMode,
-    toWebAuthnKey
-} from "@zerodev/webauthn-key"
 import {
     type WebAuthnModularSignerParams,
     toWebAuthnSigner

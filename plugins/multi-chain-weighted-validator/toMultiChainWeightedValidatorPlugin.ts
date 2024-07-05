@@ -1,4 +1,5 @@
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import {
     type UserOperation,
@@ -31,7 +32,6 @@ import {
     decodeSignatures,
     encodeSignatures
 } from "./index.js"
-import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import { encodeWebAuthnPubKey } from "./signers/toWebAuthnSigner.js"
 
 export type WeightedSigner = {
