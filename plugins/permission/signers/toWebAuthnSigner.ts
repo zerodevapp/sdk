@@ -1,4 +1,14 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
+import type { WebAuthnKey } from "@zerodev/webauthn-key"
+import {
+    b64ToBytes,
+    base64FromUint8Array,
+    findQuoteIndices,
+    hexStringToUint8Array,
+    isRIP7212SupportedNetwork,
+    parseAndNormalizeSig,
+    uint8ArrayToHexString
+} from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
@@ -17,16 +27,6 @@ import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
 import { WEBAUTHN_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
-import type { WebAuthnKey } from "./toWebAuthnKey.js"
-import {
-    b64ToBytes,
-    base64FromUint8Array,
-    findQuoteIndices,
-    hexStringToUint8Array,
-    isRIP7212SupportedNetwork,
-    parseAndNormalizeSig,
-    uint8ArrayToHexString
-} from "./webAuthnUtils.js"
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
     webAuthnKey: WebAuthnKey
