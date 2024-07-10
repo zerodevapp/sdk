@@ -10,7 +10,7 @@ export const toWebAuthnPubKey = async ({
     passkeyName,
     passkeyServerUrl,
     mode = WebAuthnMode.Login,
-    headers = { "Content-Type": "application/json" },
+    headers = { "Content-Type": "application/json" }
 }: {
     passkeyName: string
     passkeyServerUrl: string
