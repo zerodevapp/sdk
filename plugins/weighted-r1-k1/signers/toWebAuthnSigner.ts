@@ -52,7 +52,7 @@ export const toWebAuthnSigner = async <
         passkeyServerUrl,
         passkeyName,
         mode = WebAuthnMode.Register,
-        headers = { "Content-Type": "application/json" }
+        headers = {}
     }: WebAuthnModularSignerParams
 ): Promise<WeightedSigner> => {
     pubKey =
