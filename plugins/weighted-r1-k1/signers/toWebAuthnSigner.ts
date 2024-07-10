@@ -99,7 +99,7 @@ export const toWebAuthnSigner = async <
             `${passkeyServerUrl}/sign-initiate`,
             {
                 method: "POST",
-                headers,
+                headers: { "Content-Type": "application/json", ...headers },
                 body: JSON.stringify({ data: formattedMessage, userId }),
                 credentials: "include"
             }
@@ -121,7 +121,7 @@ export const toWebAuthnSigner = async <
         // verify signature from server
         const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
             method: "POST",
-            headers,
+            headers: { "Content-Type": "application/json", ...headers },
             body: JSON.stringify({ cred, userId }),
             credentials: "include"
         })
