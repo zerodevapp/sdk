@@ -19,7 +19,7 @@ export type WebAuthnAccountParams = {
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
     credentials?: RequestCredentials
-    headers?: Record<string, string>
+    headers: Record<string, string>
 }
 
 export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {

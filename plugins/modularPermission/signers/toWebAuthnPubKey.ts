@@ -15,7 +15,7 @@ export const toWebAuthnPubKey = async ({
     passkeyName: string
     passkeyServerUrl: string
     mode: WebAuthnMode
-    headers?: Record<string, string>
+    headers: Record<string, string>
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     if (mode === WebAuthnMode.Login) {

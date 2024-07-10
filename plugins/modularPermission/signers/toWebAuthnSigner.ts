@@ -36,7 +36,7 @@ export type WebAuthnModularSignerParams = ModularSignerParams & {
     passkeyServerUrl: string
     pubKey?: WebAuthnKey
     mode?: WebAuthnMode
-    headers?: Record<string, string>
+    headers: Record<string, string>
 }
 
 export const toWebAuthnSigner = async <
