@@ -24,7 +24,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 credentials: "include"
             }
         )
@@ -39,7 +42,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 body: JSON.stringify({ cred: loginCred }),
                 credentials: "include"
             }
@@ -66,7 +72,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/register/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 body: JSON.stringify({ username: passkeyName }),
                 credentials: "include"
             }
@@ -88,7 +97,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/register/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
                     username: passkeyName,
