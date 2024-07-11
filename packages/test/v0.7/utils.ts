@@ -59,11 +59,11 @@ import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
+import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
 import {
     type YiSubAccount,
     createYiSubAccount
 } from "../../../plugins/yiSubAccount/index.js"
-import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
@@ -336,7 +336,7 @@ export const getYiSubAccountClient = async ({
     return createYiSubAccountClient({
         account: resolvedAccount,
         chain,
-        bundlerTransport: http(getBundlerRpc()),
+        bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
         middleware,
         entryPoint: getEntryPoint()
     })

@@ -1,29 +1,34 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import {
-    EIP1271Abi,
-    verifyEIP6492Signature,
-    type KernelAccountClient,
-    type KernelSmartAccount
-} from "@zerodev/sdk"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
-import {
-    zeroAddress,
-    type Chain,
-    type Transport,
-    hashMessage,
-    type PublicClient,
-    hashTypedData,
-    decodeAbiParameters,
-    encodeFunctionData
-} from "viem"
-import { ethers } from "ethers"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
+    EIP1271Abi,
+    type KernelAccountClient,
+    type KernelSmartAccount,
+    verifyEIP6492Signature
+} from "@zerodev/sdk"
+import { ethers } from "ethers"
+import {
+    type BundlerClient,
     bundlerActions,
-    isSmartAccountDeployed,
-    type BundlerClient
+    isSmartAccountDeployed
 } from "permissionless"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
+import {
+    type Chain,
+    type PublicClient,
+    type Transport,
+    decodeAbiParameters,
+    encodeFunctionData,
+    hashMessage,
+    hashTypedData,
+    zeroAddress
+} from "viem"
+import type { YiSubAccount } from "../../../plugins/yiSubAccount"
+import type { YiSubAccountClient } from "../../../plugins/yiSubAccount/clients"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
+import { config } from "../config"
+import { Test_ERC20Address } from "../utils"
 import {
     getEntryPoint,
     getKernelAccountClient,
@@ -34,11 +39,6 @@ import {
     getYiSubAccountClient,
     getZeroDevPaymasterClient
 } from "./utils"
-import type { YiSubAccount } from "../../../plugins/yiSubAccount"
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
-import { Test_ERC20Address } from "../utils"
-import type { YiSubAccountClient } from "../../../plugins/yiSubAccount/clients"
-import { config } from "../config"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -323,14 +323,21 @@ describe("Yi SubAccount", () => {
     test(
         "Send tx subAccount through masterAccount",
         async () => {
-            const txHash = await yiSubAccountClient.sendTransaction({
-                to: zeroAddress,
-                data: "0x",
-                value: 0n
+            const userOpHash = await yiSubAccountClient.sendUserOperation({
+                userOperation: {
+                    callData: await account.encodeCallData({
+                        to: zeroAddress,
+                        data: "0x",
+                        value: 0n
+                    })
+                }
+            })
+            const receipt = await bundlerClient.waitForUserOperationReceipt({
+                hash: userOpHash
             })
             console.log(
                 "transactionHash",
-                `https://sepolia.etherscan.io/tx/${txHash}`
+                `https://sepolia.etherscan.io/tx/${receipt.receipt.transactionHash}`
             )
         },
         TEST_TIMEOUT
@@ -395,9 +402,8 @@ describe("Yi SubAccount", () => {
                 }),
                 value: 0n
             }
-            const txHash = await yiSubAccountClient.sendTransaction(
-                mainCalldata
-            )
+            const txHash =
+                await yiSubAccountClient.sendTransaction(mainCalldata)
             console.log(
                 "transactionHash",
                 `https://sepolia.etherscan.io/tx/${txHash}`
