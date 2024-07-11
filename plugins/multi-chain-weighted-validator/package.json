@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/multi-chain-weighted-validator",
-    "version": "5.3.0-alpha-2",
+    "version": "5.3.0-alpha-3",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
