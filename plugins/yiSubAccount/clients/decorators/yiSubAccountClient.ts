@@ -1,3 +1,5 @@
+import type { SmartAccountActions } from "permissionless"
+import type { SmartAccount } from "permissionless/accounts/types.js"
 import type {
     Middleware,
     SendTransactionWithPaymasterParameters,
@@ -5,10 +7,8 @@ import type {
 } from "permissionless/actions/smartAccount"
 import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Transport } from "viem"
-import { sendUserOperation } from "../../actions/sendUserOperation.js"
 import { sendTransaction } from "../../actions/sendTransaction.js"
-import type { SmartAccount } from "permissionless/accounts/types.js"
-import type { SmartAccountActions } from "permissionless"
+import { sendUserOperation } from "../../actions/sendUserOperation.js"
 
 export type YiSubAccountClientActions<
     entryPoint extends EntryPoint,
@@ -38,7 +38,11 @@ export function yiSubAccountClientActions<entryPoint extends EntryPoint>({
                 sendTransaction<TChain, TSmartAccount, entryPoint>(client, {
                     ...args,
                     middleware
-                } as SendTransactionWithPaymasterParameters<entryPoint, TChain, TSmartAccount>),
+                } as SendTransactionWithPaymasterParameters<
+                    entryPoint,
+                    TChain,
+                    TSmartAccount
+                >),
             sendUserOperation: (args) =>
                 sendUserOperation<
                     entryPoint,

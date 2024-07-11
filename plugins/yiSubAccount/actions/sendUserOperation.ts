@@ -3,6 +3,7 @@ import {
     type UserOperation,
     parseAccount
 } from "permissionless"
+import type { SmartAccount } from "permissionless/accounts"
 import { sendUserOperation as sendUserOperationBundler } from "permissionless/actions"
 import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
 import type { SendUserOperationParameters } from "permissionless/actions/smartAccount/sendUserOperation"
@@ -14,7 +15,6 @@ import type { Chain, Client, Hash, Transport } from "viem"
 import type { Prettify } from "viem/chains"
 import { getAction } from "viem/utils"
 import type { YiSubAccount } from "../account/createYiSubAccount"
-import type { SmartAccount } from "permissionless/accounts"
 
 export async function sendUserOperation<
     entryPoint extends EntryPoint,
@@ -42,7 +42,10 @@ export async function sendUserOperation<
         client,
         prepareUserOperationRequest<entryPoint, TTransport, TChain, TAccount>,
         "prepareUserOperationRequest"
-    )(args)
+    )({
+        ...args,
+        account
+    })
 
     userOperation.signature = await account.signUserOperation(
         userOperation as UserOperation<GetEntryPointVersion<entryPoint>>

@@ -1,3 +1,10 @@
+import { parseFactoryAddressAndCallDataFromAccountInitCode } from "@zerodev/sdk/accounts"
+import type { KernelSmartAccount } from "@zerodev/sdk/accounts"
+import {
+    getEntryPointVersion,
+    getSenderAddress,
+    isSmartAccountDeployed
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount,
@@ -9,29 +16,22 @@ import type {
     EntryPoint
 } from "permissionless/types/entrypoint"
 import {
-    type Chain,
-    type Transport,
-    type Client,
-    encodeFunctionData,
     type Address,
-    concatHex,
-    toHex,
+    type Chain,
+    type Client,
     type Hex,
+    type Transport,
+    concatHex,
+    decodeAbiParameters,
     encodeAbiParameters,
-    decodeAbiParameters
+    encodeFunctionData,
+    toHex
 } from "viem"
+import { YiDelegationManagerAbi } from "../abi/YiDelegationManagerAbi"
 import { YiSubAccountAbi } from "../abi/YiSubAccountAbi"
 import { YiSubAccountFactoryAbi } from "../abi/YiSubAccountFactoryAbi"
-import {
-    getEntryPointVersion,
-    getSenderAddress,
-    isSmartAccountDeployed
-} from "permissionless"
-import { parseFactoryAddressAndCallDataFromAccountInitCode } from "@zerodev/sdk/accounts"
-import type { YI_SUB_ACCOUNT_VERSION_TYPE } from "../types"
 import { MAGIC_BYTES, YiSubAccountVersionToAddressesMap } from "../constants"
-import { YiDelegationManagerAbi } from "../abi/YiDelegationManagerAbi"
-import type { KernelSmartAccount } from "@zerodev/sdk/accounts"
+import type { YI_SUB_ACCOUNT_VERSION_TYPE } from "../types"
 
 export type YiSubAccount<
     entryPoint extends EntryPoint,
@@ -354,9 +354,8 @@ export async function createYiSubAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature = await masterAccount.signTypedData(
-                    typedData
-                )
+                let masterSignature =
+                    await masterAccount.signTypedData(typedData)
                 if (
                     masterSignature
                         .toLowerCase()

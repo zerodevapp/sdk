@@ -3,6 +3,7 @@ import {
     createKernelAccountClient
 } from "@zerodev/sdk"
 import type { SmartAccountClientConfig } from "@zerodev/sdk/clients/kernelAccountClient"
+import type { SmartAccount } from "permissionless/accounts/types.js"
 import type { EntryPoint } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
 import type { Chain, Client, Transport } from "viem"
@@ -10,7 +11,6 @@ import {
     type YiSubAccountClientActions,
     yiSubAccountClientActions
 } from "./decorators/yiSubAccountClient.js"
-import type { SmartAccount } from "permissionless/accounts/types.js"
 
 export type YiSubAccountClient<
     entryPoint extends EntryPoint,

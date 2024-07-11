@@ -4,6 +4,9 @@ import type { YI_SUB_ACCOUNT_VERSION_TYPE } from "./types"
 export const MAGIC_BYTES =
     "0x6492649264926492649264926492649264926492649264926492649264926492"
 
+export const SUBACCOUNT_API_URL =
+    "https://yield-api-kgjy.onrender.com/subaccount/transfers-data"
+
 export const YiSubAccountVersionToAddressesMap: {
     [key in YI_SUB_ACCOUNT_VERSION_TYPE]: {
         factoryAddress: Address

@@ -3,15 +3,16 @@ import {
     parseAccount,
     waitForUserOperationReceipt
 } from "permissionless"
+import type { SmartAccount } from "permissionless/accounts"
 import type { SendTransactionWithPaymasterParameters } from "permissionless/actions/smartAccount"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Chain, Client, Hash, Transport } from "viem"
+import { getChainId } from "viem/actions"
 import type { Prettify } from "viem/types/utils"
 import { getAction } from "viem/utils"
-import { sendUserOperation } from "./sendUserOperation"
 import type { YiSubAccount } from "../account/createYiSubAccount"
-import { getChainId } from "viem/actions"
-import type { SmartAccount } from "permissionless/accounts"
+import { SUBACCOUNT_API_URL } from "../constants"
+import { sendUserOperation } from "./sendUserOperation"
 
 /**
  * Creates, signs, and sends a new transaction to the network.
@@ -102,27 +103,23 @@ export async function sendTransaction<
         throw new Error("RPC account type not supported")
     }
 
-    const response = await fetch(
-        "http://127.0.0.1:3000/simulation/transfer-data",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": "efbc1add-1c14-476e-b3f1-206db80e673c"
-            },
-            body: JSON.stringify({
-                chainId,
-                to: account.address,
-                from: subAccount.entryPoint,
-                subAccountAddress: subAccount.address,
-                input: await subAccount.encodeCallData({
-                    to,
-                    value: value || BigInt(0),
-                    data: data || "0x"
-                })
+    const response = await fetch(SUBACCOUNT_API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            chainId,
+            parentAccountAddress: account.address,
+            subAccountAddress: subAccount.address,
+            entryPoint: subAccount.entryPoint,
+            callData: await subAccount.encodeCallData({
+                to,
+                value: value || BigInt(0),
+                data: data || "0x"
             })
-        }
-    )
+        })
+    })
     const transfersCallData: [] = (await response.json()).transfersCallData
     const wrappedCallData = await subAccount.getCallData({
         to,
