@@ -39,6 +39,7 @@ export type WebAuthnModularSignerParams = {
     passkeyServerUrl: string
     pubKey?: WebAuthnKey
     mode?: WebAuthnMode
+    passkeyServerHeaders: Record<string, string>
 }
 
 export const toWebAuthnSigner = async <
@@ -50,7 +51,8 @@ export const toWebAuthnSigner = async <
         pubKey,
         passkeyServerUrl,
         passkeyName,
-        mode = WebAuthnMode.Register
+        mode = WebAuthnMode.Register,
+        passkeyServerHeaders = {}
     }: WebAuthnModularSignerParams
 ): Promise<WeightedSigner> => {
     pubKey =
@@ -58,7 +60,8 @@ export const toWebAuthnSigner = async <
         (await toWebAuthnPubKey({
             passkeyName,
             passkeyServerUrl,
-            mode
+            mode,
+            passkeyServerHeaders
         }))
     if (!pubKey) {
         throw new Error("WebAuthn public key not found")
@@ -96,7 +99,10 @@ export const toWebAuthnSigner = async <
             `${passkeyServerUrl}/sign-initiate`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 body: JSON.stringify({ data: formattedMessage, userId }),
                 credentials: "include"
             }
@@ -118,7 +124,10 @@ export const toWebAuthnSigner = async <
         // verify signature from server
         const verifyResponse = await fetch(`${passkeyServerUrl}/sign-verify`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                ...passkeyServerHeaders
+            },
             body: JSON.stringify({ cred, userId }),
             credentials: "include"
         })
