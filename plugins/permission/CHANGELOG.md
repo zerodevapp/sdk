@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.3.2
+
+### Patch Changes
+
+- Separated webauthn signer and webauthn key module
+
 ## 5.3.1
 
 ### Patch Changes

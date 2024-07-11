@@ -1,5 +1,17 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import {
+    type WebAuthnKey,
+    b64ToBytes,
+    base64FromUint8Array,
+    deserializePasskeyValidatorData,
+    findQuoteIndices,
+    hexStringToUint8Array,
+    isRIP7212SupportedNetwork,
+    parseAndNormalizeSig,
+    serializePasskeyValidatorData,
+    uint8ArrayToHexString
+} from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
@@ -26,18 +38,6 @@ import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { getValidatorAddress } from "./index.js"
-import type { WebAuthnKey } from "./toWebAuthnKey.js"
-import {
-    b64ToBytes,
-    base64FromUint8Array,
-    deserializePasskeyValidatorData,
-    findQuoteIndices,
-    hexStringToUint8Array,
-    isRIP7212SupportedNetwork,
-    parseAndNormalizeSig,
-    serializePasskeyValidatorData,
-    uint8ArrayToHexString
-} from "./utils.js"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
@@ -129,14 +129,12 @@ export async function toPasskeyValidator<
         webAuthnKey,
         entryPoint: entryPointAddress,
         kernelVersion,
-        validatorAddress: _validatorAddress,
-        credentials = "include"
+        validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
-        credentials?: RequestCredentials
     }
 ): Promise<
     KernelValidator<entryPoint, "WebAuthnValidator"> & {
@@ -257,7 +255,7 @@ export async function toPasskeyValidator<
                 ],
                 [
                     "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
+                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
                     1n,
                     44941127272049826721201904734628716258498742255959991581049806490182030242267n,
                     9910254599581058084911561569808925251374718953855182016200087235935345969636n,
@@ -274,7 +272,6 @@ export async function toPasskeyValidator<
 
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint: entryPointAddress,
                 validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
@@ -307,7 +304,6 @@ export async function deserializePasskeyValidator<
     }
 > {
     const {
-        credentials,
         entryPoint,
         validatorAddress,
         pubKeyX,
@@ -421,7 +417,7 @@ export async function deserializePasskeyValidator<
                 ],
                 [
                     "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false}',
+                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
                     1n,
                     44941127272049826721201904734628716258498742255959991581049806490182030242267n,
                     9910254599581058084911561569808925251374718953855182016200087235935345969636n,
@@ -438,7 +434,6 @@ export async function deserializePasskeyValidator<
         },
         getSerializedData() {
             return serializePasskeyValidatorData({
-                credentials,
                 entryPoint,
                 validatorAddress,
                 pubKeyX,

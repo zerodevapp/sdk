@@ -3,13 +3,13 @@ import {
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import { WebAuthnMode, toWebAuthnKey } from "@zerodev/webauthn-key"
 import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import { type Address, zeroAddress } from "viem"
 import {
     deserializePasskeyValidator,
     toPasskeyValidator
 } from "./toPasskeyValidator.js"
-import { WebAuthnMode, toWebAuthnKey } from "./toWebAuthnKey.js"
 
 export {
     deserializePasskeyValidator,

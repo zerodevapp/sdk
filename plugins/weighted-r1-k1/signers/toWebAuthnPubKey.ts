@@ -11,11 +11,13 @@ export enum WebAuthnMode {
 export const toWebAuthnPubKey = async ({
     passkeyName,
     passkeyServerUrl,
-    mode = WebAuthnMode.Login
+    mode = WebAuthnMode.Login,
+    passkeyServerHeaders = {}
 }: {
     passkeyName: string
     passkeyServerUrl: string
     mode: WebAuthnMode
+    passkeyServerHeaders: Record<string, string>
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     let authenticatorIdHash: Hex
@@ -25,7 +27,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 credentials: "include"
             }
         )
@@ -45,7 +50,10 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
                 body: JSON.stringify({ cred: loginCred }),
                 credentials: "include"
             }
@@ -73,7 +81,8 @@ export const toWebAuthnPubKey = async ({
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
                 },
                 body: JSON.stringify({ username: passkeyName }),
                 credentials: "include"
@@ -102,7 +111,8 @@ export const toWebAuthnPubKey = async ({
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
                 },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
