@@ -12,12 +12,12 @@ export const toWebAuthnPubKey = async ({
     passkeyName,
     passkeyServerUrl,
     mode = WebAuthnMode.Login,
-    passkeyServerHeaders = {}
+    headers = {}
 }: {
     passkeyName: string
     passkeyServerUrl: string
     mode: WebAuthnMode
-    passkeyServerHeaders: Record<string, string>
+    headers: Record<string, string>
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     let authenticatorIdHash: Hex
@@ -27,7 +27,7 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: { "Content-Type": "application/json", ...headers },
                 credentials: "include"
             }
         )
@@ -47,7 +47,7 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/login/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: { "Content-Type": "application/json", ...headers },
                 body: JSON.stringify({ cred: loginCred }),
                 credentials: "include"
             }
@@ -74,7 +74,7 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/register/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: { "Content-Type": "application/json", ...headers },
                 body: JSON.stringify({ username: passkeyName }),
                 credentials: "include"
             }
@@ -101,7 +101,7 @@ export const toWebAuthnPubKey = async ({
             `${passkeyServerUrl}/register/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...passkeyServerHeaders },
+                headers: { "Content-Type": "application/json", ...headers },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
                     username: passkeyName,
