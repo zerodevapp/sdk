@@ -130,12 +130,11 @@ export const toWebAuthnSigner = async <
     client: Client<TTransport, TChain, undefined>,
     { webAuthnKey }: WebAuthnModularSignerParams
 ): Promise<WeightedSigner> => {
-    const chainId = await getChainId(client)
-
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
+            const chainId = await getChainId(client)
             return signMessageUsingWebAuthn(message, chainId, [
                 { id: webAuthnKey.authenticatorId, type: "public-key" }
             ])
