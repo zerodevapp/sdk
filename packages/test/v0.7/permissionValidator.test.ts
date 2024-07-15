@@ -737,7 +737,7 @@ describe("Permission kernel Account", () => {
         "Smart account client send transaction with CallPolicy V0.0.1",
         async () => {
             const callPolicy = await toCallPolicy({
-                policyAddress: CALL_POLICY_CONTRACT_V0_0_1,
+                policyVersion: CallPolicyVersion.V0_0_1,
                 permissions: [
                     {
                         abi: TEST_ERC20Abi,
@@ -821,7 +821,7 @@ describe("Permission kernel Account", () => {
         "Smart account client send transaction with CallPolicy V0.0.2",
         async () => {
             const callPolicy = await toCallPolicy({
-                policyAddress: CALL_POLICY_CONTRACT_V0_0_2,
+                policyVersion: CallPolicyVersion.V0_0_2,
                 permissions: [
                     {
                         abi: TEST_ERC20Abi,
