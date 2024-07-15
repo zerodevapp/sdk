@@ -1,3 +1,4 @@
+import type { KernelSmartAccount } from "@zerodev/sdk"
 import {
     AccountOrClientNotFoundError,
     parseAccount,
@@ -94,7 +95,9 @@ export async function sendTransaction<
     }
 
     const subAccount = parseAccount(account_) as YiSubAccount<entryPoint>
-    const account = subAccount.masterAccount
+    const account = parseAccount(
+        subAccount.masterAccount
+    ) as KernelSmartAccount<entryPoint>
     const chainId = client.chain ? client.chain.id : await getChainId(client)
 
     if (!to) throw new Error("Missing to address")
@@ -126,9 +129,12 @@ export async function sendTransaction<
         value: value || BigInt(0),
         data: data || "0x"
     })
+
     const callData = await account.encodeCallData(
         transfersCallData?.length
-            ? [...transfersCallData, wrappedCallData]
+            ? Array.isArray(wrappedCallData)
+                ? [...transfersCallData, ...wrappedCallData]
+                : [...transfersCallData, wrappedCallData]
             : wrappedCallData
     )
 

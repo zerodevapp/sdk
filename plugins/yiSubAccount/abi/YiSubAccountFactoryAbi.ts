@@ -2,7 +2,11 @@ export const YiSubAccountFactoryAbi = [
     {
         type: "constructor",
         inputs: [
-            { name: "_dm", type: "address", internalType: "contract YiDm" }
+            {
+                name: "_dm",
+                type: "address",
+                internalType: "contract IDelegationManager"
+            }
         ],
         stateMutability: "nonpayable"
     },

@@ -2,7 +2,11 @@ export const YiSubAccountAbi = [
     {
         type: "constructor",
         inputs: [
-            { name: "_dm", type: "address", internalType: "contract YiDm" }
+            {
+                name: "_dm",
+                type: "address",
+                internalType: "contract IDelegationManager"
+            }
         ],
         stateMutability: "nonpayable"
     },
@@ -10,7 +14,13 @@ export const YiSubAccountAbi = [
         type: "function",
         name: "dm",
         inputs: [],
-        outputs: [{ name: "", type: "address", internalType: "contract YiDm" }],
+        outputs: [
+            {
+                name: "",
+                type: "address",
+                internalType: "contract IDelegationManager"
+            }
+        ],
         stateMutability: "view"
     },
     {
@@ -34,7 +44,7 @@ export const YiSubAccountAbi = [
     {
         type: "function",
         name: "initialize",
-        inputs: [{ name: "_master", type: "address", internalType: "address" }],
+        inputs: [{ name: "_root", type: "address", internalType: "address" }],
         outputs: [],
         stateMutability: "nonpayable"
     },

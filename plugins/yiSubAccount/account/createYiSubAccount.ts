@@ -27,7 +27,7 @@ import {
     encodeFunctionData,
     toHex
 } from "viem"
-import { YiDelegationManagerAbi } from "../abi/YiDelegationManagerAbi"
+import { DelegationManagerAbi } from "../abi/DelegationManagerAbi"
 import { YiSubAccountAbi } from "../abi/YiSubAccountAbi"
 import { YiSubAccountFactoryAbi } from "../abi/YiSubAccountFactoryAbi"
 import { MAGIC_BYTES, YiSubAccountVersionToAddressesMap } from "../constants"
@@ -42,11 +42,18 @@ export type YiSubAccount<
     delegationManagerAddress: Address
     getCallData: (
         args: Parameters<YiSubAccount<entryPoint>["encodeCallData"]>[0]
-    ) => Promise<{
-        to: Address
-        value: bigint
-        data: Hex
-    }>
+    ) => Promise<
+        | {
+              to: Address
+              value: bigint
+              data: Hex
+          }
+        | {
+              to: Address
+              value: bigint
+              data: Hex
+          }[]
+    >
 }
 
 const getYiSubAccountInitData = async ({
@@ -240,27 +247,65 @@ export async function createYiSubAccount<
         if (Array.isArray(tx)) {
             throw new Error("Batch call not supported yet")
         }
-        const data = concatHex([
-            accountAddress,
-            encodeAbiParameters(
+        const data = encodeAbiParameters(
+            [
+                {
+                    name: "delegations",
+                    type: "tuple[]",
+                    components: [
+                        { name: "delegate", type: "address" },
+                        { name: "delegator", type: "address" },
+                        { name: "authority", type: "bytes32" },
+                        {
+                            name: "caveats",
+                            type: "tuple[]",
+                            components: [
+                                { type: "address" },
+                                { type: "bytes" },
+                                { type: "bytes" }
+                            ]
+                        },
+                        { name: "salt", type: "uint256" },
+                        { name: "signature", type: "bytes" }
+                    ]
+                }
+            ],
+            [
                 [
-                    { type: "bytes" },
-                    { type: "bytes" },
-                    { type: "bytes" },
-                    { type: "bytes" }
-                ],
-                [await getInitCode(), "0x", "0x", "0x"]
-            )
-        ])
-        return {
+                    {
+                        delegator: accountAddress,
+                        delegate: masterAccount.address,
+                        authority:
+                            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                        caveats: [],
+                        salt: 0n,
+                        signature: "0x"
+                    }
+                ]
+            ]
+        )
+        const callData = {
             to: delegationManagerAddress,
             data: encodeFunctionData({
-                abi: YiDelegationManagerAbi,
+                abi: DelegationManagerAbi,
                 functionName: "redeemDelegation",
                 args: [data, tx]
             }),
             value: 0n
         }
+        const initCode = await getInitCode()
+        if (initCode === "0x") return callData
+
+        return [
+            {
+                to: factoryAddress,
+                data: parseFactoryAddressAndCallDataFromAccountInitCode(
+                    initCode
+                )[1],
+                value: 0n
+            },
+            callData
+        ]
     }
 
     return {
@@ -320,6 +365,7 @@ export async function createYiSubAccount<
                     message
                 })
 
+                let sig: Hex
                 if (
                     masterSignature
                         .toLowerCase()
@@ -346,9 +392,47 @@ export async function createYiSubAccount<
                         ],
                         masterSignature
                     )
-                    return decodedSig[2]
+                    sig = decodedSig[2]
+                } else {
+                    sig = masterSignature
                 }
-                return masterSignature
+                return encodeAbiParameters(
+                    [
+                        {
+                            name: "delegation",
+                            type: "tuple",
+                            components: [
+                                { name: "delegate", type: "address" },
+                                { name: "delegator", type: "address" },
+                                { name: "authority", type: "bytes32" },
+                                {
+                                    name: "caveats",
+                                    type: "tuple[]",
+                                    components: [
+                                        { type: "address" },
+                                        { type: "bytes" },
+                                        { type: "bytes" }
+                                    ]
+                                },
+                                { name: "salt", type: "uint256" },
+                                { name: "signature", type: "bytes" }
+                            ]
+                        },
+                        { name: "signature", type: "bytes" }
+                    ],
+                    [
+                        {
+                            delegator: accountAddress,
+                            delegate: masterAccount.address,
+                            authority:
+                                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                            caveats: [],
+                            salt: 0n,
+                            signature: "0x"
+                        },
+                        sig
+                    ]
+                )
             },
             signTransaction: () => {
                 throw new SignTransactionNotSupportedBySmartAccount()
@@ -356,6 +440,7 @@ export async function createYiSubAccount<
             signTypedData: async (typedData) => {
                 let masterSignature =
                     await masterAccount.signTypedData(typedData)
+                let sig: Hex
                 if (
                     masterSignature
                         .toLowerCase()
@@ -382,9 +467,47 @@ export async function createYiSubAccount<
                         ],
                         masterSignature
                     )
-                    return decodedSig[2]
+                    sig = decodedSig[2]
+                } else {
+                    sig = masterSignature
                 }
-                return masterSignature
+                return encodeAbiParameters(
+                    [
+                        {
+                            name: "delegation",
+                            type: "tuple",
+                            components: [
+                                { name: "delegate", type: "address" },
+                                { name: "delegator", type: "address" },
+                                { name: "authority", type: "bytes32" },
+                                {
+                                    name: "caveats",
+                                    type: "tuple[]",
+                                    components: [
+                                        { type: "address" },
+                                        { type: "bytes" },
+                                        { type: "bytes" }
+                                    ]
+                                },
+                                { name: "salt", type: "uint256" },
+                                { name: "signature", type: "bytes" }
+                            ]
+                        },
+                        { name: "signature", type: "bytes" }
+                    ],
+                    [
+                        {
+                            delegator: accountAddress,
+                            delegate: masterAccount.address,
+                            authority:
+                                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                            caveats: [],
+                            salt: 0n,
+                            signature: "0x"
+                        },
+                        sig
+                    ]
+                )
             },
             signUserOperation: () => {
                 throw new Error("signUserOperation not supported")

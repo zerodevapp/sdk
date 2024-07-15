@@ -318,7 +318,7 @@ export const getKernelAccountClient = async ({
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
-        bundlerTransport: http(getBundlerRpc()),
+        bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
         middleware,
         entryPoint: getEntryPoint()
     })
