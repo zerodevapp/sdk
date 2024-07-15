@@ -103,6 +103,8 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
         paymasterVerificationGasLimit: Hex
         paymasterPostOpGasLimit: Hex
         paymasterData: Hex
+        maxFeePerGas?: Hex
+        maxPriorityFeePerGas?: Hex
         paymasterAndData?: never
     }
 
@@ -115,6 +117,10 @@ export const sponsorUserOperation = async <entryPoint extends EntryPoint>(
             responseV07.paymasterVerificationGasLimit
         ),
         paymasterPostOpGasLimit: BigInt(responseV07.paymasterPostOpGasLimit),
-        paymasterData: responseV07.paymasterData
+        paymasterData: responseV07.paymasterData,
+        maxFeePerGas: response.maxFeePerGas && BigInt(response.maxFeePerGas),
+        maxPriorityFeePerGas:
+            response.maxPriorityFeePerGas &&
+            BigInt(response.maxPriorityFeePerGas)
     } as SponsorUserOperationReturnType<entryPoint>
 }

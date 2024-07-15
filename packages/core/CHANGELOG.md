@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.3
+
+### Patch Changes
+
+- Fixed sponsorUserOperation to return max fees values for Alchemy provider
+
 ## 5.3.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.3.0-alpha-3
+
+### Patch Changes
+
+- Made passkeys server headers more flexible
+
 ## 5.3.0-alpha-2
 
 ### Patch Changes

@@ -68,7 +68,6 @@ export function parseAndNormalizeSig(derSig: Hex): { r: bigint; s: bigint } {
 }
 
 type PasskeyValidatorSerializedData = {
-    credentials: string
     entryPoint: Hex
     validatorAddress: Hex
     pubKeyX: bigint

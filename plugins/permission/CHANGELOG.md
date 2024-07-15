@@ -4,8 +4,7 @@
 
 ### Patch Changes
 
--   Add ONE_OF condition to CallPolicy, and corresponding contract has been updated.
--   Should specify CallPolicy contract version with `policyAddress` when using `toCallPolicy`
+- Separated webauthn signer and webauthn key module
 
 ## 5.3.1
 

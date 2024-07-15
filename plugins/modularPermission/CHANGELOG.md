@@ -1,5 +1,11 @@
 # @zerodev/modular-permission
 
+## 5.3.2
+
+### Patch Changes
+
+- Made passkeys server headers more flexible
+
 ## 5.3.1
 
 ### Patch Changes
