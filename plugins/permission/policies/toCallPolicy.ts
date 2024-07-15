@@ -1,6 +1,10 @@
 import type { Abi, Address } from "viem"
 import { concatHex, pad } from "viem"
-import { CALL_POLICY_CONTRACT_V0_0_1, CALL_POLICY_CONTRACT_V0_0_2, PolicyFlags } from "../constants.js"
+import {
+    CALL_POLICY_CONTRACT_V0_0_1,
+    CALL_POLICY_CONTRACT_V0_0_2,
+    PolicyFlags
+} from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 import {
     encodePermissionData,
@@ -13,7 +17,10 @@ export enum CallPolicyVersion {
     V0_0_2 = "0.0.2"
 }
 
-export const getCallPolicyAddress = (policyVersion: CallPolicyVersion, policyAddress?: Address): Address => {
+export const getCallPolicyAddress = (
+    policyVersion: CallPolicyVersion,
+    policyAddress?: Address
+): Address => {
     if (policyAddress) return policyAddress
     switch (policyVersion) {
         case CallPolicyVersion.V0_0_1:

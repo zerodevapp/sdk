@@ -33,11 +33,11 @@ import {
     CALL_POLICY_CONTRACT_V0_0_1,
     CALL_POLICY_CONTRACT_V0_0_2,
     ECDSA_SIGNER_CONTRACT,
+    GAS_POLICY_CONTRACT,
     type Policy,
     SUDO_POLICY_CONTRACT,
     deserializePermissionAccount,
-    serializePermissionAccount,
-    GAS_POLICY_CONTRACT
+    serializePermissionAccount
 } from "../../../plugins/permission"
 import {
     CallPolicyVersion,
@@ -1106,9 +1106,8 @@ describe("Permission kernel Account", () => {
                 account: deserilizedAccount,
                 middleware: {
                     gasPrice: async () =>
-                        (
-                            await pimlicoBundlerClient.getUserOperationGasPrice()
-                        ).fast,
+                        (await pimlicoBundlerClient.getUserOperationGasPrice())
+                            .fast,
                     sponsorUserOperation: async ({ userOperation }) => {
                         const zeroDevPaymaster = getZeroDevPaymasterClient()
                         return zeroDevPaymaster.sponsorUserOperation({
