@@ -1,6 +1,7 @@
 import {
     type Abi,
     type AbiFunction,
+    type Address,
     type GetAbiItemParameters,
     type Hex,
     encodeAbiParameters,
@@ -10,11 +11,16 @@ import {
     toFunctionSelector,
     toHex
 } from "viem"
-import type {
-    CombinedArgs,
-    GeneratePermissionFromArgsParameters,
-    ParamRule,
-    PermissionCore
+import {
+    CALL_POLICY_CONTRACT_V0_0_1,
+    CALL_POLICY_CONTRACT_V0_0_2
+} from "../constants.js"
+import {
+    type CombinedArgs,
+    type GeneratePermissionWithPolicyAddressParameters,
+    ParamCondition,
+    type ParamRule,
+    type PermissionCore
 } from "./types.js"
 
 export function getPermissionFromABI<
@@ -23,8 +29,9 @@ export function getPermissionFromABI<
 >({
     abi,
     args,
-    functionName
-}: GeneratePermissionFromArgsParameters<TAbi, TFunctionName>): Pick<
+    functionName,
+    policyAddress
+}: GeneratePermissionWithPolicyAddressParameters<TAbi, TFunctionName>): Pick<
     PermissionCore,
     "selector" | "rules"
 > {
@@ -46,10 +53,16 @@ export function getPermissionFromABI<
     let paramRules: ParamRule[] = []
     if (args && Array.isArray(args)) {
         paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)
-            .map(
-                (arg, i) =>
-                    arg && {
-                        param: pad(
+            .map((arg, i) => {
+                if (!arg) return null
+                if (policyAddress === CALL_POLICY_CONTRACT_V0_0_1) {
+                    if (arg.condition === ParamCondition.ONE_OF) {
+                        throw Error(
+                            "The ONE_OF condition is only supported from CALL_POLICY_CONTRACT_V0_0_2 onwards. Please use CALL_POLICY_CONTRACT_V0_0_2 or a later version."
+                        )
+                    }
+                    return {
+                        params: pad(
                             isHex(arg.value)
                                 ? arg.value
                                 : toHex(
@@ -60,7 +73,35 @@ export function getPermissionFromABI<
                         offset: i * 32,
                         condition: arg.condition
                     }
-            )
+                }
+                let params: Hex[]
+                if (arg.condition === ParamCondition.ONE_OF) {
+                    params = arg.value.map((value) =>
+                        pad(
+                            isHex(value)
+                                ? value
+                                : toHex(value as Parameters<typeof toHex>[0]),
+                            { size: 32 }
+                        )
+                    )
+                } else {
+                    params = [
+                        pad(
+                            isHex(arg.value)
+                                ? arg.value
+                                : toHex(
+                                      arg.value as Parameters<typeof toHex>[0]
+                                  ),
+                            { size: 32 }
+                        )
+                    ]
+                }
+                return {
+                    params,
+                    offset: i * 32,
+                    condition: arg.condition
+                }
+            })
             .filter((rule) => rule) as ParamRule[]
     }
     return {
@@ -70,7 +111,8 @@ export function getPermissionFromABI<
 }
 
 export const encodePermissionData = (
-    permission: PermissionCore | PermissionCore[]
+    permission: PermissionCore | PermissionCore[],
+    policyAddress: Address
 ): Hex => {
     const permissionParam = {
         components: [
@@ -102,10 +144,12 @@ export const encodePermissionData = (
                         name: "offset",
                         type: "uint64"
                     },
-
                     {
-                        name: "param",
-                        type: "bytes32"
+                        name: "params",
+                        type:
+                            policyAddress === CALL_POLICY_CONTRACT_V0_0_2
+                                ? "bytes32[]"
+                                : "bytes32"
                     }
                 ],
                 name: "rules",
