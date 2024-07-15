@@ -1,6 +1,6 @@
 import type { Abi, Address } from "viem"
 import { concatHex, pad } from "viem"
-import { PolicyFlags } from "../constants.js"
+import { CALL_POLICY_CONTRACT_V0_0_1, CALL_POLICY_CONTRACT_V0_0_2, PolicyFlags } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
 import {
     encodePermissionData,
@@ -8,10 +8,26 @@ import {
 } from "./callPolicyUtils.js"
 import { CallType, type Permission } from "./types.js"
 
+export enum CallPolicyVersion {
+    V0_0_1 = "0.0.1",
+    V0_0_2 = "0.0.2"
+}
+
+export const getCallPolicyAddress = (policyVersion: CallPolicyVersion, policyAddress?: Address): Address => {
+    if (policyAddress) return policyAddress
+    switch (policyVersion) {
+        case CallPolicyVersion.V0_0_1:
+            return CALL_POLICY_CONTRACT_V0_0_1
+        case CallPolicyVersion.V0_0_2:
+            return CALL_POLICY_CONTRACT_V0_0_2
+    }
+}
+
 export type CallPolicyParams<
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string
 > = PolicyParams & {
+    policyVersion: CallPolicyVersion
     permissions?: Permission<TAbi, TFunctionName>[]
 }
 
@@ -21,14 +37,17 @@ export function toCallPolicy<
 >({
     policyAddress,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
+    policyVersion,
     permissions = []
 }: CallPolicyParams<TAbi, TFunctionName>): Policy {
+    const callPolicyAddress = getCallPolicyAddress(policyVersion, policyAddress)
+
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
             abi: perm.abi as Abi,
             functionName: perm.functionName as string,
             args: perm.args as [],
-            policyAddress
+            policyAddress: callPolicyAddress
         })
     )
 
@@ -46,7 +65,7 @@ export function toCallPolicy<
 
     const encodedPermissionData = encodePermissionData(
         permissions,
-        policyAddress
+        callPolicyAddress
     )
 
     return {
@@ -54,10 +73,11 @@ export function toCallPolicy<
             return encodedPermissionData
         },
         getPolicyInfoInBytes: () => {
-            return concatHex([policyFlag, policyAddress])
+            return concatHex([policyFlag, callPolicyAddress])
         },
         policyParams: {
             type: "call",
+            policyVersion,
             policyAddress,
             policyFlag,
             permissions
