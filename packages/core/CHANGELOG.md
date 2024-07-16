@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.4
+
+### Patch Changes
+
+- Simplified the process by making the `getChainId` call the only required action.
+
 ## 5.3.3
 
 ### Patch Changes
