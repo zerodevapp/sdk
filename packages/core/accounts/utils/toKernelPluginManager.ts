@@ -71,7 +71,7 @@ export async function toKernelPluginManager<
         )
     }
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    let chainId: number;
+    let chainId: number
     const activeValidator = regular || sudo
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
