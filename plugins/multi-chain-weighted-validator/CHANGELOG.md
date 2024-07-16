@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.3.0-alpha-4
+
+### Patch Changes
+
+- Simplified the process by making the `getChainId` call the only required action.
+
 ## 5.3.0-alpha-3
 
 ### Patch Changes
