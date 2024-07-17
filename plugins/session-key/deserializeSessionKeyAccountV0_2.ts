@@ -10,9 +10,9 @@ import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Address, Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
-import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js";
 
 export const deserializeSessionKeyAccountV0_2 = async <
     entryPoint extends EntryPoint,
