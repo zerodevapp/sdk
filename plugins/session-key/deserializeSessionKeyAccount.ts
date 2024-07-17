@@ -14,6 +14,7 @@ import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js";
 
 export const deserializeSessionKeyAccount = async <
     entryPoint extends EntryPoint,
@@ -24,7 +25,8 @@ export const deserializeSessionKeyAccount = async <
     entryPointAddress: entryPoint,
     kernelVersion: GetKernelVersion<entryPoint>,
     sessionKeyAccountParams: string,
-    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
+    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>,
+    validatorAddress: Address = SESSION_KEY_VALIDATOR_ADDRESS
 ): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -41,7 +43,8 @@ export const deserializeSessionKeyAccount = async <
         signer,
         validatorData: params.sessionKeyParams,
         entryPoint: entryPointAddress,
-        kernelVersion
+        kernelVersion,
+        validatorAddress
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(
