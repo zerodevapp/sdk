@@ -119,6 +119,11 @@ const signMessageUsingWebAuthn = async (
     return encodedSignature
 }
 
+export enum PasskeyValidatorContractVersion {
+    V0_0_1 = "0.0.1",
+    V0_0_2 = "0.0.2" // this version is only supported by kernel versions "0.3.0 || 0.3.1"
+}
+
 export async function toPasskeyValidator<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
@@ -129,11 +134,13 @@ export async function toPasskeyValidator<
         webAuthnKey,
         entryPoint: entryPointAddress,
         kernelVersion,
+        validatorContractVersion,
         validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
+        validatorContractVersion: PasskeyValidatorContractVersion
         validatorAddress?: Address
     }
 ): Promise<
@@ -144,6 +151,7 @@ export async function toPasskeyValidator<
     const validatorAddress = getValidatorAddress(
         entryPointAddress,
         kernelVersion,
+        validatorContractVersion,
         _validatorAddress
     )
     // Fetch chain id
