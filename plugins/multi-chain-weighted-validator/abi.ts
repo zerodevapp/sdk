@@ -101,6 +101,13 @@ export const MultiChainWeightedValidatorAbi = [
     },
     {
         type: "function",
+        name: "renew",
+        inputs: [{ name: "_data", type: "bytes", internalType: "bytes" }],
+        outputs: [],
+        stateMutability: "nonpayable"
+    },
+    {
+        type: "function",
         name: "proposalStatus",
         inputs: [
             {

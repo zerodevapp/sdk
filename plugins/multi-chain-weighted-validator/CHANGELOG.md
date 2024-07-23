@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.3.0-alpha-5
+
+### Patch Changes
+
+- Added support for `renew` signers config.
+
 ## 5.3.0-alpha-4
 
 ### Patch Changes
