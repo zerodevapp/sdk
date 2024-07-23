@@ -20,8 +20,8 @@ import {
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
-    zeroAddress,
-    encodeFunctionData
+    encodeFunctionData,
+    zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
@@ -353,26 +353,30 @@ export function getUpdateConfigCall<entryPoint extends EntryPoint>(
     return {
         to: validatorAddress,
         value: 0n,
-        data: encodeFunctionData({abi: MultiChainWeightedValidatorAbi, functionName: "renew", args: [
-            concatHex([
-                toHex(config.threshold, { size: 3 }),
-                toHex(config.delay || 0, { size: 6 }),
-                encodeAbiParameters(
-                    [{ name: "guardiansData", type: "bytes[]" }],
-                    [
-                        configSigners.map((cfg) =>
-                            concatHex([
-                                cfg.publicKey.length === 42
-                                    ? SIGNER_TYPE.ECDSA
-                                    : SIGNER_TYPE.PASSKEY,
-                                toHex(cfg.weight, { size: 3 }),
-                                cfg.publicKey
-                            ])
-                        )
-                    ]
-                )
-            ])
-        ]})
+        data: encodeFunctionData({
+            abi: MultiChainWeightedValidatorAbi,
+            functionName: "renew",
+            args: [
+                concatHex([
+                    toHex(config.threshold, { size: 3 }),
+                    toHex(config.delay || 0, { size: 6 }),
+                    encodeAbiParameters(
+                        [{ name: "guardiansData", type: "bytes[]" }],
+                        [
+                            configSigners.map((cfg) =>
+                                concatHex([
+                                    cfg.publicKey.length === 42
+                                        ? SIGNER_TYPE.ECDSA
+                                        : SIGNER_TYPE.PASSKEY,
+                                    toHex(cfg.weight, { size: 3 }),
+                                    cfg.publicKey
+                                ])
+                            )
+                        ]
+                    )
+                ])
+            ]
+        })
     }
 }
 

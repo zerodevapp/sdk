@@ -33,9 +33,9 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createMultiChainWeightedValidator,
-    getValidatorAddress,
+    getCurrentSigners,
     getUpdateConfigCall,
-    getCurrentSigners
+    getValidatorAddress
 } from "./toMultiChainWeightedValidatorPlugin.js"
 
 export {
