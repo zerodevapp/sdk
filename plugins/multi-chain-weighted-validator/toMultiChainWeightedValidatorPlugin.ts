@@ -20,7 +20,8 @@ import {
     type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
-    zeroAddress
+    zeroAddress,
+    encodeFunctionData
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
@@ -309,33 +310,120 @@ export async function createMultiChainWeightedValidator<
     }
 }
 
-// [TODO]
-// export function getUpdateConfigCall<entryPoint extends EntryPoint>(
-//     entryPointAddress: entryPoint,
-//     newConfig: WeightedValidatorConfig
-// ): {
-//     to: Address
-//     value: bigint
-//     data: Hex
-// } {
-//     const signers = [...newConfig.signers].sort(sortByPublicKey)
-//     const validatorAddress = getValidatorAddress(entryPointAddress)
+// TODO: move to client actions?
+// -- approveUpdateConfigUserOp
+// -- sendUpdateConfigUserOp
+export function getUpdateConfigCall<entryPoint extends EntryPoint>(
+    entryPointAddress: entryPoint,
+    config: WeightedValidatorConfig
+): {
+    to: Address
+    value: bigint
+    data: Hex
+} {
+    const validatorAddress = getValidatorAddress(entryPointAddress)
 
-//     return {
-//         to: validatorAddress,
-//         value: 0n,
-//         data: encodeFunctionData({
-//             abi: MultiChainWeightedValidatorAbi,
-//             functionName: "renew",
-//             args: [
-//                 signers.map((signer) => signer.address) ?? [],
-//                 signers.map((signer) => signer.weight) ?? [],
-//                 newConfig.threshold,
-//                 newConfig.delay || 0
-//             ]
-//         })
-//     }
-// }
+    // Check if sum of weights is equal or greater than threshold
+    let totalWeight = 0
+    for (const signer of config.signers) {
+        totalWeight += signer.weight
+    }
+    if (totalWeight < config.threshold) {
+        throw new Error(
+            `Sum of weights (${totalWeight}) is less than threshold (${config.threshold})`
+        )
+    }
+
+    // sort signers by address in descending order
+    const configSigners = config
+        ? [...config.signers]
+              .map((signer) =>
+                  typeof signer.publicKey === "object"
+                      ? {
+                            ...signer,
+                            publicKey: encodeWebAuthnPubKey(
+                                signer.publicKey
+                            ) as Hex
+                        }
+                      : { ...signer, publicKey: signer.publicKey as Hex }
+              )
+              .sort(sortByPublicKey)
+        : []
+
+    return {
+        to: validatorAddress,
+        value: 0n,
+        data: encodeFunctionData({abi: MultiChainWeightedValidatorAbi, functionName: "renew", args: [
+            concatHex([
+                toHex(config.threshold, { size: 3 }),
+                toHex(config.delay || 0, { size: 6 }),
+                encodeAbiParameters(
+                    [{ name: "guardiansData", type: "bytes[]" }],
+                    [
+                        configSigners.map((cfg) =>
+                            concatHex([
+                                cfg.publicKey.length === 42
+                                    ? SIGNER_TYPE.ECDSA
+                                    : SIGNER_TYPE.PASSKEY,
+                                toHex(cfg.weight, { size: 3 }),
+                                cfg.publicKey
+                            ])
+                        )
+                    ]
+                )
+            ])
+        ]})
+    }
+}
+
+export async function getCurrentSigners<
+    entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined
+>(
+    client: Client<TTransport, TChain, undefined>,
+    {
+        entryPoint: entryPointAddress,
+        multiChainWeightedAccountAddress
+    }: {
+        entryPoint: entryPoint
+        multiChainWeightedAccountAddress: Address
+    }
+): Promise<Array<{ encodedPublicKey: Hex; weight: number }>> {
+    const validatorAddress = getValidatorAddress(entryPointAddress)
+
+    const multiChainWeightedStorage = await getAction(
+        client,
+        readContract,
+        "readContract"
+    )({
+        abi: MultiChainWeightedValidatorAbi,
+        address: validatorAddress,
+        functionName: "multiChainWeightedStorage",
+        args: [multiChainWeightedAccountAddress]
+    })
+
+    const guardiansLength = multiChainWeightedStorage[3]
+
+    const signers: Array<{ encodedPublicKey: Hex; weight: number }> = []
+    for (let i = 0; i < guardiansLength; i++) {
+        const guardian = await getAction(
+            client,
+            readContract,
+            "readContract"
+        )({
+            abi: MultiChainWeightedValidatorAbi,
+            address: validatorAddress,
+            functionName: "guardian",
+            args: [BigInt(i), multiChainWeightedAccountAddress]
+        })
+        signers.push({
+            encodedPublicKey: guardian[2],
+            weight: guardian[1]
+        })
+    }
+    return signers
+}
 
 // [TODO]
 // export async function getCurrentSigners<

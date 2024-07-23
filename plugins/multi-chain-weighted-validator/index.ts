@@ -33,11 +33,15 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createMultiChainWeightedValidator,
-    getValidatorAddress
+    getValidatorAddress,
+    getUpdateConfigCall,
+    getCurrentSigners
 } from "./toMultiChainWeightedValidatorPlugin.js"
 
 export {
     createMultiChainWeightedValidator,
+    getUpdateConfigCall,
+    getCurrentSigners,
     type WeightedValidatorConfig,
     type WeightedSigner,
     getValidatorAddress,
