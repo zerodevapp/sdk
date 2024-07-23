@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.4.0
+
+### Patch Changes
+
+- Added new contract version for PasskeyValidator
+
 ## 5.3.5
 
 ### Patch Changes
