@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.1
+
+### Patch Changes
+
+- Added new contract version for WebAuthnSigner
+
 ## 5.4.0
 
 ### Patch Changes
