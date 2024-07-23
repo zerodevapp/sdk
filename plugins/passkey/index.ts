@@ -7,9 +7,9 @@ import { WebAuthnMode, toWebAuthnKey } from "@zerodev/webauthn-key"
 import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import { type Address, zeroAddress } from "viem"
 import {
+    PasskeyValidatorContractVersion,
     deserializePasskeyValidator,
-    toPasskeyValidator,
-    PasskeyValidatorContractVersion
+    toPasskeyValidator
 } from "./toPasskeyValidator.js"
 
 export {
@@ -20,7 +20,6 @@ export {
     WebAuthnMode,
     PasskeyValidatorContractVersion
 }
-
 
 export const kernelVersionRangeToContractVersionToValidator: {
     [key: string]: { [key: string]: Address }
@@ -43,7 +42,9 @@ export const getValidatorAddress = <entryPoint extends EntryPoint>(
     validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
     const passKeyValidatorAddress = Object.entries(
         kernelVersionRangeToContractVersionToValidator
-    ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]?.[validatorContractVersion]
+    ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]?.[
+        validatorContractVersion
+    ]
 
     if (!passKeyValidatorAddress && !validatorAddress) {
         throw new Error(
