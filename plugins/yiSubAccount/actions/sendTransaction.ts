@@ -96,7 +96,7 @@ export async function sendTransaction<
 
     const subAccount = parseAccount(account_) as YiSubAccount<entryPoint>
     const account = parseAccount(
-        subAccount.masterAccount
+        subAccount.delegateAccount
     ) as KernelSmartAccount<entryPoint>
     const chainId = client.chain ? client.chain.id : await getChainId(client)
 

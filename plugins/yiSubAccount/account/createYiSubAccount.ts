@@ -30,7 +30,11 @@ import {
 import { DelegationManagerAbi } from "../abi/DelegationManagerAbi"
 import { YiSubAccountAbi } from "../abi/YiSubAccountAbi"
 import { YiSubAccountFactoryAbi } from "../abi/YiSubAccountFactoryAbi"
-import { MAGIC_BYTES, YiSubAccountVersionToAddressesMap } from "../constants"
+import {
+    MAGIC_BYTES,
+    YiSubAccountVersionToDMMap,
+    YiSubAccountVersionToFactoryMap
+} from "../constants"
 import type { YI_SUB_ACCOUNT_VERSION_TYPE } from "../types"
 
 export type YiSubAccount<
@@ -38,7 +42,7 @@ export type YiSubAccount<
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
 > = SmartAccount<entryPoint, "yiSubAccount", transport, chain> & {
-    masterAccount: KernelSmartAccount<entryPoint, transport, chain>
+    delegateAccount: KernelSmartAccount<entryPoint, transport, chain>
     delegationManagerAddress: Address
     getCallData: (
         args: Parameters<YiSubAccount<entryPoint>["encodeCallData"]>[0]
@@ -107,15 +111,15 @@ const getYiSubAccountInitCodeWithParentInitCode = async <
 >({
     index,
     factoryAddress,
-    masterAccount
+    delegateAccount
 }: {
     index: bigint
     factoryAddress: Address
-    masterAccount: KernelSmartAccount<entryPoint, TTransport, TChain>
+    delegateAccount: KernelSmartAccount<entryPoint, TTransport, TChain>
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getYiSubAccountInitData({
-        masterAccountAddress: masterAccount.address
+        masterAccountAddress: delegateAccount.address
     })
 
     // Build the account init code
@@ -127,7 +131,7 @@ const getYiSubAccountInitCodeWithParentInitCode = async <
             args: [
                 initialisationData,
                 toHex(index, { size: 32 }),
-                await masterAccount.generateInitCode()
+                await delegateAccount.generateInitCode()
             ]
         })
     ])
@@ -178,7 +182,8 @@ export type CreateYiSubAccountParameters<
     TChain extends Chain | undefined = Chain | undefined
 > = {
     entryPoint: entryPoint
-    masterAccount: KernelSmartAccount<entryPoint, TTransport, TChain>
+    delegateAccount: KernelSmartAccount<entryPoint, TTransport, TChain>
+    masterAccountAddress: Address
     index?: bigint
     factoryAddress?: Address
     delegationManagerAddress?: Address
@@ -194,7 +199,8 @@ export async function createYiSubAccount<
     client: Client<TTransport, TChain, undefined>,
     {
         entryPoint: entryPointAddress,
-        masterAccount,
+        delegateAccount,
+        masterAccountAddress,
         yiSubAccountVersion: _,
         deployedAccountAddress,
         factoryAddress: _factoryAddress,
@@ -204,16 +210,16 @@ export async function createYiSubAccount<
 ): Promise<YiSubAccount<entryPoint, TTransport, TChain>> {
     const factoryAddress =
         _factoryAddress ??
-        YiSubAccountVersionToAddressesMap["0.0.1"].factoryAddress
+        YiSubAccountVersionToFactoryMap["0.0.1"].factoryAddress
     const delegationManagerAddress =
         _delegationManagerAddress ??
-        YiSubAccountVersionToAddressesMap["0.0.1"].delegationManagerAddress
+        YiSubAccountVersionToDMMap["1.0.0"].delegationManagerAddress
 
     const generateInitCode = () =>
         getYiSubAccountInitCode({
             index,
             factoryAddress,
-            masterAccountAddress: masterAccount.address
+            masterAccountAddress
         })
     const accountAddress =
         deployedAccountAddress ??
@@ -274,7 +280,7 @@ export async function createYiSubAccount<
                 [
                     {
                         delegator: accountAddress,
-                        delegate: masterAccount.address,
+                        delegate: masterAccountAddress,
                         authority:
                             "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                         caveats: [],
@@ -309,7 +315,7 @@ export async function createYiSubAccount<
     }
 
     return {
-        masterAccount,
+        delegateAccount,
         delegationManagerAddress,
         getCallData,
         ...toSmartAccount({
@@ -318,7 +324,7 @@ export async function createYiSubAccount<
             entryPoint: entryPointAddress,
             address: accountAddress,
             encodeCallData: async (tx) => {
-                return masterAccount.encodeCallData(await getCallData(tx))
+                return delegateAccount.encodeCallData(await getCallData(tx))
             },
             encodeDeployCallData: async (_tx) => {
                 throw new Error("encodeDeployCallData not supported yet")
@@ -352,7 +358,7 @@ export async function createYiSubAccount<
                     await getYiSubAccountInitCodeWithParentInitCode({
                         factoryAddress,
                         index,
-                        masterAccount
+                        delegateAccount
                     })
                 )[1]
             },
@@ -361,7 +367,7 @@ export async function createYiSubAccount<
                 throw new Error("getNonce not supported")
             },
             signMessage: async ({ message }) => {
-                let masterSignature = await masterAccount.signMessage({
+                let masterSignature = await delegateAccount.signMessage({
                     message
                 })
 
@@ -423,7 +429,7 @@ export async function createYiSubAccount<
                     [
                         {
                             delegator: accountAddress,
-                            delegate: masterAccount.address,
+                            delegate: masterAccountAddress,
                             authority:
                                 "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                             caveats: [],
@@ -438,8 +444,9 @@ export async function createYiSubAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature =
-                    await masterAccount.signTypedData(typedData)
+                let masterSignature = await delegateAccount.signTypedData(
+                    typedData
+                )
                 let sig: Hex
                 if (
                     masterSignature
@@ -498,7 +505,7 @@ export async function createYiSubAccount<
                     [
                         {
                             delegator: accountAddress,
-                            delegate: masterAccount.address,
+                            delegate: masterAccountAddress,
                             authority:
                                 "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                             caveats: [],

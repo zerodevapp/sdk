@@ -31,7 +31,7 @@ export async function sendUserOperation<
     if (!account_) throw new AccountOrClientNotFoundError()
 
     const account = (parseAccount(account_) as YiSubAccount<entryPoint>)
-        .masterAccount
+        .delegateAccount
 
     const { userOperation: _userOperation } = args
 

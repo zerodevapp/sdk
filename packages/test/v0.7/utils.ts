@@ -11,11 +11,7 @@ import {
     createWeightedECDSAValidator,
     getRecoveryAction
 } from "@zerodev/weighted-ecdsa-validator"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V07,
-    createBundlerClient
-} from "permissionless"
+import { ENTRYPOINT_ADDRESS_V07, createBundlerClient } from "permissionless"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import {
     createPimlicoBundlerClient,
@@ -62,8 +58,13 @@ import type { AddressInfo } from "net"
 import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
 import {
     type YiSubAccount,
-    createYiSubAccount
+    createYiSubAccount,
+    createMultiTenantSessionAccount,
+    toDelegationHash
 } from "../../../plugins/yiSubAccount/index.js"
+import { getChainId } from "viem/actions"
+import { ROOT_AUTHORITY } from "../../../plugins/yiSubAccount/constants.js"
+import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
@@ -177,9 +178,87 @@ export const getYiSubAccount = async (
 
     return createYiSubAccount(publicClient, {
         entryPoint: getEntryPoint(),
-        masterAccount,
+        delegateAccount: masterAccount,
+        masterAccountAddress: masterAccount.address,
         yiSubAccountVersion: "0.0.1",
         index: subAccountIndex
+    })
+}
+
+export const getMultiTenantSessionAccount = async () => {
+    const privateKey = generatePrivateKey()
+    const sessionKeyAccount = privateKeyToAccount(privateKey)
+    const publicClient = await getPublicClient()
+    const yiSubAccount = await getYiSubAccount()
+    console.log({ sessionKeyAccountAddress: sessionKeyAccount.address })
+
+    const chainId = await getChainId(publicClient)
+
+    const caveat = toAllowedTargetsEnforcer({
+        targets: [sessionKeyAccount.address]
+    })
+    const caveats = [caveat]
+
+    const sessionSignature = await yiSubAccount.delegateAccount.signTypedData({
+        domain: {
+            chainId,
+            name: "DelegationManager",
+            verifyingContract: yiSubAccount.delegationManagerAddress,
+            version: "1"
+        },
+        types: {
+            Delegation: [
+                {
+                    name: "delegate",
+                    type: "address"
+                },
+                {
+                    name: "delegator",
+                    type: "address"
+                },
+                {
+                    name: "authority",
+                    type: "bytes32"
+                },
+                {
+                    name: "caveats",
+                    type: "Caveat[]"
+                },
+                {
+                    name: "salt",
+                    type: "uint256"
+                }
+            ],
+            Caveat: [
+                { name: "enforcer", type: "address" },
+                { name: "terms", type: "bytes" }
+            ]
+        },
+        primaryType: "Delegation",
+        message: {
+            delegate: sessionKeyAccount.address,
+            delegator: yiSubAccount.delegateAccount.address,
+            authority: toDelegationHash({
+                delegate: yiSubAccount.delegateAccount.address,
+                delegator: yiSubAccount.address,
+                authority: ROOT_AUTHORITY,
+                caveats: [],
+                salt: 0n,
+                signature: "0x"
+            }),
+            caveats,
+            salt: 0n
+        }
+    })
+    console.log({ caveat })
+
+    return createMultiTenantSessionAccount(publicClient, {
+        masterAccountAddress: yiSubAccount.delegateAccount.address,
+        subAccountAddress: yiSubAccount.address,
+        caveats,
+        entryPoint: getEntryPoint(),
+        sessionKeyAccount,
+        sessionSignature
     })
 }
 
