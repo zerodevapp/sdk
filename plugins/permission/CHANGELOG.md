@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.2
+
+### Patch Changes
+
+- Added v0.0.3 contract version for CallPolicy
+
 ## 5.4.1
 
 ### Patch Changes

@@ -3,6 +3,7 @@ import { concatHex, pad } from "viem"
 import {
     CALL_POLICY_CONTRACT_V0_0_1,
     CALL_POLICY_CONTRACT_V0_0_2,
+    CALL_POLICY_CONTRACT_V0_0_3,
     PolicyFlags
 } from "../constants.js"
 import type { Policy, PolicyParams } from "../types.js"
@@ -14,7 +15,8 @@ import { CallType, type Permission } from "./types.js"
 
 export enum CallPolicyVersion {
     V0_0_1 = "0.0.1",
-    V0_0_2 = "0.0.2"
+    V0_0_2 = "0.0.2",
+    V0_0_3 = "0.0.3"
 }
 
 export const getCallPolicyAddress = (
@@ -27,6 +29,8 @@ export const getCallPolicyAddress = (
             return CALL_POLICY_CONTRACT_V0_0_1
         case CallPolicyVersion.V0_0_2:
             return CALL_POLICY_CONTRACT_V0_0_2
+        case CallPolicyVersion.V0_0_3:
+            return CALL_POLICY_CONTRACT_V0_0_3
     }
 }
 
