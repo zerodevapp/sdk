@@ -26,7 +26,6 @@ export const CALL_POLICY_CONTRACT_V0_0_2 =
  */
 export const CALL_POLICY_CONTRACT_V0_0_3 =
     "0xB3CB5f502250360335614df1421f2AAbE98CE503"
-    
 
 /**
  * @dev CALL_POLICY_CONTRACT_V0_0_4 updates
