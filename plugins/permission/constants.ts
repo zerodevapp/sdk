@@ -26,6 +26,14 @@ export const CALL_POLICY_CONTRACT_V0_0_2 =
  */
 export const CALL_POLICY_CONTRACT_V0_0_3 =
     "0xB3CB5f502250360335614df1421f2AAbE98CE503"
+    
+
+/**
+ * @dev CALL_POLICY_CONTRACT_V0_0_4 updates
+ * - Fixed erc4337 storage violation with custom storage slot (Works with Alchemy now)
+ */
+export const CALL_POLICY_CONTRACT_V0_0_4 =
+    "0x9a52283276A0ec8740DF50bF01B28A80D880eaf2"
 
 export const GAS_POLICY_CONTRACT = "0xaeFC5AbC67FfD258abD0A3E54f65E70326F84b23"
 export const RATE_LIMIT_POLICY_CONTRACT =

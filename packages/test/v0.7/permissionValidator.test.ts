@@ -1062,6 +1062,86 @@ describe("Permission kernel Account", () => {
     )
 
     test(
+        "Smart account client send transaction with CallPolicy V0.0.4",
+        async () => {
+            const callPolicy = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_4,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Smart account client send transaction with serialization/deserialization",
         async () => {
             const callPolicy = await toCallPolicy({

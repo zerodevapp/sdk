@@ -11,10 +11,7 @@ import {
     toFunctionSelector,
     toHex
 } from "viem"
-import {
-    CALL_POLICY_CONTRACT_V0_0_1,
-    CALL_POLICY_CONTRACT_V0_0_2
-} from "../constants.js"
+import { CALL_POLICY_CONTRACT_V0_0_1 } from "../constants.js"
 import {
     type CombinedArgs,
     type GeneratePermissionWithPolicyAddressParameters,
@@ -147,9 +144,9 @@ export const encodePermissionData = (
                     {
                         name: "params",
                         type:
-                            policyAddress === CALL_POLICY_CONTRACT_V0_0_2
-                                ? "bytes32[]"
-                                : "bytes32"
+                            policyAddress === CALL_POLICY_CONTRACT_V0_0_1
+                                ? "bytes32"
+                                : "bytes32[]"
                     }
                 ],
                 name: "rules",

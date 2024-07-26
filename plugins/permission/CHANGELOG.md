@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.3
+
+### Patch Changes
+
+- Fixed erc4337 storage violation with custom storage slot (Works with Alchemy now)
+
 ## 5.4.2
 
 ### Patch Changes
