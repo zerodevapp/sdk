@@ -195,7 +195,7 @@ export const getMultiTenantSessionAccount = async () => {
     const chainId = await getChainId(publicClient)
 
     const caveat = toAllowedTargetsEnforcer({
-        targets: [sessionKeyAccount.address]
+        targets: [zeroAddress]
     })
     const caveats = [caveat]
 
