@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.5
+
+### Patch Changes
+
+- Added invalidateNonce and getKernelV3ModuleCurrentNonce actions in kernelAccountClient
+
 ## 5.3.4
 
 ### Patch Changes

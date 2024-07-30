@@ -30,8 +30,6 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
-    CALL_POLICY_CONTRACT_V0_0_1,
-    CALL_POLICY_CONTRACT_V0_0_2,
     ECDSA_SIGNER_CONTRACT,
     GAS_POLICY_CONTRACT,
     type Policy,
@@ -478,6 +476,99 @@ describe("Permission kernel Account", () => {
             } catch (error) {
                 errMsg = error.message
             }
+            expect(errMsg).toMatch(
+                "UserOperation reverted during simulation with reason: 0x756688fe"
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client revoke permissionValidator with invalidate nonce",
+        async () => {
+            const {
+                accountWithSudo,
+                accountWithSudoAndRegular,
+                accountWithRegular
+            } = await getSignerToPermissionKernelAccountAndPlugin([
+                await toSudoPolicy({})
+            ])
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: accountWithSudoAndRegular,
+                middleware: {
+                    sponsorUserOperation: async ({ userOperation }) => {
+                        const zeroDevPaymaster = getZeroDevPaymasterClient()
+                        return zeroDevPaymaster.sponsorUserOperation({
+                            userOperation,
+                            entryPoint: getEntryPoint()
+                        })
+                    }
+                }
+            })
+            const permissionSmartAccountClientWithRegular =
+                await getKernelAccountClient({
+                    account: accountWithRegular,
+                    middleware: {
+                        sponsorUserOperation: async ({ userOperation }) => {
+                            const zeroDevPaymaster = getZeroDevPaymasterClient()
+                            return zeroDevPaymaster.sponsorUserOperation({
+                                userOperation,
+                                entryPoint: getEntryPoint()
+                            })
+                        }
+                    }
+                })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Install Transaction hash:", response)
+            const permissionSmartAccountClientSudo =
+                await getKernelAccountClient({
+                    account: accountWithSudo,
+                    middleware: {
+                        sponsorUserOperation: async ({ userOperation }) => {
+                            const zeroDevPaymaster = getZeroDevPaymasterClient()
+                            return zeroDevPaymaster.sponsorUserOperation({
+                                userOperation,
+                                entryPoint: getEntryPoint()
+                            })
+                        }
+                    }
+                })
+
+            const currentNonce =
+                await permissionSmartAccountClientSudo.getKernelV3ModuleCurrentNonce(
+                    {}
+                )
+            console.log({ currentNonce })
+
+            const response2 =
+                await permissionSmartAccountClientSudo.invalidateNonce({
+                    nonceToSet: currentNonce + 1
+                })
+            console.log("Invalidate nonce transaction hash:", response2)
+
+            let errMsg = ""
+            try {
+                await permissionSmartAccountClientWithRegular.sendTransaction({
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                })
+            } catch (error) {
+                errMsg = error.message
+            }
+            console.log(errMsg)
             expect(errMsg).toMatch(
                 "UserOperation reverted during simulation with reason: 0x756688fe"
             )
