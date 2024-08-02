@@ -1,5 +1,17 @@
 # @zerodev/sdk
 
+## 5.3.7
+
+### Patch Changes
+
+- Reverted viem version pin
+
+## 5.3.6
+
+### Patch Changes
+
+- SDK core pinned to viem 2.16.x
+
 ## 5.3.5
 
 ### Patch Changes
