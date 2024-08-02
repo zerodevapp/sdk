@@ -40,7 +40,12 @@ export const deserializePermissionAccount = async <
     entryPointAddress: entryPoint,
     kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,
-    modularSigner?: ModularSigner
+    modularSigner?: ModularSigner,
+    factoryAddress?: `0x${string}`,
+    metaFactoryAddress?: `0x${string}`,
+    accountImplementationAddress?: `0x${string}`,
+    signerContractAddress?: `0x${string}`,
+
 ) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -53,6 +58,7 @@ export const deserializePermissionAccount = async <
     let signer: ModularSigner
     if (params.privateKey)
         signer = toECDSASigner({
+            ...(signerContractAddress ? { signerContractAddress } : {}),
             signer: privateKeyToAccount(
                 params.privateKey
             ) as SmartAccountSigner<"privateKey", `0x${string}`>
@@ -91,7 +97,10 @@ export const deserializePermissionAccount = async <
         kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress
+        deployedAccountAddress: params.accountParams.accountAddress,
+        ...(factoryAddress ? { factoryAddress } : {}),
+        ...(metaFactoryAddress ? { metaFactoryAddress } : {}),
+        ...(accountImplementationAddress ? { accountImplementationAddress } : {}),
     })
 }
 
