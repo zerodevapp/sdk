@@ -482,7 +482,8 @@ export class KernelEIP1193Provider<
         return {
             grantedPermissions: permissions.map((permission) => ({
                 type: permission.type,
-                data: permission.data
+                data: permission.data,
+                policies: permission.policies
             })),
             expiry: params[0].expiry,
             permissionsContext: permissionValidator.getIdentifier()

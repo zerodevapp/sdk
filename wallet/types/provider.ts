@@ -1,5 +1,6 @@
 import type { EntryPoint } from "permissionless/types"
 import type { Address, Hex } from "viem"
+import type { Policy } from "./policy"
 
 export type PaymasterServiceCapability = {
     url: string
@@ -44,13 +45,16 @@ export type GetCallsResult = {
 export type ShowCallsParams = string
 
 // wallet_issuePermissions
+export type Permission = {
+    type: string
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    data: Record<string, any>
+    required: boolean
+    policies: Policy[]
+}
+
 export type GrantPermissionsParams = {
-    permissions: {
-        type: string
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-        data: Record<string, any>
-        required: boolean
-    }[]
+    permissions: Permission[]
     expiry: number
 }
 

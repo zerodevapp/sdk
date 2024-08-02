@@ -71,7 +71,7 @@ export async function toKernelPluginManager<
         )
     }
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    const chainId = await getChainId(client)
+    let chainId: number
     const activeValidator = regular || sudo
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
@@ -181,6 +181,9 @@ export async function toKernelPluginManager<
             accountAddress,
             kernelVersion
         )
+        if (!chainId) {
+            chainId = await getChainId(client)
+        }
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {
             const typeData = await getPluginsEnableTypedDataV1({
@@ -237,6 +240,9 @@ export async function toKernelPluginManager<
 
         const validatorNonce = await getKernelV3Nonce(client, accountAddress)
 
+        if (!chainId) {
+            chainId = await getChainId(client)
+        }
         const typedData = await getPluginsEnableTypedDataV2({
             accountAddress,
             chainId,

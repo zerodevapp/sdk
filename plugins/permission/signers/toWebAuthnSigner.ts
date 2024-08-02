@@ -12,6 +12,7 @@ import {
 import type { TypedData } from "abitype"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
+    type Address,
     type Chain,
     type Client,
     type LocalAccount,
@@ -25,11 +26,20 @@ import {
 import { type SignableMessage, encodeAbiParameters } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
-import { WEBAUTHN_SIGNER_CONTRACT } from "../constants.js"
+import {
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_1,
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_2
+} from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
+
+export enum WebAuthnSignerVersion {
+    V0_0_1 = "0.0.1",
+    V0_0_2 = "0.0.2"
+}
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
     webAuthnKey: WebAuthnKey
+    webAuthnSignerVersion: WebAuthnSignerVersion
 }
 
 const signMessageUsingWebAuthn = async (
@@ -111,16 +121,35 @@ const signMessageUsingWebAuthn = async (
     return encodedSignature
 }
 
+export const getWebAuthnSignerAddress = (
+    webAuthnSignerVersion: WebAuthnSignerVersion,
+    webAuthnSignerAddress?: Address
+): Address => {
+    if (webAuthnSignerAddress) return webAuthnSignerAddress
+    switch (webAuthnSignerVersion) {
+        case WebAuthnSignerVersion.V0_0_1:
+            return WEBAUTHN_SIGNER_CONTRACT_V0_0_1
+        case WebAuthnSignerVersion.V0_0_2:
+            return WEBAUTHN_SIGNER_CONTRACT_V0_0_2
+    }
+}
+
 export const toWebAuthnSigner = async <
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, undefined>,
     {
-        signerContractAddress = WEBAUTHN_SIGNER_CONTRACT,
-        webAuthnKey
+        signerContractAddress,
+        webAuthnKey,
+        webAuthnSignerVersion
     }: WebAuthnModularSignerParams
 ): Promise<ModularSigner> => {
+    const webAuthnSignerAddress = getWebAuthnSignerAddress(
+        webAuthnSignerVersion,
+        signerContractAddress
+    )
+
     const chainId = await getChainId(client)
 
     const account: LocalAccount = toAccount({
@@ -161,7 +190,7 @@ export const toWebAuthnSigner = async <
 
     return {
         account,
-        signerContractAddress,
+        signerContractAddress: webAuthnSignerAddress,
         getSignerData: () => {
             return encodeAbiParameters(
                 [

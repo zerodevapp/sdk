@@ -125,9 +125,6 @@ export async function createMultiChainWeightedValidator<
               .sort(sortByPublicKey)
         : []
 
-    // Fetch chain id
-    const chainId = await getChainId(client)
-
     const getIndexOfSigner = () => {
         return configSigners.findIndex(
             (_signer) =>
@@ -212,6 +209,9 @@ export async function createMultiChainWeightedValidator<
                     userOperation.signature
                 ))
             }
+
+            // Fetch chain id
+            const chainId = await getChainId(client)
             // last signer signs for userOpHash
             const userOpHash = getUserOperationHash({
                 userOperation: {

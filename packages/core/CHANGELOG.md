@@ -1,5 +1,35 @@
 # @zerodev/sdk
 
+## 5.3.8
+
+### Patch Changes
+
+- Added initConfig support in createKernelAccount
+
+## 5.3.7
+
+### Patch Changes
+
+- Reverted viem version pin
+
+## 5.3.6
+
+### Patch Changes
+
+- SDK core pinned to viem 2.16.x
+
+## 5.3.5
+
+### Patch Changes
+
+- Added invalidateNonce and getKernelV3ModuleCurrentNonce actions in kernelAccountClient
+
+## 5.3.4
+
+### Patch Changes
+
+- Simplified the process by making the `getChainId` call the only required action.
+
 ## 5.3.3
 
 ### Patch Changes

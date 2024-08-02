@@ -1,4 +1,5 @@
 export type {
+    Permission,
     PaymasterServiceCapability,
     SendCallsParams,
     SendCallsResult,

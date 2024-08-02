@@ -4,9 +4,17 @@ import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import type { KernelSmartAccount } from "../../accounts/index.js"
 import {
+    type GetKernelV3ModuleCurrentNonceParameters,
+    getKernelV3ModuleCurrentNonce
+} from "../../actions/account-client/getKernelV3ModuleCurrentNonce.js"
+import {
     type GetUserOperationGasPriceReturnType,
     getUserOperationGasPrice
 } from "../../actions/account-client/getUserOperationGasPrice.js"
+import {
+    type InvalidateNonceParameters,
+    invalidateNonce
+} from "../../actions/account-client/invalidateNonce.js"
 import type {
     SignUserOperationParameters,
     SignUserOperationReturnType,
@@ -106,6 +114,42 @@ export type KernelAccountClientActions<
             TChainOverride
         >
     ) => Promise<Hash>
+    /**
+     * Creates, signs, and sends a kernel v3 module nonce invalidation transaction to the network.
+     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     *
+     *
+     * @param args - {@link InvalidateNonceParameters}
+     * @returns The [Transaction](https://viem.sh/docs/glossary/terms.html#transaction) hash. {@link SendTransactionReturnType}
+     */
+    invalidateNonce: <
+        TChainOverride extends Chain | undefined = Chain | undefined
+    >(
+        args: InvalidateNonceParameters<
+            entryPoint,
+            TChain,
+            TSmartAccount,
+            TChainOverride
+        >
+    ) => Promise<Hash>
+    /**
+     * Creates, signs, and sends a transaction to fetch KernelV3 module nonce to the network.
+     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     *
+     *
+     * @param args - {@link GetKernelV3ModuleCurrentNonceParameters}
+     * @returns nonce
+     */
+    getKernelV3ModuleCurrentNonce: <
+        TChainOverride extends Chain | undefined = Chain | undefined
+    >(
+        args: GetKernelV3ModuleCurrentNonceParameters<
+            entryPoint,
+            TChain,
+            TSmartAccount,
+            TChainOverride
+        >
+    ) => Promise<number>
 }
 
 export function kernelAccountClientActions<entryPoint extends EntryPoint>({
@@ -141,6 +185,20 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                     TChain,
                     TSmartAccount
                 >
-            )
+            ),
+        invalidateNonce: async (args) =>
+            invalidateNonce(client, {
+                ...args,
+                middleware
+            } as InvalidateNonceParameters<entryPoint, TChain, TSmartAccount>),
+        getKernelV3ModuleCurrentNonce: async (args) =>
+            getKernelV3ModuleCurrentNonce(client, {
+                ...args,
+                middleware
+            } as GetKernelV3ModuleCurrentNonceParameters<
+                entryPoint,
+                TChain,
+                TSmartAccount
+            >)
     })
 }
