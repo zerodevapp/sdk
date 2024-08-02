@@ -1,6 +1,6 @@
 import { EventEmitter } from "events"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import { createKernelAccountClient } from "@zerodev/sdk"
+import { addressToEmptyAccount, createKernelAccountClient } from "@zerodev/sdk"
 import type { SponsorUserOperationReturnType } from "@zerodev/sdk/actions"
 import { createZeroDevPaymasterClient } from "@zerodev/sdk/clients"
 import {
@@ -36,6 +36,7 @@ import type {
     EIP1193Parameters,
     EIP1193RequestFn,
     Hash,
+    LocalAccount,
     SendTransactionParameters,
     Transport
 } from "viem"
@@ -426,8 +427,16 @@ export class KernelEIP1193Provider<
         const permissions = params[0].permissions
 
         // signer
-        const sessionPrivateKey = generatePrivateKey()
-        const sessionKeySigner = privateKeyToAccount(sessionPrivateKey)
+        let sessionPrivateKey: Hex = "0x"
+        let sessionKeySigner: LocalAccount
+        if (params[0].signer?.type === "account") {
+            sessionKeySigner = addressToEmptyAccount(params[0].signer.data.id)
+        } else if (params[0].signer?.type === "wallet") {
+            sessionPrivateKey = generatePrivateKey()
+            sessionKeySigner = privateKeyToAccount(sessionPrivateKey)
+        } else {
+            throw new Error("Signer not supported")
+        }
 
         const delegations: Delegation[] = [
             {
