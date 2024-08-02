@@ -1,14 +1,15 @@
 import { EventEmitter } from "events"
-import {
-    deserializePermissionAccount,
-    serializePermissionAccount,
-    toPermissionValidator
-} from "@zerodev/permissions"
-import { toECDSASigner } from "@zerodev/permissions/signers"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk"
+import { createKernelAccountClient } from "@zerodev/sdk"
 import type { SponsorUserOperationReturnType } from "@zerodev/sdk/actions"
 import { createZeroDevPaymasterClient } from "@zerodev/sdk/clients"
+import {
+    type Delegation,
+    ROOT_AUTHORITY,
+    createSessionAccount,
+    getDelegationTupleType
+} from "@zerodev/session-account"
+import { dmActionsEip7710 } from "@zerodev/session-account/clients"
 import {
     type BundlerClient,
     ENTRYPOINT_ADDRESS_V06,
@@ -38,7 +39,15 @@ import type {
     SendTransactionParameters,
     Transport
 } from "viem"
-import { http, type Hex, isHex, toHex } from "viem"
+import {
+    http,
+    type Hex,
+    decodeAbiParameters,
+    encodeAbiParameters,
+    isHex,
+    keccak256,
+    toHex
+} from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import type {
     GetCallsParams,
@@ -49,7 +58,7 @@ import type {
     SendCallsResult,
     SessionType
 } from "./types"
-import { getPolicies, validatePermissions } from "./utils/permissions"
+import { validatePermissions } from "./utils/permissions"
 import { KernelLocalStorage } from "./utils/storage"
 
 const WALLET_CAPABILITIES_STORAGE_KEY = "WALLET_CAPABILITIES"
@@ -290,27 +299,34 @@ export class KernelEIP1193Provider<
         )
 
         const sessionId = capabilities?.permissions?.sessionId
+            ? keccak256(capabilities?.permissions?.sessionId)
+            : undefined
         const session = permission?.[accountAddress]?.[
             toHex(accountChainId)
         ]?.find((session) => session.sessionId === sessionId)
         if (session && this.kernelClient?.account?.client) {
-            const sessionSigner = await toECDSASigner({
-                signer: privateKeyToAccount(session.signerPrivateKey)
-            })
-            const sessionKeyAccount = (await deserializePermissionAccount(
+            const sessionSigner = privateKeyToAccount(session.signerPrivateKey)
+
+            const [delegations] = decodeAbiParameters(
+                [getDelegationTupleType(true)],
+                session.approval as Hex
+            )
+            const sessionAccount = await createSessionAccount(
                 this.kernelClient.account.client as Client<
                     Transport,
                     Chain,
                     undefined
                 >,
-                this.kernelClient.account.entryPoint,
-                this.kernelClient.account.kernelVersion,
-                session.approval,
-                sessionSigner
-            )) as unknown as KernelSmartAccount<entryPoint, Transport, Chain>
+                {
+                    entryPoint: this.kernelClient.account.entryPoint,
+                    sessionKeyAccount: sessionSigner,
+                    delegations: delegations as Delegation[]
+                }
+            )
 
             const kernelClient = createKernelAccountClient({
-                account: sessionKeyAccount,
+                account:
+                    sessionAccount as unknown as KernelSmartAccount<entryPoint>,
                 chain: this.kernelClient.chain,
                 entryPoint: this.kernelClient.account.entryPoint,
                 bundlerTransport: http(this.kernelClient.transport.url),
@@ -332,7 +348,7 @@ export class KernelEIP1193Provider<
             })
         }
 
-        const encodedeCall = await kernelAccountClient.account.encodeCallData(
+        const encodedCall = await kernelAccountClient.account.encodeCallData(
             calls.map((call) => ({
                 to: call.to ?? kernelAccountClient.account.address,
                 value: call.value ? BigInt(call.value) : 0n,
@@ -342,7 +358,7 @@ export class KernelEIP1193Provider<
 
         return await kernelAccountClient.sendUserOperation({
             userOperation: {
-                callData: encodedeCall
+                callData: encodedCall
             }
         })
     }
@@ -406,59 +422,44 @@ export class KernelEIP1193Provider<
                 .permissions.permissionTypes
 
         validatePermissions(params[0], capabilities)
-        const policies = getPolicies(params[0])
+        // const policies = getPolicies(params[0])
         const permissions = params[0].permissions
 
         // signer
         const sessionPrivateKey = generatePrivateKey()
-        const sessionKeySigner = toECDSASigner({
-            signer: privateKeyToAccount(sessionPrivateKey)
-        })
+        const sessionKeySigner = privateKeyToAccount(sessionPrivateKey)
 
-        const client = this.kernelClient.account.client as Client<
-            Transport,
-            Chain | undefined,
-            undefined
-        >
-
-        const permissionValidator = await toPermissionValidator(client, {
-            entryPoint: this.kernelClient.account.entryPoint,
-            kernelVersion: this.kernelClient.account.kernelVersion,
-            signer: sessionKeySigner,
-            policies: policies
-        })
-
-        const sudoValidator =
-            this.kernelClient.account.kernelPluginManager.sudoValidator
-        const sessionKeyAccount = await createKernelAccount(client, {
-            entryPoint: this.kernelClient.account.entryPoint,
-            kernelVersion: this.kernelClient.account.kernelVersion,
-            plugins: {
-                sudo: sudoValidator,
-                regular: permissionValidator
+        const delegations: Delegation[] = [
+            {
+                delegator: this.kernelClient.account.address,
+                delegate: sessionKeySigner.address,
+                authority: ROOT_AUTHORITY,
+                caveats: [],
+                salt: 0n,
+                signature: "0x"
             }
+        ]
+        const kernelClientDM = this.kernelClient.extend(
+            dmActionsEip7710<entryPoint, KernelSmartAccount<entryPoint>>()
+        )
+
+        const mainDeleGatorSignature = await kernelClientDM.signDelegation({
+            delegation: delegations[0]
         })
-        const enabledSignature =
-            await sessionKeyAccount.kernelPluginManager.getPluginEnableSignature(
-                sessionKeyAccount.address
-            )
-        const sessionKeyAccountWithSig = await createKernelAccount(client, {
-            entryPoint: this.kernelClient.account.entryPoint,
-            kernelVersion: this.kernelClient.account.kernelVersion,
-            plugins: {
-                sudo: sudoValidator,
-                regular: permissionValidator,
-                pluginEnableSignature: enabledSignature
-            }
-        })
+        delegations[0].signature = mainDeleGatorSignature
+        const encodedDelegations = encodeAbiParameters(
+            [getDelegationTupleType(true)],
+            [delegations]
+        )
 
         const createdPermissions =
             this.getItemFromStorage(WALLET_PERMISSION_STORAGE_KEY) || {}
+
         const newPermission = {
-            sessionId: permissionValidator.getIdentifier(),
+            sessionId: keccak256(encodedDelegations),
             entryPoint: this.kernelClient.account.entryPoint,
             signerPrivateKey: sessionPrivateKey,
-            approval: await serializePermissionAccount(sessionKeyAccountWithSig)
+            approval: encodedDelegations
         }
 
         const address = this.kernelClient.account.address
@@ -486,7 +487,7 @@ export class KernelEIP1193Provider<
                 policies: permission.policies
             })),
             expiry: params[0].expiry,
-            permissionsContext: permissionValidator.getIdentifier()
+            permissionsContext: encodedDelegations
         }
     }
 

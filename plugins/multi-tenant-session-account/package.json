@@ -1,0 +1,74 @@
+{
+    "name": "@zerodev/session-account",
+    "version": "5.3.0-alpha-2",
+    "author": "ZeroDev",
+    "main": "./_cjs/index.js",
+    "module": "./_esm/index.js",
+    "types": "./_types/index.d.ts",
+    "typings": "./_types/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "description": "A utility library for working with ERC-4337",
+    "keywords": ["ethereum", "erc-4337", "eip-4337", "paymaster", "bundler"],
+    "license": "MIT",
+    "files": [
+        "_esm",
+        "_cjs",
+        "_types",
+        "./**/*.ts",
+        "!_esm/**/*.tsbuildinfo",
+        "!_cjs/**/*.tsbuildinfo",
+        "!_types/**/*.tsbuildinfo",
+        "!.env",
+        "!./**/*.test.ts",
+        "!.changeset"
+    ],
+    "exports": {
+        ".": {
+            "types": "./_types/index.d.ts",
+            "import": "./_esm/index.js",
+            "default": "./_cjs/index.js"
+        },
+        "./actions": {
+            "types": "./_types/actions/index.d.ts",
+            "import": "./_esm/actions/index.js",
+            "default": "./_cjs/actions/index.js"
+        },
+        "./types": {
+            "types": "./_types/types/index.d.ts",
+            "import": "./_esm/types/index.js",
+            "default": "./_cjs/types/index.js"
+        },
+        "./clients": {
+            "types": "./_types/clients/index.d.ts",
+            "import": "./_esm/clients/index.js",
+            "default": "./_cjs/clients/index.js"
+        },
+        "./enforcers": {
+            "types": "./_types/enforcers/index.d.ts",
+            "import": "./_esm/enforcers/index.js",
+            "default": "./_cjs/enforcers/index.js"
+        }
+    },
+    "scripts": {
+        "build": "bun run clean && bun run build:cjs && bun run build:esm && bun run build:types",
+        "build:cjs": "tsc --project ./tsconfig.build.json --module commonjs --outDir ./_cjs --removeComments --verbatimModuleSyntax false && printf '{\"type\":\"commonjs\"}' > ./_cjs/package.json",
+        "build:esm": "tsc --project ./tsconfig.build.json --module es2015 --outDir ./_esm && printf '{\"type\": \"module\",\"sideEffects\":false}' > ./_esm/package.json",
+        "build:types": "tsc --project ./tsconfig.build.json --module esnext --declarationDir ./_types --emitDeclarationOnly --declaration --declarationMap",
+        "clean": "rimraf _esm _cjs _types",
+        "changeset": "changeset",
+        "changeset:release": "bun run build && changeset publish",
+        "changeset:version": "changeset version && bun install --lockfile-only",
+        "format": "biome format . --write",
+        "lint": "biome check .",
+        "lint:fix": "bun run lint --apply"
+    },
+    "peerDependencies": {
+        "viem": "^2.16.3",
+        "permissionless": "^0.1.18",
+        "@zerodev/sdk": "^5.2.1"
+    },
+    "dependencies": {
+        "semver": "^7.6.0"
+    }
+}

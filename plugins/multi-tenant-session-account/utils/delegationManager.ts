@@ -1,4 +1,13 @@
-import { concatHex, encodeAbiParameters, keccak256, stringToHex } from "viem"
+import { KernelV3AccountAbi } from "@zerodev/sdk"
+import {
+    concatHex,
+    encodeAbiParameters,
+    encodeFunctionData,
+    keccak256,
+    stringToHex,
+    zeroAddress
+} from "viem"
+import { DMVersionToAddressMap } from "../constants"
 import type { Caveat, Delegation } from "../types"
 
 export const getDelegationTupleType = (isArray = false) => {
@@ -72,4 +81,16 @@ export const toDelegationHash = (delegation: Delegation) => {
             ]
         )
     )
+}
+
+export const getInstallDMAsExecutorCallData = () => {
+    return encodeFunctionData({
+        abi: KernelV3AccountAbi,
+        functionName: "installModule",
+        args: [
+            BigInt(2),
+            DMVersionToAddressMap["1.0.0"].delegationManagerAddress,
+            concatHex([zeroAddress, "0x"])
+        ]
+    })
 }

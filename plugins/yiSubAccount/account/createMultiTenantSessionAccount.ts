@@ -1,8 +1,15 @@
+import { fixSignedData } from "@zerodev/sdk"
+import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
+import {
+    type UserOperation,
+    getAccountNonce,
+    getUserOperationHash
+} from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
     type SmartAccount,
-    toSmartAccount,
-    type SmartAccountSigner
+    type SmartAccountSigner,
+    toSmartAccount
 } from "permissionless/accounts"
 import type {
     EntryPoint,
@@ -13,20 +20,22 @@ import {
     type Chain,
     type Client,
     type Hex,
-    type Transport,
     type LocalAccount,
+    type Transport,
+    type TypedData,
+    type TypedDataDefinition,
     concatHex,
     decodeAbiParameters,
     encodeAbiParameters,
-    toFunctionSelector,
     getAbiItem,
-    type TypedData,
-    type TypedDataDefinition,
     pad,
     parseSignature,
+    toFunctionSelector,
     toHex
 } from "viem"
 import { toAccount } from "viem/accounts"
+import { getChainId, signMessage, signTypedData } from "viem/actions"
+import { MultiTenantSessionAccountAbi } from "../abi/MultiTenantSessionAccountAbi"
 import {
     MAGIC_BYTES,
     MULTI_TENANT_SESSION_ACCOUNT_ADDRESS,
@@ -34,19 +43,10 @@ import {
     YiSubAccountVersionToDMMap
 } from "../constants"
 import type { Caveat, Delegation } from "../types"
-import { MultiTenantSessionAccountAbi } from "../abi/MultiTenantSessionAccountAbi"
 import {
     getDelegationTupleType,
     toDelegationHash
 } from "../utils/delegationManager"
-import { getChainId, signMessage, signTypedData } from "viem/actions"
-import {
-    type UserOperation,
-    getAccountNonce,
-    getUserOperationHash
-} from "permissionless"
-import { fixSignedData } from "@zerodev/sdk"
-import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
 
 export type MultiTenantSessionAccount<
     entryPoint extends EntryPoint,
@@ -457,9 +457,8 @@ export async function createMultiTenantSessionAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature = await sessionAccount.signTypedData(
-                    typedData
-                )
+                let masterSignature =
+                    await sessionAccount.signTypedData(typedData)
                 let sig: Hex
                 if (
                     masterSignature

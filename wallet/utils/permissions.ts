@@ -1,4 +1,5 @@
 import {
+    CallPolicyVersion,
     type SignatureCallerPolicyParams,
     toCallPolicy,
     toGasPolicy,
@@ -37,7 +38,12 @@ export const getPermissionPoliciy = (permission: Permission): Policy[] => {
             policies.push(toSudoPolicy({}))
             break
         case "contract-call":
-            policies.push(toCallPolicy(permission.data))
+            policies.push(
+                toCallPolicy({
+                    ...permission.data,
+                    policyVersion: CallPolicyVersion.V0_0_4
+                })
+            )
             break
         case "signature":
             policies.push(

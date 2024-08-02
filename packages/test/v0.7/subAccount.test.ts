@@ -24,6 +24,7 @@ import {
     zeroAddress
 } from "viem"
 import type { YiSubAccount } from "../../../plugins/yiSubAccount"
+import type { MultiTenantSessionAccount } from "../../../plugins/yiSubAccount"
 import type { YiSubAccountClient } from "../../../plugins/yiSubAccount/clients"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { config } from "../config"
@@ -39,7 +40,6 @@ import {
     getYiSubAccountClient,
     getZeroDevPaymasterClient
 } from "./utils"
-import type { MultiTenantSessionAccount } from "../../../plugins/yiSubAccount"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -426,9 +426,8 @@ describe("Yi SubAccount", () => {
                 }),
                 value: 0n
             }
-            const txHash = await yiSubAccountClient.sendTransaction(
-                mainCalldata
-            )
+            const txHash =
+                await yiSubAccountClient.sendTransaction(mainCalldata)
             console.log(
                 "transactionHash",
                 `https://sepolia.etherscan.io/tx/${txHash}`

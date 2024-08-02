@@ -55,16 +55,18 @@ import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
-import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
-import {
-    type YiSubAccount,
-    createYiSubAccount,
-    createMultiTenantSessionAccount,
-    toDelegationHash
-} from "../../../plugins/yiSubAccount/index.js"
 import { getChainId } from "viem/actions"
+import { createSessionAccount } from "../../../plugins/multi-tenant-session-account/index.js"
+import type { Delegation } from "../../../plugins/multi-tenant-session-account/types.js"
+import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
 import { ROOT_AUTHORITY } from "../../../plugins/yiSubAccount/constants.js"
 import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/index.js"
+import {
+    type YiSubAccount,
+    createMultiTenantSessionAccount,
+    createYiSubAccount,
+    toDelegationHash
+} from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
@@ -109,11 +111,16 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
     return ENTRYPOINT_ADDRESS_V07
 }
 
-export const getEcdsaKernelAccountWithRandomSigner = async () => {
-    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
+export const getEcdsaKernelAccountWithRandomSigner = async (
+    initConfig?: Hex[]
+) => {
+    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey(), initConfig)
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
+const getEcdsaKernelAccountWithPrivateKey = async (
+    privateKey: Hex,
+    initConfig?: Hex[]
+) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
@@ -132,7 +139,8 @@ const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
             sudo: ecdsaValidatorPlugin
         },
         index,
-        kernelVersion
+        kernelVersion,
+        initConfig
     })
 }
 
@@ -259,6 +267,20 @@ export const getMultiTenantSessionAccount = async () => {
         entryPoint: getEntryPoint(),
         sessionKeyAccount,
         sessionSignature
+    })
+}
+
+export const getSessionAccount = async (
+    delegations: Delegation[],
+    privateKey: Hex
+) => {
+    const sessionKeyAccount = privateKeyToAccount(privateKey)
+    const publicClient = await getPublicClient()
+
+    return createSessionAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        sessionKeyAccount,
+        delegations
     })
 }
 
