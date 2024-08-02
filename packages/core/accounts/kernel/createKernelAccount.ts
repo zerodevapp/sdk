@@ -68,7 +68,10 @@ export type KernelSmartAccount<
     encodeModuleInstallCallData: () => Promise<Hex>
 }
 
-export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
+export type CreateKernelAccountParameters<
+    entryPoint extends EntryPoint,
+    KernelVerion extends GetKernelVersion<entryPoint>
+> = {
     plugins:
         | Omit<
               KernelPluginManagerParams<entryPoint>,
@@ -82,6 +85,7 @@ export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     metaFactoryAddress?: Address
     deployedAccountAddress?: Address
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
 }
 
 /**
@@ -140,12 +144,14 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
     kernelPluginManager,
     initHook,
-    kernelVersion
+    kernelVersion,
+    initConfig
 }: {
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const { enableData, identifier, validatorAddress } =
@@ -187,7 +193,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
             initHook && kernelPluginManager.hook
                 ? await kernelPluginManager.hook?.getEnableData()
                 : "0x",
-            []
+            initConfig ?? []
         ]
     })
 }
@@ -207,7 +213,8 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
     kernelPluginManager,
     initHook,
-    kernelVersion
+    kernelVersion,
+    initConfig
 }: {
     index: bigint
     factoryAddress: Address
@@ -217,13 +224,15 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPoint>({
         entryPoint: entryPointAddress,
         kernelPluginManager,
         initHook,
-        kernelVersion
+        kernelVersion,
+        initConfig
     })
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -336,6 +345,7 @@ const getDefaultAddresses = <entryPoint extends EntryPoint>(
  */
 export async function createKernelAccount<
     entryPoint extends EntryPoint,
+    KernelVersion extends GetKernelVersion<entryPoint>,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -348,8 +358,9 @@ export async function createKernelAccount<
         accountImplementationAddress: _accountImplementationAddress,
         metaFactoryAddress: _metaFactoryAddress,
         deployedAccountAddress,
-        kernelVersion
-    }: CreateKernelAccountParameters<entryPoint>
+        kernelVersion,
+        initConfig
+    }: CreateKernelAccountParameters<entryPoint, KernelVersion>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
@@ -393,7 +404,8 @@ export async function createKernelAccount<
             entryPoint: entryPointAddress,
             kernelPluginManager,
             initHook,
-            kernelVersion
+            kernelVersion,
+            initConfig
         })
     }
 

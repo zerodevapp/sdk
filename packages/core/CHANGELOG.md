@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.8
+
+### Patch Changes
+
+- Added initConfig support in createKernelAccount
+
 ## 5.3.7
 
 ### Patch Changes
