@@ -272,7 +272,8 @@ export const getMultiTenantSessionAccount = async () => {
 
 export const getSessionAccount = async (
     delegations: Delegation[],
-    privateKey: Hex
+    privateKey: Hex,
+    delegatorInitCode?: Hex
 ) => {
     const sessionKeyAccount = privateKeyToAccount(privateKey)
     const publicClient = await getPublicClient()
@@ -280,7 +281,8 @@ export const getSessionAccount = async (
     return createSessionAccount(publicClient, {
         entryPoint: getEntryPoint(),
         sessionKeyAccount,
-        delegations
+        delegations,
+        delegatorInitCode
     })
 }
 

@@ -88,11 +88,6 @@ describe("Yi SubAccount", () => {
                 }
             }
         })
-        const tx = await kernelClient.sendTransaction({
-            to: kernelClient.account.address,
-            data: "0x"
-        })
-        console.log("installModule tx: ", tx)
 
         bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
 
@@ -125,7 +120,12 @@ describe("Yi SubAccount", () => {
         })
         console.log({ mainDeleGatorSignature })
         delegations[0].signature = mainDeleGatorSignature
-        sessionAccount = await getSessionAccount(delegations, privateSessionKey)
+        const initCode = await mainDelegatorAccount.getInitCode()
+        sessionAccount = await getSessionAccount(
+            delegations,
+            privateSessionKey,
+            initCode
+        )
         sessionAccountClient = await getKernelAccountClient({
             // @ts-ignore: fix return type error
             account: sessionAccount,

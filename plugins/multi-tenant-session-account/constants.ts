@@ -8,7 +8,7 @@ export const SUBACCOUNT_API_URL =
     "https://yield-api-kgjy.onrender.com/subaccount/transfers-data"
 
 export const MULTI_TENANT_SESSION_ACCOUNT_ADDRESS =
-    "0x9281227977251B5aD836f6F00069CC86a80Cb574"
+    "0x6F5c16285A19348258F8F0Eb7cBBC7f79E89b59C"
 
 export const ROOT_AUTHORITY =
     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"

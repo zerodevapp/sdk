@@ -308,8 +308,8 @@ export class KernelEIP1193Provider<
         if (session && this.kernelClient?.account?.client) {
             const sessionSigner = privateKeyToAccount(session.signerPrivateKey)
 
-            const [delegations] = decodeAbiParameters(
-                [getDelegationTupleType(true)],
+            const [delegations, delegatorInitCode] = decodeAbiParameters(
+                [getDelegationTupleType(true), { type: "bytes" }],
                 session.approval as Hex
             )
             const sessionAccount = await createSessionAccount(
@@ -321,7 +321,8 @@ export class KernelEIP1193Provider<
                 {
                     entryPoint: this.kernelClient.account.entryPoint,
                     sessionKeyAccount: sessionSigner,
-                    delegations: delegations as Delegation[]
+                    delegations: delegations as Delegation[],
+                    delegatorInitCode
                 }
             )
 
@@ -456,19 +457,22 @@ export class KernelEIP1193Provider<
             delegation: delegations[0]
         })
         delegations[0].signature = mainDeleGatorSignature
-        const encodedDelegations = encodeAbiParameters(
-            [getDelegationTupleType(true)],
-            [delegations]
+
+        const mainDelegatorAccountInitCode =
+            await this.kernelClient.account.getInitCode()
+        const permissionsContext = encodeAbiParameters(
+            [getDelegationTupleType(true), { type: "bytes" }],
+            [delegations, mainDelegatorAccountInitCode]
         )
 
         const createdPermissions =
             this.getItemFromStorage(WALLET_PERMISSION_STORAGE_KEY) || {}
 
         const newPermission = {
-            sessionId: keccak256(encodedDelegations),
+            sessionId: keccak256(permissionsContext),
             entryPoint: this.kernelClient.account.entryPoint,
             signerPrivateKey: sessionPrivateKey,
-            approval: encodedDelegations
+            approval: permissionsContext
         }
 
         const address = this.kernelClient.account.address
@@ -496,7 +500,7 @@ export class KernelEIP1193Provider<
                 policies: permission.policies
             })),
             expiry: params[0].expiry,
-            permissionsContext: encodedDelegations
+            permissionsContext
         }
     }
 

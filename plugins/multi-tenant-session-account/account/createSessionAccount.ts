@@ -3,7 +3,8 @@ import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
 import {
     type UserOperation,
     getAccountNonce,
-    getUserOperationHash
+    getUserOperationHash,
+    isSmartAccountDeployed
 } from "permissionless"
 import {
     SignTransactionNotSupportedBySmartAccount,
@@ -60,6 +61,7 @@ export type CreateSessionAccountParameters<
     sessionKeyAccount: SmartAccountSigner<TSource, TAddress>
     delegations: Delegation[]
     multiTenantSessionAccountAddress?: Address
+    delegatorInitCode?: Hex
 }
 
 export async function createSessionAccount<
@@ -75,7 +77,8 @@ export async function createSessionAccount<
         delegations,
         sessionKeyAccount,
         multiTenantSessionAccountAddress:
-            accountAddress = MULTI_TENANT_SESSION_ACCOUNT_ADDRESS
+            accountAddress = MULTI_TENANT_SESSION_ACCOUNT_ADDRESS,
+        delegatorInitCode = "0x"
     }: CreateSessionAccountParameters<entryPoint, TSource, TAddress>
 ): Promise<SessionAccount<entryPoint, TTransport, TChain>> {
     const viemSigner: LocalAccount = {
@@ -114,6 +117,85 @@ export async function createSessionAccount<
     const getInitCode = async () => {
         return "0x" as Hex
     }
+    const getDelegations = async () => {
+        delegations.unshift({
+            delegate: accountAddress,
+            delegator: sessionAccount.address,
+            authority: toDelegationHash(delegations[0]),
+            caveats: [],
+            salt: 0n,
+            signature: "0x"
+        })
+
+        delegations[0].signature = await sessionAccount.signTypedData({
+            domain: {
+                chainId,
+                name: "DelegationManager",
+                verifyingContract:
+                    DMVersionToAddressMap["1.0.0"].delegationManagerAddress,
+                version: "1"
+            },
+            types: {
+                Delegation: [
+                    {
+                        name: "delegate",
+                        type: "address"
+                    },
+                    {
+                        name: "delegator",
+                        type: "address"
+                    },
+                    {
+                        name: "authority",
+                        type: "bytes32"
+                    },
+                    {
+                        name: "caveats",
+                        type: "Caveat[]"
+                    },
+                    {
+                        name: "salt",
+                        type: "uint256"
+                    }
+                ],
+                Caveat: [
+                    { name: "enforcer", type: "address" },
+                    { name: "terms", type: "bytes" }
+                ]
+            },
+            primaryType: "Delegation",
+            message: {
+                delegate: delegations[0].delegate,
+                delegator: delegations[0].delegator,
+                authority: delegations[0].authority,
+                caveats: delegations[0].caveats.filter((c) => ({
+                    enforcer: c.enforcer,
+                    terms: c.terms
+                })),
+                salt: delegations[0].salt
+            }
+        })
+        return delegations
+    }
+
+    delegations = await getDelegations()
+
+    let delegatorAccountDeployed = await isSmartAccountDeployed(
+        client,
+        delegations[delegations.length - 1].delegator
+    )
+
+    const getDelegatorInitCode = async (): Promise<Hex> => {
+        if (delegatorAccountDeployed) return "0x"
+
+        delegatorAccountDeployed = await isSmartAccountDeployed(
+            client,
+            delegations[delegations.length - 1].delegator
+        )
+
+        if (delegatorAccountDeployed) return "0x"
+        return delegatorInitCode
+    }
 
     return {
         ...toSmartAccount({
@@ -129,64 +211,7 @@ export async function createSessionAccount<
                         name: "executeUserOp"
                     })
                 )
-                delegations.unshift({
-                    delegate: accountAddress,
-                    delegator: sessionAccount.address,
-                    authority: toDelegationHash(delegations[0]),
-                    caveats: [],
-                    salt: 0n,
-                    signature: "0x"
-                })
 
-                delegations[0].signature = await sessionAccount.signTypedData({
-                    domain: {
-                        chainId,
-                        name: "DelegationManager",
-                        verifyingContract:
-                            DMVersionToAddressMap["1.0.0"]
-                                .delegationManagerAddress,
-                        version: "1"
-                    },
-                    types: {
-                        Delegation: [
-                            {
-                                name: "delegate",
-                                type: "address"
-                            },
-                            {
-                                name: "delegator",
-                                type: "address"
-                            },
-                            {
-                                name: "authority",
-                                type: "bytes32"
-                            },
-                            {
-                                name: "caveats",
-                                type: "Caveat[]"
-                            },
-                            {
-                                name: "salt",
-                                type: "uint256"
-                            }
-                        ],
-                        Caveat: [
-                            { name: "enforcer", type: "address" },
-                            { name: "terms", type: "bytes" }
-                        ]
-                    },
-                    primaryType: "Delegation",
-                    message: {
-                        delegate: delegations[0].delegate,
-                        delegator: delegations[0].delegator,
-                        authority: delegations[0].authority,
-                        caveats: delegations[0].caveats.filter((c) => ({
-                            enforcer: c.enforcer,
-                            terms: c.terms
-                        })),
-                        salt: delegations[0].salt
-                    }
-                })
                 const execMode = concatHex([
                     isBatch ? "0x01" : "0x00", // 1 byte
                     "0x00", // 1 byte
@@ -240,9 +265,18 @@ export async function createSessionAccount<
                             {
                                 type: "bytes",
                                 name: "execData"
+                            },
+                            {
+                                type: "bytes",
+                                name: "delegatorInitCode"
                             }
                         ],
-                        [delegations, execMode, execData]
+                        [
+                            delegations,
+                            execMode,
+                            execData,
+                            await getDelegatorInitCode()
+                        ]
                     )
                 ])
             },
