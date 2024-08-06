@@ -13,10 +13,7 @@ import {
 import type { TypedData } from "abitype"
 import { type UserOperation, getUserOperationHash } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -133,9 +130,11 @@ export async function toMultiChainWebAuthnValidator<
         kernelVersion: GetKernelVersion<entryPoint>
         validatorAddress?: Address
     }
-): Promise<KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
-    getSerializedData: () => string
-}> {
+): Promise<
+    KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
+        getSerializedData: () => string
+    }
+> {
     const currentValidatorAddress =
         validatorAddress ?? MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
 
@@ -185,7 +184,10 @@ export async function toMultiChainWebAuthnValidator<
         address: currentValidatorAddress,
         source: "MultiChainWebAuthnValidator",
         getIdentifier() {
-            return currentValidatorAddress ?? MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
+            return (
+                currentValidatorAddress ??
+                MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
+            )
         },
         async getEnableData() {
             return encodeAbiParameters(
@@ -289,9 +291,11 @@ export async function deserializeMultiChainWebAuthnValidator<
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
     }
-): Promise<KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
-    getSerializedData: () => string
-}> {
+): Promise<
+    KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
+        getSerializedData: () => string
+    }
+> {
     const {
         entryPoint,
         validatorAddress,
@@ -470,7 +474,10 @@ function deserializeMultiChainWebAuthnValidatorData(
     const uint8Array = base64ToBytes(serializedData)
     const jsonString = new TextDecoder().decode(uint8Array)
     const parsed = JSON.parse(jsonString, (_, value) => {
-        if (Array.isArray(value) && value.every(item => typeof item === "number")) {
+        if (
+            Array.isArray(value) &&
+            value.every((item) => typeof item === "number")
+        ) {
             return new Uint8Array(value)
         }
         if (typeof value === "string" && /^\d+$/.test(value)) {
