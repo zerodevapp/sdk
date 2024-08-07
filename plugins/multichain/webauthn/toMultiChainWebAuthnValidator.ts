@@ -453,6 +453,7 @@ type MultiChainWebAuthnValidatorSerializedData = {
 function serializeMultiChainWebAuthnValidatorData(
     params: MultiChainWebAuthnValidatorSerializedData
 ): string {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     const replacer = (_: string, value: any) => {
         if (typeof value === "bigint") {
             return value.toString()
