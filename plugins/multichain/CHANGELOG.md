@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.4
+
+### Minor Changes
+
+- Add serializaztion for the MultiChainWebAuthnValidator
+
 ## 5.3.3
 
 ### Patch Changes
