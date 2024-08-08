@@ -6,7 +6,11 @@ export {
     type KernelSmartAccount,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
-    EIP1271Abi
+    EIP1271Abi,
+    getKernelV3Nonce,
+    accountMetadata,
+    getActionSelector,
+    getPluginsEnableTypedData
 } from "./accounts/index.js"
 export {
     sponsorUserOperation,

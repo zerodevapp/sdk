@@ -11,6 +11,12 @@ export {
 } from "./account-client/signUserOperation.js"
 
 export {
+    type PrepareUserOperationParameters,
+    type PrepareUserOperationReturnType,
+    prepareUserOperation,
+} from "./account-client/prepareUserOperation.js"
+
+export {
     getUserOperationGasPrice,
     type GetUserOperationGasPriceReturnType
 } from "./account-client/getUserOperationGasPrice.js"
