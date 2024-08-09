@@ -74,7 +74,10 @@ export function kernelAccountMultiChainClientActions<
                 client,
                 {
                     ...args,
-                    middleware
+                    middleware: {
+                        ...middleware,
+                        ...args.middleware
+                    }
                 },
                 validatorType,
                 numOfUserOps,

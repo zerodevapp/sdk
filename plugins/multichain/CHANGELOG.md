@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.5
+
+### Patch Changes
+
+- Allow passing custom middleware to the multi chain client prepareMultiUserOpRequest
+
 ## 5.3.4
 
 ### Minor Changes
