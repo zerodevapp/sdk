@@ -9,10 +9,10 @@ import {
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
-import { type Address, toHex } from "viem"
-import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 import type { Caveat } from "@zerodev/session-account"
 import { toAllowedParamsEnforcer } from "@zerodev/session-account/enforcers"
+import { type Address, toHex } from "viem"
+import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
 export const validatePermissions = (
     permissionsParams: GrantPermissionsParams,

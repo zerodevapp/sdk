@@ -10,13 +10,13 @@ import {
     toFunctionSelector,
     toHex
 } from "viem"
+import { ParamCondition } from "./constants.js"
 import type {
     CombinedArgs,
+    GeneratePermissionFromArgsParameters,
     ParamRule,
-    PermissionCore,
-    GeneratePermissionFromArgsParameters
+    PermissionCore
 } from "./types.js"
-import { ParamCondition } from "./constants.js"
 
 export function getPermissionFromABI<
     TAbi extends Abi | readonly unknown[],

@@ -1,8 +1,8 @@
-import { type Address, type Abi, pad } from "viem"
+import { type Abi, type Address, pad } from "viem"
 import type { Caveat } from "../../types.js"
+import { AllowedParamsEnforcerAddress, CallType } from "./constants.js"
 import type { Permission } from "./types.js"
 import { encodePermissionData, getPermissionFromABI } from "./utils.js"
-import { AllowedParamsEnforcerAddress, CallType } from "./constants.js"
 
 export type AllowedParamsEnforcerParams<
     TAbi extends Abi | readonly unknown[],
