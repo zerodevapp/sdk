@@ -1,5 +1,6 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import { createKernelAccount, createKernelAccountClient } from "@zerodev/sdk"
+import { getInstallDMAsExecutorCallData } from "@zerodev/session-account"
 import { walletClientToSmartAccountSigner } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
 import {
@@ -100,7 +101,8 @@ export const wrapSmartWallet = (
                                 kernelVersion,
                                 plugins: {
                                     sudo: ecdsaValidator
-                                }
+                                },
+                                initConfig: [getInstallDMAsExecutorCallData()]
                             }
                         )
                         const kernelClient = createKernelAccountClient({

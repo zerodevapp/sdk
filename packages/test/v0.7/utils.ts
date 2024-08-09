@@ -11,11 +11,7 @@ import {
     createWeightedECDSAValidator,
     getRecoveryAction
 } from "@zerodev/weighted-ecdsa-validator"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V07,
-    createBundlerClient
-} from "permissionless"
+import { ENTRYPOINT_ADDRESS_V07, createBundlerClient } from "permissionless"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import {
     createPimlicoBundlerClient,
@@ -59,6 +55,18 @@ import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
+import { getChainId } from "viem/actions"
+import { createSessionAccount } from "../../../plugins/multi-tenant-session-account/index.js"
+import type { Delegation } from "../../../plugins/multi-tenant-session-account/types.js"
+import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
+import { ROOT_AUTHORITY } from "../../../plugins/yiSubAccount/constants.js"
+import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/index.js"
+import {
+    type YiSubAccount,
+    createMultiTenantSessionAccount,
+    createYiSubAccount,
+    toDelegationHash
+} from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 432334375434333332434365532464445487823332432423423n
@@ -103,11 +111,16 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
     return ENTRYPOINT_ADDRESS_V07
 }
 
-export const getEcdsaKernelAccountWithRandomSigner = async () => {
-    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
+export const getEcdsaKernelAccountWithRandomSigner = async (
+    initConfig?: Hex[]
+) => {
+    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey(), initConfig)
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
+const getEcdsaKernelAccountWithPrivateKey = async (
+    privateKey: Hex,
+    initConfig?: Hex[]
+) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
@@ -126,7 +139,150 @@ const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
             sudo: ecdsaValidatorPlugin
         },
         index,
+        kernelVersion,
+        initConfig
+    })
+}
+
+export const generateRandomBigIntIndex = (): bigint => {
+    const min = 1n
+    const max = 10000000000n
+    return min + (BigInt(Math.floor(Math.random() * Number(max - min))) + min)
+}
+
+export const getUndeployedYiSubAccount = async (
+    withRandomMasterSigner = false
+) => {
+    return getYiSubAccount(withRandomMasterSigner, generateRandomBigIntIndex())
+}
+
+export const getYiSubAccount = async (
+    withRandomMasterSigner = false,
+    subAccountIndex?: bigint
+) => {
+    const privateKey = process.env.TEST_PRIVATE_KEY as Hex
+    if (!privateKey) {
+        throw new Error("TEST_PRIVATE_KEY environment variable not set")
+    }
+
+    const publicClient = await getPublicClient()
+    const signer = privateKeyToAccount(
+        withRandomMasterSigner ? generatePrivateKey() : privateKey
+    )
+    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
+        entryPoint: getEntryPoint(),
+        signer: { ...signer, source: "local" as "local" | "external" },
         kernelVersion
+    })
+
+    const masterAccount = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaValidatorPlugin
+        },
+        index,
+        kernelVersion
+    })
+
+    return createYiSubAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        delegateAccount: masterAccount,
+        masterAccountAddress: masterAccount.address,
+        yiSubAccountVersion: "0.0.1",
+        index: subAccountIndex
+    })
+}
+
+export const getMultiTenantSessionAccount = async () => {
+    const privateKey = generatePrivateKey()
+    const sessionKeyAccount = privateKeyToAccount(privateKey)
+    const publicClient = await getPublicClient()
+    const yiSubAccount = await getYiSubAccount()
+    console.log({ sessionKeyAccountAddress: sessionKeyAccount.address })
+
+    const chainId = await getChainId(publicClient)
+
+    const caveat = toAllowedTargetsEnforcer({
+        targets: [zeroAddress]
+    })
+    const caveats = [caveat]
+
+    const sessionSignature = await yiSubAccount.delegateAccount.signTypedData({
+        domain: {
+            chainId,
+            name: "DelegationManager",
+            verifyingContract: yiSubAccount.delegationManagerAddress,
+            version: "1"
+        },
+        types: {
+            Delegation: [
+                {
+                    name: "delegate",
+                    type: "address"
+                },
+                {
+                    name: "delegator",
+                    type: "address"
+                },
+                {
+                    name: "authority",
+                    type: "bytes32"
+                },
+                {
+                    name: "caveats",
+                    type: "Caveat[]"
+                },
+                {
+                    name: "salt",
+                    type: "uint256"
+                }
+            ],
+            Caveat: [
+                { name: "enforcer", type: "address" },
+                { name: "terms", type: "bytes" }
+            ]
+        },
+        primaryType: "Delegation",
+        message: {
+            delegate: sessionKeyAccount.address,
+            delegator: yiSubAccount.delegateAccount.address,
+            authority: toDelegationHash({
+                delegate: yiSubAccount.delegateAccount.address,
+                delegator: yiSubAccount.address,
+                authority: ROOT_AUTHORITY,
+                caveats: [],
+                salt: 0n,
+                signature: "0x"
+            }),
+            caveats,
+            salt: 0n
+        }
+    })
+    console.log({ caveat })
+
+    return createMultiTenantSessionAccount(publicClient, {
+        masterAccountAddress: yiSubAccount.delegateAccount.address,
+        subAccountAddress: yiSubAccount.address,
+        caveats,
+        entryPoint: getEntryPoint(),
+        sessionKeyAccount,
+        sessionSignature
+    })
+}
+
+export const getSessionAccount = async (
+    delegations: Delegation[],
+    privateKey: Hex,
+    delegatorInitCode?: Hex
+) => {
+    const sessionKeySigner = privateKeyToAccount(privateKey)
+    const publicClient = await getPublicClient()
+
+    return createSessionAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        sessionKeySigner,
+        delegations,
+        delegatorInitCode
     })
 }
 
@@ -265,7 +421,25 @@ export const getKernelAccountClient = async ({
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
-        bundlerTransport: http(getBundlerRpc()),
+        bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
+        middleware,
+        entryPoint: getEntryPoint()
+    })
+}
+
+export const getYiSubAccountClient = async ({
+    account,
+    middleware
+}: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
+    account: YiSubAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+}) => {
+    const chain = getTestingChain()
+    const resolvedAccount = account
+
+    return createYiSubAccountClient({
+        account: resolvedAccount,
+        chain,
+        bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
         middleware,
         entryPoint: getEntryPoint()
     })

@@ -4,6 +4,7 @@ import {
     createConnector
 } from "@wagmi/core"
 import {
+    PasskeyValidatorContractVersion,
     WebAuthnMode,
     toPasskeyValidator,
     toWebAuthnKey
@@ -13,6 +14,7 @@ import {
     createKernelAccount,
     createKernelAccountClient
 } from "@zerodev/sdk"
+import { getInstallDMAsExecutorCallData } from "@zerodev/session-account"
 import type { EntryPoint } from "permissionless/types"
 import {
     http,
@@ -104,7 +106,8 @@ export function passkeyConnector(
                 const webAuthnKey = await toWebAuthnKey({
                     passkeyName: passkeyName,
                     passkeyServerUrl: `${ZERODEV_PASSKEY_URL}/${projectId}`,
-                    mode
+                    mode,
+                    passkeyServerHeaders: {}
                 })
 
                 const passkeyValidator = await toPasskeyValidator(
@@ -112,7 +115,9 @@ export function passkeyConnector(
                     {
                         webAuthnKey,
                         entryPoint: entryPoint,
-                        kernelVersion
+                        kernelVersion,
+                        validatorContractVersion:
+                            PasskeyValidatorContractVersion.V0_0_2
                     }
                 )
                 const passkeyData = (
@@ -130,7 +135,8 @@ export function passkeyConnector(
                     kernelVersion,
                     plugins: {
                         sudo: passkeyValidator
-                    }
+                    },
+                    initConfig: [getInstallDMAsExecutorCallData()]
                 })
                 const kernelClient = createKernelAccountClient({
                     account: kernelAccount,

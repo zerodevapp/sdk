@@ -1,4 +1,5 @@
 import {
+    CallPolicyVersion,
     type SignatureCallerPolicyParams,
     toCallPolicy,
     toGasPolicy,
@@ -8,6 +9,8 @@ import {
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
+import type { Caveat } from "@zerodev/session-account"
+import { toAllowedParamsEnforcer } from "@zerodev/session-account/enforcers"
 import { type Address, toHex } from "viem"
 import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
@@ -37,7 +40,12 @@ export const getPermissionPoliciy = (permission: Permission): Policy[] => {
             policies.push(toSudoPolicy({}))
             break
         case "contract-call":
-            policies.push(toCallPolicy(permission.data))
+            policies.push(
+                toCallPolicy({
+                    ...permission.data,
+                    policyVersion: CallPolicyVersion.V0_0_4
+                })
+            )
             break
         case "signature":
             policies.push(
@@ -80,6 +88,34 @@ export const getPolicies = (
             })
         ])
     return policies
+}
+
+export const getPermissionCaveat = (permission: Permission): Caveat[] => {
+    const caveats: Caveat[] = []
+    switch (permission.type) {
+        case "sudo":
+            break
+        case "contract-call":
+            caveats.push(
+                toAllowedParamsEnforcer({
+                    ...permission.data
+                })
+            )
+            break
+        default:
+            break
+    }
+
+    return caveats
+}
+export const getCaveats = (
+    permissionsParams: GrantPermissionsParams
+): Caveat[] => {
+    const caveats = permissionsParams.permissions.flatMap((permission) =>
+        getPermissionCaveat(permission)
+    )
+
+    return caveats
 }
 
 export const isSessionValid = (

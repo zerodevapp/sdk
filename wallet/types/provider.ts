@@ -1,5 +1,5 @@
 import type { EntryPoint } from "permissionless/types"
-import type { Address, Hex } from "viem"
+import type { Address, Hex, OneOf } from "viem"
 import type { Policy } from "./policy"
 
 export type PaymasterServiceCapability = {
@@ -53,8 +53,20 @@ export type Permission = {
     policies: Policy[]
 }
 
+export type AccountSigner = {
+    type: "account"
+    data: {
+        id: Address
+    }
+}
+export type WalletSigner = {
+    type: "wallet"
+}
+export type Signer = OneOf<AccountSigner | WalletSigner>
+
 export type GrantPermissionsParams = {
     permissions: Permission[]
+    signer?: Signer | undefined
     expiry: number
 }
 
