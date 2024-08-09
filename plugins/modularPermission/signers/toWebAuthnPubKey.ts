@@ -15,7 +15,7 @@ export const toWebAuthnPubKey = async ({
     passkeyName: string
     passkeyServerUrl: string
     mode: WebAuthnMode
-    passkeyServerHeaders: Record<string, string>
+    passkeyServerHeaders?: Record<string, string>
 }): Promise<WebAuthnKey> => {
     let pubKey: string | undefined
     if (mode === WebAuthnMode.Login) {
@@ -26,7 +26,7 @@ export const toWebAuthnPubKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 credentials: "include"
             }
@@ -44,7 +44,7 @@ export const toWebAuthnPubKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({ cred: loginCred }),
                 credentials: "include"
@@ -74,7 +74,7 @@ export const toWebAuthnPubKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({ username: passkeyName }),
                 credentials: "include"
@@ -99,7 +99,7 @@ export const toWebAuthnPubKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
