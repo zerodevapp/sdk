@@ -275,12 +275,12 @@ export const getSessionAccount = async (
     privateKey: Hex,
     delegatorInitCode?: Hex
 ) => {
-    const sessionKeyAccount = privateKeyToAccount(privateKey)
+    const sessionKeySigner = privateKeyToAccount(privateKey)
     const publicClient = await getPublicClient()
 
     return createSessionAccount(publicClient, {
         entryPoint: getEntryPoint(),
-        sessionKeyAccount,
+        sessionKeySigner,
         delegations,
         delegatorInitCode
     })

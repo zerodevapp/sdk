@@ -11,6 +11,8 @@ import {
 import type { Policy } from "@zerodev/permissions/types"
 import { type Address, toHex } from "viem"
 import type { GrantPermissionsParams, Permission, SessionType } from "../types"
+import type { Caveat } from "@zerodev/session-account"
+import { toAllowedParamsEnforcer } from "@zerodev/session-account/enforcers"
 
 export const validatePermissions = (
     permissionsParams: GrantPermissionsParams,
@@ -86,6 +88,34 @@ export const getPolicies = (
             })
         ])
     return policies
+}
+
+export const getPermissionCaveat = (permission: Permission): Caveat[] => {
+    const caveats: Caveat[] = []
+    switch (permission.type) {
+        case "sudo":
+            break
+        case "contract-call":
+            caveats.push(
+                toAllowedParamsEnforcer({
+                    ...permission.data
+                })
+            )
+            break
+        default:
+            break
+    }
+
+    return caveats
+}
+export const getCaveats = (
+    permissionsParams: GrantPermissionsParams
+): Caveat[] => {
+    const caveats = permissionsParams.permissions.flatMap((permission) =>
+        getPermissionCaveat(permission)
+    )
+
+    return caveats
 }
 
 export const isSessionValid = (

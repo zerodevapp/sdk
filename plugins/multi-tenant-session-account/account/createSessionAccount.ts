@@ -58,7 +58,7 @@ export type CreateSessionAccountParameters<
     TAddress extends Address = Address
 > = {
     entryPoint: entryPoint
-    sessionKeyAccount: SmartAccountSigner<TSource, TAddress>
+    sessionKeySigner: SmartAccountSigner<TSource, TAddress>
     delegations: Delegation[]
     multiTenantSessionAccountAddress?: Address
     delegatorInitCode?: Hex
@@ -75,14 +75,14 @@ export async function createSessionAccount<
     {
         entryPoint: entryPointAddress,
         delegations,
-        sessionKeyAccount,
+        sessionKeySigner,
         multiTenantSessionAccountAddress:
             accountAddress = MULTI_TENANT_SESSION_ACCOUNT_ADDRESS,
         delegatorInitCode = "0x"
     }: CreateSessionAccountParameters<entryPoint, TSource, TAddress>
 ): Promise<SessionAccount<entryPoint, TTransport, TChain>> {
     const viemSigner: LocalAccount = {
-        ...sessionKeyAccount,
+        ...sessionKeySigner,
         signTransaction: (_, __) => {
             throw new SignTransactionNotSupportedBySmartAccount()
         }

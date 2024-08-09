@@ -59,7 +59,7 @@ import type {
     SendCallsResult,
     SessionType
 } from "./types"
-import { validatePermissions } from "./utils/permissions"
+import { getCaveats, validatePermissions } from "./utils/permissions"
 import { KernelLocalStorage } from "./utils/storage"
 
 const WALLET_CAPABILITIES_STORAGE_KEY = "WALLET_CAPABILITIES"
@@ -306,7 +306,7 @@ export class KernelEIP1193Provider<
             toHex(accountChainId)
         ]?.find((session) => session.sessionId === sessionId)
         if (session && this.kernelClient?.account?.client) {
-            const sessionSigner = privateKeyToAccount(session.signerPrivateKey)
+            const sessionKeySigner = privateKeyToAccount(session.signerPrivateKey)
 
             const [delegations, delegatorInitCode] = decodeAbiParameters(
                 [getDelegationTupleType(true), { type: "bytes" }],
@@ -320,7 +320,7 @@ export class KernelEIP1193Provider<
                 >,
                 {
                     entryPoint: this.kernelClient.account.entryPoint,
-                    sessionKeyAccount: sessionSigner,
+                    sessionKeySigner,
                     delegations: delegations as Delegation[],
                     delegatorInitCode
                 }
@@ -424,7 +424,7 @@ export class KernelEIP1193Provider<
                 .permissions.permissionTypes
 
         validatePermissions(params[0], capabilities)
-        // const policies = getPolicies(params[0])
+        const caveats = getCaveats(params[0])
         const permissions = params[0].permissions
 
         // signer
@@ -444,7 +444,7 @@ export class KernelEIP1193Provider<
                 delegator: this.kernelClient.account.address,
                 delegate: sessionKeySigner.address,
                 authority: ROOT_AUTHORITY,
-                caveats: [],
+                caveats,
                 salt: 0n,
                 signature: "0x"
             }
