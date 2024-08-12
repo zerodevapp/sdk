@@ -9,10 +9,14 @@ import {
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
-import { type Address, toHex } from "viem"
-import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 import type { Caveat } from "@zerodev/session-account"
-import { toAllowedParamsEnforcer } from "@zerodev/session-account/enforcers"
+import {
+    CallType,
+    ParamCondition,
+    toAllowedParamsEnforcer
+} from "@zerodev/session-account/enforcers"
+import { type Address, type Hex, erc20Abi, toHex } from "viem"
+import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
 export const validatePermissions = (
     permissionsParams: GrantPermissionsParams,
@@ -102,6 +106,43 @@ export const getPermissionCaveat = (permission: Permission): Caveat[] => {
                 })
             )
             break
+        case "erc20-token-approve": {
+            const permissions = [
+                {
+                    abi: erc20Abi,
+                    functionName: "approve",
+                    target: permission.data.tokenAddress,
+                    callType: CallType.BATCH_CALL,
+                    args: [
+                        {
+                            condition: ParamCondition.ONE_OF,
+                            value: permission.data.contractAllowList.map(
+                                (list: { address: Address }) => list.address
+                            )
+                        },
+                        {
+                            condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                            value: BigInt(permission.data.allowance)
+                        }
+                    ]
+                },
+                ...permission.data.contractAllowList.flatMap(
+                    (contract: { functions: Hex[]; address: Address }) =>
+                        contract.functions.map((selector: Hex) => ({
+                            target: contract.address,
+                            selector,
+                            callType: CallType.BATCH_CALL
+                        }))
+                )
+            ]
+            console.log({ permissions })
+            caveats.push(
+                toAllowedParamsEnforcer({
+                    permissions
+                })
+            )
+            break
+        }
         default:
             break
     }

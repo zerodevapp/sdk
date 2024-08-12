@@ -101,7 +101,8 @@ export class KernelEIP1193Provider<
                           "contract-call",
                           "rate-limit",
                           "gas-limit",
-                          "signature"
+                          "signature",
+                          "erc20-token-approve"
                       ]
                   }
                 : {
@@ -306,7 +307,9 @@ export class KernelEIP1193Provider<
             toHex(accountChainId)
         ]?.find((session) => session.sessionId === sessionId)
         if (session && this.kernelClient?.account?.client) {
-            const sessionKeySigner = privateKeyToAccount(session.signerPrivateKey)
+            const sessionKeySigner = privateKeyToAccount(
+                session.signerPrivateKey
+            )
 
             const [delegations, delegatorInitCode] = decodeAbiParameters(
                 [getDelegationTupleType(true), { type: "bytes" }],

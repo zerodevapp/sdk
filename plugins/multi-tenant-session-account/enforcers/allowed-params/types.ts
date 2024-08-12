@@ -56,10 +56,10 @@ export type GetFunctionArgs<
           args?: readonly unknown[]
       }
     : TArgs extends readonly []
-    ? { args?: never }
-    : {
-          args?: TArgs
-      }
+      ? { args?: never }
+      : {
+            args?: TArgs
+        }
 
 export type Permission<
     TAbi extends Abi | readonly unknown[],
@@ -72,11 +72,11 @@ export type Permission<
 } & (TFunctionName extends string
         ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-        ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-              TAbi,
-              _FunctionName
-          >
-        : never)
+          ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
+                TAbi,
+                _FunctionName
+            >
+          : never)
 
 type ConditionValue<
     TAbiParameter extends AbiParameter,
@@ -112,5 +112,5 @@ export type GeneratePermissionFromArgsParameters<
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
     : _FunctionName extends string
-    ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
-    : never)
+      ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
+      : never)

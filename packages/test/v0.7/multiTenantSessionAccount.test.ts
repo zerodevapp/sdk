@@ -2,15 +2,18 @@
 import { beforeAll, describe, test } from "bun:test"
 import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import { getInstallDMAsExecutorCallData } from "@zerodev/session-account"
+import {
+    ParamCondition,
+    toAllowedParamsEnforcer
+} from "@zerodev/session-account/enforcers"
 import { type BundlerClient, bundlerActions } from "permissionless"
 import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
 import {
     type Chain,
     type PublicClient,
     type Transport,
-    zeroAddress,
-    decodeErrorResult,
-    encodeFunctionData
+    encodeFunctionData,
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import type { SessionAccount } from "../../../plugins/multi-tenant-session-account"
@@ -18,7 +21,8 @@ import { dmActionsEip7710 } from "../../../plugins/multi-tenant-session-account/
 import { ROOT_AUTHORITY } from "../../../plugins/multi-tenant-session-account/constants"
 import type { Delegation } from "../../../plugins/multi-tenant-session-account/types"
 import type { YiSubAccount } from "../../../plugins/yiSubAccount"
-import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/allowed-targets/toAllowedTargetsEnforcer"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
+import { Test_ERC20Address } from "../utils"
 import {
     getEcdsaKernelAccountWithRandomSigner,
     getEntryPoint,
@@ -28,12 +32,6 @@ import {
     getZeroDevPaymasterClient,
     mintToAccount
 } from "./utils"
-import {
-    ParamCondition,
-    toAllowedParamsEnforcer
-} from "@zerodev/session-account/enforcers"
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
-import { Test_ERC20Address } from "../utils"
 
 const TEST_TIMEOUT = 1000000
 
@@ -56,22 +54,6 @@ describe("Yi SubAccount", () => {
         KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     >
     let delegations: Delegation[]
-
-    const res=decodeErrorResult({
-        abi: [
-            {
-                inputs: [
-                    {
-                        type: "string"
-                    }
-                ],
-                name: "Error",
-                type: "error"
-            }
-        ],
-        data: "0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000033416c6c6f776564506172616d73456e666f726365723a6e6f2d6d61746368696e672d7065726d697373696f6e732d666f756e6400000000000000000000000000"
-    })
-    console.log({res})
 
     beforeAll(async () => {
         const ownerPrivateKey = process.env.TEST_PRIVATE_KEY
