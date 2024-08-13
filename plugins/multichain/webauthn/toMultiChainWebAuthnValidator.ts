@@ -53,11 +53,12 @@ const signMessageUsingWebAuthn = async (
     }
 
     let fromWebAuthnSignUserOps = false
-    const prefix = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+    const prefix =
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     if (messageContent.startsWith(prefix)) {
         // message is from webauthnSignUserOps
-        messageContent = messageContent.slice(prefix.length);
-        fromWebAuthnSignUserOps = true;
+        messageContent = messageContent.slice(prefix.length)
+        fromWebAuthnSignUserOps = true
     }
     // remove 0x prefix if present
     const formattedMessage = messageContent.startsWith("0x")
