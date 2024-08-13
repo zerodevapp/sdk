@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.7
+
+### Patch Changes
+
+- Encode signature differently depending on number of user ops
+
 ## 5.3.6
 
 ### Patch Changes
