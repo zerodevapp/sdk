@@ -110,7 +110,19 @@ const signMessageUsingWebAuthn = async (
             isRIP7212SupportedNetwork(chainId)
         ]
     )
-    return encodedSignature
+    return encodeAbiParameters(
+        [
+            {
+                name: "merkleData",
+                type: "bytes"
+            },
+            {
+                name: "signature",
+                type: "bytes"
+            }
+        ],
+        ["0x", encodedSignature]
+    )
 }
 
 export async function toMultiChainWebAuthnValidator<
@@ -238,7 +250,7 @@ export async function toMultiChainWebAuthnValidator<
             return signature
         },
         async getDummySignature(_userOperation) {
-            return encodeAbiParameters(
+            const signature = encodeAbiParameters(
                 [
                     { name: "authenticatorData", type: "bytes" },
                     { name: "clientDataJSON", type: "string" },
@@ -255,6 +267,14 @@ export async function toMultiChainWebAuthnValidator<
                     9910254599581058084911561569808925251374718953855182016200087235935345969636n,
                     false
                 ]
+            )
+
+            return encodeAbiParameters(
+                [
+                    { name: "merkleData", type: "bytes" },
+                    { name: "signature", type: "bytes" }
+                ],
+                ["0x", signature]
             )
         },
         async isEnabled(
@@ -403,7 +423,7 @@ export async function deserializeMultiChainWebAuthnValidator<
             return signature
         },
         async getDummySignature(_userOperation) {
-            return encodeAbiParameters(
+            const signature = encodeAbiParameters(
                 [
                     { name: "authenticatorData", type: "bytes" },
                     { name: "clientDataJSON", type: "string" },
@@ -420,6 +440,14 @@ export async function deserializeMultiChainWebAuthnValidator<
                     9910254599581058084911561569808925251374718953855182016200087235935345969636n,
                     false
                 ]
+            )
+
+            return encodeAbiParameters(
+                [
+                    { name: "merkleData", type: "bytes" },
+                    { name: "signature", type: "bytes" }
+                ],
+                ["0x", signature]
             )
         },
         async isEnabled(

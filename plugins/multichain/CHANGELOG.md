@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.6
+
+### Patch Changes
+
+- Fixed signature encoding issue of single user op for multi chain webauthn validator
+
 ## 5.3.5
 
 ### Patch Changes
