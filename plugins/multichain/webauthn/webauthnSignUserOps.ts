@@ -48,11 +48,7 @@ export async function webauthnSignUserOps<entryPoint extends EntryPoint>({
 
     const passkeySig = await account.kernelPluginManager.signMessage({
         message: {
-            // concat dummy 32 bytes to specify that the message is from webauthnSignUserOps
-            raw: concatHex([
-                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                toEthSignedMessageHash
-            ])
+            raw: toEthSignedMessageHash
         }
     })
 

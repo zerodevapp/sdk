@@ -52,14 +52,6 @@ const signMessageUsingWebAuthn = async (
         throw new Error("Unsupported message format")
     }
 
-    let fromWebAuthnSignUserOps = false
-    const prefix =
-        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-    if (messageContent.startsWith(prefix)) {
-        // message is from webauthnSignUserOps
-        messageContent = messageContent.slice(prefix.length)
-        fromWebAuthnSignUserOps = true
-    }
     // remove 0x prefix if present
     const formattedMessage = messageContent.startsWith("0x")
         ? messageContent.slice(2)
@@ -118,21 +110,6 @@ const signMessageUsingWebAuthn = async (
             isRIP7212SupportedNetwork(chainId)
         ]
     )
-    if (fromWebAuthnSignUserOps) {
-        return encodeAbiParameters(
-            [
-                {
-                    name: "merkleData",
-                    type: "bytes"
-                },
-                {
-                    name: "signature",
-                    type: "bytes"
-                }
-            ],
-            ["0x", encodedSignature]
-        )
-    }
 
     return encodedSignature
 }
@@ -259,7 +236,22 @@ export async function toMultiChainWebAuthnValidator<
                 account,
                 message: { raw: hash }
             })
-            return signature
+
+            const encodedSignature = encodeAbiParameters(
+                [
+                    {
+                        name: "merkleData",
+                        type: "bytes"
+                    },
+                    {
+                        name: "signature",
+                        type: "bytes"
+                    }
+                ],
+                ["0x", signature]
+            )
+
+            return encodedSignature
         },
         async getDummySignature(_userOperation) {
             const signature = encodeAbiParameters(
@@ -432,7 +424,22 @@ export async function deserializeMultiChainWebAuthnValidator<
                 account,
                 message: { raw: hash }
             })
-            return signature
+
+            const encodedSignature = encodeAbiParameters(
+                [
+                    {
+                        name: "merkleData",
+                        type: "bytes"
+                    },
+                    {
+                        name: "signature",
+                        type: "bytes"
+                    }
+                ],
+                ["0x", signature]
+            )
+
+            return encodedSignature
         },
         async getDummySignature(_userOperation) {
             const signature = encodeAbiParameters(

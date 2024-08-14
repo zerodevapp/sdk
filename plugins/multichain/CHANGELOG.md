@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.8
+
+### Patch Changes
+
+- Fixed webAuthnSignUserOps to correctly encode signature
+
 ## 5.3.7
 
 ### Patch Changes
