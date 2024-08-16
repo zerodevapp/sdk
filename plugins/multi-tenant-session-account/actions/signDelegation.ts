@@ -8,8 +8,8 @@ import type {
 import type { Address, Chain, Client, Hash, Transport } from "viem"
 import { decodeAbiParameters } from "viem"
 import { getChainId } from "viem/actions"
-import { DMVersionToAddressMap } from "../constants"
-import type { Delegation } from "../types"
+import { DMVersionToAddressMap } from "../constants.js"
+import type { Delegation } from "../types.js"
 
 export type SignDelegationParameters<
     entryPoint extends EntryPoint,

@@ -35,16 +35,16 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage, signTypedData } from "viem/actions"
-import { MultiTenantSessionAccountAbi } from "../abi/MultiTenantSessionAccountAbi"
+import { MultiTenantSessionAccountAbi } from "../abi/MultiTenantSessionAccountAbi.js"
 import {
     DMVersionToAddressMap,
     MULTI_TENANT_SESSION_ACCOUNT_ADDRESS
-} from "../constants"
-import type { Delegation } from "../types"
+} from "../constants.js"
+import type { Delegation } from "../types.js"
 import {
     getDelegationTupleType,
     toDelegationHash
-} from "../utils/delegationManager"
+} from "../utils/delegationManager.js"
 
 export type SessionAccount<
     entryPoint extends EntryPoint,

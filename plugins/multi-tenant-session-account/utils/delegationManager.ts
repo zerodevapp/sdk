@@ -7,8 +7,8 @@ import {
     stringToHex,
     zeroAddress
 } from "viem"
-import { DMVersionToAddressMap } from "../constants"
-import type { Caveat, Delegation } from "../types"
+import { DMVersionToAddressMap } from "../constants.js"
+import type { Caveat, Delegation } from "../types.js"
 
 export const getDelegationTupleType = (isArray = false) => {
     return {

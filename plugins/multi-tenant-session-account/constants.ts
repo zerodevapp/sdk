@@ -1,5 +1,5 @@
 import type { Address } from "viem"
-import type { DM_VERSION_TYPE } from "./types"
+import type { DM_VERSION_TYPE } from "./types.js"
 
 export const MAGIC_BYTES =
     "0x6492649264926492649264926492649264926492649264926492649264926492"
