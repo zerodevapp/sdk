@@ -1,7 +1,10 @@
 import type { SmartAccount } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Chain, Client, Hash, Transport } from "viem"
-import { type SignDelegationParameters, signDelegation } from "../../actions/index.js"
+import {
+    type SignDelegationParameters,
+    signDelegation
+} from "../../actions/index.js"
 
 export type DMActionsEip7710<
     TEntryPoint extends EntryPoint,
