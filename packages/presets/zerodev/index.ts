@@ -9,7 +9,7 @@ import {
 import type { GetKernelVersion } from "@zerodev/sdk/types"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
-import type { Address, Chain, HttpTransport } from "viem"
+import type { Address, Chain } from "viem"
 import { http, createPublicClient, isAddress } from "viem"
 
 export type Provider = "STACKUP" | "PIMLICO" | "ALCHEMY" | "GELATO"
@@ -75,14 +75,7 @@ export async function createEcdsaKernelAccountClient<
     kernelVersion: GetKernelVersion<entryPoint>
     provider?: Provider
     index?: bigint
-}): Promise<
-    KernelAccountClient<
-        entryPoint,
-        HttpTransport,
-        TChain,
-        KernelSmartAccount<entryPoint, HttpTransport, TChain>
-    >
-> {
+}) {
     const publicClient = createPublicClient({
         transport: http(getZeroDevBundlerRPC(projectId, provider))
     })
@@ -112,7 +105,7 @@ export async function createEcdsaKernelAccountClient<
         entryPoint: entryPointAddress
     })
 
-    const kernelClient = createKernelAccountClient({
+    return createKernelAccountClient({
         account,
         chain,
         entryPoint: entryPointAddress,
@@ -138,11 +131,4 @@ export async function createEcdsaKernelAccountClient<
                   }
                 : undefined
     })
-
-    return kernelClient as unknown as KernelAccountClient<
-        entryPoint,
-        HttpTransport,
-        TChain,
-        KernelSmartAccount<entryPoint, HttpTransport, TChain>
-    >
 }
