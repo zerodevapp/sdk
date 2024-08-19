@@ -46,6 +46,7 @@ import {
 } from "../utils/toKernelPluginManager.js"
 import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
 import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
@@ -86,6 +87,7 @@ export type CreateKernelAccountParameters<
     deployedAccountAddress?: Address
     kernelVersion: GetKernelVersion<entryPoint>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
+    useMetaFactory?: boolean
 }
 
 /**
@@ -214,7 +216,8 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     kernelPluginManager,
     initHook,
     kernelVersion,
-    initConfig
+    initConfig,
+    useMetaFactory
 }: {
     index: bigint
     factoryAddress: Address
@@ -225,6 +228,7 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPoint>
     initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
+    useMetaFactory: boolean
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPoint>({
@@ -244,6 +248,17 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
                 abi: createAccountAbi,
                 functionName: "createAccount",
                 args: [accountImplementationAddress, initialisationData, index]
+            }) as Hex
+        ])
+    }
+
+    if (!useMetaFactory) {
+        return concatHex([
+            factoryAddress,
+            encodeFunctionData({
+                abi: KernelV3FactoryAbi,
+                functionName: "createAccount",
+                args: [initialisationData, toHex(index, { size: 32 })]
             }) as Hex
         ])
     }
@@ -359,7 +374,8 @@ export async function createKernelAccount<
         metaFactoryAddress: _metaFactoryAddress,
         deployedAccountAddress,
         kernelVersion,
-        initConfig
+        initConfig,
+        useMetaFactory = true
     }: CreateKernelAccountParameters<entryPoint, KernelVersion>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
@@ -405,7 +421,8 @@ export async function createKernelAccount<
             kernelPluginManager,
             initHook,
             kernelVersion,
-            initConfig
+            initConfig,
+            useMetaFactory
         })
     }
 
@@ -477,9 +494,13 @@ export async function createKernelAccount<
 
                 const entryPointVersion =
                     getEntryPointVersion(entryPointAddress)
-                return entryPointVersion === "v0.6"
-                    ? factoryAddress
-                    : metaFactoryAddress
+                if (entryPointVersion === "v0.6") {
+                    return factoryAddress
+                }
+                if (!useMetaFactory) {
+                    return factoryAddress
+                }
+                return metaFactoryAddress
             },
 
             async getFactoryData() {
