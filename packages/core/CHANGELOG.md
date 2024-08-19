@@ -1,5 +1,12 @@
 # @zerodev/sdk
 
+## 5.3.9
+
+### Patch Changes
+
+- Added useMetaFactory support in createKernelAccount
+- Added `ZERODEV` provider support
+
 ## 5.3.8
 
 ### Patch Changes
