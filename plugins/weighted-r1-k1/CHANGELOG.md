@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.3.0-alpha-4
+
+### Patch Changes
+
+- Added the update-config feature and migrated to the webauthn-key module
+
 ## 5.3.0-alpha-3
 
 ### Patch Changes

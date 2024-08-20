@@ -27,9 +27,9 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createWeightedValidator,
-    getValidatorAddress,
+    getCurrentSigners,
     getUpdateConfigCall,
-    getCurrentSigners
+    getValidatorAddress
 } from "./toWeightedValidatorPlugin.js"
 
 export {
