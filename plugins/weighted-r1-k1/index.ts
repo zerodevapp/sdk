@@ -19,9 +19,7 @@ import {
     type ECDSASignerParams,
     toECDSASigner
 } from "./signers/toECDSASigner.js"
-import { WebAuthnMode, toWebAuthnPubKey } from "./signers/toWebAuthnPubKey.js"
 import {
-    type WebAuthnKey,
     type WebAuthnModularSignerParams,
     toWebAuthnSigner
 } from "./signers/toWebAuthnSigner.js"
@@ -29,7 +27,9 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createWeightedValidator,
-    getValidatorAddress
+    getValidatorAddress,
+    getUpdateConfigCall,
+    getCurrentSigners
 } from "./toWeightedValidatorPlugin.js"
 
 export {
@@ -37,12 +37,11 @@ export {
     type WeightedValidatorConfig,
     type WeightedSigner,
     getValidatorAddress,
+    getUpdateConfigCall,
+    getCurrentSigners,
     type KernelValidator,
     toECDSASigner,
     type ECDSASignerParams,
-    toWebAuthnPubKey,
-    type WebAuthnKey,
-    WebAuthnMode,
     type WebAuthnModularSignerParams,
     toWebAuthnSigner,
     type ApproveUserOperationParameters,
