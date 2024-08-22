@@ -36,7 +36,7 @@ export type WebAuthnModularSignerParams = ModularSignerParams & {
     passkeyServerUrl: string
     pubKey?: WebAuthnKey
     mode?: WebAuthnMode
-    passkeyServerHeaders: Record<string, string>
+    passkeyServerHeaders?: Record<string, string>
 }
 
 export const toWebAuthnSigner = async <
@@ -99,7 +99,7 @@ export const toWebAuthnSigner = async <
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({ data: formattedMessage, userId }),
                 credentials: "include"
@@ -123,7 +123,7 @@ export const toWebAuthnSigner = async <
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                ...passkeyServerHeaders
+                ...(passkeyServerHeaders ?? {})
             },
             body: JSON.stringify({ cred, userId }),
             credentials: "include"

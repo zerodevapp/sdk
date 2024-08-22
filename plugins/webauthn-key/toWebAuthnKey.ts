@@ -19,7 +19,7 @@ export type WebAuthnAccountParams = {
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
     credentials?: RequestCredentials
-    passkeyServerHeaders: Record<string, string>
+    passkeyServerHeaders?: Record<string, string>
 }
 
 export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
@@ -51,7 +51,7 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 credentials
             }
@@ -71,7 +71,7 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({ cred: loginCred }),
                 credentials
@@ -93,7 +93,7 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({ username: passkeyName }),
                 credentials
@@ -114,7 +114,7 @@ export const toWebAuthnKey = async ({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...passkeyServerHeaders
+                    ...(passkeyServerHeaders ?? {})
                 },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
