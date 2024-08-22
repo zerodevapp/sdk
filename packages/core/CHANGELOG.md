@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.10
+
+### Patch Changes
+
+- Added initConfig support in deserialize utils of permission validator and kernel account
+
 ## 5.3.9
 
 ### Patch Changes

@@ -156,7 +156,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    const { enableData, identifier, validatorAddress } =
+    const { enableData, identifier, validatorAddress, initConfig: initConfig_ } =
         await kernelPluginManager.getValidatorInitData()
 
     if (entryPointVersion === "v0.6") {
@@ -195,7 +195,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
             initHook && kernelPluginManager.hook
                 ? await kernelPluginManager.hook?.getEnableData()
                 : "0x",
-            initConfig ?? []
+            initConfig ?? initConfig_ ?? []
         ]
     })
 }

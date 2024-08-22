@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.4
+
+### Patch Changes
+
+- Added initConfig support in deserialize utils of permission validator and kernel account
+
 ## 5.4.3
 
 ### Patch Changes

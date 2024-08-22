@@ -146,7 +146,12 @@ export const decodeParamsFromInitCode = (
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
                 identifier: initializeFunctionData.args[0],
-                enableData: initializeFunctionData.args[2]
+                enableData: initializeFunctionData.args[2],
+                initConfig:
+                    kernelVersion === "0.3.1" &&
+                    Array.isArray(initializeFunctionData.args[4])
+                        ? [...initializeFunctionData.args[4]]
+                        : undefined
             }
         }
     }
