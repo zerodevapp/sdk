@@ -1,5 +1,23 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.3.0-alpha-7
+
+### Patch Changes
+
+- Update contract address
+
+## 5.3.0-alpha-6
+
+### Patch Changes
+
+- Rollback contract version to 5.3.0-alpha-4
+
+## 5.3.0-alpha-5
+
+### Patch Changes
+
+- Added support for `renew` signers config.
+
 ## 5.3.0-alpha-4
 
 ### Patch Changes
