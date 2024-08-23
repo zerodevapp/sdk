@@ -7,7 +7,7 @@ export type AllowedTargetsEnforcerParams = {
 }
 
 export const AllowedTargetsEnforcerAddress =
-    "0xF64D77B1f375AC43952865883360a4917353b72A"
+    "0x518d39bC3F1598512Bd5D323e5e9228CC47732b4"
 
 export function toAllowedTargetsEnforcer({
     targets,
@@ -16,6 +16,7 @@ export function toAllowedTargetsEnforcer({
     return {
         enforcer: enforcerAddress,
         terms: concatHex([...targets]),
-        args: "0x"
+        args: "0x",
+        getArgs: () => "0x"
     }
 }

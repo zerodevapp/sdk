@@ -95,7 +95,6 @@ export async function signDelegation<
             ...delegation
         }
     })
-    console.log({ signature })
     if (signature.length > 174) {
         try {
             const [, , decodedSignature] = decodeAbiParameters(

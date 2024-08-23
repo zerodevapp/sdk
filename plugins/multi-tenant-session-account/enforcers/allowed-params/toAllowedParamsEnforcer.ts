@@ -42,6 +42,7 @@ export function toAllowedParamsEnforcer<
     return {
         enforcer: enforcerAddress,
         terms: encodedPermissionData,
-        args: "0x"
+        args: "0x",
+        getArgs: () => "0x"
     }
 }

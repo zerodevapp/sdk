@@ -102,6 +102,21 @@ export const DelegationManagerAbi = [
     },
     {
         type: "function",
+        name: "delegateSignature",
+        inputs: [
+            { name: "_requestor", type: "address", internalType: "address" },
+            {
+                name: "_messageHash",
+                type: "bytes32",
+                internalType: "bytes32"
+            },
+            { name: "_data", type: "bytes", internalType: "bytes" }
+        ],
+        outputs: [{ name: "", type: "bytes4", internalType: "bytes4" }],
+        stateMutability: "view"
+    },
+    {
+        type: "function",
         name: "disableDelegation",
         inputs: [
             {
@@ -307,6 +322,13 @@ export const DelegationManagerAbi = [
     },
     {
         type: "function",
+        name: "onInstall",
+        inputs: [{ name: "", type: "bytes", internalType: "bytes" }],
+        outputs: [],
+        stateMutability: "nonpayable"
+    },
+    {
+        type: "function",
         name: "onchainDelegations",
         inputs: [
             {
@@ -352,15 +374,11 @@ export const DelegationManagerAbi = [
         inputs: [
             { name: "_data", type: "bytes", internalType: "bytes" },
             {
-                name: "_action",
-                type: "tuple",
-                internalType: "struct Action",
-                components: [
-                    { name: "to", type: "address", internalType: "address" },
-                    { name: "value", type: "uint256", internalType: "uint256" },
-                    { name: "data", type: "bytes", internalType: "bytes" }
-                ]
-            }
+                name: "_executionMode",
+                type: "bytes32",
+                internalType: "bytes32"
+            },
+            { name: "_executionData", type: "bytes", internalType: "bytes" }
         ],
         outputs: [],
         stateMutability: "nonpayable"

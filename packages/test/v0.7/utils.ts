@@ -69,10 +69,11 @@ import {
 } from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
-export const index = 432334375434333332434365532464445487823332432423423n
+export const index = 0n // 432334375434333332434365532464445487823332432423423n
 export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
-const projectId = config["v0.7"].sepolia.projectId
+const testingChain = "Base Sepolia"
+const projectId = config["v0.7"][testingChain].projectId
 
 export const validateEnvironmentVariables = (envVars: string[]): void => {
     const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
@@ -112,20 +113,27 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
 }
 
 export const getEcdsaKernelAccountWithRandomSigner = async (
-    initConfig?: Hex[]
+    initConfig?: Hex[],
+    chain?: string
 ) => {
-    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey(), initConfig)
+    return getEcdsaKernelAccountWithPrivateKey(
+        "0xdecd24cf132511c15660755cb179da493965561f9b9de0ee428988ef07f9ea8a" ??
+            generatePrivateKey(),
+        initConfig,
+        chain
+    )
 }
 
 const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
-    initConfig?: Hex[]
+    initConfig?: Hex[],
+    chain?: string
 ) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
 
-    const publicClient = await getPublicClient()
+    const publicClient = await getPublicClient(chain)
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -336,8 +344,8 @@ export const getZeroDevPaymasterClient = () => {
     })
 }
 
-const getPaymasterRpc = (): string => {
-    const zeroDevProjectId = projectId
+export const getPaymasterRpc = (_projectId?: string): string => {
+    const zeroDevProjectId = _projectId ?? projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
         throw new Error(
@@ -348,8 +356,11 @@ const getPaymasterRpc = (): string => {
     return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
-export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = config["v0.7"].sepolia.rpcUrl
+export const getPublicClient = async (
+    chain?: string
+): Promise<PublicClient> => {
+    const rpcUrl = config["v0.7"][chain ?? testingChain].rpcUrl
+    console.log({ rpcUrl })
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -359,13 +370,6 @@ export const getPublicClient = async (): Promise<PublicClient> => {
     })
 
     const chainId = await publicClient.getChainId()
-    const testingChain = getTestingChain()
-
-    if (chainId !== testingChain.id) {
-        throw new Error(
-            `Testing Chain ID (${testingChain.id}) not supported by RPC URL`
-        )
-    }
 
     return publicClient
 }
@@ -400,11 +404,9 @@ export const getPimlicoBundlerClient = () => {
 }
 
 export const getTestingChain = (): Chain => {
-    const testChainId = config["v0.7"].sepolia.chainId
-    const chainId = testChainId ?? polygonMumbai.id
-    const chain = Object.values(allChains).find((c) => c.id === chainId)
+    const chain = Object.values(allChains).find((c) => c.name === testingChain)
     if (!chain) {
-        throw new Error(`Chain with id ${chainId} not found`)
+        throw new Error(`Chain ${testingChain} not found`)
     }
     return chain
 }
@@ -454,9 +456,9 @@ export const getSignerToEcdsaKernelAccount = async () => {
     return getEcdsaKernelAccountWithPrivateKey(privateKey)
 }
 
-const getBundlerRpc = (provider?: string): string => {
-    const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = config["v0.7"].sepolia.bundlerUrl
+export const getBundlerRpc = (_projectId?: string): string => {
+    const zeroDevProjectId = _projectId ?? projectId
+    const zeroDevBundlerRpcHost = config["v0.7"][testingChain].bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"

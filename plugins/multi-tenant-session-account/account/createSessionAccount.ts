@@ -12,10 +12,7 @@ import {
     type SmartAccountSigner,
     toSmartAccount
 } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -50,7 +47,13 @@ export type SessionAccount<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<entryPoint, "multiTenantSessionAccount", transport, chain>
+> = SmartAccount<entryPoint, "multiTenantSessionAccount", transport, chain> & {
+    delegations: Delegation[]
+    encodeCallData: (
+        args: SessionAccountEncodeCallDataArgs,
+        _delegations?: Delegation[]
+    ) => Promise<Hex>
+}
 
 export type CreateSessionAccountParameters<
     entryPoint extends EntryPoint,
@@ -63,6 +66,18 @@ export type CreateSessionAccountParameters<
     multiTenantSessionAccountAddress?: Address
     delegatorInitCode?: Hex
 }
+
+export type SessionAccountEncodeCallDataArgs =
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+      }
+    | {
+          to: Address
+          value: bigint
+          data: Hex
+      }[]
 
 export async function createSessionAccount<
     entryPoint extends EntryPoint,
@@ -198,12 +213,16 @@ export async function createSessionAccount<
     }
 
     return {
+        delegations,
         ...toSmartAccount({
             client,
             source: "multiTenantSessionAccount",
             entryPoint: entryPointAddress,
             address: accountAddress,
-            encodeCallData: async (tx) => {
+            encodeCallData: async (
+                tx: SessionAccountEncodeCallDataArgs,
+                _delegations?: Delegation[]
+            ) => {
                 const isBatch = Array.isArray(tx)
                 const executeUserOpSig = toFunctionSelector(
                     getAbiItem({
@@ -272,7 +291,7 @@ export async function createSessionAccount<
                             }
                         ],
                         [
-                            delegations,
+                            _delegations ?? delegations,
                             execMode,
                             execData,
                             await getDelegatorInitCode()

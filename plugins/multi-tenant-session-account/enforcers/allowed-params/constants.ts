@@ -15,4 +15,4 @@ export enum ParamCondition {
 }
 
 export const AllowedParamsEnforcerAddress =
-    "0x54F1f6aAe77D2E3feA4c40A7d99E4aDcEFa00c79"
+    "0x73EFe621A030e0AaF189B9C40156353A16B80aD0"

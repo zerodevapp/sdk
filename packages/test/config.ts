@@ -1,6 +1,11 @@
 import type { EntryPointVersion } from "permissionless/types/entrypoint"
 import type { Chain } from "viem"
-import { polygonMumbai, sepolia } from "viem/chains"
+import {
+    baseSepolia,
+    optimismSepolia,
+    polygonMumbai,
+    sepolia
+} from "viem/chains"
 
 export const config: {
     [key in EntryPointVersion]: {
@@ -27,11 +32,23 @@ export const config: {
         }
     },
     "v0.7": {
-        sepolia: {
+        Sepolia: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: sepolia.id,
             projectId: process.env.ZERODEV_PROJECT_ID_SEPOLIA || ""
+        },
+        "OP Sepolia": {
+            rpcUrl: process.env.RPC_URL_OP_SEPOLIA || "",
+            bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
+            chainId: optimismSepolia.id,
+            projectId: process.env.ZERODEV_PROJECT_ID_OP_SEPOLIA || ""
+        },
+        "Base Sepolia": {
+            rpcUrl: process.env.RPC_URL_BASE_SEPOLIA || "",
+            bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
+            chainId: baseSepolia.id,
+            projectId: process.env.ZERODEV_PROJECT_ID_BASE_SEPOLIA || ""
         }
     }
 }

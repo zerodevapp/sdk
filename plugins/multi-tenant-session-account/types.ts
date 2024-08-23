@@ -2,9 +2,11 @@ import type { Address, Hex } from "viem"
 
 export type DM_VERSION_TYPE = "1.0.0"
 
-export type Caveat = {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export type Caveat<T = any> = {
     enforcer: Address
     args: Hex
+    getArgs: (params: T) => Hex
     terms: Hex
 }
 
