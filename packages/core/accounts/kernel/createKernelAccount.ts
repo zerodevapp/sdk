@@ -621,9 +621,7 @@ export async function createKernelAccount<
 
             // Get simple dummy signature
             async getDummySignature(userOperation) {
-                return await kernelPluginManager.getDummySignature(
-                    userOperation
-                )
+                return kernelPluginManager.getDummySignature(userOperation)
             },
 
             // Encode the init code
