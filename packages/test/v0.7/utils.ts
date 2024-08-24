@@ -180,7 +180,7 @@ export const getZeroDevPaymasterClient = () => {
     })
 }
 
-const getPaymasterRpc = (): string => {
+export const getPaymasterRpc = (): string => {
     const zeroDevProjectId = projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
@@ -280,7 +280,7 @@ export const getSignerToEcdsaKernelAccount = async () => {
     return getEcdsaKernelAccountWithPrivateKey(privateKey)
 }
 
-const getBundlerRpc = (provider?: string): string => {
+export const getBundlerRpc = (provider?: string): string => {
     const zeroDevProjectId = projectId
     const zeroDevBundlerRpcHost = config["v0.7"].sepolia.bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {

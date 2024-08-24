@@ -56,6 +56,8 @@ export function toECDSASigner<
         getSignerData: () => {
             return viemSigner.address
         },
-        getDummySignature: () => constants.DUMMY_ECDSA_SIG
+        getDummySignature: () => {
+            return constants.DUMMY_ECDSA_SIG
+        }
     }
 }

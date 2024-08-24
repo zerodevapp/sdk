@@ -159,6 +159,7 @@ export type ValidatorInitData = {
 export type KernelPluginManager<entryPoint extends EntryPoint> =
     KernelValidator<entryPoint> & {
         sudoValidator?: KernelValidator<entryPoint>
+        regularValidator?: KernelValidator<entryPoint>
         hook?: KernelValidatorHook
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
