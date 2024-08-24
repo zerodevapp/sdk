@@ -1,9 +1,9 @@
 import {
-    getEncodedPluginsData,
-    isPluginInitialized,
-    KernelV3AccountAbi,
     type Action,
-    type KernelSmartAccount
+    type KernelSmartAccount,
+    KernelV3AccountAbi,
+    getEncodedPluginsData,
+    isPluginInitialized
 } from "@zerodev/sdk"
 import {
     AccountOrClientNotFoundError,
@@ -19,12 +19,12 @@ import type {
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
 import {
-    zeroAddress,
     type Chain,
     type Client,
     type Hash,
     type Hex,
-    type Transport
+    type Transport,
+    zeroAddress
 } from "viem"
 import type { Prettify } from "viem/chains"
 import { getAbiItem, getAction, toFunctionSelector } from "viem/utils"

@@ -1,28 +1,28 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { Address, privateKeyToAccount } from "viem/accounts"
-import {
-    createWeightedKernelAccountClient,
-    createWeightedValidator,
-    toECDSASigner,
-    WeightedSigner
-} from "../../../plugins/weighted-r1-k1"
-import {
-    getPublicClient,
-    getEntryPoint,
-    getPaymasterRpc,
-    getBundlerRpc
-} from "./utils"
-import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { createKernelAccount, createZeroDevPaymasterClient } from "@zerodev/sdk"
-import { sepolia } from "viem/chains"
+import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { http, zeroAddress } from "viem"
+import { Address, privateKeyToAccount } from "viem/accounts"
+import { sepolia } from "viem/chains"
 import {
     CallPolicyVersion,
     toCallPolicy
 } from "../../../plugins/permission/policies"
 import { toECDSASigner as toStandaloneECDSASigner } from "../../../plugins/permission/signers"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
+import {
+    type WeightedSigner,
+    createWeightedKernelAccountClient,
+    createWeightedValidator,
+    toECDSASigner
+} from "../../../plugins/weighted-r1-k1"
+import {
+    getBundlerRpc,
+    getEntryPoint,
+    getPaymasterRpc,
+    getPublicClient
+} from "./utils"
 
 const TEST_TIMEOUT = 1000000
 
