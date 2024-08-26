@@ -28,7 +28,7 @@ const TEST_TIMEOUT = 1000000
 
 describe("weightedValidator", () => {
     test(
-        "should work",
+        "should enable regular validator",
         async () => {
             const publicClient = await getPublicClient()
             const entryPoint = getEntryPoint()
@@ -158,7 +158,7 @@ describe("weightedValidator", () => {
                         value: BigInt(0)
                     })
                 },
-                signatures: []
+                signatures: [signature1, signature2]
             })
 
             console.log({ userOpHash })
