@@ -298,7 +298,8 @@ export async function toMultiChainWebAuthnValidator<
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
                 authenticatorId: webAuthnKey.authenticatorId,
-                authenticatorIdHash: webAuthnKey.authenticatorIdHash
+                authenticatorIdHash: webAuthnKey.authenticatorIdHash,
+                rpId
             })
         }
     }
@@ -330,7 +331,8 @@ export async function deserializeMultiChainWebAuthnValidator<
         pubKeyX,
         pubKeyY,
         authenticatorId,
-        authenticatorIdHash
+        authenticatorIdHash,
+        rpId
     } = deserializeMultiChainWebAuthnValidatorData(serializedData)
 
     // Fetch chain id
@@ -341,7 +343,7 @@ export async function deserializeMultiChainWebAuthnValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, chainId, [
+            return signMessageUsingWebAuthn(message, chainId, rpId, [
                 { id: authenticatorId, type: "public-key" }
             ])
         },
@@ -486,7 +488,8 @@ export async function deserializeMultiChainWebAuthnValidator<
                 pubKeyX,
                 pubKeyY,
                 authenticatorId,
-                authenticatorIdHash
+                authenticatorIdHash,
+                rpId
             })
         }
     }
@@ -499,6 +502,7 @@ type MultiChainWebAuthnValidatorSerializedData = {
     pubKeyY: bigint
     authenticatorId: string
     authenticatorIdHash: Hex
+    rpId?: string
 }
 
 function serializeMultiChainWebAuthnValidatorData(
