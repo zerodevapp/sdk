@@ -1,5 +1,17 @@
 # @zerodev/weighted-validator
 
+## 5.3.0-alpha-6
+
+### Patch Changes
+
+- Update peer dependency to core sdk 5.3.11
+
+## 5.3.0-alpha-5
+
+### Patch Changes
+
+- Fixed the issue with the regular validator not being enabled
+
 ## 5.3.0-alpha-4
 
 ### Patch Changes
