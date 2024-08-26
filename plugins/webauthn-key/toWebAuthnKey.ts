@@ -16,6 +16,7 @@ export type WebAuthnKey = {
 export type WebAuthnAccountParams = {
     passkeyName: string
     passkeyServerUrl: string
+    rpID?: string
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
     credentials?: RequestCredentials
@@ -33,6 +34,7 @@ export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
 export const toWebAuthnKey = async ({
     passkeyName,
     passkeyServerUrl,
+    rpID,
     webAuthnKey,
     mode = WebAuthnMode.Register,
     credentials = "include",
@@ -53,6 +55,7 @@ export const toWebAuthnKey = async ({
                     "Content-Type": "application/json",
                     ...passkeyServerHeaders
                 },
+                body: JSON.stringify({ rpID }),
                 credentials
             }
         )
@@ -73,7 +76,7 @@ export const toWebAuthnKey = async ({
                     "Content-Type": "application/json",
                     ...passkeyServerHeaders
                 },
-                body: JSON.stringify({ cred: loginCred }),
+                body: JSON.stringify({ cred: loginCred, rpID }),
                 credentials
             }
         )
@@ -95,7 +98,7 @@ export const toWebAuthnKey = async ({
                     "Content-Type": "application/json",
                     ...passkeyServerHeaders
                 },
-                body: JSON.stringify({ username: passkeyName }),
+                body: JSON.stringify({ username: passkeyName, rpID }),
                 credentials
             }
         )
@@ -119,7 +122,8 @@ export const toWebAuthnKey = async ({
                 body: JSON.stringify({
                     userId: registerOptions.userId,
                     username: passkeyName,
-                    cred: registerCred
+                    cred: registerCred,
+                    rpID
                 }),
                 credentials
             }
