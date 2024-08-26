@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.11
+
+### Patch Changes
+
+- Exposed regular validator properties in the kernelPluginManager interface
+
 ## 5.3.10
 
 ### Patch Changes
