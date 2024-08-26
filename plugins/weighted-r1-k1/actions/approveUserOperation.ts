@@ -88,8 +88,6 @@ export async function approveUserOperation<
         getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })
     )
 
-    console.log("approveUserOperation: validatorAddress", validatorAddress)
-
     // check if regular validator exists
     if (account.kernelPluginManager.regularValidator) {
         const isPluginEnabled =
