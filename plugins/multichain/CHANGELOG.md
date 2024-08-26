@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.9
+
+### Patch Changes
+
+- Added custom rpId support to the multi chain webAuthn validator
+
 ## 5.3.8
 
 ### Patch Changes
