@@ -1,4 +1,10 @@
-import type { KernelSmartAccount } from "@zerodev/sdk"
+import {
+    type Action,
+    type KernelSmartAccount,
+    KernelV3AccountAbi,
+    getEncodedPluginsData,
+    isPluginInitialized
+} from "@zerodev/sdk"
 import {
     AccountOrClientNotFoundError,
     type UserOperation,
@@ -12,9 +18,16 @@ import type {
     EntryPoint,
     GetEntryPointVersion
 } from "permissionless/types/entrypoint"
-import type { Chain, Client, Hash, Hex, Transport } from "viem"
+import {
+    type Chain,
+    type Client,
+    type Hash,
+    type Hex,
+    type Transport,
+    zeroAddress
+} from "viem"
 import type { Prettify } from "viem/chains"
-import { getAction } from "viem/utils"
+import { getAbiItem, getAction, toFunctionSelector } from "viem/utils"
 import { encodeSignatures } from "../utils.js"
 
 export type SendUserOperationWithSignaturesParameters<
@@ -47,6 +60,110 @@ export async function sendUserOperationWithSignatures<
     const account = parseAccount(account_) as KernelSmartAccount<entryPoint>
 
     const { userOperation: _userOperation, signatures } = args
+
+    const action: Action = {
+        selector: toFunctionSelector(
+            getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })
+        ),
+        address: zeroAddress
+    }
+
+    // check if regular validator exists
+    if (account.kernelPluginManager.regularValidator) {
+        const isPluginEnabled =
+            (await account.kernelPluginManager.isEnabled(
+                account.address,
+                action.selector
+            )) ||
+            (await isPluginInitialized(
+                client,
+                account.address,
+                account.kernelPluginManager.address
+            ))
+
+        // if the regular validator is not enabled, encode with enable signatures
+        if (!isPluginEnabled) {
+            const dummySignature =
+                await account.kernelPluginManager.regularValidator.getDummySignature(
+                    _userOperation as UserOperation<
+                        GetEntryPointVersion<entryPoint>
+                    >
+                )
+
+            const encodedDummySignatures = await getEncodedPluginsData({
+                enableSignature: encodeSignatures(signatures),
+                userOpSignature: dummySignature,
+                action,
+                enableData: await account.kernelPluginManager.getEnableData(
+                    account.address
+                )
+            })
+
+            _userOperation.signature = encodedDummySignatures
+
+            const userOperation = await getAction(
+                client,
+                prepareUserOperationRequest<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TAccount
+                >,
+                "prepareUserOperationRequest"
+            )(args)
+
+            const encodedSignatures = await getEncodedPluginsData({
+                enableSignature: encodeSignatures(signatures),
+                userOpSignature:
+                    await account.kernelPluginManager.signUserOperationWithActiveValidator(
+                        userOperation as UserOperation<
+                            GetEntryPointVersion<entryPoint>
+                        >
+                    ),
+                action,
+                enableData: await account.kernelPluginManager.getEnableData(
+                    account.address
+                )
+            })
+
+            userOperation.signature = encodedSignatures
+
+            return sendUserOperationBundler(client, {
+                userOperation: userOperation as UserOperation<
+                    GetEntryPointVersion<entryPoint>
+                >,
+                entryPoint: account.entryPoint
+            })
+
+            // if the regular validator is enabled, use signUserOperationWithActiveValidator directly
+        } else {
+            const userOperation = await getAction(
+                client,
+                prepareUserOperationRequest<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TAccount
+                >,
+                "prepareUserOperationRequest"
+            )(args)
+
+            userOperation.signature =
+                await account.kernelPluginManager.signUserOperationWithActiveValidator(
+                    userOperation as UserOperation<
+                        GetEntryPointVersion<entryPoint>
+                    >
+                )
+
+            return sendUserOperationBundler(client, {
+                userOperation: userOperation as UserOperation<
+                    GetEntryPointVersion<entryPoint>
+                >,
+                entryPoint: account.entryPoint
+            })
+        }
+    }
+
     const encodedSignatures = encodeSignatures(signatures)
     _userOperation.signature = encodedSignatures
     _userOperation.signature = await account.getDummySignature(
