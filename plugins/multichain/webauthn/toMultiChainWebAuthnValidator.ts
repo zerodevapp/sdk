@@ -36,6 +36,7 @@ import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "../constants.js"
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
     chainId: number,
+    rpId?: string,
     allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
 ) => {
     let messageContent: string
@@ -66,7 +67,8 @@ const signMessageUsingWebAuthn = async (
     const assertionOptions: PublicKeyCredentialRequestOptionsJSON = {
         challenge,
         allowCredentials,
-        userVerification: "required"
+        userVerification: "required",
+        rpId
     }
 
     // start authentication (signing)
@@ -124,11 +126,13 @@ export async function toMultiChainWebAuthnValidator<
         webAuthnKey,
         entryPoint: entryPointAddress,
         kernelVersion: _,
+        rpId,
         validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
         entryPoint: entryPoint
         kernelVersion: GetKernelVersion<entryPoint>
+        rpId?: string
         validatorAddress?: Address
     }
 ): Promise<
@@ -146,7 +150,7 @@ export async function toMultiChainWebAuthnValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, chainId, [
+            return signMessageUsingWebAuthn(message, chainId, rpId, [
                 { id: webAuthnKey.authenticatorId, type: "public-key" }
             ])
         },
