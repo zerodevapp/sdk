@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.3.0
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
 ## 5.3.0-alpha-6
 
 ### Patch Changes

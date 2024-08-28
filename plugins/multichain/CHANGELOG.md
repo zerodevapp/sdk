@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.10
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
 ## 5.3.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @zerodev/modular-permission
 
+## 5.3.3
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
 ## 5.3.2
 
 ### Patch Changes

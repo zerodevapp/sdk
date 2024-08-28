@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/passkey-validator",
-    "version": "5.4.0",
+    "version": "5.4.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -42,6 +42,6 @@
         "viem": "^2.16.3",
         "@zerodev/sdk": "^5.2.1",
         "@zerodev/webauthn-key": "^5.3.0",
-        "permissionless": "^0.1.18"
+        "permissionless": ">=0.1.18 <=0.1.29"
     }
 }
