@@ -33,11 +33,11 @@ import {
     type SmartAccount,
     signerToSimpleSmartAccount
 } from "permissionless/accounts"
-import type { Middleware } from "permissionless/actions/smartAccount.js"
+import type { Middleware } from "permissionless/actions/smartAccount"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint.js"
+} from "permissionless/types"
 import {
     http,
     type AbiItem,
@@ -69,7 +69,7 @@ import { config } from "./config.js"
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 export const index = 5438533232332340n
 const DEFAULT_PROVIDER = "STACKUP"
-const projectId = config["v0.6"].sepolia.projectId
+const projectId = config["v0.6"][sepolia.id].projectId
 export const kernelVersion = "0.2.4"
 export const getFactoryAddress = (): Address => {
     const factoryAddress = process.env.FACTORY_ADDRESS
@@ -88,7 +88,7 @@ export const getPrivateKeyAccount = (): Account => {
 }
 
 export const getTestingChain = (): Chain => {
-    const testChainId = config["v0.6"].sepolia.chainId
+    const testChainId = config["v0.6"][sepolia.id].chainId
     const chainId = testChainId ?? sepolia.id
     const chain = Object.values(allChains).find((c) => c.id === chainId)
     if (!chain) {
@@ -157,7 +157,7 @@ export const getKernelV1Account = async () => {
     return createKernelAccountV1(publicClient, {
         signer,
         index,
-        entrypoint: getEntryPoint()
+        entryPoint: getEntryPoint()
     }) as unknown as KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
 }
 
@@ -462,7 +462,7 @@ export const getSessionKeyToSessionKeyKernelAccount = async (
 
 const getBundlerRpc = (): string => {
     const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = config["v0.6"].sepolia.bundlerUrl
+    const zeroDevBundlerRpcHost = config["v0.6"][sepolia.id].bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
@@ -514,7 +514,7 @@ export const getKernelAccountClient = async ({
 }
 
 export const getEoaWalletClient = (): WalletClient => {
-    const rpcUrl = config["v0.6"].sepolia.rpcUrl
+    const rpcUrl = config["v0.6"][sepolia.id].rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -531,7 +531,7 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V06_TYPE => {
 }
 
 export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = config["v0.6"].sepolia.rpcUrl
+    const rpcUrl = config["v0.6"][sepolia.id].rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }

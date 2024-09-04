@@ -279,7 +279,7 @@ describe("fallback client e2e", () => {
                     message,
                     signature: signature,
                     provider: new ethers.providers.JsonRpcProvider(
-                        config["v0.6"].sepolia.rpcUrl
+                        config["v0.6"][sepolia.id].rpcUrl
                     )
                 })
                 expect(ambireResult).toBeTrue()
@@ -344,7 +344,7 @@ describe("fallback client e2e", () => {
                     },
                     signature: signature,
                     provider: new ethers.providers.JsonRpcProvider(
-                        config["v0.6"].sepolia.rpcUrl
+                        config["v0.6"][sepolia.id].rpcUrl
                     )
                 })
                 expect(ambireResult).toBeTrue()
@@ -370,7 +370,7 @@ describe("fallback client e2e", () => {
                     message,
                     signature: response,
                     provider: new ethers.providers.JsonRpcProvider(
-                        config["v0.6"].sepolia.rpcUrl
+                        config["v0.6"][sepolia.id].rpcUrl
                     )
                 })
                 expect(ambireResult).toBeTrue()

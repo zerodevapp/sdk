@@ -150,7 +150,7 @@ describe("ECDSA kernel Account v1", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.6"].sepolia.rpcUrl
+                    config["v0.6"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

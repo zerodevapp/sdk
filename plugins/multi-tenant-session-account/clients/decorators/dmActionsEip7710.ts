@@ -1,13 +1,10 @@
 import type { SmartAccount } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
-import type { Prettify } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import {
     type EncodeCallDataWithCABParameters,
-    type SendTransactionWithCABParameters,
     type SignDelegationParameters,
     encodeCallDataWithCAB,
-    sendTransactionWithCAB,
     signDelegation
 } from "../../actions/index.js"
 
@@ -20,16 +17,6 @@ export type DMActionsEip7710<
 > = {
     signDelegation: (
         args: SignDelegationParameters<TEntryPoint, TAccount>
-    ) => Promise<Hash>
-    sendTransactionWithCAB: <TChainOverride extends Chain | undefined>(
-        args: Prettify<
-            SendTransactionWithCABParameters<
-                TEntryPoint,
-                TChain,
-                TAccount,
-                TChainOverride
-            >
-        >
     ) => Promise<Hash>
     encodeCallDataWithCAB: <TChainOverride extends Chain | undefined>(
         args: EncodeCallDataWithCABParameters<
@@ -60,17 +47,6 @@ const dmActionsEip7710 =
                 {
                     ...args
                 } as SignDelegationParameters<TEntryPoint, TAccount>
-            ),
-        sendTransactionWithCAB: (args) =>
-            sendTransactionWithCAB(
-                client as Client<TTransport, TChain, TAccount>,
-                {
-                    ...args
-                } as SendTransactionWithCABParameters<
-                    TEntryPoint,
-                    TChain,
-                    TAccount
-                >
             ),
         encodeCallDataWithCAB: (args) =>
             encodeCallDataWithCAB(

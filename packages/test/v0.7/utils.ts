@@ -20,7 +20,7 @@ import {
 import type {
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint"
+} from "permissionless/types"
 import {
     http,
     type Address,
@@ -47,8 +47,8 @@ import { toPermissionValidator } from "../../../plugins/permission/toPermissionV
 import type { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
-import type { Action } from "@zerodev/sdk/types/kernel.js"
-import type { SmartAccountSigner } from "permissionless/accounts/types.js"
+import type { Action } from "@zerodev/sdk/types"
+import type { SmartAccountSigner } from "permissionless/accounts"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
@@ -69,10 +69,10 @@ import {
 } from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
-export const index = 0n // 432334375434333332434365532464445487823332432423423n
+export const index = 11111111111111n // 432334375434333332434365532464445487823332432423423n
 export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
-const testingChain = "Base Sepolia"
+const testingChain = allChains.sepolia.id
 const projectId = config["v0.7"][testingChain].projectId
 
 export const validateEnvironmentVariables = (envVars: string[]): void => {
@@ -114,7 +114,7 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
 
 export const getEcdsaKernelAccountWithRandomSigner = async (
     initConfig?: Hex[],
-    chain?: string
+    chain?: number
 ) => {
     return getEcdsaKernelAccountWithPrivateKey(
         "0xdecd24cf132511c15660755cb179da493965561f9b9de0ee428988ef07f9ea8a" ??
@@ -127,7 +127,7 @@ export const getEcdsaKernelAccountWithRandomSigner = async (
 const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
     initConfig?: Hex[],
-    chain?: string
+    chain?: number
 ) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
@@ -357,10 +357,9 @@ export const getPaymasterRpc = (_projectId?: string): string => {
 }
 
 export const getPublicClient = async (
-    chain?: string
+    chain?: number
 ): Promise<PublicClient> => {
     const rpcUrl = config["v0.7"][chain ?? testingChain].rpcUrl
-    console.log({ rpcUrl })
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -404,7 +403,7 @@ export const getPimlicoBundlerClient = () => {
 }
 
 export const getTestingChain = (): Chain => {
-    const chain = Object.values(allChains).find((c) => c.name === testingChain)
+    const chain = Object.values(allChains).find((c) => c.id === testingChain)
     if (!chain) {
         throw new Error(`Chain ${testingChain} not found`)
     }

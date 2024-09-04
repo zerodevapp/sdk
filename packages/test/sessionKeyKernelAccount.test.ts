@@ -55,7 +55,7 @@ describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient
     const client = await createPublicClient({
         chain: sepolia,
-        transport: http(config["v0.6"].sepolia.rpcUrl as string)
+        transport: http(config["v0.6"][sepolia.id].rpcUrl as string)
     })
     const executeBatchSelector = toFunctionSelector(
         getAbiItem({

@@ -16,7 +16,6 @@ export function toAllowedTargetsEnforcer({
     return {
         enforcer: enforcerAddress,
         terms: concatHex([...targets]),
-        args: "0x",
-        getArgs: () => "0x"
+        args: "0x"
     }
 }

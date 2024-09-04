@@ -165,7 +165,7 @@ describe("Yi SubAccount", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -240,7 +240,7 @@ describe("Yi SubAccount", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -270,7 +270,7 @@ describe("Yi SubAccount", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

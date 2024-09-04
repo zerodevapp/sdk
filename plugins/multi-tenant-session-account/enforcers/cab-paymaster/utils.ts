@@ -3,12 +3,14 @@ import {
     type Address,
     type Hex,
     concatHex,
+    encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
     isHex,
     pad,
     toHex
 } from "viem"
+import type { CABPaymasterEnforcerArgs } from "./toCABPaymasterEnforcer"
 
 export type SponsorTokenInfo = {
     amount: bigint
@@ -79,7 +81,8 @@ export const encodePaymasterTokens = (
     )
     repayTokenDataEncoded = concatHex([
         toHex(repayTokenData.length, { size: 1 }),
-        repayTokenDataEncoded
+        repayTokenDataEncoded,
+        pad("0x00", { size: 1 }) // repayGasData = 0
     ])
 
     return {
@@ -87,3 +90,65 @@ export const encodePaymasterTokens = (
         repayTokenDataEncoded
     }
 }
+
+export const encodeCABEnforcerArgs = ({
+    indexes,
+    nonce,
+    paymasterSignature,
+    repayTokenData,
+    spender,
+    sponsorTokenData
+}: CABPaymasterEnforcerArgs) => {
+    const { sponsorTokenDataEncoded, repayTokenDataEncoded } =
+        encodePaymasterTokens(sponsorTokenData, repayTokenData)
+
+    return encodeAbiParameters(
+        [
+            { type: "uint256[]", name: "indexes" },
+            { type: "bytes", name: "data" }
+        ],
+        [
+            indexes,
+            concatHex([
+                spender,
+                toHex(nonce, { size: 32 }),
+                sponsorTokenDataEncoded,
+                repayTokenDataEncoded,
+                paymasterSignature
+            ])
+        ]
+    )
+}
+
+export const cabAllowancesAbiType = {
+    name: "RepayAllowances",
+    type: "tuple[]",
+    components: [
+        {
+            name: "token",
+            type: "address"
+        },
+        {
+            name: "amount",
+            type: "uint256"
+        },
+        {
+            name: "vaults",
+            type: "tuple[]",
+            components: [
+                {
+                    name: "chainId",
+                    type: "uint256"
+                },
+                {
+                    name: "vault",
+                    type: "address"
+                },
+                {
+                    name: "multiplier",
+                    type: "uint256"
+                }
+            ]
+        }
+    ]
+} as const

@@ -22,8 +22,8 @@ import {
     bundlerActions
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint.js"
+import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -63,6 +63,7 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils.js"
+import { sepolia } from "viem/chains";
 
 dotenv.config()
 
@@ -195,7 +196,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -260,7 +261,7 @@ describe("ECDSA kernel Account", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -290,7 +291,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

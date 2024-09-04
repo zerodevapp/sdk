@@ -1,4 +1,4 @@
-import type { EntryPointVersion } from "permissionless/types/entrypoint"
+import type { EntryPointVersion } from "permissionless/types"
 import type { Chain } from "viem"
 import {
     baseSepolia,
@@ -9,7 +9,7 @@ import {
 
 export const config: {
     [key in EntryPointVersion]: {
-        [key in Chain["name"]]: {
+        [key in number]: {
             rpcUrl: string
             chainId: number
             bundlerUrl: string
@@ -18,13 +18,7 @@ export const config: {
     }
 } = {
     "v0.6": {
-        polygonMumbai: {
-            rpcUrl: process.env.RPC_URL_MUMBAI || "",
-            bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV06 || "",
-            chainId: polygonMumbai.id,
-            projectId: process.env.ZERODEV_PROJECT_ID_MUMBAI || ""
-        },
-        sepolia: {
+        [sepolia.id]: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: sepolia.id,
@@ -32,19 +26,19 @@ export const config: {
         }
     },
     "v0.7": {
-        Sepolia: {
+        [sepolia.id]: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: sepolia.id,
             projectId: process.env.ZERODEV_PROJECT_ID_SEPOLIA || ""
         },
-        "OP Sepolia": {
+        [optimismSepolia.id]: {
             rpcUrl: process.env.RPC_URL_OP_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: optimismSepolia.id,
             projectId: process.env.ZERODEV_PROJECT_ID_OP_SEPOLIA || ""
         },
-        "Base Sepolia": {
+        [baseSepolia.id]: {
             rpcUrl: process.env.RPC_URL_BASE_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: baseSepolia.id,

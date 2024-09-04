@@ -264,7 +264,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -341,7 +341,7 @@ describe("MultiChainECDSAValidator", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -371,7 +371,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -414,7 +414,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

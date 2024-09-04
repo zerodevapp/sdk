@@ -31,7 +31,10 @@ import {
     createPublicClient,
     encodeAbiParameters,
     encodeFunctionData,
-    pad
+    pad,
+    decodeAbiParameters,
+    isAddressEqual,
+    toHex
 } from "viem"
 import { getChainId } from "viem/actions"
 import type { SessionAccount } from "../account/createSessionAccount.js"
@@ -41,12 +44,11 @@ import {
 } from "../constants.js"
 import {
     type SponsorTokenInfo,
+    cabAllowancesAbiType,
+    encodeCABEnforcerArgs,
     encodePaymasterTokens
 } from "../enforcers/cab-paymaster/index.js"
-import {
-    CABPaymasterEnforcerAddress,
-    toCABPaymasterEnforcer
-} from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
+import { CABPaymasterEnforcerAddress } from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
 import { toDelegationHash } from "../utils/index.js"
 
 export type EncodeCallDataWithCABParameters<
@@ -173,7 +175,9 @@ export async function encodeCallDataWithCAB<
             // @ts-expect-error
             chainId,
             // @ts-expect-error
-            repayTokens
+            repayTokens,
+            // @ts-expect-error
+            CABPaymasterEnforcerAddress
         ]
     })
     const cabEnforcerIndex = account.delegations[
@@ -322,11 +326,47 @@ export async function encodeCallDataWithCAB<
                 // @ts-expect-error
                 sponsorTokenDataEncoded,
                 // @ts-expect-error
-                repayTokenDataEncoded
+                repayTokenDataEncoded,
+                // @ts-expect-error
+                CABPaymasterEnforcerAddress
             ]
         })
     if (cabEnforcer) {
-        const cabEnforcerArgs = toCABPaymasterEnforcer({}).getArgs({
+        const [allowances] = decodeAbiParameters(
+            [cabAllowancesAbiType],
+            cabEnforcer.terms
+        )
+        const indexes = cabPaymasterTokensResponse.repayTokensInfo.map(
+            (rpyTkn, rpyIdx) => {
+                let sponsorIndex = 0
+                let repayIndex = 0
+                allowances.forEach((allowance, allowanceIdx) => {
+                    repayIndex = allowance.vaults.findIndex(
+                        (vault) =>
+                            vault.chainId === BigInt(rpyTkn.chainId) &&
+                            isAddressEqual(vault.vault, rpyTkn.vault)
+                    )
+                    if (
+                        repayIndex !== -1 &&
+                        isAddressEqual(
+                            cabPaymasterTokensResponse.sponsorTokensInfo[rpyIdx]
+                                .address,
+                            allowance.token
+                        )
+                    ) {
+                        sponsorIndex = allowanceIdx
+                    }
+                })
+                return BigInt(
+                    concatHex([
+                        toHex(sponsorIndex, { size: 16 }),
+                        toHex(repayIndex, { size: 16 })
+                    ])
+                )
+            }
+        )
+        const cabEnforcerArgs = encodeCABEnforcerArgs({
+            indexes,
             nonce: accountNonce,
             spender: delegatorAccountAddress,
             paymasterSignature,
