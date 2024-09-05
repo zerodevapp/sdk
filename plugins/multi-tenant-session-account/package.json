@@ -67,7 +67,7 @@
         "viem": "^2.16.3",
         "permissionless": "^0.1.18",
         "@zerodev/sdk": "^5.3.10",
-        "@zerodev/cab": "^0.0.16-alpha-6"
+        "@zerodev/cab": "0.0.16-alpha-7"
     },
     "dependencies": {
         "semver": "^7.6.0"

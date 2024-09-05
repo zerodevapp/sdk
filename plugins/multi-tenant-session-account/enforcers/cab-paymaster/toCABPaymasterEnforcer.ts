@@ -31,7 +31,7 @@ export type Allowance = {
 }
 
 export const CABPaymasterEnforcerAddress =
-    "0xe899da923bc1750f8411805bf7d6db587fb3656f"
+    "0x55c9964c836468ac3847ebeE3C47950Aaf59F1Ce"
 
 export async function toCABPaymasterEnforcer({
     accountAddress,
