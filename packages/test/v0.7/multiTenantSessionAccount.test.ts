@@ -1,6 +1,5 @@
 // @ts-expect-error
 import { beforeAll, describe, test } from "bun:test"
-import { createKernelCABClient } from "/Users/sh31/code/zerodev/cab"
 import {
     type KernelAccountClient,
     type KernelSmartAccount,
@@ -27,14 +26,15 @@ import {
     type Transport,
     createPublicClient,
     decodeErrorResult,
+    decodeFunctionData,
+    encodeErrorResult,
     encodeFunctionData,
     parseEther,
-    zeroAddress,
-    encodeErrorResult,
-    decodeFunctionData
+    zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { baseSepolia, optimismSepolia, sepolia } from "viem/chains"
+import { createKernelCABClient } from "/Users/sh31/code/zerodev/cab"
 import type {
     Caveat,
     SessionAccount
@@ -388,7 +388,7 @@ describe("Yi SubAccount", () => {
                     params: [kernelCabClientOPSepolia.account.address]
                 })
                 console.log("CAB balance:", cabBalance)
-                    // @ts-ignore
+                // @ts-ignore
                 if (cabBalance?.availableRepayTokens?.length) {
                     break
                 }

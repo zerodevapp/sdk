@@ -1,14 +1,14 @@
 import type { RepayTokenInfo } from "@zerodev/cab"
 import {
+    http,
     type Address,
     type Hex,
     createPublicClient,
-    encodeAbiParameters,
-    http
+    encodeAbiParameters
 } from "viem"
+import { CAB_PAYMASTER_SERVER_URL } from "../../constants.js"
 import type { Caveat } from "../../types.js"
 import { type SponsorTokenInfo, cabAllowancesAbiType } from "./utils.js"
-import { CAB_PAYMASTER_SERVER_URL } from "../../constants.js"
 
 export type CABPaymasterEnforcerArgs = {
     indexes: bigint[]

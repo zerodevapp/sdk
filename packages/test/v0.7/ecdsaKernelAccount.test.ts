@@ -43,6 +43,7 @@ import {
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { sepolia } from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
@@ -63,7 +64,6 @@ import {
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils.js"
-import { sepolia } from "viem/chains";
 
 dotenv.config()
 
