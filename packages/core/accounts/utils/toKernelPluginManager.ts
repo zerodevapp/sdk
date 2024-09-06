@@ -166,10 +166,9 @@ export async function toKernelPluginManager<
         if (entryPointVersion === "v0.6") {
             return regular.isEnabled(accountAddress, selector)
         }
-        const isEnabled = (
+        const isEnabled =
             (await regular.isEnabled(accountAddress, action.selector)) ||
             (await isPluginInitialized(client, accountAddress, regular.address))
-        )
         if (isEnabled) {
             pluginEnabled = true
         }
@@ -193,7 +192,7 @@ export async function toKernelPluginManager<
             kernelVersion
         )
         if (!chainId) {
-            chainId = client.chain?.id ?? await getChainId(client)
+            chainId = client.chain?.id ?? (await getChainId(client))
         }
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {
@@ -252,7 +251,7 @@ export async function toKernelPluginManager<
         const validatorNonce = await getKernelV3Nonce(client, accountAddress)
 
         if (!chainId) {
-            chainId = client.chain?.id ??await getChainId(client)
+            chainId = client.chain?.id ?? (await getChainId(client))
         }
         const typedData = await getPluginsEnableTypedDataV2({
             accountAddress,

@@ -526,7 +526,11 @@ export async function createKernelAccount<
             },
             async signMessage({ message }) {
                 const messageHash = hashMessage(message)
-                const { name, chainId: metadataChainId, version } = await accountMetadata(
+                const {
+                    name,
+                    chainId: metadataChainId,
+                    version
+                } = await accountMetadata(
                     client,
                     accountAddress,
                     kernelVersion,
@@ -578,7 +582,11 @@ export async function createKernelAccount<
 
                 const typedHash = hashTypedData(typedData)
 
-                const { name, chainId: metadataChainId, version } = await accountMetadata(
+                const {
+                    name,
+                    chainId: metadataChainId,
+                    version
+                } = await accountMetadata(
                     client,
                     accountAddress,
                     kernelVersion,
