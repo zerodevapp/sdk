@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.13
+
+### Patch Changes
+
+- Optimized performance by removing unnecessary getChainId calls and caching pluginEnabled data
+
 ## 5.3.12
 
 ### Patch Changes
