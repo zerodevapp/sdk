@@ -88,6 +88,7 @@ export type CreateKernelAccountParameters<
     kernelVersion: GetKernelVersion<entryPoint>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
+    chainId?: number
 }
 
 /**
@@ -379,7 +380,8 @@ export async function createKernelAccount<
         deployedAccountAddress,
         kernelVersion,
         initConfig,
-        useMetaFactory = true
+        useMetaFactory = true,
+        chainId
     }: CreateKernelAccountParameters<entryPoint, KernelVersion>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
@@ -399,7 +401,8 @@ export async function createKernelAccount<
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               entryPoint: entryPointAddress,
-              kernelVersion
+              kernelVersion,
+              chainId
           })
 
     // initHook flag is activated only if both the hook and sudo validator are given
@@ -523,14 +526,15 @@ export async function createKernelAccount<
             },
             async signMessage({ message }) {
                 const messageHash = hashMessage(message)
-                const { name, chainId, version } = await accountMetadata(
+                const { name, chainId: metadataChainId, version } = await accountMetadata(
                     client,
                     accountAddress,
-                    kernelVersion
+                    kernelVersion,
+                    chainId
                 )
                 const wrappedMessageHash = await eip712WrapHash(messageHash, {
                     name,
-                    chainId: Number(chainId),
+                    chainId: Number(metadataChainId),
                     version,
                     verifyingContract: accountAddress
                 })
@@ -574,14 +578,15 @@ export async function createKernelAccount<
 
                 const typedHash = hashTypedData(typedData)
 
-                const { name, chainId, version } = await accountMetadata(
+                const { name, chainId: metadataChainId, version } = await accountMetadata(
                     client,
                     accountAddress,
-                    kernelVersion
+                    kernelVersion,
+                    chainId
                 )
                 const wrappedMessageHash = await eip712WrapHash(typedHash, {
                     name,
-                    chainId: Number(chainId),
+                    chainId: Number(metadataChainId),
                     version,
                     verifyingContract: accountAddress
                 })

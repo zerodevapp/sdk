@@ -197,6 +197,7 @@ export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
     action?: Action
     entryPoint: entryPoint
     kernelVersion: KERNEL_VERSION_TYPE
+    chainId?: number
 } & Partial<PluginValidityData>
 
 export type Hook = {
