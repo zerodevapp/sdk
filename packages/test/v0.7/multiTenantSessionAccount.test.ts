@@ -252,7 +252,7 @@ describe("Yi SubAccount", () => {
                 kernelClient.account.client as PublicClient,
                 kernelClient,
                 kernelClient.account.address,
-                100000000n
+                parseEther("0.999999999")
             )
 
             const amountToTransfer = 10000n
