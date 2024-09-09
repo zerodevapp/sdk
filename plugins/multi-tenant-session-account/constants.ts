@@ -8,7 +8,7 @@ export const SUBACCOUNT_API_URL =
     "https://yield-api-kgjy.onrender.com/subaccount/transfers-data"
 
 export const MULTI_TENANT_SESSION_ACCOUNT_ADDRESS =
-    "0x465D2C76eE3173eeca6D439879E680Ca437C6AED"
+    "0x16c15c5349eB67185b8A58020E57D71F57105f6d"
 
 export const CAB_PAYMASTER_SERVER_URL =
     "https://cab-paymaster-service-dev.onrender.com/paymaster/api"
@@ -25,7 +25,7 @@ export const DMVersionToAddressMap: {
     }
 } = {
     "1.0.0": {
-        delegationManagerAddress: "0x852874907AC8eE238577928DbEE7b908Eb0BF480"
+        delegationManagerAddress: "0x942Eb55c0dD36297bdCd622cb3E2A5f4D6c750CD"
         // delegationManagerAddress: "0x77dB450f40737F53b63170A8A9cdb93FaDE366D1"
     }
 }

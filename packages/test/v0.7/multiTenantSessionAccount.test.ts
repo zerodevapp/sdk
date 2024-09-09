@@ -60,23 +60,6 @@ import {
 } from "./utils"
 
 const TEST_TIMEOUT = 1000000
-const res = decodeErrorResult({
-    abi: [
-        {
-            inputs: [
-                {
-                    internalType: "string",
-                    name: "reason",
-                    type: "string"
-                }
-            ],
-            name: "Error",
-            type: "error"
-        }
-    ],
-    data: "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002645524332303a207472616e7366657220616d6f756e7420657863656564732062616c616e63650000000000000000000000000000000000000000000000000000"
-})
-// console.log({ res })
 
 describe("Yi SubAccount", () => {
     let publicClient: PublicClient
