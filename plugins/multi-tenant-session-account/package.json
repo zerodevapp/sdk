@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/session-account",
-    "version": "5.3.0-alpha-15",
+    "version": "5.3.0-alpha-18",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -67,7 +67,7 @@
         "viem": "^2.16.3",
         "permissionless": "^0.1.18",
         "@zerodev/sdk": "^5.3.10",
-        "@zerodev/cab": "^0.0.16-alpha-6"
+        "@zerodev/cab": "0.0.16-alpha-9"
     },
     "dependencies": {
         "semver": "^7.6.0"
