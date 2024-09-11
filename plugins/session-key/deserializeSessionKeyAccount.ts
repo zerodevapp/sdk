@@ -12,6 +12,7 @@ import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Address, Chain, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
 
@@ -24,7 +25,8 @@ export const deserializeSessionKeyAccount = async <
     entryPointAddress: entryPoint,
     kernelVersion: GetKernelVersion<entryPoint>,
     sessionKeyAccountParams: string,
-    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>
+    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>,
+    validatorAddress: Address = SESSION_KEY_VALIDATOR_ADDRESS
 ): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -41,7 +43,8 @@ export const deserializeSessionKeyAccount = async <
         signer,
         validatorData: params.sessionKeyParams,
         entryPoint: entryPointAddress,
-        kernelVersion
+        kernelVersion,
+        validatorAddress
     })
 
     const { index, validatorInitData } = decodeParamsFromInitCode(

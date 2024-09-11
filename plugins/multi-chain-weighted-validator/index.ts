@@ -1,5 +1,10 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import {
+    type WebAuthnKey,
+    WebAuthnMode,
+    toWebAuthnKey
+} from "@zerodev/webauthn-key"
+import {
     type ApproveUserOperationParameters,
     type ApproveUserOperationReturnType,
     approveUserOperation
@@ -20,9 +25,7 @@ import {
     type ECDSASignerParams,
     toECDSASigner
 } from "./signers/toECDSASigner.js"
-import { WebAuthnMode, toWebAuthnPubKey } from "./signers/toWebAuthnPubKey.js"
 import {
-    type WebAuthnKey,
     type WebAuthnModularSignerParams,
     toWebAuthnSigner
 } from "./signers/toWebAuthnSigner.js"
@@ -30,18 +33,22 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createMultiChainWeightedValidator,
+    getCurrentSigners,
+    getUpdateConfigCall,
     getValidatorAddress
 } from "./toMultiChainWeightedValidatorPlugin.js"
 
 export {
     createMultiChainWeightedValidator,
+    getUpdateConfigCall,
+    getCurrentSigners,
     type WeightedValidatorConfig,
     type WeightedSigner,
     getValidatorAddress,
     type KernelValidator,
     toECDSASigner,
     type ECDSASignerParams,
-    toWebAuthnPubKey,
+    toWebAuthnKey,
     type WebAuthnKey,
     WebAuthnMode,
     type WebAuthnModularSignerParams,

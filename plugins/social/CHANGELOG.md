@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.1.2
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
 ## 5.1.1
 
 ### Patch Changes

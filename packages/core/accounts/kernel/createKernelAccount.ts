@@ -46,6 +46,7 @@ import {
 } from "../utils/toKernelPluginManager.js"
 import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
 import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
@@ -68,7 +69,10 @@ export type KernelSmartAccount<
     encodeModuleInstallCallData: () => Promise<Hex>
 }
 
-export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
+export type CreateKernelAccountParameters<
+    entryPoint extends EntryPoint,
+    KernelVerion extends GetKernelVersion<entryPoint>
+> = {
     plugins:
         | Omit<
               KernelPluginManagerParams<entryPoint>,
@@ -82,6 +86,9 @@ export type CreateKernelAccountParameters<entryPoint extends EntryPoint> = {
     metaFactoryAddress?: Address
     deployedAccountAddress?: Address
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
+    useMetaFactory?: boolean
+    chainId?: number
 }
 
 /**
@@ -140,16 +147,22 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
     kernelPluginManager,
     initHook,
-    kernelVersion
+    kernelVersion,
+    initConfig
 }: {
     entryPoint: entryPoint
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
 }) => {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    const { enableData, identifier, validatorAddress } =
-        await kernelPluginManager.getValidatorInitData()
+    const {
+        enableData,
+        identifier,
+        validatorAddress,
+        initConfig: initConfig_
+    } = await kernelPluginManager.getValidatorInitData()
 
     if (entryPointVersion === "v0.6") {
         return encodeFunctionData({
@@ -187,7 +200,7 @@ const getKernelInitData = async <entryPoint extends EntryPoint>({
             initHook && kernelPluginManager.hook
                 ? await kernelPluginManager.hook?.getEnableData()
                 : "0x",
-            []
+            initConfig ?? initConfig_ ?? []
         ]
     })
 }
@@ -207,7 +220,9 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     entryPoint: entryPointAddress,
     kernelPluginManager,
     initHook,
-    kernelVersion
+    kernelVersion,
+    initConfig,
+    useMetaFactory
 }: {
     index: bigint
     factoryAddress: Address
@@ -217,13 +232,16 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
     kernelPluginManager: KernelPluginManager<entryPoint>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPoint>
+    initConfig?: GetKernelVersion<entryPoint> extends "0.3.1" ? Hex[] : never
+    useMetaFactory: boolean
 }): Promise<Hex> => {
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPoint>({
         entryPoint: entryPointAddress,
         kernelPluginManager,
         initHook,
-        kernelVersion
+        kernelVersion,
+        initConfig
     })
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
@@ -235,6 +253,17 @@ const getAccountInitCode = async <entryPoint extends EntryPoint>({
                 abi: createAccountAbi,
                 functionName: "createAccount",
                 args: [accountImplementationAddress, initialisationData, index]
+            }) as Hex
+        ])
+    }
+
+    if (!useMetaFactory) {
+        return concatHex([
+            factoryAddress,
+            encodeFunctionData({
+                abi: KernelV3FactoryAbi,
+                functionName: "createAccount",
+                args: [initialisationData, toHex(index, { size: 32 })]
             }) as Hex
         ])
     }
@@ -336,6 +365,7 @@ const getDefaultAddresses = <entryPoint extends EntryPoint>(
  */
 export async function createKernelAccount<
     entryPoint extends EntryPoint,
+    KernelVersion extends GetKernelVersion<entryPoint>,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -348,8 +378,11 @@ export async function createKernelAccount<
         accountImplementationAddress: _accountImplementationAddress,
         metaFactoryAddress: _metaFactoryAddress,
         deployedAccountAddress,
-        kernelVersion
-    }: CreateKernelAccountParameters<entryPoint>
+        kernelVersion,
+        initConfig,
+        useMetaFactory = true,
+        chainId
+    }: CreateKernelAccountParameters<entryPoint, KernelVersion>
 ): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
@@ -368,7 +401,8 @@ export async function createKernelAccount<
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               entryPoint: entryPointAddress,
-              kernelVersion
+              kernelVersion,
+              chainId
           })
 
     // initHook flag is activated only if both the hook and sudo validator are given
@@ -393,7 +427,9 @@ export async function createKernelAccount<
             entryPoint: entryPointAddress,
             kernelPluginManager,
             initHook,
-            kernelVersion
+            kernelVersion,
+            initConfig,
+            useMetaFactory
         })
     }
 
@@ -465,9 +501,13 @@ export async function createKernelAccount<
 
                 const entryPointVersion =
                     getEntryPointVersion(entryPointAddress)
-                return entryPointVersion === "v0.6"
-                    ? factoryAddress
-                    : metaFactoryAddress
+                if (entryPointVersion === "v0.6") {
+                    return factoryAddress
+                }
+                if (!useMetaFactory) {
+                    return factoryAddress
+                }
+                return metaFactoryAddress
             },
 
             async getFactoryData() {
@@ -486,14 +526,19 @@ export async function createKernelAccount<
             },
             async signMessage({ message }) {
                 const messageHash = hashMessage(message)
-                const { name, chainId, version } = await accountMetadata(
+                const {
+                    name,
+                    chainId: metadataChainId,
+                    version
+                } = await accountMetadata(
                     client,
                     accountAddress,
-                    kernelVersion
+                    kernelVersion,
+                    chainId
                 )
                 const wrappedMessageHash = await eip712WrapHash(messageHash, {
                     name,
-                    chainId: Number(chainId),
+                    chainId: Number(metadataChainId),
                     version,
                     verifyingContract: accountAddress
                 })
@@ -537,14 +582,19 @@ export async function createKernelAccount<
 
                 const typedHash = hashTypedData(typedData)
 
-                const { name, chainId, version } = await accountMetadata(
+                const {
+                    name,
+                    chainId: metadataChainId,
+                    version
+                } = await accountMetadata(
                     client,
                     accountAddress,
-                    kernelVersion
+                    kernelVersion,
+                    chainId
                 )
                 const wrappedMessageHash = await eip712WrapHash(typedHash, {
                     name,
-                    chainId: Number(chainId),
+                    chainId: Number(metadataChainId),
                     version,
                     verifyingContract: accountAddress
                 })

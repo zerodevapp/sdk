@@ -1,5 +1,23 @@
 # @zerodev/passkey-validator
 
+## 5.4.1
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
+## 5.4.0
+
+### Patch Changes
+
+- Added new contract version for PasskeyValidator
+
+## 5.3.5
+
+### Patch Changes
+
+- Separated webauthn validator and webauthn key module
+
 ## 5.3.4
 
 ### Patch Changes

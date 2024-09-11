@@ -11,6 +11,7 @@ import type {
     ValidatorInitData
 } from "@zerodev/sdk/types"
 import { getEntryPointVersion } from "permissionless"
+import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hex, Transport } from "viem"
 import { decodeFunctionData } from "viem"
@@ -52,7 +53,9 @@ export const deserializePermissionAccount = async <
     let signer: ModularSigner
     if (params.privateKey)
         signer = toECDSASigner({
-            signer: privateKeyToAccount(params.privateKey)
+            signer: privateKeyToAccount(
+                params.privateKey
+            ) as SmartAccountSigner<"privateKey", `0x${string}`>
         })
     else if (modularSigner) signer = modularSigner
     else throw new Error("No signer or serialized sessionKey provided")
@@ -143,7 +146,12 @@ export const decodeParamsFromInitCode = (
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
                 identifier: initializeFunctionData.args[0],
-                enableData: initializeFunctionData.args[2]
+                enableData: initializeFunctionData.args[2],
+                initConfig:
+                    kernelVersion === "0.3.1" &&
+                    Array.isArray(initializeFunctionData.args[4])
+                        ? [...initializeFunctionData.args[4]]
+                        : undefined
             }
         }
     }

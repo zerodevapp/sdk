@@ -1,12 +1,29 @@
 import { p256 } from "@noble/curves/p256"
 import { type Hex, bytesToBigInt, hexToBytes } from "viem"
 
-const RIP7212_SUPPORTED_NETWORKS = [80001]
+const RIP7212_SUPPORTED_NETWORKS = [80001, 137]
+
+export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
+    RIP7212_SUPPORTED_NETWORKS.includes(chainId)
 
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     return `0x${Array.from(array, (byte) =>
         byte.toString(16).padStart(2, "0")
     ).join("")}` as `0x${string}`
+}
+
+export const hexStringToUint8Array = (hexString: string): Uint8Array => {
+    const formattedHexString = hexString.startsWith("0x")
+        ? hexString.slice(2)
+        : hexString
+    const byteArray = new Uint8Array(formattedHexString.length / 2)
+    for (let i = 0; i < formattedHexString.length; i += 2) {
+        byteArray[i / 2] = Number.parseInt(
+            formattedHexString.substring(i, i + 2),
+            16
+        )
+    }
+    return byteArray
 }
 
 export const b64ToBytes = (base64: string): Uint8Array => {
@@ -50,21 +67,47 @@ export function parseAndNormalizeSig(derSig: Hex): { r: bigint; s: bigint } {
     return { r, s }
 }
 
-export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
-    RIP7212_SUPPORTED_NETWORKS.includes(chainId)
+type PasskeyValidatorSerializedData = {
+    entryPoint: Hex
+    validatorAddress: Hex
+    pubKeyX: bigint
+    pubKeyY: bigint
+    authenticatorId: string
+    authenticatorIdHash: Hex
+}
 
-export const hexStringToUint8Array = (hexString: string): Uint8Array => {
-    const formattedHexString = hexString.startsWith("0x")
-        ? hexString.slice(2)
-        : hexString
-    const byteArray = new Uint8Array(formattedHexString.length / 2)
-    for (let i = 0; i < formattedHexString.length; i += 2) {
-        byteArray[i / 2] = Number.parseInt(
-            formattedHexString.substring(i, i + 2),
-            16
-        )
+export const serializePasskeyValidatorData = (
+    params: PasskeyValidatorSerializedData
+) => {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    const replacer = (_: string, value: any) => {
+        if (typeof value === "bigint") {
+            return value.toString()
+        }
+        return value
     }
-    return byteArray
+
+    const jsonString = JSON.stringify(params, replacer)
+    const uint8Array = new TextEncoder().encode(jsonString)
+    const base64String = bytesToBase64(uint8Array)
+    return base64String
+}
+
+export const deserializePasskeyValidatorData = (params: string) => {
+    const uint8Array = base64ToBytes(params)
+    const jsonString = new TextDecoder().decode(uint8Array)
+    const parsed = JSON.parse(jsonString) as PasskeyValidatorSerializedData
+    return parsed
+}
+
+function base64ToBytes(base64: string) {
+    const binString = atob(base64)
+    return Uint8Array.from(binString, (m) => m.codePointAt(0) as number)
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+    const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("")
+    return btoa(binString)
 }
 
 /**

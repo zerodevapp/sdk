@@ -1,6 +1,6 @@
 {
-    "name": "@zerodev/weighted-validator",
-    "version": "5.3.0",
+    "name": "@zerodev/webauthn-key",
+    "version": "5.3.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -39,9 +39,6 @@
         "@simplewebauthn/browser": "^8.3.4"
     },
     "peerDependencies": {
-        "viem": "^2.16.3",
-        "@zerodev/sdk": "^5.3.11",
-        "@zerodev/webauthn-key": "^5.3.0",
-        "permissionless": ">=0.1.18 <=0.1.29"
+        "viem": "^2.16.3"
     }
 }

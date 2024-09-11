@@ -1,5 +1,5 @@
-import { type Hex, keccak256 } from "viem"
-import { b64ToBytes, uint8ArrayToHexString } from "./webAuthnUtils.js"
+import { type Hex, concatHex, keccak256, pad, toHex } from "viem"
+import { b64ToBytes, uint8ArrayToHexString } from "./utils.js"
 
 export enum WebAuthnMode {
     Register = "register",
@@ -16,17 +16,29 @@ export type WebAuthnKey = {
 export type WebAuthnAccountParams = {
     passkeyName: string
     passkeyServerUrl: string
+    rpID?: string
     webAuthnKey?: WebAuthnKey
     mode?: WebAuthnMode
     credentials?: RequestCredentials
+    passkeyServerHeaders: Record<string, string>
+}
+
+export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
+    return concatHex([
+        toHex(pubKey.pubX, { size: 32 }),
+        toHex(pubKey.pubY, { size: 32 }),
+        pad(pubKey.authenticatorIdHash, { size: 32 })
+    ])
 }
 
 export const toWebAuthnKey = async ({
     passkeyName,
     passkeyServerUrl,
+    rpID,
     webAuthnKey,
     mode = WebAuthnMode.Register,
-    credentials = "include"
+    credentials = "include",
+    passkeyServerHeaders = {}
 }: WebAuthnAccountParams): Promise<WebAuthnKey> => {
     if (webAuthnKey) {
         return webAuthnKey
@@ -39,7 +51,11 @@ export const toWebAuthnKey = async ({
             `${passkeyServerUrl}/login/options`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
+                body: JSON.stringify({ rpID }),
                 credentials
             }
         )
@@ -56,8 +72,11 @@ export const toWebAuthnKey = async ({
             `${passkeyServerUrl}/login/verify`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cred: loginCred }),
+                headers: {
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
+                },
+                body: JSON.stringify({ cred: loginCred, rpID }),
                 credentials
             }
         )
@@ -76,9 +95,10 @@ export const toWebAuthnKey = async ({
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
                 },
-                body: JSON.stringify({ username: passkeyName }),
+                body: JSON.stringify({ username: passkeyName, rpID }),
                 credentials
             }
         )
@@ -96,12 +116,14 @@ export const toWebAuthnKey = async ({
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...passkeyServerHeaders
                 },
                 body: JSON.stringify({
                     userId: registerOptions.userId,
                     username: passkeyName,
-                    cred: registerCred
+                    cred: registerCred,
+                    rpID
                 }),
                 credentials
             }

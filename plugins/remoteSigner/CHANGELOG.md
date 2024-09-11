@@ -1,5 +1,11 @@
 # @zerodev/remote-signer
 
+## 5.2.3
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
 ## 5.2.2
 
 ### Patch Changes

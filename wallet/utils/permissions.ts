@@ -1,5 +1,4 @@
 import {
-    type RateLimitPolicyParams,
     type SignatureCallerPolicyParams,
     toCallPolicy,
     toGasPolicy,
@@ -10,7 +9,7 @@ import {
 } from "@zerodev/permissions/policies"
 import type { Policy } from "@zerodev/permissions/types"
 import { type Address, toHex } from "viem"
-import type { GrantPermissionsParams, SessionType } from "../types"
+import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
 export const validatePermissions = (
     permissionsParams: GrantPermissionsParams,
@@ -31,38 +30,56 @@ export const validatePermissions = (
     }
 }
 
+export const getPermissionPoliciy = (permission: Permission): Policy[] => {
+    const policies: Policy[] = []
+    switch (permission.type) {
+        case "sudo":
+            policies.push(toSudoPolicy({}))
+            break
+        case "contract-call":
+            policies.push(toCallPolicy(permission.data))
+            break
+        case "signature":
+            policies.push(
+                toSignatureCallerPolicy(
+                    permission.data as SignatureCallerPolicyParams
+                )
+            )
+            break
+        default:
+            break
+    }
+    for (const policy of permission.policies) {
+        switch (policy.type) {
+            case "gas-limit":
+                policies.push(
+                    toGasPolicy({
+                        allowed: policy.data.limit
+                    })
+                )
+                break
+            case "rate-limit":
+                policies.push(toRateLimitPolicy(policy.data))
+                break
+            default:
+                break
+        }
+    }
+    return policies
+}
+
 export const getPolicies = (
     permissionsParams: GrantPermissionsParams
 ): Policy[] => {
     const policies = permissionsParams.permissions
-        .map((permission) => {
-            switch (permission.type) {
-                case "sudo":
-                    return toSudoPolicy({})
-                case "contract-call":
-                    return toCallPolicy(permission.data)
-                case "rate-limit":
-                    return toRateLimitPolicy(
-                        permission.data as RateLimitPolicyParams
-                    )
-                case "gas-limit":
-                    return toGasPolicy(permission.data)
-                case "signature":
-                    return toSignatureCallerPolicy(
-                        permission.data as SignatureCallerPolicyParams
-                    )
-                default:
-                    return undefined
-            }
-        })
+        .flatMap((permission) => getPermissionPoliciy(permission))
         .concat([
             toTimestampPolicy({
                 validAfter: Math.floor(new Date().valueOf() / 1000),
                 validUntil: permissionsParams.expiry
             })
         ])
-
-    return policies.filter((p) => p !== undefined) as Policy[]
+    return policies
 }
 
 export const isSessionValid = (

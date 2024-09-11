@@ -1,5 +1,11 @@
 # @zerodev/wallet
 
+## 0.1.4
+
+### Patch Changes
+
+- fix: policy parsing in grantPermission
+
 ## 0.1.3
 
 ### Patch Changes

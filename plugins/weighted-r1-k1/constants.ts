@@ -28,7 +28,7 @@ export const getRecoveryAction = (entryPoint: EntryPoint): Action => {
 }
 
 export const WEIGHTED_VALIDATOR_ADDRESS_V07 =
-    "0x70815ACa0463140de5F50A7c8dd0B4f45395BC41"
+    "0x2E29537bBaf8AB5dC8037Fa4Bc3DEB2c289498A3"
 
 export enum SIGNER_TYPE {
     ECDSA = "0x01",

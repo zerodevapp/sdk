@@ -180,7 +180,7 @@ export const getZeroDevPaymasterClient = () => {
     })
 }
 
-const getPaymasterRpc = (): string => {
+export const getPaymasterRpc = (): string => {
     const zeroDevProjectId = projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
@@ -280,7 +280,7 @@ export const getSignerToEcdsaKernelAccount = async () => {
     return getEcdsaKernelAccountWithPrivateKey(privateKey)
 }
 
-const getBundlerRpc = (provider?: string): string => {
+export const getBundlerRpc = (provider?: string): string => {
     const zeroDevProjectId = projectId
     const zeroDevBundlerRpcHost = config["v0.7"].sepolia.bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
@@ -626,9 +626,53 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
         index,
         kernelVersion
     })
+    const accountWithRegular = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            regular: permissionSessionKeyPlugin,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        deployedAccountAddress: accountWithSudo.address,
+        kernelVersion
+    })
+
+    const privateKey3 = generatePrivateKey()
+    const signer3 = privateKeyToAccount(privateKey3)
+    const ecdsaModularSigner3 = toECDSASigner({ signer: signer3 })
+    const permissionSessionKeyPlugin2 = await toPermissionValidator(
+        publicClient,
+        {
+            entryPoint: getEntryPoint(),
+            signer: ecdsaModularSigner3,
+            policies,
+            kernelVersion
+        }
+    )
+    const accountWithSudoAndRegular2 = await createKernelAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        plugins: {
+            sudo: ecdsaPlugin,
+            regular: permissionSessionKeyPlugin2,
+            action: {
+                address: zeroAddress,
+                selector: toFunctionSelector(
+                    getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })
+                )
+            }
+        },
+        index,
+        kernelVersion
+    })
     return {
         accountWithSudoAndRegular,
         accountWithSudo,
+        accountWithRegular,
+        accountWithSudoAndRegular2,
         plugin: permissionSessionKeyPlugin
     }
 }

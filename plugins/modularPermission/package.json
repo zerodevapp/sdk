@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/modular-permission",
-    "version": "5.3.1",
+    "version": "5.3.3",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -58,6 +58,6 @@
     "peerDependencies": {
         "viem": "^2.16.3",
         "@zerodev/sdk": "^5.2.1",
-        "permissionless": "^0.1.18"
+        "permissionless": ">=0.1.18 <=0.1.29"
     }
 }
