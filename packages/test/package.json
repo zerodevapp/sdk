@@ -17,6 +17,7 @@
         "@zerodev/ecdsa-validator": "workspace:*",
         "@zerodev/session-key": "workspace:*",
         "@zerodev/modular-permission": "workspace:*",
-        "permissionless": "^0.1.18"
+        "permissionless": "^0.1.18",
+        "@zerodev/cab": "0.0.16-alpha-10"
     }
 }

@@ -69,7 +69,7 @@ import {
 } from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
-export const index = 1111111111111111n // 432334375434333332434365532464445487823332432423423n
+export const index = 11111111111111111n // 432334375434333332434365532464445487823332432423423n
 export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
 const testingChain = allChains.sepolia.id
