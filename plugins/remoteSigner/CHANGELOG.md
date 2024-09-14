@@ -1,5 +1,11 @@
 # @zerodev/remote-signer
 
+## 5.2.4
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.2.3
 
 ### Patch Changes

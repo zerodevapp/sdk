@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.14
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.3.13
 
 ### Patch Changes

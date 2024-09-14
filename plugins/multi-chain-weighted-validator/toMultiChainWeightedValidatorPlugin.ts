@@ -7,10 +7,7 @@ import {
     getUserOperationHash
 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Address,
     type Chain,

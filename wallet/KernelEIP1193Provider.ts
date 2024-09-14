@@ -35,6 +35,8 @@ import type {
     EIP1193Parameters,
     EIP1193RequestFn,
     Hash,
+    PublicActions,
+    PublicRpcSchema,
     SendTransactionParameters,
     Transport
 } from "viem"
@@ -63,11 +65,18 @@ export class KernelEIP1193Provider<
         entryPoint,
         Transport,
         Chain,
-        KernelSmartAccount<entryPoint>
+        KernelSmartAccount<entryPoint, Transport, Chain>
     >
     private bundlerClient: BundlerClient<entryPoint>
 
-    constructor(kernelClient: KernelAccountClient<entryPoint>) {
+    constructor(
+        kernelClient: KernelAccountClient<
+            entryPoint,
+            Transport,
+            Chain,
+            KernelSmartAccount<entryPoint, Transport, Chain>
+        >
+    ) {
         super()
         if (
             typeof kernelClient.account !== "object" ||
@@ -79,7 +88,7 @@ export class KernelEIP1193Provider<
             entryPoint,
             Transport,
             Chain,
-            KernelSmartAccount<entryPoint>
+            KernelSmartAccount<entryPoint, Transport, Chain>
         >
 
         const permissions =
@@ -279,7 +288,7 @@ export class KernelEIP1193Provider<
             entryPoint,
             Transport,
             Chain,
-            KernelSmartAccount<entryPoint>
+            KernelSmartAccount<entryPoint, Transport, Chain>
         >
         const permission = this.getItemFromStorage(
             WALLET_PERMISSION_STORAGE_KEY
@@ -301,7 +310,9 @@ export class KernelEIP1193Provider<
                 this.kernelClient.account.client as Client<
                     Transport,
                     Chain,
-                    undefined
+                    undefined,
+                    PublicRpcSchema,
+                    PublicActions
                 >,
                 this.kernelClient.account.entryPoint,
                 this.kernelClient.account.kernelVersion,
@@ -418,7 +429,9 @@ export class KernelEIP1193Provider<
         const client = this.kernelClient.account.client as Client<
             Transport,
             Chain | undefined,
-            undefined
+            undefined,
+            PublicRpcSchema,
+            PublicActions
         >
 
         const permissionValidator = await toPermissionValidator(client, {

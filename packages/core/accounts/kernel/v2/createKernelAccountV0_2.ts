@@ -8,7 +8,7 @@ import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accoun
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint.js"
+} from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -16,6 +16,8 @@ import {
     type EncodeDeployDataParameters,
     type Hash,
     type Hex,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     type TypedDataDefinition,
     concatHex,
@@ -141,7 +143,13 @@ export async function createKernelAccountV0_2<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         plugins,
         entryPoint: entryPointAddress,

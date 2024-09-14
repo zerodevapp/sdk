@@ -30,8 +30,12 @@ import { getValidatorAddress } from "../toMultiChainWeightedValidatorPlugin.js"
 
 export type ApproveUserOperationParameters<
     entryPoint extends EntryPoint,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 > = {
     multiChainAccounts: KernelSmartAccount<entryPoint>[]
@@ -66,7 +70,7 @@ export type ApproveUserOperationParameters<
               | "paymasterData"
               | "signature"
           >
-} & GetAccountParameter<entryPoint, TAccount> &
+} & GetAccountParameter<entryPoint, TTransport, TChain, TAccount> &
     Middleware<entryPoint>
 
 export type ApproveUserOperationReturnType = {
@@ -81,12 +85,16 @@ export async function approveUserOperation<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<ApproveUserOperationParameters<entryPoint, TAccount>>
+    args: Prettify<
+        ApproveUserOperationParameters<entryPoint, TTransport, TChain, TAccount>
+    >
 ): Promise<ApproveUserOperationReturnType> {
     const {
         account: account_ = client.account,

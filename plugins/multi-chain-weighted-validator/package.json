@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/multi-chain-weighted-validator",
-    "version": "5.3.0",
+    "version": "5.3.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -40,9 +40,9 @@
         "merkletreejs": "^0.3.11"
     },
     "peerDependencies": {
-        "viem": "^2.16.3",
+        "viem": ">=2.16.3 <2.18.0",
         "@zerodev/sdk": "^5.2.1",
         "@zerodev/webauthn-key": "^5.3.0",
-        "permissionless": ">=0.1.18 <=0.1.29"
+        "permissionless": ">=0.1.44 <=0.1.45"
     }
 }

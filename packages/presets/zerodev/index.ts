@@ -84,7 +84,8 @@ export async function createEcdsaKernelAccountClient<
     >
 > {
     const publicClient = createPublicClient({
-        transport: http(getZeroDevBundlerRPC(projectId, provider))
+        transport: http(getZeroDevBundlerRPC(projectId, provider)),
+        chain
     })
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {

@@ -3,7 +3,7 @@ import {
     KernelV3AccountAbi,
     isPluginInitialized
 } from "@zerodev/sdk"
-import type { SmartAccount } from "permissionless/accounts/types"
+import type { SmartAccount } from "permissionless/accounts"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
@@ -29,8 +29,12 @@ import { getValidatorAddress } from "../toWeightedValidatorPlugin.js"
 
 export type ApproveUserOperationParameters<
     entryPoint extends EntryPoint,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 > = {
     userOperation: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
@@ -64,19 +68,23 @@ export type ApproveUserOperationParameters<
               | "paymasterData"
               | "signature"
           >
-} & GetAccountParameter<entryPoint, TAccount> &
+} & GetAccountParameter<entryPoint, TTransport, TChain, TAccount> &
     Middleware<entryPoint>
 
 export async function approveUserOperation<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<ApproveUserOperationParameters<entryPoint, TAccount>>
+    args: Prettify<
+        ApproveUserOperationParameters<entryPoint, TTransport, TChain, TAccount>
+    >
 ): Promise<Hex> {
     const { account: account_ = client.account, userOperation } = args
     if (!account_) throw new AccountOrClientNotFoundError()

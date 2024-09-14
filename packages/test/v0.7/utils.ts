@@ -24,7 +24,7 @@ import {
 import type {
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint"
+} from "permissionless/types"
 import {
     http,
     type Address,
@@ -51,8 +51,8 @@ import { toPermissionValidator } from "../../../plugins/permission/toPermissionV
 import type { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
-import type { Action } from "@zerodev/sdk/types/kernel.js"
-import type { SmartAccountSigner } from "permissionless/accounts/types.js"
+import type { Action } from "@zerodev/sdk/types"
+import type { SmartAccountSigner } from "permissionless/accounts"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
@@ -257,7 +257,7 @@ export const getKernelAccountClient = async ({
     account,
     middleware
 }: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
-    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
 } = {}) => {
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToEcdsaKernelAccount())

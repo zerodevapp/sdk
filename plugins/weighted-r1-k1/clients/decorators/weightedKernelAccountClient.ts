@@ -17,11 +17,19 @@ import {
 
 export type WeightedKernelAccountClientActions<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TSmartAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
-> = KernelAccountClientActions<entryPoint, TChain, TSmartAccount> & {
+> = KernelAccountClientActions<
+    entryPoint,
+    TTransport,
+    TChain,
+    TSmartAccount
+> & {
     /**
      * Approve a user operation with the given transport, chain, smart account and signer.
      *
@@ -65,13 +73,16 @@ export function weightedKernelAccountClientActions<
     return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-            | KernelSmartAccount<entryPoint>
+        TSmartAccount extends
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
+            | undefined =
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
     ): WeightedKernelAccountClientActions<
         entryPoint,
+        TTransport,
         TChain,
         TSmartAccount
     > => ({
@@ -82,7 +93,12 @@ export function weightedKernelAccountClientActions<
                 {
                     ...args,
                     middleware
-                } as ApproveUserOperationParameters<entryPoint, TSmartAccount>
+                } as ApproveUserOperationParameters<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TSmartAccount
+                >
             ),
         sendUserOperationWithSignatures: (args) =>
             sendUserOperationWithSignatures<
@@ -95,6 +111,8 @@ export function weightedKernelAccountClientActions<
                 middleware
             } as SendUserOperationWithSignaturesParameters<
                 entryPoint,
+                TTransport,
+                TChain,
                 TSmartAccount
             >)
     })

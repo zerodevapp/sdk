@@ -13,10 +13,17 @@ import type {
 import { getEntryPointVersion } from "permissionless"
 import type { SmartAccountSigner } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
-import type { Chain, Client, Hex, Transport } from "viem"
+import type {
+    Chain,
+    Client,
+    Hex,
+    PublicActions,
+    PublicRpcSchema,
+    Transport
+} from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import type { DecodeFunctionDataReturnType } from "viem/utils/abi/decodeFunctionData.js"
+import type { DecodeFunctionDataReturnType } from "viem/utils"
 import {
     toCallPolicy,
     toGasPolicy,
@@ -36,7 +43,13 @@ export const deserializePermissionAccount = async <
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     entryPointAddress: entryPoint,
     kernelVersion: GetKernelVersion<entryPoint>,
     modularPermissionAccountParams: string,

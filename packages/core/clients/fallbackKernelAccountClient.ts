@@ -7,7 +7,9 @@ export const createFallbackKernelAccountClient = <
     TEntryPoint extends EntryPoint,
     TTransport extends Transport,
     TChain extends Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<TEntryPoint> | undefined
+    TSmartAccount extends
+        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
+        | undefined
 >(
     clients: Array<
         KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount>

@@ -1,5 +1,11 @@
 # @zerodev/presets
 
+## 5.3.3
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.3.2
 
 ### Patch Changes

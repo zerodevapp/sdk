@@ -26,9 +26,12 @@ import { type ValidatorType, prepareMultiUserOpRequest } from "./actions"
 
 export type KernelAccountMultiChainClientActions<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TSmartAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 > = {
     prepareMultiUserOpRequest: <TTransport extends Transport>(
@@ -54,13 +57,16 @@ export function kernelAccountMultiChainClientActions<
     return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends SmartAccount<entryPoint> | undefined =
-            | SmartAccount<entryPoint>
+        TSmartAccount extends
+            | SmartAccount<entryPoint, string, TTransport, TChain>
+            | undefined =
+            | SmartAccount<entryPoint, string, TTransport, TChain>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
     ): KernelAccountMultiChainClientActions<
         entryPoint,
+        TTransport,
         TChain,
         TSmartAccount
     > => ({
@@ -90,8 +96,10 @@ export type KernelMultiChainClient<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TSmartAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 > = KernelAccountClient<entryPoint, TTransport, TChain, TSmartAccount> & {
     prepareMultiUserOpRequest: (
@@ -112,7 +120,9 @@ export type KernelMultiChainClient<
 }
 
 export const createKernelMultiChainClient = <
-    TSmartAccount extends KernelSmartAccount<TEntryPoint> | undefined,
+    TSmartAccount extends
+        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
+        | undefined,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = undefined,
     TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<

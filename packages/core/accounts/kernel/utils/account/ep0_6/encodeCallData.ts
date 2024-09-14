@@ -1,4 +1,4 @@
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
+import type { EntryPoint } from "permissionless/types"
 import type { KernelSmartAccount } from "../../../createKernelAccount.js"
 import { encodeExecuteBatchCall } from "../../ep0_6/encodeExecuteBatchCall.js"
 import { encodeExecuteDelegateCall } from "../../ep0_6/encodeExecuteDelegateCall.js"

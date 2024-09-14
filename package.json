@@ -32,7 +32,7 @@
         "build": "bash build-all.sh",
         "format": "biome format . --write",
         "lint": "biome check .",
-        "lint:fix": "bun run lint --apply",
+        "lint:fix": "bun run lint --write",
         "changeset": "changeset",
         "changeset:release": "bun run build && changeset publish",
         "changeset:version": "changeset version && bun install --lockfile-only"

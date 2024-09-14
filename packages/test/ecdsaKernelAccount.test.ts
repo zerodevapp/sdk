@@ -105,7 +105,7 @@ describe("ECDSA kernel Account", () => {
         ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE, Transport, Chain>
     >
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,

@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.1.3
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.1.2
 
 ### Patch Changes

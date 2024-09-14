@@ -1,5 +1,11 @@
 # @zerodev/session-key
 
+## 5.4.4
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.4.3
 
 ### Patch Changes

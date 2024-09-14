@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.4.2
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.4.1
 
 ### Patch Changes

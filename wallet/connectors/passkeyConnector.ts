@@ -4,6 +4,7 @@ import {
     createConnector
 } from "@wagmi/core"
 import {
+    PasskeyValidatorContractVersion,
     WebAuthnMode,
     toPasskeyValidator,
     toWebAuthnKey
@@ -104,7 +105,8 @@ export function passkeyConnector(
                 const webAuthnKey = await toWebAuthnKey({
                     passkeyName: passkeyName,
                     passkeyServerUrl: `${ZERODEV_PASSKEY_URL}/${projectId}`,
-                    mode
+                    mode,
+                    passkeyServerHeaders: {}
                 })
 
                 const passkeyValidator = await toPasskeyValidator(
@@ -112,7 +114,9 @@ export function passkeyConnector(
                     {
                         webAuthnKey,
                         entryPoint: entryPoint,
-                        kernelVersion
+                        kernelVersion,
+                        validatorContractVersion:
+                            PasskeyValidatorContractVersion.V0_0_2
                     }
                 )
                 const passkeyData = (

@@ -19,6 +19,8 @@ import {
     type Chain,
     type Client,
     type Hex,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     type TypedDataDefinition,
     concatHex,
@@ -366,10 +368,16 @@ const getDefaultAddresses = <entryPoint extends EntryPoint>(
 export async function createKernelAccount<
     entryPoint extends EntryPoint,
     KernelVersion extends GetKernelVersion<entryPoint>,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    TTransport extends Transport,
+    TChain extends Chain | undefined
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         plugins,
         entryPoint: entryPointAddress,

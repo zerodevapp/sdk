@@ -3,9 +3,10 @@ import { formatJsonRpcError } from "@walletconnect/jsonrpc-utils"
 import type { SessionTypes } from "@walletconnect/types"
 import { getSdkError } from "@walletconnect/utils"
 import type { Web3WalletTypes } from "@walletconnect/web3wallet"
-import type { KernelAccountClient } from "@zerodev/sdk"
+import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
 import { KernelEIP1193Provider } from "@zerodev/wallet"
 import type { EntryPoint } from "permissionless/types"
+import type { Chain, Transport } from "viem"
 import WalletConnectWallet from "./WalletConnectWallet"
 import { stripEip155Prefix } from "./constants"
 
@@ -26,7 +27,12 @@ class WalletConnectKernelService {
         walletConnectProjectId: string
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         walletConnectMetadata: any
-        kernelClient?: KernelAccountClient<EntryPoint>
+        kernelClient?: KernelAccountClient<
+            EntryPoint,
+            Transport,
+            Chain,
+            KernelSmartAccount<EntryPoint, Transport, Chain>
+        >
         kernelProvider?: KernelEIP1193Provider<EntryPoint>
     }) {
         if (!this.wcWallet) return

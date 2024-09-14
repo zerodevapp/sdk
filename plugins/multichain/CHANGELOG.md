@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.11
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.3.10
 
 ### Patch Changes

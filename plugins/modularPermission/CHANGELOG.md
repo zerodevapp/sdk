@@ -1,5 +1,11 @@
 # @zerodev/modular-permission
 
+## 5.3.4
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
 ## 5.3.3
 
 ### Patch Changes

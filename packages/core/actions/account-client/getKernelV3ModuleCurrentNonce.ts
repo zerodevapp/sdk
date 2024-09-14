@@ -12,14 +12,18 @@ import { KernelV3AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/Ker
 
 export type GetKernelV3ModuleCurrentNonceParameters<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 > = Prettify<
     SendTransactionWithPaymasterParameters<
         entryPoint,
+        TTransport,
         TChain,
         TAccount,
         TChainOverride
@@ -30,8 +34,10 @@ export async function getKernelV3ModuleCurrentNonce<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 >(
@@ -39,6 +45,7 @@ export async function getKernelV3ModuleCurrentNonce<
     args: Prettify<
         GetKernelV3ModuleCurrentNonceParameters<
             entryPoint,
+            TTransport,
             TChain,
             TAccount,
             TChainOverride

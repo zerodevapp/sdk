@@ -1,5 +1,13 @@
 # @zerodev/walletconnect
 
+## 0.0.6
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+- Updated dependencies
+  - @zerodev/wallet@0.1.5
+
 ## 0.0.5
 
 ### Patch Changes

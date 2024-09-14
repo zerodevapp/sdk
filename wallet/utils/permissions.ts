@@ -1,4 +1,6 @@
+import type { Policy } from "@zerodev/permissions"
 import {
+    CallPolicyVersion,
     type SignatureCallerPolicyParams,
     toCallPolicy,
     toGasPolicy,
@@ -7,7 +9,6 @@ import {
     toSudoPolicy,
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
-import type { Policy } from "@zerodev/permissions/types"
 import { type Address, toHex } from "viem"
 import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
@@ -37,7 +38,12 @@ export const getPermissionPoliciy = (permission: Permission): Policy[] => {
             policies.push(toSudoPolicy({}))
             break
         case "contract-call":
-            policies.push(toCallPolicy(permission.data))
+            policies.push(
+                toCallPolicy({
+                    ...permission.data,
+                    policyVersion: CallPolicyVersion.V0_0_4
+                })
+            )
             break
         case "signature":
             policies.push(
