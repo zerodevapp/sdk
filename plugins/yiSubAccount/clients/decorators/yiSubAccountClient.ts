@@ -1,5 +1,5 @@
 import type { SmartAccountActions } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts/types.js"
+import type { SmartAccount } from "permissionless/accounts"
 import type {
     Middleware,
     SendTransactionWithPaymasterParameters,
@@ -12,12 +12,15 @@ import { sendUserOperation } from "../../actions/sendUserOperation.js"
 
 export type YiSubAccountClientActions<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TSmartAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 > = Pick<
-    SmartAccountActions<entryPoint, TChain, TSmartAccount>,
+    SmartAccountActions<entryPoint, TTransport, TChain, TSmartAccount>,
     "sendUserOperation" | "sendTransaction"
 >
 
@@ -27,22 +30,33 @@ export function yiSubAccountClientActions<entryPoint extends EntryPoint>({
     return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends SmartAccount<entryPoint> | undefined =
-            | SmartAccount<entryPoint>
+        TSmartAccount extends
+            | SmartAccount<entryPoint, string, TTransport, TChain>
+            | undefined =
+            | SmartAccount<entryPoint, string, TTransport, TChain>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
-    ): YiSubAccountClientActions<entryPoint, TChain, TSmartAccount> => {
+    ): YiSubAccountClientActions<
+        entryPoint,
+        TTransport,
+        TChain,
+        TSmartAccount
+    > => {
         return {
             sendTransaction: (args) =>
-                sendTransaction<TChain, TSmartAccount, entryPoint>(client, {
-                    ...args,
-                    middleware
-                } as SendTransactionWithPaymasterParameters<
-                    entryPoint,
-                    TChain,
-                    TSmartAccount
-                >),
+                sendTransaction<entryPoint, TTransport, TChain, TSmartAccount>(
+                    client,
+                    {
+                        ...args,
+                        middleware
+                    } as SendTransactionWithPaymasterParameters<
+                        entryPoint,
+                        TTransport,
+                        TChain,
+                        TSmartAccount
+                    >
+                ),
             sendUserOperation: (args) =>
                 sendUserOperation<
                     entryPoint,
@@ -52,7 +66,7 @@ export function yiSubAccountClientActions<entryPoint extends EntryPoint>({
                 >(client, {
                     ...args,
                     middleware
-                } as SendUserOperationParameters<entryPoint, TSmartAccount>)
+                } as SendUserOperationParameters<entryPoint, TTransport, TChain, TSmartAccount>)
         }
     }
 }

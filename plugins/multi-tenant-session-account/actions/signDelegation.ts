@@ -13,26 +13,32 @@ import type { Delegation } from "../types.js"
 
 export type SignDelegationParameters<
     entryPoint extends EntryPoint,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 > = Prettify<
     {
         delegation: Delegation
         delegationManagerAddress?: Address
-    } & GetAccountParameter<entryPoint, TAccount>
+    } & GetAccountParameter<entryPoint, TTransport, TChain, TAccount>
 >
 
 export async function signDelegation<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: SignDelegationParameters<entryPoint, TAccount>
+    args: SignDelegationParameters<entryPoint, TTransport, TChain, TAccount>
 ): Promise<Hash> {
     const {
         account: account_ = client.account,
@@ -47,7 +53,12 @@ export async function signDelegation<
         })
     }
 
-    const account = parseAccount(account_) as SmartAccount<entryPoint>
+    const account = parseAccount(account_) as SmartAccount<
+        entryPoint,
+        string,
+        TTransport,
+        TChain
+    >
 
     const chainId = client.chain ? client.chain.id : await getChainId(client)
 

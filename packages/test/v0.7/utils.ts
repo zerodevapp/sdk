@@ -356,16 +356,15 @@ export const getPaymasterRpc = (_projectId?: string): string => {
     return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
-export const getPublicClient = async (
-    chain?: number
-): Promise<PublicClient> => {
+export const getPublicClient = async (chain?: number) => {
     const rpcUrl = config["v0.7"][chain ?? testingChain].rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
 
     const publicClient = createPublicClient({
-        transport: http(rpcUrl)
+        transport: http(rpcUrl),
+        chain: getTestingChain(chain)
     })
 
     const chainId = await publicClient.getChainId()
@@ -402,8 +401,9 @@ export const getPimlicoBundlerClient = () => {
     })
 }
 
-export const getTestingChain = (): Chain => {
-    const chain = Object.values(allChains).find((c) => c.id === testingChain)
+export const getTestingChain = (chainId?: number): Chain => {
+    const _chainId = chainId ?? testingChain
+    const chain = Object.values(allChains).find((c) => c.id === _chainId)
     if (!chain) {
         throw new Error(`Chain ${testingChain} not found`)
     }
@@ -432,7 +432,7 @@ export const getYiSubAccountClient = async ({
     account,
     middleware
 }: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
-    account: YiSubAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    account: YiSubAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
 }) => {
     const chain = getTestingChain()
     const resolvedAccount = account

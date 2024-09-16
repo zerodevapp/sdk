@@ -2,8 +2,8 @@ import {
     type KernelSmartAccount,
     createKernelAccountClient
 } from "@zerodev/sdk"
-import type { SmartAccountClientConfig } from "@zerodev/sdk/clients/kernelAccountClient"
-import type { SmartAccount } from "permissionless/accounts/types.js"
+import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
+import type { SmartAccount } from "permissionless/accounts"
 import type { EntryPoint } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
 import type { Chain, Client, Transport } from "viem"
@@ -16,24 +16,28 @@ export type YiSubAccountClient<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    account extends
+        | SmartAccount<entryPoint, string, transport, chain>
+        | undefined =
+        | SmartAccount<entryPoint, string, transport, chain>
         | undefined
 > = Client<
     transport,
     chain,
     account,
     BundlerRpcSchema<entryPoint>,
-    YiSubAccountClientActions<entryPoint, chain, account>
+    YiSubAccountClientActions<entryPoint, transport, chain, account>
 >
 
 export const createYiSubAccountClient = <
-    TSmartAccount extends SmartAccount<TEntryPoint> | undefined,
+    TEntryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = undefined,
-    TEntryPoint extends EntryPoint = TSmartAccount extends SmartAccount<infer U>
-        ? U
-        : never
+    TChain extends Chain | undefined = Chain | undefined,
+    TSmartAccount extends
+        | SmartAccount<TEntryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<TEntryPoint, string, TTransport, TChain>
+        | undefined
 >(
     parameters: SmartAccountClientConfig<
         TEntryPoint,
@@ -48,9 +52,13 @@ export const createYiSubAccountClient = <
         middleware
     } = parameters
 
-    const client = createKernelAccountClient<KernelSmartAccount<TEntryPoint>>({
+    const client = createKernelAccountClient({
         ...parameters,
-        account: parameters.account as KernelSmartAccount<TEntryPoint>,
+        account: parameters.account as unknown as KernelSmartAccount<
+            TEntryPoint,
+            TTransport,
+            TChain
+        >,
         name,
         key
     })

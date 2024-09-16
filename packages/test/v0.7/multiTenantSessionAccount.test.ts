@@ -34,7 +34,7 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { baseSepolia, optimismSepolia, sepolia } from "viem/chains"
-import { createKernelCABClient } from "/Users/sh31/code/zerodev/cab"
+import { createKernelCABClient } from "@zerodev/cab"
 import type {
     Caveat,
     SessionAccount
@@ -63,21 +63,25 @@ const TEST_TIMEOUT = 1000000
 
 describe("Yi SubAccount", () => {
     let publicClient: PublicClient
-    let mainDelegatorAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let mainDelegatorAccount: KernelSmartAccount<
+        ENTRYPOINT_ADDRESS_V07_TYPE,
+        Transport,
+        Chain
+    >
     let account: YiSubAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
         ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
     >
     let sessionAccount: SessionAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let sessionAccountClient: KernelAccountClient<
         ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
     >
     let delegations: Delegation[]
 
@@ -131,7 +135,13 @@ describe("Yi SubAccount", () => {
             const kernelClientDM = kernelClient.extend(
                 dmActionsEip7710<
                     ENTRYPOINT_ADDRESS_V07_TYPE,
-                    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+                    Transport,
+                    Chain,
+                    KernelSmartAccount<
+                        ENTRYPOINT_ADDRESS_V07_TYPE,
+                        Transport,
+                        Chain
+                    >
                 >()
             )
 
@@ -219,7 +229,13 @@ describe("Yi SubAccount", () => {
             const kernelClientDM = kernelClient.extend(
                 dmActionsEip7710<
                     ENTRYPOINT_ADDRESS_V07_TYPE,
-                    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+                    Transport,
+                    Chain,
+                    KernelSmartAccount<
+                        ENTRYPOINT_ADDRESS_V07_TYPE,
+                        Transport,
+                        Chain
+                    >
                 >()
             )
 
@@ -315,7 +331,6 @@ describe("Yi SubAccount", () => {
 
             const kernelClientOPSepolia = createKernelAccountClient({
                 account: mainDelegatorAccountOPSepolia,
-                chain: optimismSepolia,
                 bundlerTransport: http(
                     getBundlerRpc(config["v0.7"][optimismSepolia.id].projectId),
                     { timeout: 100_000 }
@@ -419,7 +434,13 @@ describe("Yi SubAccount", () => {
             const kernelClientDM = kernelClient.extend(
                 dmActionsEip7710<
                     ENTRYPOINT_ADDRESS_V07_TYPE,
-                    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+                    Transport,
+                    Chain,
+                    KernelSmartAccount<
+                        ENTRYPOINT_ADDRESS_V07_TYPE,
+                        Transport,
+                        Chain
+                    >
                 >()
             )
 
@@ -464,7 +485,13 @@ describe("Yi SubAccount", () => {
             const sessionAccountClientDM = sessionAccountClient.extend(
                 dmActionsEip7710<
                     ENTRYPOINT_ADDRESS_V07_TYPE,
-                    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+                    Transport,
+                    Chain,
+                    KernelSmartAccount<
+                        ENTRYPOINT_ADDRESS_V07_TYPE,
+                        Transport,
+                        Chain
+                    >
                 >()
             )
             const repayTokens = [
@@ -497,7 +524,8 @@ describe("Yi SubAccount", () => {
             })
 
             const receipt = await bundlerClient.waitForUserOperationReceipt({
-                hash: userOpHash
+                hash: userOpHash,
+                timeout: TEST_TIMEOUT
             })
 
             console.log(

@@ -6,11 +6,8 @@ import {
 import type { SmartAccount } from "permissionless/accounts"
 import { sendUserOperation as sendUserOperationBundler } from "permissionless/actions"
 import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
-import type { SendUserOperationParameters } from "permissionless/actions/smartAccount/sendUserOperation"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+import type { SendUserOperationParameters } from "permissionless/actions/smartAccount"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import type { Prettify } from "viem/chains"
 import { getAction } from "viem/utils"
@@ -20,12 +17,16 @@ export async function sendUserOperation<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<SendUserOperationParameters<entryPoint, TAccount>>
+    args: Prettify<
+        SendUserOperationParameters<entryPoint, TTransport, TChain, TAccount>
+    >
 ): Promise<Hash> {
     const { account: account_ = client.account } = args
     if (!account_) throw new AccountOrClientNotFoundError()

@@ -9,7 +9,6 @@ import {
     toSudoPolicy,
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
-import type { Policy } from "@zerodev/permissions/types"
 import type { Caveat } from "@zerodev/session-account"
 import {
     CallType,

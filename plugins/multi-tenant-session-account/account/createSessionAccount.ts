@@ -19,6 +19,8 @@ import {
     type Client,
     type Hex,
     type LocalAccount,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     type TypedData,
     type TypedDataDefinition,
@@ -86,7 +88,13 @@ export async function createSessionAccount<
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         entryPoint: entryPointAddress,
         delegations,

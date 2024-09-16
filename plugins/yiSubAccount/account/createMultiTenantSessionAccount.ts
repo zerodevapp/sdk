@@ -11,16 +11,15 @@ import {
     type SmartAccountSigner,
     toSmartAccount
 } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Address,
     type Chain,
     type Client,
     type Hex,
     type LocalAccount,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     type TypedData,
     type TypedDataDefinition,
@@ -75,7 +74,13 @@ export async function createMultiTenantSessionAccount<
     TSource extends string = "custom",
     TAddress extends Address = Address
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         entryPoint: entryPointAddress,
         sessionKeyAccount,
@@ -457,8 +462,9 @@ export async function createMultiTenantSessionAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature =
-                    await sessionAccount.signTypedData(typedData)
+                let masterSignature = await sessionAccount.signTypedData(
+                    typedData
+                )
                 let sig: Hex
                 if (
                     masterSignature

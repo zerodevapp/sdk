@@ -14,12 +14,14 @@ import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint"
+} from "permissionless/types"
 import {
     type Address,
     type Chain,
     type Client,
     type Hex,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     concatHex,
     decodeAbiParameters,
@@ -196,7 +198,13 @@ export async function createYiSubAccount<
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         entryPoint: entryPointAddress,
         delegateAccount,
@@ -444,8 +452,9 @@ export async function createYiSubAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature =
-                    await delegateAccount.signTypedData(typedData)
+                let masterSignature = await delegateAccount.signTypedData(
+                    typedData
+                )
                 let sig: Hex
                 if (
                     masterSignature

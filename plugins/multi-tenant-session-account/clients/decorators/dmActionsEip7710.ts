@@ -10,17 +10,26 @@ import {
 
 export type DMActionsEip7710<
     TEntryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<TEntryPoint> | undefined =
-        | SmartAccount<TEntryPoint>
+    TAccount extends
+        | SmartAccount<TEntryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<TEntryPoint, string, TTransport, TChain>
         | undefined
 > = {
     signDelegation: (
-        args: SignDelegationParameters<TEntryPoint, TAccount>
+        args: SignDelegationParameters<
+            TEntryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
     ) => Promise<Hash>
     encodeCallDataWithCAB: <TChainOverride extends Chain | undefined>(
         args: EncodeCallDataWithCABParameters<
             TEntryPoint,
+            TTransport,
             TChain,
             TAccount,
             TChainOverride
@@ -31,22 +40,28 @@ export type DMActionsEip7710<
 const dmActionsEip7710 =
     <
         TEntryPoint extends EntryPoint,
-        TAccount extends SmartAccount<TEntryPoint> | undefined =
-            | SmartAccount<TEntryPoint>
+        TTransport extends Transport,
+        TChain extends Chain | undefined = Chain | undefined,
+        TAccount extends
+            | SmartAccount<TEntryPoint, string, TTransport, TChain>
+            | undefined =
+            | SmartAccount<TEntryPoint, string, TTransport, TChain>
             | undefined
     >() =>
-    <
-        TTransport extends Transport,
-        TChain extends Chain | undefined = Chain | undefined
-    >(
+    (
         client: Client<TTransport, TChain, TAccount>
-    ): DMActionsEip7710<TEntryPoint, TChain, TAccount> => ({
+    ): DMActionsEip7710<TEntryPoint, TTransport, TChain, TAccount> => ({
         signDelegation: (args) =>
             signDelegation(
                 client as Client<TTransport, TChain, TAccount>,
                 {
                     ...args
-                } as SignDelegationParameters<TEntryPoint, TAccount>
+                } as SignDelegationParameters<
+                    TEntryPoint,
+                    TTransport,
+                    TChain,
+                    TAccount
+                >
             ),
         encodeCallDataWithCAB: (args) =>
             encodeCallDataWithCAB(
@@ -55,6 +70,7 @@ const dmActionsEip7710 =
                     ...args
                 } as EncodeCallDataWithCABParameters<
                     TEntryPoint,
+                    TTransport,
                     TChain,
                     TAccount
                 >

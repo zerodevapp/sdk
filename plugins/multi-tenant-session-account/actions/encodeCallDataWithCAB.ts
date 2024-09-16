@@ -53,13 +53,16 @@ import { toDelegationHash } from "../utils/index.js"
 
 export type EncodeCallDataWithCABParameters<
     entryPoint extends EntryPoint,
-    TChain extends Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 > = Prettify<
-    GetAccountParameter<entryPoint, TAccount> &
+    GetAccountParameter<entryPoint, TTransport, TChain, TAccount> &
         GetChainParameter<TChain, TChainOverride> & {
             calls: { to: Address; value: bigint; data: Hex }[]
             repayTokens: RepayTokens
@@ -71,13 +74,16 @@ export async function encodeCallDataWithCAB<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChainOverride extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: EncodeCallDataWithCABParameters<
         entryPoint,
+        TTransport,
         TChain,
         TAccount,
         TChainOverride

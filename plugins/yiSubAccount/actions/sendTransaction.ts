@@ -6,7 +6,7 @@ import {
 } from "permissionless"
 import type { SmartAccount } from "permissionless/accounts"
 import type { SendTransactionWithPaymasterParameters } from "permissionless/actions/smartAccount"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import { getChainId } from "viem/actions"
 import type { Prettify } from "viem/types/utils"
@@ -62,15 +62,21 @@ import { sendUserOperation } from "./sendUserOperation"
  * })
  */
 export async function sendTransaction<
-    TChain extends Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined,
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 >(
     client: Client<Transport, TChain, TAccount>,
     args: Prettify<
         SendTransactionWithPaymasterParameters<
             entryPoint,
+            TTransport,
             TChain,
             TAccount,
             TChainOverride

@@ -341,8 +341,11 @@ export class KernelEIP1193Provider<
             )
 
             const kernelClient = createKernelAccountClient({
-                account:
-                    sessionAccount as unknown as KernelSmartAccount<entryPoint, Transport, Chain>,
+                account: sessionAccount as unknown as KernelSmartAccount<
+                    entryPoint,
+                    Transport,
+                    Chain
+                >,
                 chain: this.kernelClient.chain,
                 entryPoint: this.kernelClient.account.entryPoint,
                 bundlerTransport: http(this.kernelClient.transport.url),
@@ -464,7 +467,12 @@ export class KernelEIP1193Provider<
             }
         ]
         const kernelClientDM = this.kernelClient.extend(
-            dmActionsEip7710<entryPoint, KernelSmartAccount<entryPoint>>()
+            dmActionsEip7710<
+                entryPoint,
+                Transport,
+                Chain,
+                KernelSmartAccount<entryPoint, Transport, Chain>
+            >()
         )
 
         const mainDeleGatorSignature = await kernelClientDM.signDelegation({

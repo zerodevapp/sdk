@@ -59,8 +59,8 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.16.3",
-        "permissionless": "^0.1.18",
+        "viem": ">=2.16.3 <2.18.0",
+        "permissionless": ">=0.1.44 <=0.1.45",
         "@zerodev/sdk": "^5.2.1"
     },
     "dependencies": {
