@@ -1,5 +1,6 @@
 // @ts-expect-error
 import { beforeAll, describe, test } from "bun:test"
+import { createKernelCABClient } from "@zerodev/cab"
 import {
     type KernelAccountClient,
     type KernelSmartAccount,
@@ -34,7 +35,6 @@ import {
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { baseSepolia, optimismSepolia, sepolia } from "viem/chains"
-import { createKernelCABClient } from "@zerodev/cab"
 import type {
     Caveat,
     SessionAccount

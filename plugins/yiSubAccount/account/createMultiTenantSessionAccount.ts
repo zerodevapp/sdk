@@ -462,9 +462,8 @@ export async function createMultiTenantSessionAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature = await sessionAccount.signTypedData(
-                    typedData
-                )
+                let masterSignature =
+                    await sessionAccount.signTypedData(typedData)
                 let sig: Hex
                 if (
                     masterSignature

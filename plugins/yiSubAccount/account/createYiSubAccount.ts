@@ -452,9 +452,8 @@ export async function createYiSubAccount<
                 throw new SignTransactionNotSupportedBySmartAccount()
             },
             signTypedData: async (typedData) => {
-                let masterSignature = await delegateAccount.signTypedData(
-                    typedData
-                )
+                let masterSignature =
+                    await delegateAccount.signTypedData(typedData)
                 let sig: Hex
                 if (
                     masterSignature

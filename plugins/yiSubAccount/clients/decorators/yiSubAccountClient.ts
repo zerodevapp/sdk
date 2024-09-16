@@ -66,7 +66,12 @@ export function yiSubAccountClientActions<entryPoint extends EntryPoint>({
                 >(client, {
                     ...args,
                     middleware
-                } as SendUserOperationParameters<entryPoint, TTransport, TChain, TSmartAccount>)
+                } as SendUserOperationParameters<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TSmartAccount
+                >)
         }
     }
 }
