@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/remote-signer",
-    "version": "5.2.2",
+    "version": "5.2.4",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -35,8 +35,8 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.16.3",
+        "viem": ">=2.16.3 <2.18.0",
         "@zerodev/sdk": "^5.2.1",
-        "permissionless": "^0.1.18"
+        "permissionless": ">=0.1.44 <=0.1.45"
     }
 }

@@ -6,11 +6,8 @@ import {
 } from "permissionless"
 import { sendUserOperation as sendUserOperationBundler } from "permissionless/actions"
 import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
-import type { SendUserOperationParameters } from "permissionless/actions/smartAccount/sendUserOperation"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+import type { SendUserOperationParameters } from "permissionless/actions/smartAccount"
+import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Chain,
     type Client,
@@ -27,11 +24,15 @@ import type { ApproveUserOperationReturnType } from "./approveUserOperation.js"
 
 export type SendUserOperationWithApprovalsParameters<
     entryPoint extends EntryPoint,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TTransport extends Transport = Transport,
+    TChain extends Chain | undefined = Chain | undefined,
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 > = Prettify<
-    SendUserOperationParameters<entryPoint, TAccount> & {
+    SendUserOperationParameters<entryPoint, TTransport, TChain, TAccount> & {
         approvals: ApproveUserOperationReturnType[]
     }
 >
@@ -40,13 +41,20 @@ export async function sendUserOperationWithApprovals<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: Prettify<
-        SendUserOperationWithApprovalsParameters<entryPoint, TAccount>
+        SendUserOperationWithApprovalsParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
     >
 ): Promise<Hash> {
     const { account: account_ = client.account } = args

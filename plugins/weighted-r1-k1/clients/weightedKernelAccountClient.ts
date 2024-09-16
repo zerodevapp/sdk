@@ -2,7 +2,7 @@ import {
     type KernelSmartAccount,
     createKernelAccountClient
 } from "@zerodev/sdk"
-import type { SmartAccountClientConfig } from "@zerodev/sdk/clients/kernelAccountClient"
+import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
 import type { EntryPoint } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
 import type { Chain, Client, Transport } from "viem"
@@ -15,19 +15,23 @@ export type WeightedKernelAccountClient<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    account extends
+        | KernelSmartAccount<entryPoint, transport, chain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, transport, chain>
         | undefined
 > = Client<
     transport,
     chain,
     account,
     BundlerRpcSchema<entryPoint>,
-    WeightedKernelAccountClientActions<entryPoint, chain, account>
+    WeightedKernelAccountClientActions<entryPoint, transport, chain, account>
 >
 
 export const createWeightedKernelAccountClient = <
-    TSmartAccount extends KernelSmartAccount<TEntryPoint> | undefined,
+    TSmartAccount extends
+        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
+        | undefined,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = undefined,
     TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<

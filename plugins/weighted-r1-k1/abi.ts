@@ -8,16 +8,32 @@ export const WeightedValidatorAbi = [
         name: "eip712Domain",
         inputs: [],
         outputs: [
-            { name: "fields", type: "bytes1", internalType: "bytes1" },
+            {
+                name: "fields",
+                type: "bytes1",
+                internalType: "bytes1"
+            },
             { name: "name", type: "string", internalType: "string" },
-            { name: "version", type: "string", internalType: "string" },
-            { name: "chainId", type: "uint256", internalType: "uint256" },
+            {
+                name: "version",
+                type: "string",
+                internalType: "string"
+            },
+            {
+                name: "chainId",
+                type: "uint256",
+                internalType: "uint256"
+            },
             {
                 name: "verifyingContract",
                 type: "address",
                 internalType: "address"
             },
-            { name: "salt", type: "bytes32", internalType: "bytes32" },
+            {
+                name: "salt",
+                type: "bytes32",
+                internalType: "bytes32"
+            },
             {
                 name: "extensions",
                 type: "uint256[]",
@@ -35,12 +51,28 @@ export const WeightedValidatorAbi = [
                 type: "uint256",
                 internalType: "uint256"
             },
-            { name: "kernel", type: "address", internalType: "address" }
+            {
+                name: "kernel",
+                type: "address",
+                internalType: "address"
+            }
         ],
         outputs: [
-            { name: "guardianType", type: "bytes1", internalType: "bytes1" },
-            { name: "weight", type: "uint24", internalType: "uint24" },
-            { name: "encodedPublicKey", type: "bytes", internalType: "bytes" }
+            {
+                name: "guardianType",
+                type: "bytes1",
+                internalType: "bytes1"
+            },
+            {
+                name: "weight",
+                type: "uint24",
+                internalType: "uint24"
+            },
+            {
+                name: "encodedPublicKey",
+                type: "bytes",
+                internalType: "bytes"
+            }
         ],
         stateMutability: "view"
     },
@@ -48,7 +80,11 @@ export const WeightedValidatorAbi = [
         type: "function",
         name: "isInitialized",
         inputs: [
-            { name: "smartAccount", type: "address", internalType: "address" }
+            {
+                name: "smartAccount",
+                type: "address",
+                internalType: "address"
+            }
         ],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
         stateMutability: "view"
@@ -57,7 +93,11 @@ export const WeightedValidatorAbi = [
         type: "function",
         name: "isModuleType",
         inputs: [
-            { name: "moduleTypeId", type: "uint256", internalType: "uint256" }
+            {
+                name: "moduleTypeId",
+                type: "uint256",
+                internalType: "uint256"
+            }
         ],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
         stateMutability: "pure"
@@ -67,8 +107,16 @@ export const WeightedValidatorAbi = [
         name: "isValidSignatureWithSender",
         inputs: [
             { name: "", type: "address", internalType: "address" },
-            { name: "hash", type: "bytes32", internalType: "bytes32" },
-            { name: "signature", type: "bytes", internalType: "bytes" }
+            {
+                name: "hash",
+                type: "bytes32",
+                internalType: "bytes32"
+            },
+            {
+                name: "signature",
+                type: "bytes",
+                internalType: "bytes"
+            }
         ],
         outputs: [{ name: "", type: "bytes4", internalType: "bytes4" }],
         stateMutability: "view"
@@ -96,7 +144,11 @@ export const WeightedValidatorAbi = [
                 type: "bytes32",
                 internalType: "bytes32"
             },
-            { name: "kernel", type: "address", internalType: "address" }
+            {
+                name: "kernel",
+                type: "address",
+                internalType: "address"
+            }
         ],
         outputs: [
             {
@@ -109,9 +161,20 @@ export const WeightedValidatorAbi = [
                 type: "uint48",
                 internalType: "ValidAfter"
             },
-            { name: "approvals", type: "uint24", internalType: "uint24" }
+            {
+                name: "approvals",
+                type: "uint24",
+                internalType: "uint24"
+            }
         ],
         stateMutability: "view"
+    },
+    {
+        type: "function",
+        name: "renew",
+        inputs: [{ name: "_data", type: "bytes", internalType: "bytes" }],
+        outputs: [],
+        stateMutability: "nonpayable"
     },
     {
         type: "function",
@@ -127,9 +190,21 @@ export const WeightedValidatorAbi = [
                         type: "address",
                         internalType: "address"
                     },
-                    { name: "nonce", type: "uint256", internalType: "uint256" },
-                    { name: "initCode", type: "bytes", internalType: "bytes" },
-                    { name: "callData", type: "bytes", internalType: "bytes" },
+                    {
+                        name: "nonce",
+                        type: "uint256",
+                        internalType: "uint256"
+                    },
+                    {
+                        name: "initCode",
+                        type: "bytes",
+                        internalType: "bytes"
+                    },
+                    {
+                        name: "callData",
+                        type: "bytes",
+                        internalType: "bytes"
+                    },
                     {
                         name: "accountGasLimits",
                         type: "bytes32",
@@ -150,10 +225,18 @@ export const WeightedValidatorAbi = [
                         type: "bytes",
                         internalType: "bytes"
                     },
-                    { name: "signature", type: "bytes", internalType: "bytes" }
+                    {
+                        name: "signature",
+                        type: "bytes",
+                        internalType: "bytes"
+                    }
                 ]
             },
-            { name: "userOpHash", type: "bytes32", internalType: "bytes32" }
+            {
+                name: "userOpHash",
+                type: "bytes32",
+                internalType: "bytes32"
+            }
         ],
         outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
         stateMutability: "payable"
@@ -172,22 +255,48 @@ export const WeightedValidatorAbi = [
                 type: "uint256",
                 internalType: "uint256"
             },
-            { name: "kernel", type: "address", internalType: "address" }
+            {
+                name: "kernel",
+                type: "address",
+                internalType: "address"
+            }
         ],
         outputs: [
-            { name: "status", type: "uint8", internalType: "enum VoteStatus" }
+            {
+                name: "status",
+                type: "uint8",
+                internalType: "enum VoteStatus"
+            }
         ],
         stateMutability: "view"
     },
     {
         type: "function",
         name: "weightedStorage",
-        inputs: [{ name: "kernel", type: "address", internalType: "address" }],
+        inputs: [
+            {
+                name: "kernel",
+                type: "address",
+                internalType: "address"
+            }
+        ],
         outputs: [
-            { name: "totalWeight", type: "uint24", internalType: "uint24" },
-            { name: "threshold", type: "uint24", internalType: "uint24" },
+            {
+                name: "totalWeight",
+                type: "uint24",
+                internalType: "uint24"
+            },
+            {
+                name: "threshold",
+                type: "uint24",
+                internalType: "uint24"
+            },
             { name: "delay", type: "uint48", internalType: "uint48" },
-            { name: "guardianLength", type: "uint32", internalType: "uint32" }
+            {
+                name: "guardianLength",
+                type: "uint32",
+                internalType: "uint32"
+            }
         ],
         stateMutability: "view"
     },
@@ -319,7 +428,11 @@ export const WeightedValidatorAbi = [
         type: "error",
         name: "AlreadyInitialized",
         inputs: [
-            { name: "smartAccount", type: "address", internalType: "address" }
+            {
+                name: "smartAccount",
+                type: "address",
+                internalType: "address"
+            }
         ]
     },
     {
@@ -330,13 +443,23 @@ export const WeightedValidatorAbi = [
     {
         type: "error",
         name: "InvalidTargetAddress",
-        inputs: [{ name: "target", type: "address", internalType: "address" }]
+        inputs: [
+            {
+                name: "target",
+                type: "address",
+                internalType: "address"
+            }
+        ]
     },
     {
         type: "error",
         name: "NotInitialized",
         inputs: [
-            { name: "smartAccount", type: "address", internalType: "address" }
+            {
+                name: "smartAccount",
+                type: "address",
+                internalType: "address"
+            }
         ]
     },
     { type: "error", name: "NotSupportedSignatureType", inputs: [] },

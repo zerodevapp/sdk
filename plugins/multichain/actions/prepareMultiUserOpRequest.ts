@@ -10,12 +10,12 @@ import type {
     PrepareUserOperationRequestReturnType,
     SponsorUserOperationReturnType
 } from "permissionless/actions/smartAccount"
-import type { StateOverrides } from "permissionless/types/bundler"
 import type {
     ENTRYPOINT_ADDRESS_V07_TYPE,
     EntryPoint,
     GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+} from "permissionless/types"
+import type { StateOverrides } from "permissionless/types/bundler"
 import type { Chain, Client, Transport } from "viem"
 import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
@@ -28,12 +28,21 @@ export async function prepareMultiUserOpRequest<
     entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    TAccount extends
+        | SmartAccount<entryPoint, string, TTransport, TChain>
+        | undefined =
+        | SmartAccount<entryPoint, string, TTransport, TChain>
         | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<PrepareUserOperationRequestParameters<entryPoint, TAccount>>,
+    args: Prettify<
+        PrepareUserOperationRequestParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
+    >,
     validatorType: ValidatorType,
     numOfUserOps: number,
     stateOverrides?: StateOverrides
@@ -46,9 +55,12 @@ export async function prepareMultiUserOpRequest<
 
     if (!account_) throw new AccountOrClientNotFoundError()
 
-    const account = parseAccount(
-        account_
-    ) as SmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    const account = parseAccount(account_) as SmartAccount<
+        ENTRYPOINT_ADDRESS_V07_TYPE,
+        string,
+        TTransport,
+        TChain
+    >
 
     const [sender, nonce, factory, factoryData, callData, gasEstimation] =
         await Promise.all([

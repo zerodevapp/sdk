@@ -67,11 +67,14 @@ export const zerodevPaymasterActions =
 
 export type KernelAccountClientActions<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TSmartAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
-> = SmartAccountActions<entryPoint, TChain, TSmartAccount> & {
+> = SmartAccountActions<entryPoint, TTransport, TChain, TSmartAccount> & {
     /**
      * Signs a user operation with the given transport, chain, and smart account.
      *
@@ -109,6 +112,7 @@ export type KernelAccountClientActions<
     >(
         args: UninstallPluginParameters<
             entryPoint,
+            TTransport,
             TChain,
             TSmartAccount,
             TChainOverride
@@ -127,6 +131,7 @@ export type KernelAccountClientActions<
     >(
         args: InvalidateNonceParameters<
             entryPoint,
+            TTransport,
             TChain,
             TSmartAccount,
             TChainOverride
@@ -145,6 +150,7 @@ export type KernelAccountClientActions<
     >(
         args: GetKernelV3ModuleCurrentNonceParameters<
             entryPoint,
+            TTransport,
             TChain,
             TSmartAccount,
             TChainOverride
@@ -158,12 +164,19 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
     return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-            | KernelSmartAccount<entryPoint>
+        TSmartAccount extends
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
+            | undefined =
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
-    ): KernelAccountClientActions<entryPoint, TChain, TSmartAccount> => ({
+    ): KernelAccountClientActions<
+        entryPoint,
+        TTransport,
+        TChain,
+        TSmartAccount
+    > => ({
         ...smartAccountActions({ middleware })(client),
         signUserOperation: (args) =>
             signUserOperation<entryPoint, TTransport, TChain, TSmartAccount>(
@@ -171,7 +184,12 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                 {
                     ...args,
                     middleware
-                } as SignUserOperationParameters<entryPoint, TSmartAccount>
+                } as SignUserOperationParameters<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TSmartAccount
+                >
             ),
         getUserOperationGasPrice: async () => getUserOperationGasPrice(client),
         uninstallPlugin: async (args) =>
@@ -182,6 +200,7 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                     middleware
                 } as UninstallPluginParameters<
                     entryPoint,
+                    TTransport,
                     TChain,
                     TSmartAccount
                 >
@@ -190,13 +209,19 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
             invalidateNonce(client, {
                 ...args,
                 middleware
-            } as InvalidateNonceParameters<entryPoint, TChain, TSmartAccount>),
+            } as InvalidateNonceParameters<
+                entryPoint,
+                TTransport,
+                TChain,
+                TSmartAccount
+            >),
         getKernelV3ModuleCurrentNonce: async (args) =>
             getKernelV3ModuleCurrentNonce(client, {
                 ...args,
                 middleware
             } as GetKernelV3ModuleCurrentNonceParameters<
                 entryPoint,
+                TTransport,
                 TChain,
                 TSmartAccount
             >)

@@ -498,7 +498,7 @@ export const getKernelAccountClient = async ({
         ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE, Transport, Chain>
     >
 > => {
     const chain = getTestingChain()

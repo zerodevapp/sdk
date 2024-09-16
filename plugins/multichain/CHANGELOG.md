@@ -1,5 +1,53 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.11
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
+## 5.3.10
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
+## 5.3.9
+
+### Patch Changes
+
+- Added custom rpId support to the multi chain webAuthn validator
+
+## 5.3.8
+
+### Patch Changes
+
+- Fixed webAuthnSignUserOps to correctly encode signature
+
+## 5.3.7
+
+### Patch Changes
+
+- Encode signature differently depending on number of user ops
+
+## 5.3.6
+
+### Patch Changes
+
+- Fixed signature encoding issue of single user op for multi chain webauthn validator
+
+## 5.3.5
+
+### Patch Changes
+
+- Allow passing custom middleware to the multi chain client prepareMultiUserOpRequest
+
+## 5.3.4
+
+### Minor Changes
+
+- Add serializaztion for the MultiChainWebAuthnValidator
+
 ## 5.3.3
 
 ### Patch Changes

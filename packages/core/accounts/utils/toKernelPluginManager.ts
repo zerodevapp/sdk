@@ -59,7 +59,8 @@ export async function toKernelPluginManager<
         validAfter = 0,
         validUntil = 0,
         entryPoint: entryPointAddress,
-        kernelVersion
+        kernelVersion,
+        chainId
     }: KernelPluginManagerParams<entryPoint>
 ): Promise<KernelPluginManager<entryPoint>> {
     if (
@@ -70,8 +71,8 @@ export async function toKernelPluginManager<
             "Either sudo or/and regular validator version mismatch. Update to latest plugin package and use the proper plugin version"
         )
     }
+    let pluginEnabled: boolean
     const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    let chainId: number
     const activeValidator = regular || sudo
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
@@ -106,6 +107,9 @@ export async function toKernelPluginManager<
         }
         if (entryPointVersion === "v0.6") {
             if (regular) {
+                if (pluginEnabled) {
+                    return ValidatorMode.plugin
+                }
                 if (await isPluginEnabled(accountAddress, selector)) {
                     return ValidatorMode.plugin
                 }
@@ -132,6 +136,9 @@ export async function toKernelPluginManager<
             }
         }
         if (regular) {
+            if (pluginEnabled) {
+                return userOpSignature
+            }
             if (await isPluginEnabled(accountAddress, action.selector)) {
                 return userOpSignature
             }
@@ -159,10 +166,13 @@ export async function toKernelPluginManager<
         if (entryPointVersion === "v0.6") {
             return regular.isEnabled(accountAddress, selector)
         }
-        return (
+        const isEnabled =
             (await regular.isEnabled(accountAddress, action.selector)) ||
             (await isPluginInitialized(client, accountAddress, regular.address))
-        )
+        if (isEnabled) {
+            pluginEnabled = true
+        }
+        return isEnabled
     }
 
     const getPluginEnableSignature = async (accountAddress: Address) => {
@@ -182,7 +192,7 @@ export async function toKernelPluginManager<
             kernelVersion
         )
         if (!chainId) {
-            chainId = await getChainId(client)
+            chainId = client.chain?.id ?? (await getChainId(client))
         }
         let ownerSig: Hex
         if (entryPointVersion === "v0.6") {
@@ -241,7 +251,7 @@ export async function toKernelPluginManager<
         const validatorNonce = await getKernelV3Nonce(client, accountAddress)
 
         if (!chainId) {
-            chainId = await getChainId(client)
+            chainId = client.chain?.id ?? (await getChainId(client))
         }
         const typedData = await getPluginsEnableTypedDataV2({
             accountAddress,
@@ -257,6 +267,7 @@ export async function toKernelPluginManager<
 
     return {
         sudoValidator: sudo,
+        regularValidator: regular,
         ...activeValidator,
         hook,
         getIdentifier,

@@ -1,5 +1,42 @@
 # @zerodev/sdk
 
+## 5.3.14
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
+## 5.3.13
+
+### Patch Changes
+
+- Optimized performance by removing unnecessary getChainId calls and caching pluginEnabled data
+
+## 5.3.12
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
+## 5.3.11
+
+### Patch Changes
+
+- Exposed regular validator properties in the kernelPluginManager interface
+
+## 5.3.10
+
+### Patch Changes
+
+- Added initConfig support in deserialize utils of permission validator and kernel account
+
+## 5.3.9
+
+### Patch Changes
+
+- Added useMetaFactory support in createKernelAccount
+- Added `ZERODEV` provider support
+
 ## 5.3.8
 
 ### Patch Changes

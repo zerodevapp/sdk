@@ -19,14 +19,18 @@ import type {
 
 export type UninstallPluginParameters<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 > = Prettify<
     SendTransactionWithPaymasterParameters<
         entryPoint,
+        TTransport,
         TChain,
         TAccount,
         TChainOverride
@@ -40,14 +44,22 @@ export async function uninstallPlugin<
     entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined,
     TChainOverride extends Chain | undefined = Chain | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: Prettify<
-        UninstallPluginParameters<entryPoint, TChain, TAccount, TChainOverride>
+        UninstallPluginParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TAccount,
+            TChainOverride
+        >
     >
 ): Promise<Hash> {
     const {
@@ -82,7 +94,13 @@ export async function uninstallPlugin<
     const hookData = (await hook?.getEnableData(account.address)) ?? "0x"
     return await getAction(
         client,
-        sendTransaction<TChain, TAccount, entryPoint, TChainOverride>,
+        sendTransaction<
+            TTransport,
+            TChain,
+            TAccount,
+            entryPoint,
+            TChainOverride
+        >,
         "sendTransaction"
     )({
         ...args,

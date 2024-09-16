@@ -1,3 +1,4 @@
+import type { Policy } from "@zerodev/permissions"
 import {
     CallPolicyVersion,
     type SignatureCallerPolicyParams,

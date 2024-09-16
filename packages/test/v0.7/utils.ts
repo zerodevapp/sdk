@@ -414,7 +414,7 @@ export const getKernelAccountClient = async ({
     account,
     middleware
 }: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
-    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
 } = {}) => {
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToEcdsaKernelAccount())
@@ -858,7 +858,7 @@ export async function mintToAccount<entryPoint extends EntryPoint>(
         entryPoint,
         Transport,
         Chain,
-        KernelSmartAccount<entryPoint>
+        KernelSmartAccount<entryPoint, Transport, Chain>
     >,
     target: Address,
     amount: bigint

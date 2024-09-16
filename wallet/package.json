@@ -35,15 +35,14 @@
         "lint:fix": "bun run lint --apply"
     },
     "dependencies": {
-        "@zerodev/ecdsa-validator": "^5.3.1",
-        "@zerodev/passkey-validator": "^5.3.4",
-        "@zerodev/permissions": "^5.3.1",
-        "@zerodev/sdk": "^5.3.2",
-        "@zerodev/session-account": "^5.3.0-alpha-7"
+        "@zerodev/ecdsa-validator": "^5.3.3",
+        "@zerodev/passkey-validator": "^5.4.2",
+        "@zerodev/permissions": "^5.4.6",
+        "@zerodev/sdk": "^5.3.14"
     },
     "peerDependencies": {
         "wagmi": "^2.9.0",
-        "viem": "^2.16.3",
+        "viem": ">=2.16.3 <2.18.0",
         "permissionless": "^0.1.29"
     }
 }

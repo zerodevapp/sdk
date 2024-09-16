@@ -18,12 +18,15 @@ import {
 
 export type MultiChainWeightedKernelAccountClientActions<
     entryPoint extends EntryPoint,
+    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    TSmartAccount extends
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined
 > = Omit<
-    KernelAccountClientActions<entryPoint, TChain, TSmartAccount>,
+    KernelAccountClientActions<entryPoint, TTransport, TChain, TSmartAccount>,
     | "sendUserOperation"
     | "sendTransaction"
     | "writeContract"
@@ -72,13 +75,16 @@ export function multiChainWeightedKernelAccountClientActions<
     return <
         TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends KernelSmartAccount<entryPoint> | undefined =
-            | KernelSmartAccount<entryPoint>
+        TSmartAccount extends
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
+            | undefined =
+            | KernelSmartAccount<entryPoint, TTransport, TChain>
             | undefined
     >(
         client: Client<TTransport, TChain, TSmartAccount>
     ): MultiChainWeightedKernelAccountClientActions<
         entryPoint,
+        TTransport,
         TChain,
         TSmartAccount
     > => {
@@ -101,7 +107,12 @@ export function multiChainWeightedKernelAccountClientActions<
                 >(client, {
                     ...args,
                     middleware
-                } as ApproveUserOperationParameters<entryPoint, TSmartAccount>),
+                } as ApproveUserOperationParameters<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TSmartAccount
+                >),
             sendUserOperationWithApprovals: (args) =>
                 sendUserOperationWithApprovals<
                     entryPoint,
@@ -113,6 +124,8 @@ export function multiChainWeightedKernelAccountClientActions<
                     middleware
                 } as SendUserOperationWithApprovalsParameters<
                     entryPoint,
+                    TTransport,
+                    TChain,
                     TSmartAccount
                 >)
         }

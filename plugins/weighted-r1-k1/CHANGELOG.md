@@ -1,5 +1,35 @@
 # @zerodev/weighted-validator
 
+## 5.3.1
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+
+## 5.3.0
+
+### Patch Changes
+
+- Pinned permissionless version >=0.1.18 <=0.1.29
+
+## 5.3.0-alpha-6
+
+### Patch Changes
+
+- Update peer dependency to core sdk 5.3.11
+
+## 5.3.0-alpha-5
+
+### Patch Changes
+
+- Fixed the issue with the regular validator not being enabled
+
+## 5.3.0-alpha-4
+
+### Patch Changes
+
+- Added the update-config feature and migrated to the webauthn-key module
+
 ## 5.3.0-alpha-3
 
 ### Patch Changes

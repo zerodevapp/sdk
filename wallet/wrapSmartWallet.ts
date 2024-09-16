@@ -48,7 +48,7 @@ export const wrapSmartWallet = (
                     return async (params: any) => {
                         await target.connect(params)
                         const chainId = await target.getChainId()
-                        const chain = config.chains.find(
+                        const chain: Chain = config.chains.find(
                             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                             (c: any) => c.id === chainId
                         )

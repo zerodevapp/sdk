@@ -1,5 +1,5 @@
 import { getEntryPointVersion } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts/types"
+import type { SmartAccount } from "permissionless/accounts"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
 import type { BundlerRpcSchema } from "permissionless/types/bundler"
@@ -23,23 +23,27 @@ export type KernelAccountClient<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends KernelSmartAccount<entryPoint> | undefined =
-        | KernelSmartAccount<entryPoint>
+    account extends
+        | KernelSmartAccount<entryPoint, transport, chain>
+        | undefined =
+        | KernelSmartAccount<entryPoint, transport, chain>
         | undefined
 > = Client<
     transport,
     chain,
     account,
     BundlerRpcSchema<entryPoint>,
-    KernelAccountClientActions<entryPoint, chain, account>
+    KernelAccountClientActions<entryPoint, transport, chain, account>
 >
 
 export type SmartAccountClientConfig<
     entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends SmartAccount<entryPoint> | undefined =
-        | SmartAccount<entryPoint>
+    account extends
+        | SmartAccount<entryPoint, string, transport, chain>
+        | undefined =
+        | SmartAccount<entryPoint, string, transport, chain>
         | undefined
 > = Prettify<
     Pick<
@@ -54,14 +58,14 @@ export type SmartAccountClientConfig<
 >
 
 export const createKernelAccountClient = <
-    TSmartAccount extends KernelSmartAccount<TEntryPoint> | undefined,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = undefined,
-    TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<
-        infer U
-    >
-        ? U
-        : never
+    TTransport extends Transport,
+    TChain extends Chain | undefined,
+    TEntryPoint extends EntryPoint,
+    TSmartAccount extends
+        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
+        | undefined =
+        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
+        | undefined
 >(
     parameters: SmartAccountClientConfig<
         TEntryPoint,
@@ -92,7 +96,8 @@ export const createKernelAccountClient = <
             })
             if (
                 !shouldIncludePimlicoProvider ||
-                isProviderSet(_bundlerTransport.value?.url, "ALCHEMY")
+                isProviderSet(_bundlerTransport.value?.url, "ALCHEMY") ||
+                isProviderSet(_bundlerTransport.value?.url, "ZERODEV")
             )
                 return _bundlerTransport
             _bundlerTransport = http(

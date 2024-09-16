@@ -13,7 +13,7 @@ import {
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     EntryPoint
-} from "permissionless/types/entrypoint.js"
+} from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -21,6 +21,8 @@ import {
     type Hash,
     type Hex,
     type LocalAccount,
+    type PublicActions,
+    type PublicRpcSchema,
     type Transport,
     type TypedData,
     type TypedDataDefinition,
@@ -97,7 +99,13 @@ export async function createKernelAccountV1<
     TSource extends string = string,
     TAddress extends Address = Address
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client<
+        TTransport,
+        TChain,
+        undefined,
+        PublicRpcSchema,
+        PublicActions<TTransport, TChain>
+    >,
     {
         signer,
         entryPoint: entryPointAddress,

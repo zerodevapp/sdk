@@ -1,5 +1,16 @@
 # @zerodev/wallet
 
+## 0.1.5
+
+### Patch Changes
+
+- Patch for latest permissionless 0.1.45 support
+- Updated dependencies
+  - @zerodev/permissions@5.4.6
+  - @zerodev/passkey-validator@5.4.2
+  - @zerodev/sdk@5.3.14
+  - @zerodev/ecdsa-validator@5.3.3
+
 ## 0.1.4
 
 ### Patch Changes
