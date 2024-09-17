@@ -5,7 +5,10 @@ import { toAccount } from "viem/accounts"
 import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner } from "../types.js"
 
-export function toEmptyECDSASigner(address: Address, signerContractAddress: Address = ECDSA_SIGNER_CONTRACT): ModularSigner {
+export function toEmptyECDSASigner(
+    address: Address,
+    signerContractAddress: Address = ECDSA_SIGNER_CONTRACT
+): ModularSigner {
     const account = toAccount({
         address,
         async signMessage() {
