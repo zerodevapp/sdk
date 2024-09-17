@@ -14,7 +14,6 @@ import {
     createKernelAccount,
     createKernelAccountClient
 } from "@zerodev/sdk"
-import { getInstallDMAsExecutorCallData } from "@zerodev/session-account"
 import type { EntryPoint } from "permissionless/types"
 import {
     http,
@@ -135,8 +134,7 @@ export function passkeyConnector(
                     kernelVersion,
                     plugins: {
                         sudo: passkeyValidator
-                    },
-                    initConfig: [getInstallDMAsExecutorCallData()]
+                    }
                 })
                 const kernelClient = createKernelAccountClient({
                     account: kernelAccount,

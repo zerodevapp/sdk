@@ -9,13 +9,7 @@ import {
     toSudoPolicy,
     toTimestampPolicy
 } from "@zerodev/permissions/policies"
-import type { Caveat } from "@zerodev/session-account"
-import {
-    CallType,
-    ParamCondition,
-    toAllowedParamsEnforcer
-} from "@zerodev/session-account/enforcers"
-import { type Address, type Hex, erc20Abi, toHex } from "viem"
+import { type Address, toHex } from "viem"
 import type { GrantPermissionsParams, Permission, SessionType } from "../types"
 
 export const validatePermissions = (
@@ -92,71 +86,6 @@ export const getPolicies = (
             })
         ])
     return policies
-}
-
-export const getPermissionCaveat = (permission: Permission): Caveat[] => {
-    const caveats: Caveat[] = []
-    switch (permission.type) {
-        case "sudo":
-            break
-        case "contract-call":
-            caveats.push(
-                toAllowedParamsEnforcer({
-                    ...permission.data
-                })
-            )
-            break
-        case "erc20-token-approve": {
-            const permissions = [
-                {
-                    abi: erc20Abi,
-                    functionName: "approve",
-                    target: permission.data.tokenAddress,
-                    callType: CallType.BATCH_CALL,
-                    args: [
-                        {
-                            condition: ParamCondition.ONE_OF,
-                            value: permission.data.contractAllowList.map(
-                                (list: { address: Address }) => list.address
-                            )
-                        },
-                        {
-                            condition: ParamCondition.LESS_THAN_OR_EQUAL,
-                            value: BigInt(permission.data.allowance)
-                        }
-                    ]
-                },
-                ...permission.data.contractAllowList.flatMap(
-                    (contract: { functions: Hex[]; address: Address }) =>
-                        contract.functions.map((selector: Hex) => ({
-                            target: contract.address,
-                            selector,
-                            callType: CallType.BATCH_CALL
-                        }))
-                )
-            ]
-            console.log({ permissions })
-            caveats.push(
-                toAllowedParamsEnforcer({
-                    permissions
-                })
-            )
-            break
-        }
-        default:
-            break
-    }
-
-    return caveats
-}
-export const getCaveats = (
-    permissionsParams: GrantPermissionsParams
-): Caveat[] => {
-    const caveats = permissionsParams.permissions.flatMap((permission) =>
-        getPermissionCaveat(permission)
-    )
-
-    return caveats
 }
 
 export const isSessionValid = (
