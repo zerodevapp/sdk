@@ -11,11 +11,7 @@ import {
     createWeightedECDSAValidator,
     getRecoveryAction
 } from "@zerodev/weighted-ecdsa-validator"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V07,
-    createBundlerClient
-} from "permissionless"
+import { ENTRYPOINT_ADDRESS_V07, createBundlerClient } from "permissionless"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import {
     createPimlicoBundlerClient,
@@ -59,12 +55,25 @@ import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
+import { getChainId } from "viem/actions"
+import { createSessionAccount } from "../../../plugins/multi-tenant-session-account/index.js"
+import type { Delegation } from "../../../plugins/multi-tenant-session-account/types.js"
+import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
+import { ROOT_AUTHORITY } from "../../../plugins/yiSubAccount/constants.js"
+import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/index.js"
+import {
+    type YiSubAccount,
+    createMultiTenantSessionAccount,
+    createYiSubAccount,
+    toDelegationHash
+} from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
-export const index = 432334375434333332434365532464445487823332432423423n
+export const index = 11111111111111111n // 432334375434333332434365532464445487823332432423423n
 export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
-const projectId = config["v0.7"].sepolia.projectId
+const testingChain = allChains.sepolia.id
+const projectId = config["v0.7"][testingChain].projectId
 
 export const validateEnvironmentVariables = (envVars: string[]): void => {
     const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
@@ -103,16 +112,28 @@ export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
     return ENTRYPOINT_ADDRESS_V07
 }
 
-export const getEcdsaKernelAccountWithRandomSigner = async () => {
-    return getEcdsaKernelAccountWithPrivateKey(generatePrivateKey())
+export const getEcdsaKernelAccountWithRandomSigner = async (
+    initConfig?: Hex[],
+    chain?: number
+) => {
+    return getEcdsaKernelAccountWithPrivateKey(
+        "0xdecd24cf132511c15660755cb179da493965561f9b9de0ee428988ef07f9ea8a" ??
+            generatePrivateKey(),
+        initConfig,
+        chain
+    )
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
+const getEcdsaKernelAccountWithPrivateKey = async (
+    privateKey: Hex,
+    initConfig?: Hex[],
+    chain?: number
+) => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
 
-    const publicClient = await getPublicClient()
+    const publicClient = await getPublicClient(chain)
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -126,7 +147,30 @@ const getEcdsaKernelAccountWithPrivateKey = async (privateKey: Hex) => {
             sudo: ecdsaValidatorPlugin
         },
         index,
-        kernelVersion
+        kernelVersion,
+        initConfig
+    })
+}
+
+export const generateRandomBigIntIndex = (): bigint => {
+    const min = 1n
+    const max = 10000000000n
+    return min + (BigInt(Math.floor(Math.random() * Number(max - min))) + min)
+}
+
+export const getSessionAccount = async (
+    delegations: Delegation[],
+    privateKey: Hex,
+    delegatorInitCode?: Hex
+) => {
+    const sessionKeySigner = privateKeyToAccount(privateKey)
+    const publicClient = await getPublicClient()
+
+    return createSessionAccount(publicClient, {
+        entryPoint: getEntryPoint(),
+        sessionKeySigner,
+        delegations,
+        delegatorInitCode
     })
 }
 
@@ -180,8 +224,8 @@ export const getZeroDevPaymasterClient = () => {
     })
 }
 
-export const getPaymasterRpc = (): string => {
-    const zeroDevProjectId = projectId
+export const getPaymasterRpc = (_projectId?: string): string => {
+    const zeroDevProjectId = _projectId ?? projectId
     const zeroDevPaymasterRpcHost = process.env.ZERODEV_PAYMASTER_RPC_HOST
     if (!zeroDevProjectId || !zeroDevPaymasterRpcHost) {
         throw new Error(
@@ -192,24 +236,18 @@ export const getPaymasterRpc = (): string => {
     return `${zeroDevPaymasterRpcHost}/${zeroDevProjectId}?provider=${DEFAULT_PROVIDER}`
 }
 
-export const getPublicClient = async (): Promise<PublicClient> => {
-    const rpcUrl = config["v0.7"].sepolia.rpcUrl
+export const getPublicClient = async (chain?: number) => {
+    const rpcUrl = config["v0.7"][chain ?? testingChain].rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
 
     const publicClient = createPublicClient({
-        transport: http(rpcUrl)
+        transport: http(rpcUrl),
+        chain: getTestingChain(chain)
     })
 
     const chainId = await publicClient.getChainId()
-    const testingChain = getTestingChain()
-
-    if (chainId !== testingChain.id) {
-        throw new Error(
-            `Testing Chain ID (${testingChain.id}) not supported by RPC URL`
-        )
-    }
 
     return publicClient
 }
@@ -243,12 +281,11 @@ export const getPimlicoBundlerClient = () => {
     })
 }
 
-export const getTestingChain = (): Chain => {
-    const testChainId = config["v0.7"].sepolia.chainId
-    const chainId = testChainId ?? polygonMumbai.id
-    const chain = Object.values(allChains).find((c) => c.id === chainId)
+export const getTestingChain = (chainId?: number): Chain => {
+    const _chainId = chainId ?? testingChain
+    const chain = Object.values(allChains).find((c) => c.id === _chainId)
     if (!chain) {
-        throw new Error(`Chain with id ${chainId} not found`)
+        throw new Error(`Chain ${testingChain} not found`)
     }
     return chain
 }
@@ -265,7 +302,7 @@ export const getKernelAccountClient = async ({
     return createKernelAccountClient({
         account: resolvedAccount,
         chain,
-        bundlerTransport: http(getBundlerRpc()),
+        bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
         middleware,
         entryPoint: getEntryPoint()
     })
@@ -280,9 +317,9 @@ export const getSignerToEcdsaKernelAccount = async () => {
     return getEcdsaKernelAccountWithPrivateKey(privateKey)
 }
 
-export const getBundlerRpc = (provider?: string): string => {
-    const zeroDevProjectId = projectId
-    const zeroDevBundlerRpcHost = config["v0.7"].sepolia.bundlerUrl
+export const getBundlerRpc = (_projectId?: string): string => {
+    const zeroDevProjectId = _projectId ?? projectId
+    const zeroDevBundlerRpcHost = config["v0.7"][testingChain].bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
@@ -683,7 +720,7 @@ export async function mintToAccount<entryPoint extends EntryPoint>(
         entryPoint,
         Transport,
         Chain,
-        KernelSmartAccount<entryPoint>
+        KernelSmartAccount<entryPoint, Transport, Chain>
     >,
     target: Address,
     amount: bigint

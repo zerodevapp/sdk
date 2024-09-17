@@ -214,7 +214,7 @@ describe("Permission kernel Account", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -281,7 +281,7 @@ describe("Permission kernel Account", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -311,7 +311,7 @@ describe("Permission kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

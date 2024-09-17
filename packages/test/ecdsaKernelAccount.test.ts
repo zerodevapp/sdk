@@ -20,7 +20,7 @@ import dotenv from "dotenv"
 import { ethers } from "ethers"
 import { type BundlerClient, ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
+import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -200,7 +200,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.6"].sepolia.rpcUrl
+                    config["v0.6"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -265,7 +265,7 @@ describe("ECDSA kernel Account", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.6"].sepolia.rpcUrl
+                    config["v0.6"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -291,7 +291,7 @@ describe("ECDSA kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.6"].sepolia.rpcUrl
+                    config["v0.6"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

@@ -45,7 +45,7 @@
     },
     "peerDependencies": {
         "viem": ">=2.16.3 <2.18.0",
-        "permissionless": "^0.1.29"
+        "permissionless": ">=0.1.44 <=0.1.45"
     },
     "devDependencies": {
         "@types/lodash": "^4.17.4"

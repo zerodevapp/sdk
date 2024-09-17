@@ -150,7 +150,7 @@ describe("Remote Signer", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -226,7 +226,7 @@ describe("Remote Signer", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -256,7 +256,7 @@ describe("Remote Signer", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"].sepolia.rpcUrl
+                    config["v0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
