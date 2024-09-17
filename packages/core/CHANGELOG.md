@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.15
+
+### Patch Changes
+
+- Added some util exports
+
 ## 5.3.14
 
 ### Patch Changes

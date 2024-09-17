@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.7
+
+### Patch Changes
+
+- Added optional param signerContractAddress in toEmptyECDSASigner in permissions pkg
+
 ## 5.4.6
 
 ### Patch Changes
