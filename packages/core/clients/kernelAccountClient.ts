@@ -109,16 +109,21 @@ export const createKernelAccountClient = <
     })
 
     let middleware = parameters.middleware
-    if (
-        (!middleware ||
-            (typeof middleware !== "function" && !middleware.gasPrice)) &&
-        client.transport?.url &&
-        isProviderSet(client.transport.url, "PIMLICO")
-    ) {
-        const gasPrice = () => getUserOperationGasPrice(client)
-        middleware = {
-            ...middleware,
-            gasPrice
+    const providers = ["PIMLICO", "THIRDWEB"]
+
+    for (const provider of providers) {
+        if (
+            (!middleware ||
+                (typeof middleware !== "function" && !middleware.gasPrice)) &&
+            client.transport?.url &&
+            isProviderSet(client.transport.url, provider)
+        ) {
+            const gasPrice = () => getUserOperationGasPrice(client, provider)
+            middleware = {
+                ...middleware,
+                gasPrice
+            }
+            break
         }
     }
     return client.extend(
