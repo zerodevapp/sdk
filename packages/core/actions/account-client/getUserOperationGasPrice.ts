@@ -12,7 +12,7 @@ export const getUserOperationGasPrice = async <
     TChain extends Chain | undefined = Chain | undefined,
     TAccount extends Account | undefined = Account | undefined
 >(
-    client: Client<TTransport, TChain, TAccount, ZeroDevAccountClientRpcSchema>,
+    client: Client<TTransport, TChain, TAccount, ZeroDevAccountClientRpcSchema>
 ): Promise<Prettify<GetUserOperationGasPriceReturnType>> => {
     const gasPrice = await client.request({
         method: "zd_getUserOperationGasPrice",
