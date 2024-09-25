@@ -1,17 +1,14 @@
 import { ENTRYPOINT_ADDRESS_V06 } from "permissionless"
 import type { EntryPoint } from "permissionless/types"
-import type {
-    UserOperation,
-    UserOperationWithBigIntAsHex
-} from "permissionless/types/userOperation.js"
+import type { UserOperation } from "permissionless/types/userOperation.js"
 import { deepHexlify } from "permissionless/utils"
 import type { Address, Hex } from "viem"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
 
 export type EstimateGasInERC20Parameters = {
-    userOperation: UserOperation<"v0.6">
+    userOperation: UserOperation<"v0.6" | "v0.7">
     gasTokenAddress: Hex
-    entryPoint?: Address
+    entryPoint: Address
 }
 
 export type GetERC20TokenQuotesReturnType = {
@@ -36,9 +33,10 @@ export const estimateGasInERC20 = async <entryPoint extends EntryPoint>(
         params: [
             {
                 chainId: client.chain?.id as number,
-                userOp: deepHexlify(
-                    args.userOperation
-                ) as UserOperationWithBigIntAsHex<"v0.6">,
+                userOp: {
+                    ...deepHexlify(args.userOperation),
+                    initCode: args.userOperation.initCode || "0x"
+                },
                 tokenAddress: args.gasTokenAddress,
                 entryPointAddress: args.entryPoint ?? ENTRYPOINT_ADDRESS_V06
             }
