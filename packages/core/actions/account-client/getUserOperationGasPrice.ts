@@ -13,33 +13,14 @@ export const getUserOperationGasPrice = async <
     TAccount extends Account | undefined = Account | undefined
 >(
     client: Client<TTransport, TChain, TAccount, ZeroDevAccountClientRpcSchema>,
-    provider: string
 ): Promise<Prettify<GetUserOperationGasPriceReturnType>> => {
-    if (provider === "PIMLICO") {
-        const gasPrice = await client.request({
-            method: "zd_getPimlicoUserOperationGasPrice",
-            params: []
-        })
+    const gasPrice = await client.request({
+        method: "zd_getUserOperationGasPrice",
+        params: []
+    })
 
-        return {
-            maxFeePerGas: BigInt(gasPrice.standard.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(gasPrice.standard.maxPriorityFeePerGas)
-        }
+    return {
+        maxFeePerGas: BigInt(gasPrice.standard.maxFeePerGas),
+        maxPriorityFeePerGas: BigInt(gasPrice.standard.maxPriorityFeePerGas)
     }
-
-    if (provider === "THIRDWEB") {
-        const gasPrice = await client.request({
-            method: "zd_getThirdwebUserOperationGasPrice",
-            params: []
-        })
-
-        return {
-            maxFeePerGas: BigInt(gasPrice.fast.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(gasPrice.fast.maxPriorityFeePerGas)
-        }
-    }
-
-    throw new Error(
-        `Unsupported provider: ${provider}, please use "PIMLICO" or "THIRDWEB"`
-    )
 }

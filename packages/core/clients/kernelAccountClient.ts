@@ -97,7 +97,8 @@ export const createKernelAccountClient = <
             if (
                 !shouldIncludePimlicoProvider ||
                 isProviderSet(_bundlerTransport.value?.url, "ALCHEMY") ||
-                isProviderSet(_bundlerTransport.value?.url, "ZERODEV")
+                isProviderSet(_bundlerTransport.value?.url, "ZERODEV") || 
+                isProviderSet(_bundlerTransport.value?.url, "THIRDWEB")
             )
                 return _bundlerTransport
             _bundlerTransport = http(
@@ -109,21 +110,18 @@ export const createKernelAccountClient = <
     })
 
     let middleware = parameters.middleware
-    const providers = ["PIMLICO", "THIRDWEB"]
 
-    for (const provider of providers) {
-        if (
-            (!middleware ||
-                (typeof middleware !== "function" && !middleware.gasPrice)) &&
-            client.transport?.url &&
-            isProviderSet(client.transport.url, provider)
-        ) {
-            const gasPrice = () => getUserOperationGasPrice(client, provider)
-            middleware = {
-                ...middleware,
-                gasPrice
-            }
-            break
+    if (
+        (!middleware ||
+            (typeof middleware !== "function" && !middleware.gasPrice)) &&
+        client.transport?.url &&
+        (isProviderSet(client.transport.url, "PIMLICO") ||
+         isProviderSet(client.transport.url, "THIRDWEB"))
+    ) {
+        const gasPrice = () => getUserOperationGasPrice(client)
+        middleware = {
+            ...middleware,
+            gasPrice
         }
     }
     return client.extend(

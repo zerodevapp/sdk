@@ -110,12 +110,7 @@ export type ZeroDevUserOperationGasPriceWithBigIntAsHex = {
 
 export type ZeroDevAccountClientRpcSchema = [
     {
-        Method: "zd_getPimlicoUserOperationGasPrice"
-        Parameters: []
-        ReturnType: ZeroDevUserOperationGasPriceWithBigIntAsHex
-    },
-    {
-        Method: "zd_getThirdwebUserOperationGasPrice"
+        Method: "zd_getUserOperationGasPrice"
         Parameters: []
         ReturnType: ZeroDevUserOperationGasPriceWithBigIntAsHex
     }
