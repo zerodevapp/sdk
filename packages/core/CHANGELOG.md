@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.16
+
+### Patch Changes
+
+- Added support for THIRDWEB provider
+
 ## 5.3.15
 
 ### Patch Changes
