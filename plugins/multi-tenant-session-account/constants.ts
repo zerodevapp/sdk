@@ -11,7 +11,7 @@ export const MULTI_TENANT_SESSION_ACCOUNT_ADDRESS =
     "0x16c15c5349eB67185b8A58020E57D71F57105f6d"
 
 export const CAB_PAYMASTER_SERVER_URL =
-    "https://cab-paymaster-service-dev.onrender.com/paymaster/api"
+    "https://cab-paymaster-service.onrender.com/paymaster/api"
 
 export const ROOT_AUTHORITY =
     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"

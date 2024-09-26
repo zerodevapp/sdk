@@ -3,8 +3,14 @@ import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import {
     type EncodeCallDataWithCABParameters,
+    type SendDelegateUserOperationParameters,
+    type SendInstallDMAndDelegateUserOperationParameters,
+    type SendInstallDMAsExecutorUserOperationParameters,
     type SignDelegationParameters,
+    delegate,
     encodeCallDataWithCAB,
+    installDMAndDelegate,
+    installDMAsExecutor,
     signDelegation
 } from "../../actions/index.js"
 
@@ -33,6 +39,30 @@ export type DMActionsEip7710<
             TChain,
             TAccount,
             TChainOverride
+        >
+    ) => Promise<Hash>
+    installDMAndDelegate: (
+        args: SendInstallDMAndDelegateUserOperationParameters<
+            TEntryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
+    ) => Promise<Hash>
+    installDMAsExecutor: (
+        args: SendInstallDMAsExecutorUserOperationParameters<
+            TEntryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
+    ) => Promise<Hash>
+    delegate: (
+        args: SendDelegateUserOperationParameters<
+            TEntryPoint,
+            TTransport,
+            TChain,
+            TAccount
         >
     ) => Promise<Hash>
 }
@@ -74,7 +104,10 @@ const dmActionsEip7710 =
                     TChain,
                     TAccount
                 >
-            )
+            ),
+        installDMAndDelegate: (args) => installDMAndDelegate(client, args),
+        installDMAsExecutor: (args) => installDMAsExecutor(client, { ...args }),
+        delegate: (args) => delegate(client, args)
     })
 
 export { dmActionsEip7710 }
