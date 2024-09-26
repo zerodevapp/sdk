@@ -45,10 +45,12 @@ export const getERC20PaymasterApproveCall = async <
     client: ZeroDevPaymasterClient<entryPoint>,
     {
         gasToken,
-        approveAmount
+        approveAmount,
+        entryPoint
     }: {
         gasToken: Address
         approveAmount: bigint
+        entryPoint: Address
     }
 ): Promise<{ to: Address; value: bigint; data: Hex }> => {
     const response = await client.request({
@@ -56,7 +58,7 @@ export const getERC20PaymasterApproveCall = async <
         params: [
             {
                 chainId: client.chain?.id as number,
-                entryPointAddress: ENTRYPOINT_ADDRESS_V06
+                entryPointAddress: entryPoint
             }
         ]
     })
