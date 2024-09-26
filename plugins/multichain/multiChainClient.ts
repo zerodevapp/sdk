@@ -162,6 +162,7 @@ export const createKernelMultiChainClient = <
         transport: (opts) => {
             let _bundlerTransport = bundlerTransport({
                 ...opts,
+                timeout: bundlerTransport({}).config.timeout,
                 retryCount: 0
             })
             if (
@@ -171,7 +172,11 @@ export const createKernelMultiChainClient = <
                 return _bundlerTransport
             _bundlerTransport = http(
                 setPimlicoAsProvider(_bundlerTransport.value?.url)
-            )({ ...opts, retryCount: 0 })
+            )({
+                ...opts,
+                timeout: bundlerTransport({}).config.timeout,
+                retryCount: 0
+            })
             return _bundlerTransport
         },
         type: "kernelAccountClient"

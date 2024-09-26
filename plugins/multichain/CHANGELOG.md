@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.12
+
+### Patch Changes
+
+- Fix bundlerTransport timeout issue
+
 ## 5.3.11
 
 ### Patch Changes
