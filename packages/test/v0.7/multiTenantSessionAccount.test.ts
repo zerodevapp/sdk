@@ -43,7 +43,6 @@ import { dmActionsEip7710 } from "../../../plugins/multi-tenant-session-account/
 import { ROOT_AUTHORITY } from "../../../plugins/multi-tenant-session-account/constants"
 import { toCABPaymasterEnforcer } from "../../../plugins/multi-tenant-session-account/enforcers/cab-paymaster/toCABPaymasterEnforcer"
 import type { Delegation } from "../../../plugins/multi-tenant-session-account/types"
-import type { YiSubAccount } from "../../../plugins/yiSubAccount"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { config } from "../config"
 import { Test_ERC20Address } from "../utils"
@@ -68,7 +67,6 @@ describe("Yi SubAccount", () => {
         Transport,
         Chain
     >
-    let account: YiSubAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
     let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
         ENTRYPOINT_ADDRESS_V07_TYPE,
@@ -105,12 +103,12 @@ describe("Yi SubAccount", () => {
             }
         })
 
-        const installTx = await kernelClient.sendTransaction({
-            to: kernelClient.account.address,
-            value: 0n,
-            data: getInstallDMAsExecutorCallData()
-        })
-        console.log({ installTx })
+        // const installTx = await kernelClient.sendTransaction({
+        //     to: kernelClient.account.address,
+        //     value: 0n,
+        //     data: getInstallDMAsExecutorCallData(),
+        // })
+        // console.log({ installTx })
 
         bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
     })
@@ -239,11 +237,17 @@ describe("Yi SubAccount", () => {
                 >()
             )
 
-            const mainDeleGatorSignature = await kernelClientDM.signDelegation({
-                delegation: delegations[0]
-            })
-            console.log({ mainDeleGatorSignature })
-            delegations[0].signature = mainDeleGatorSignature
+            const installDMAndDelegateHash =
+                await kernelClientDM.installDMAndDelegate({
+                    caveats,
+                    sessionKeyAddress: sessionKeyAccount.address
+                })
+
+            console.log(
+                "transactionHash",
+                `https://sepolia.etherscan.io/tx/${installDMAndDelegateHash}`
+            )
+
             const initCode = await mainDelegatorAccount.getInitCode()
             sessionAccount = await getSessionAccount(
                 delegations,
@@ -304,7 +308,9 @@ describe("Yi SubAccount", () => {
         "enable cab",
         async () => {
             const kernelCabClient = createKernelCABClient(kernelClient, {
-                transport: http(CAB_PAYMASTER_SERVER_URL)
+                transport: http(CAB_PAYMASTER_SERVER_URL),
+                entryPoint: getEntryPoint(),
+                chain: sepolia
             })
             console.log("kernelCabClient addr", kernelCabClient.account.address)
             await kernelCabClient.enableCAB({
@@ -331,6 +337,7 @@ describe("Yi SubAccount", () => {
 
             const kernelClientOPSepolia = createKernelAccountClient({
                 account: mainDelegatorAccountOPSepolia,
+                chain: optimismSepolia,
                 bundlerTransport: http(
                     getBundlerRpc(config["v0.7"][optimismSepolia.id].projectId),
                     { timeout: 100_000 }
@@ -365,7 +372,9 @@ describe("Yi SubAccount", () => {
             const kernelCabClientOPSepolia = createKernelCABClient(
                 kernelClientOPSepolia,
                 {
-                    transport: http(CAB_PAYMASTER_SERVER_URL)
+                    transport: http(CAB_PAYMASTER_SERVER_URL),
+                    entryPoint: getEntryPoint(),
+                    chain: optimismSepolia
                 }
             )
             console.log(

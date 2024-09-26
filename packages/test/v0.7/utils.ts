@@ -58,15 +58,6 @@ import type { AddressInfo } from "net"
 import { getChainId } from "viem/actions"
 import { createSessionAccount } from "../../../plugins/multi-tenant-session-account/index.js"
 import type { Delegation } from "../../../plugins/multi-tenant-session-account/types.js"
-import { createYiSubAccountClient } from "../../../plugins/yiSubAccount/clients/yiSubAccountClient.js"
-import { ROOT_AUTHORITY } from "../../../plugins/yiSubAccount/constants.js"
-import { toAllowedTargetsEnforcer } from "../../../plugins/yiSubAccount/enforcers/index.js"
-import {
-    type YiSubAccount,
-    createMultiTenantSessionAccount,
-    createYiSubAccount,
-    toDelegationHash
-} from "../../../plugins/yiSubAccount/index.js"
 
 // export const index = 43244782332432423423n
 export const index = 11111111111111111n // 432334375434333332434365532464445487823332432423423n
@@ -117,8 +108,8 @@ export const getEcdsaKernelAccountWithRandomSigner = async (
     chain?: number
 ) => {
     return getEcdsaKernelAccountWithPrivateKey(
-        "0xdecd24cf132511c15660755cb179da493965561f9b9de0ee428988ef07f9ea8a" ??
-            generatePrivateKey(),
+        // "0x3688628d97b817ee5e25dfce254ba4d87b5fd894449fce6c2acc60fdf98906de" ??
+        generatePrivateKey(),
         initConfig,
         chain
     )

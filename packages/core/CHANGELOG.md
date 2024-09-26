@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.17
+
+### Patch Changes
+
+- Fixed bundlerTransport timeout not applying issue
+
 ## 5.3.16
 
 ### Patch Changes
