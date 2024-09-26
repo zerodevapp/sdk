@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.18
+
+### Patch Changes
+
+- Added entrypoint v0.7 support for erc20 paymaster
+
 ## 5.3.17
 
 ### Patch Changes
