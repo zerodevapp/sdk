@@ -1,6 +1,7 @@
 import {
     KernelFactoryStakerAbi,
     KernelV3AccountAbi,
+    KernelV3FactoryAbi,
     KernelV3_1AccountAbi,
     createKernelAccount
 } from "@zerodev/sdk"
@@ -84,7 +85,7 @@ export const deserializePermissionAccount = async <
         kernelVersion
     })
 
-    const { index, validatorInitData } = decodeParamsFromInitCode(
+    const { index, validatorInitData, useMetaFactory } = decodeParamsFromInitCode(
         params.accountParams.initCode,
         kernelVersion
     )
@@ -104,7 +105,8 @@ export const deserializePermissionAccount = async <
         kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress
+        deployedAccountAddress: params.accountParams.accountAddress,
+        useMetaFactory
     })
 }
 
@@ -133,10 +135,23 @@ export const decodeParamsFromInitCode = (
 ) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
-    const deployWithFactoryFunctionData = decodeFunctionData({
-        abi: KernelFactoryStakerAbi,
-        data: `0x${initCode.slice(42)}`
-    })
+    const initCodeWithoutFactoryAddress: Hex = `0x${initCode.slice(42)}`
+    let deployWithFactoryFunctionData:
+        | DecodeFunctionDataReturnType<typeof KernelFactoryStakerAbi>
+        | DecodeFunctionDataReturnType<typeof KernelV3FactoryAbi>
+    let useMetaFactory = true
+    try {
+        deployWithFactoryFunctionData = decodeFunctionData({
+            abi: KernelFactoryStakerAbi,
+            data: initCodeWithoutFactoryAddress
+        })
+    } catch (error) {
+        deployWithFactoryFunctionData = decodeFunctionData({
+            abi: KernelV3FactoryAbi,
+            data: initCodeWithoutFactoryAddress
+        })
+        useMetaFactory = false
+    }
     if (!deployWithFactoryFunctionData) throw new Error("Invalid initCode")
     if (deployWithFactoryFunctionData.functionName === "deployWithFactory") {
         index = BigInt(deployWithFactoryFunctionData.args[2])
@@ -167,8 +182,37 @@ export const decodeParamsFromInitCode = (
                         : undefined
             }
         }
+    } else if (deployWithFactoryFunctionData.functionName === "createAccount") {
+        index = BigInt(deployWithFactoryFunctionData.args[1])
+        let initializeFunctionData:
+            | DecodeFunctionDataReturnType<typeof KernelV3AccountAbi>
+            | DecodeFunctionDataReturnType<typeof KernelV3_1AccountAbi>
+        if (kernelVersion === "0.3.0") {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3AccountAbi,
+                data: deployWithFactoryFunctionData.args[0]
+            })
+        } else {
+            initializeFunctionData = decodeFunctionData({
+                abi: KernelV3_1AccountAbi,
+                data: deployWithFactoryFunctionData.args[0]
+            })
+        }
+        if (!initializeFunctionData) throw new Error("Invalid initCode")
+        if (initializeFunctionData.functionName === "initialize") {
+            validatorInitData = {
+                validatorAddress: initializeFunctionData.args[0],
+                identifier: initializeFunctionData.args[0],
+                enableData: initializeFunctionData.args[2],
+                initConfig:
+                    kernelVersion === "0.3.1" &&
+                    Array.isArray(initializeFunctionData.args[4])
+                        ? [...initializeFunctionData.args[4]]
+                        : undefined
+            }
+        }
     }
     if (index === undefined || validatorInitData === undefined)
         throw new Error("Invalid initCode")
-    return { index, validatorInitData }
+    return { index, validatorInitData, useMetaFactory }
 }

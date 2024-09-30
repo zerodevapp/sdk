@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.8
+
+### Patch Changes
+
+- Fixed the deserializePermissionAccount util when useMetaFactory is false
+
 ## 5.4.7
 
 ### Patch Changes

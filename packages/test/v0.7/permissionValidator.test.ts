@@ -11,7 +11,7 @@ import {
 import { ethers } from "ethers"
 import type { BundlerClient } from "permissionless"
 import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
+import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -67,6 +67,7 @@ import {
     kernelVersion,
     sleep
 } from "./utils"
+import { sepolia } from "viem/chains";
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -77,13 +78,13 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Permission kernel Account", () => {
-    let publicClient: PublicClient
+    let publicClient: PublicClient<Transport, Chain>
     let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let ecdsaSmartAccountClient: KernelAccountClient<
         ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
     >
     let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let owner: PrivateKeyAccount
@@ -92,7 +93,7 @@ describe("Permission kernel Account", () => {
         ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
     >
 
     async function mintToAccount(target: Address, amount: bigint) {
