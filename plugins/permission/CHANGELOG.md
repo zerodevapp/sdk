@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.9
+
+### Patch Changes
+
+- Export decodeParamsFromInitCode util from permission package
+
 ## 5.4.8
 
 ### Patch Changes
