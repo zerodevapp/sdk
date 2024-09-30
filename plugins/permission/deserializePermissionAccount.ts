@@ -85,10 +85,8 @@ export const deserializePermissionAccount = async <
         kernelVersion
     })
 
-    const { index, validatorInitData, useMetaFactory } = decodeParamsFromInitCode(
-        params.accountParams.initCode,
-        kernelVersion
-    )
+    const { index, validatorInitData, useMetaFactory } =
+        decodeParamsFromInitCode(params.accountParams.initCode, kernelVersion)
 
     const kernelPluginManager = await toKernelPluginManager(client, {
         regular: modularPermissionPlugin,

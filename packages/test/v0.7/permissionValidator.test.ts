@@ -29,6 +29,7 @@ import {
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import { sepolia } from "viem/chains"
 import {
     ECDSA_SIGNER_CONTRACT,
     GAS_POLICY_CONTRACT,
@@ -67,7 +68,6 @@ import {
     kernelVersion,
     sleep
 } from "./utils"
-import { sepolia } from "viem/chains";
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
