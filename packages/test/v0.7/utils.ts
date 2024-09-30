@@ -438,7 +438,9 @@ export const getRecoveryKernelAccount = async (
 export const getSignerToPermissionKernelAccount = async (
     policies: Policy[],
     action?: Action
-): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>> => {
+): Promise<
+    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
+> => {
     const privateKey1 = process.env.TEST_PRIVATE_KEY as Hex
     if (!privateKey1) {
         throw new Error(
@@ -526,7 +528,9 @@ export const getSessionKeySignerToPermissionKernelAccount = async (
 
 export const getSignerToRootPermissionKernelAccount = async (
     policies: Policy[]
-): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>> => {
+): Promise<
+    KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
+> => {
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
     const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
@@ -557,7 +561,9 @@ export const getSignerToRootPermissionKernelAccount = async (
 export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
     async (
         policies: Policy[]
-    ): Promise<KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>> => {
+    ): Promise<
+        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
+    > => {
         const publicClient = await getPublicClient()
         const signer1 = privateKeyToAccount(generatePrivateKey())
         const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
