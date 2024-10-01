@@ -69,7 +69,8 @@ export const createZeroDevPaymasterClient = <
                 !shouldIncludePimlicoProvider ||
                 isProviderSet(_transport.value?.url, "ALCHEMY") ||
                 isProviderSet(_transport.value?.url, "ZERODEV") ||
-                isProviderSet(_transport.value?.url, "THIRDWEB")
+                isProviderSet(_transport.value?.url, "THIRDWEB") ||
+                isProviderSet(_transport.value?.url, "CONDUIT")
             )
                 return _transport
             _transport = http(setPimlicoAsProvider(_transport.value?.url))({

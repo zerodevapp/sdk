@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.19
+
+### Patch Changes
+
+- Add support for CONDUIT as provider alongwith ZERODEV
+
 ## 5.3.18
 
 ### Patch Changes
