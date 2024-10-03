@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.20
+
+### Patch Changes
+
+- Added custom gasPrice logic for Alchemy and Conduit in getUserOperationGasPrice action
+
 ## 5.3.19
 
 ### Patch Changes
