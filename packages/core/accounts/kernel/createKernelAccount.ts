@@ -452,10 +452,7 @@ export async function createKernelAccount<
 
     if (!accountAddress) throw new Error("Account address not found")
 
-    let smartAccountDeployed = await isSmartAccountDeployed(
-        client,
-        accountAddress
-    )
+    let smartAccountDeployed: boolean | undefined;
 
     return {
         kernelVersion,
@@ -498,6 +495,12 @@ export async function createKernelAccount<
                 return encodeCallDataEpV07(tx)
             },
             async getFactory() {
+                if (smartAccountDeployed === undefined) {
+                    smartAccountDeployed = await isSmartAccountDeployed(
+                        client,
+                        accountAddress
+                    )
+                }
                 if (smartAccountDeployed) return undefined
 
                 smartAccountDeployed = await isSmartAccountDeployed(
@@ -519,6 +522,12 @@ export async function createKernelAccount<
             },
 
             async getFactoryData() {
+                if (smartAccountDeployed === undefined) {
+                    smartAccountDeployed = await isSmartAccountDeployed(
+                        client,
+                        accountAddress
+                    )
+                }
                 if (smartAccountDeployed) return undefined
 
                 smartAccountDeployed = await isSmartAccountDeployed(
@@ -647,6 +656,12 @@ export async function createKernelAccount<
 
             // Encode the init code
             async getInitCode() {
+                if (smartAccountDeployed === undefined) {
+                    smartAccountDeployed = await isSmartAccountDeployed(
+                        client,
+                        accountAddress
+                    )
+                }
                 if (smartAccountDeployed) return "0x"
 
                 smartAccountDeployed = await isSmartAccountDeployed(
