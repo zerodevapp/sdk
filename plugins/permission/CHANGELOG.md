@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.4.10
+
+### Patch Changes
+
+- Allowed to pass enableSignature param in serializePermissionAccount util
+
 ## 5.4.9
 
 ### Patch Changes

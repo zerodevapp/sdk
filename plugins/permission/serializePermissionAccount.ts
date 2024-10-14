@@ -8,7 +8,8 @@ import {
 
 export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
     account: KernelSmartAccount<entryPoint>,
-    privateKey?: Hex
+    privateKey?: Hex,
+    enableSignature?: Hex
 ): Promise<string> => {
     if (!isPermissionValidatorPlugin(account.kernelPluginManager))
         throw new Error("Account plugin is not a permission validator")
@@ -16,10 +17,11 @@ export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
         account.kernelPluginManager.getPluginSerializationParams()
     const action = account.kernelPluginManager.getAction()
     const validityData = account.kernelPluginManager.getValidityData()
-    const enableSignature =
-        await account.kernelPluginManager.getPluginEnableSignature(
+    const _enableSignature =
+        enableSignature ??
+        (await account.kernelPluginManager.getPluginEnableSignature(
             account.address
-        )
+        ))
     const accountParams = {
         initCode: await account.generateInitCode(),
         accountAddress: account.address
@@ -30,7 +32,7 @@ export const serializePermissionAccount = async <entryPoint extends EntryPoint>(
         action,
         validityData,
         accountParams,
-        enableSignature,
+        enableSignature: _enableSignature,
         privateKey
     }
 
