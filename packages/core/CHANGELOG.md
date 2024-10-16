@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.21
+
+### Patch Changes
+
+- Added changeSudoValidator action to kernelAccountClient
+
 ## 5.3.20
 
 ### Patch Changes
