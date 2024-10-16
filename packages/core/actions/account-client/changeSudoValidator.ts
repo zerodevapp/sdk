@@ -110,11 +110,7 @@ export async function changeSudoValidator<
         )
     }
 
-    console.log("rootValidatorId", rootValidatorId)
-
     const validatorData = await sudoValidator.getEnableData(account.address)
-
-    console.log("validatorData", validatorData)
 
     const hookId = hook?.getIdentifier() ?? zeroAddress
 
