@@ -21,6 +21,11 @@ export {
 } from "./account-client/uninstallPlugin.js"
 
 export {
+    changeSudoValidator,
+    type ChangeSudoValidatorParameters
+} from "./account-client/changeSudoValidator.js"
+
+export {
     estimateGasInERC20,
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType
