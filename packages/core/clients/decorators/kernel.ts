@@ -240,11 +240,21 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
             invalidateNonce(client, {
                 ...args,
                 middleware
-            } as InvalidateNonceParameters<entryPoint, TTransport, TChain, TSmartAccount>),
+            } as InvalidateNonceParameters<
+                entryPoint,
+                TTransport,
+                TChain,
+                TSmartAccount
+            >),
         getKernelV3ModuleCurrentNonce: async (args) =>
             getKernelV3ModuleCurrentNonce(client, {
                 ...args,
                 middleware
-            } as GetKernelV3ModuleCurrentNonceParameters<entryPoint, TTransport, TChain, TSmartAccount>)
+            } as GetKernelV3ModuleCurrentNonceParameters<
+                entryPoint,
+                TTransport,
+                TChain,
+                TSmartAccount
+            >)
     })
 }

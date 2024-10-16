@@ -8,12 +8,12 @@ import {
     parseAccount
 } from "permissionless/utils"
 import {
-    type Hex,
-    zeroAddress,
     type Chain,
     type Client,
     type Hash,
-    type Transport
+    type Hex,
+    type Transport,
+    zeroAddress
 } from "viem"
 import { concatHex, encodeFunctionData, getAction, pad } from "viem/utils"
 import type { KernelSmartAccount } from "../../accounts/index.js"
@@ -143,7 +143,12 @@ export async function changeSudoValidator<
                     callType: "delegatecall"
                 })
             }
-        } as SendUserOperationParameters<entryPoint, TTransport, TChain, TAccount>)
+        } as SendUserOperationParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >)
     }
 
     /**
