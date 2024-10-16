@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.22
+
+### Patch Changes
+
+- Removed unnecessary logs in changeSudoValidator
+
 ## 5.3.21
 
 ### Patch Changes
