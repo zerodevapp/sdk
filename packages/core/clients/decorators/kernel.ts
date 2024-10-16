@@ -16,11 +16,16 @@ import {
     invalidateNonce
 } from "../../actions/account-client/invalidateNonce.js"
 import type {
+    ChangeSudoValidatorParameters,
     SignUserOperationParameters,
     SignUserOperationReturnType,
     UninstallPluginParameters
 } from "../../actions/index.js"
-import { signUserOperation, uninstallPlugin } from "../../actions/index.js"
+import {
+    changeSudoValidator,
+    signUserOperation,
+    uninstallPlugin
+} from "../../actions/index.js"
 import {
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType,
@@ -119,6 +124,19 @@ export type KernelAccountClientActions<
         >
     ) => Promise<Hash>
     /**
+     * Creates, signs, and sends a user operation to change sudo validator to the network.
+     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     */
+    changeSudoValidator: (
+        args: ChangeSudoValidatorParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TSmartAccount
+        >
+    ) => Promise<Hash>
+
+    /**
      * Creates, signs, and sends a kernel v3 module nonce invalidation transaction to the network.
      * This function also allows you to sponsor this transaction if sender is a smartAccount
      *
@@ -199,6 +217,19 @@ export function kernelAccountClientActions<entryPoint extends EntryPoint>({
                     ...args,
                     middleware
                 } as UninstallPluginParameters<
+                    entryPoint,
+                    TTransport,
+                    TChain,
+                    TSmartAccount
+                >
+            ),
+        changeSudoValidator: async (args) =>
+            changeSudoValidator<entryPoint, TTransport, TChain, TSmartAccount>(
+                client,
+                {
+                    ...args,
+                    middleware
+                } as ChangeSudoValidatorParameters<
                     entryPoint,
                     TTransport,
                     TChain,
