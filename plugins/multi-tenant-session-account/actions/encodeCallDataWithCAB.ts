@@ -48,7 +48,10 @@ import {
     encodeCABEnforcerArgs,
     encodePaymasterTokens
 } from "../enforcers/cab-paymaster/index.js"
-import { CABPaymasterEnforcerAddress } from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
+import {
+    type ENFORCER_VERSION,
+    getEnforcerAddress
+} from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
 import { toDelegationHash } from "../utils/index.js"
 
 export type EncodeCallDataWithCABParameters<
@@ -66,6 +69,7 @@ export type EncodeCallDataWithCABParameters<
         GetChainParameter<TChain, TChainOverride> & {
             calls: { to: Address; value: bigint; data: Hex }[]
             repayTokens: RepayTokens
+            enforcerVersion?: ENFORCER_VERSION
         }
 >
 
@@ -89,6 +93,9 @@ export async function encodeCallDataWithCAB<
         TChainOverride
     >
 ): Promise<Hash> {
+    const cabEnforcerAddress = getEnforcerAddress(
+        args.enforcerVersion ?? "v0_2"
+    )
     const { account: account_ = client.account, calls, repayTokens } = args
 
     if (!account_) {
@@ -183,15 +190,13 @@ export async function encodeCallDataWithCAB<
             // @ts-expect-error
             repayTokens,
             // @ts-expect-error
-            CABPaymasterEnforcerAddress
+            cabEnforcerAddress
         ]
     })
     const cabEnforcerIndex = account.delegations[
         account.delegations.length - 1
     ].caveats.findIndex(
-        (c) =>
-            c.enforcer.toLowerCase() ===
-            CABPaymasterEnforcerAddress.toLowerCase()
+        (c) => c.enforcer.toLowerCase() === cabEnforcerAddress.toLowerCase()
     )
     const cabEnforcer =
         account.delegations[account.delegations.length - 1].caveats[
@@ -334,7 +339,7 @@ export async function encodeCallDataWithCAB<
                 // @ts-expect-error
                 repayTokenDataEncoded,
                 // @ts-expect-error
-                CABPaymasterEnforcerAddress
+                cabEnforcerAddress
             ]
         })
     if (cabEnforcer) {

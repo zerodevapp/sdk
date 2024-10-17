@@ -1,5 +1,8 @@
 export {
-    CABPaymasterEnforcerAddress,
+    CABPaymasterEnforcerAddressV0_1,
+    CABPaymasterEnforcerAddressV0_2,
+    type ENFORCER_VERSION,
+    getEnforcerAddress,
     type CABPaymasterEnforcerArgs,
     type CABPaymasterEnforcerParams,
     toCABPaymasterEnforcer

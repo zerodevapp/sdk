@@ -13,6 +13,7 @@ import {
     installDMAsExecutor,
     signDelegation
 } from "../../actions/index.js"
+import type { ENFORCER_VERSION } from "../../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
 
 export type DMActionsEip7710<
     TEntryPoint extends EntryPoint,
@@ -77,7 +78,11 @@ const dmActionsEip7710 =
             | undefined =
             | SmartAccount<TEntryPoint, string, TTransport, TChain>
             | undefined
-    >() =>
+    >({
+        enforcerVersion
+    }: {
+        enforcerVersion: ENFORCER_VERSION
+    }) =>
     (
         client: Client<TTransport, TChain, TAccount>
     ): DMActionsEip7710<TEntryPoint, TTransport, TChain, TAccount> => ({
@@ -97,7 +102,8 @@ const dmActionsEip7710 =
             encodeCallDataWithCAB(
                 client as Client<TTransport, TChain, TAccount>,
                 {
-                    ...args
+                    ...args,
+                    enforcerVersion: enforcerVersion
                 } as EncodeCallDataWithCABParameters<
                     TEntryPoint,
                     TTransport,

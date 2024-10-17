@@ -19,9 +19,11 @@ export type CABPaymasterEnforcerArgs = {
     paymasterSignature: Hex
 }
 
+export type ENFORCER_VERSION = "v0_1" | "v0_2"
+
 export type CABPaymasterEnforcerParams = {
     accountAddress: Address
-    enforcerAddress?: Address
+    enforcerVersion: ENFORCER_VERSION
 }
 
 export type Allowance = {
@@ -30,13 +32,25 @@ export type Allowance = {
     vaults: { chainId: bigint; vault: Address; multiplier: bigint }[]
 }
 
-export const CABPaymasterEnforcerAddress =
+export const CABPaymasterEnforcerAddressV0_1 =
     "0x78b09791499931CC36919Ef6A38BEC8B569E7f57"
+
+export const CABPaymasterEnforcerAddressV0_2 =
+    "0x9A3b8B3eAEDf076956b12A5d1a0248FDD2CA9E78"
+
+export const getEnforcerAddress = (version: ENFORCER_VERSION) => {
+    if (version === "v0_1") {
+        return CABPaymasterEnforcerAddressV0_1
+    } else {
+        return CABPaymasterEnforcerAddressV0_2
+    }
+}
 
 export async function toCABPaymasterEnforcer({
     accountAddress,
-    enforcerAddress = CABPaymasterEnforcerAddress
+    enforcerVersion = "v0_2"
 }: CABPaymasterEnforcerParams): Promise<Caveat> {
+    const enforcerAddress = getEnforcerAddress(enforcerVersion)
     const cabClient = createPublicClient({
         transport: http(CAB_PAYMASTER_SERVER_URL)
     })

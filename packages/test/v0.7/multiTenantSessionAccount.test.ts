@@ -1,6 +1,6 @@
 // @ts-expect-error
 import { beforeAll, describe, test } from "bun:test"
-import { createKernelCABClient } from "@zerodev/cab"
+import { CAB_V0_2_1, createKernelCABClient } from "@zerodev/cab"
 import {
     type KernelAccountClient,
     type KernelSmartAccount,
@@ -14,6 +14,7 @@ import {
     getInstallDMAsExecutorCallData
 } from "@zerodev/session-account"
 import {
+    type ENFORCER_VERSION,
     ParamCondition,
     toAllowedParamsEnforcer
 } from "@zerodev/session-account/enforcers"
@@ -82,6 +83,7 @@ describe("Yi SubAccount", () => {
         KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
     >
     let delegations: Delegation[]
+    const enforcerVersion: ENFORCER_VERSION = "v0_2"
 
     beforeAll(async () => {
         const ownerPrivateKey = process.env.TEST_PRIVATE_KEY
@@ -103,12 +105,12 @@ describe("Yi SubAccount", () => {
             }
         })
 
-        // const installTx = await kernelClient.sendTransaction({
-        //     to: kernelClient.account.address,
-        //     value: 0n,
-        //     data: getInstallDMAsExecutorCallData(),
-        // })
-        // console.log({ installTx })
+        const installTx = await kernelClient.sendTransaction({
+            to: kernelClient.account.address,
+            value: 0n,
+            data: getInstallDMAsExecutorCallData()
+        })
+        console.log({ installTx })
 
         bundlerClient = kernelClient.extend(bundlerActions(getEntryPoint()))
     })
@@ -140,7 +142,7 @@ describe("Yi SubAccount", () => {
                         Transport,
                         Chain
                     >
-                >()
+                >({ enforcerVersion })
             )
 
             const mainDeleGatorSignature = await kernelClientDM.signDelegation({
@@ -234,7 +236,7 @@ describe("Yi SubAccount", () => {
                         Transport,
                         Chain
                     >
-                >()
+                >({ enforcerVersion })
             )
 
             const installDMAndDelegateHash =
@@ -310,7 +312,8 @@ describe("Yi SubAccount", () => {
             const kernelCabClient = createKernelCABClient(kernelClient, {
                 transport: http(CAB_PAYMASTER_SERVER_URL),
                 entryPoint: getEntryPoint(),
-                chain: sepolia
+                chain: sepolia,
+                cabVersion: CAB_V0_2_1
             })
             console.log("kernelCabClient addr", kernelCabClient.account.address)
             await kernelCabClient.enableCAB({
@@ -374,7 +377,8 @@ describe("Yi SubAccount", () => {
                 {
                     transport: http(CAB_PAYMASTER_SERVER_URL),
                     entryPoint: getEntryPoint(),
-                    chain: optimismSepolia
+                    chain: optimismSepolia,
+                    cabVersion: CAB_V0_2_1
                 }
             )
             console.log(
@@ -425,7 +429,8 @@ describe("Yi SubAccount", () => {
                 ]
             })
             const cabCaveat = await toCABPaymasterEnforcer({
-                accountAddress: mainDelegatorAccount.address
+                accountAddress: mainDelegatorAccount.address,
+                enforcerVersion
             })
             const caveats = [cabCaveat]
 
@@ -450,7 +455,7 @@ describe("Yi SubAccount", () => {
                         Transport,
                         Chain
                     >
-                >()
+                >({ enforcerVersion })
             )
 
             const mainDeleGatorSignature = await kernelClientDM.signDelegation({
@@ -501,7 +506,7 @@ describe("Yi SubAccount", () => {
                         Transport,
                         Chain
                     >
-                >()
+                >({ enforcerVersion })
             )
             const repayTokens = [
                 {
