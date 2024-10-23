@@ -30,3 +30,9 @@ export {
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType
 } from "./paymaster/estimateGasInERC20.js"
+
+export {
+    type SponsorUserOperationEip7677Parameters,
+    type SponsorUserOperationEip7677ReturnType,
+    sponsorUserOperationEip7677
+} from "./paymaster/sponsorUserOperationEip7677.js"

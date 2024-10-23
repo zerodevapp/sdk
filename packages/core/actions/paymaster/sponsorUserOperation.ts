@@ -1,4 +1,5 @@
 import { getEntryPointVersion } from "permissionless"
+import type { PartialPick } from "permissionless/types"
 import type {
     ENTRYPOINT_ADDRESS_V06_TYPE,
     EntryPoint
@@ -28,8 +29,6 @@ export type SponsorUserOperationParameters<entryPoint extends EntryPoint> = {
     shouldOverrideFee?: boolean
     shouldConsume?: boolean
 }
-
-export type PartialPick<T, K extends keyof T> = Partial<Pick<T, K>>
 
 export type SponsorUserOperationReturnType<entryPoint extends EntryPoint> =
     entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE

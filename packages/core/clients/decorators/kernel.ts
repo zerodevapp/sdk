@@ -1,6 +1,11 @@
-import { type SmartAccountActions, smartAccountActions } from "permissionless"
+import {
+    type BundlerClient,
+    type SmartAccountActions,
+    smartAccountActions
+} from "permissionless"
 import type { Middleware } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
+import type { StateOverrides } from "permissionless/types/bundler"
 import type { Chain, Client, Hash, Transport } from "viem"
 import type { KernelSmartAccount } from "../../accounts/index.js"
 import {
@@ -19,11 +24,14 @@ import type {
     ChangeSudoValidatorParameters,
     SignUserOperationParameters,
     SignUserOperationReturnType,
+    SponsorUserOperationEip7677Parameters,
+    SponsorUserOperationEip7677ReturnType,
     UninstallPluginParameters
 } from "../../actions/index.js"
 import {
     changeSudoValidator,
     signUserOperation,
+    sponsorUserOperationEip7677,
     uninstallPlugin
 } from "../../actions/index.js"
 import {
@@ -48,6 +56,11 @@ export type ZeroDevPaymasterClientActions<entryPoint extends EntryPoint> = {
     estimateGasInERC20: (
         args: EstimateGasInERC20Parameters
     ) => Promise<EstimateGasInERC20ReturnType>
+    sponsorUserOperationEip7677: (
+        args: SponsorUserOperationEip7677Parameters<entryPoint>,
+        bundlerClient: BundlerClient<entryPoint>,
+        stateOverrides?: StateOverrides
+    ) => Promise<SponsorUserOperationEip7677ReturnType<entryPoint>>
 }
 
 export const zerodevPaymasterActions =
@@ -67,6 +80,17 @@ export const zerodevPaymasterActions =
             estimateGasInERC20(
                 client as ZeroDevPaymasterClient<entryPoint>,
                 args
+            ),
+        sponsorUserOperationEip7677: async (
+            args: SponsorUserOperationEip7677Parameters<entryPoint>,
+            bundlerClient: BundlerClient<entryPoint>,
+            stateOverrides?: StateOverrides
+        ) =>
+            sponsorUserOperationEip7677(
+                client as ZeroDevPaymasterClient<entryPoint>,
+                args,
+                bundlerClient,
+                stateOverrides
             )
     })
 

@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.23
+
+### Patch Changes
+
+- Added sponsorUserOperationEip7677 action to ZeroDevPaymasterClient
+
 ## 5.3.22
 
 ### Patch Changes
