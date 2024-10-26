@@ -122,7 +122,8 @@ export const createKernelAccountClient = <
             (typeof middleware !== "function" && !middleware.gasPrice)) &&
         client.transport?.url &&
         (isProviderSet(client.transport.url, "PIMLICO") ||
-            isProviderSet(client.transport.url, "THIRDWEB"))
+            isProviderSet(client.transport.url, "THIRDWEB") ||
+            isProviderSet(client.transport.url, "CONDUIT"))
     ) {
         const gasPrice = () => getUserOperationGasPrice(client)
         middleware = {

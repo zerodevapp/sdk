@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.3.24
+
+### Patch Changes
+
+- Added CONDUIT provider to list of provider which can use getUserOperationGasPrice
+
 ## 5.3.23
 
 ### Patch Changes
