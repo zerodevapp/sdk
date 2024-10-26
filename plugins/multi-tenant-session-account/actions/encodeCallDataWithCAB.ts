@@ -351,7 +351,7 @@ export async function encodeCallDataWithCAB<
             (rpyTkn, rpyIdx) => {
                 let sponsorIndex = 0
                 let repayIndex = 0
-                allowances.forEach((allowance, allowanceIdx) => {
+                for (const [allowanceIdx, allowance] of allowances.entries()) {
                     repayIndex = allowance.vaults.findIndex(
                         (vault) =>
                             vault.chainId === BigInt(rpyTkn.chainId) &&
@@ -366,8 +366,12 @@ export async function encodeCallDataWithCAB<
                         )
                     ) {
                         sponsorIndex = allowanceIdx
+                        break
                     }
-                })
+                }
+                if (repayIndex === -1) {
+                    throw new Error("Repay token not found in allowances")
+                }
                 return BigInt(
                     concatHex([
                         toHex(sponsorIndex, { size: 16 }),
