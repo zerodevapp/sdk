@@ -1,5 +1,3 @@
-import { getEntryPointVersion } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import { satisfies } from "semver"
 import {
     type Address,
@@ -35,16 +33,17 @@ import { getPluginsEnableTypedData as getPluginsEnableTypedDataV1 } from "../ker
 import { getEncodedPluginsData as getEncodedPluginsDataV2 } from "../kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
 import { getPluginsEnableTypedData as getPluginsEnableTypedDataV2 } from "../kernel/utils/plugins/ep0_7/getPluginsEnableTypedData.js"
 import { isPluginInitialized } from "../kernel/utils/plugins/ep0_7/isPluginInitialized.js"
+import type { EntryPointVersion } from "viem/account-abstraction";
 
-export function isKernelPluginManager<entryPoint extends EntryPoint>(
+export function isKernelPluginManager<entryPointVersion extends EntryPointVersion>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
-): plugin is KernelPluginManager<entryPoint> {
+): plugin is KernelPluginManager<entryPointVersion> {
     return plugin.getPluginEnableSignature !== undefined
 }
 
 export async function toKernelPluginManager<
-    entryPoint extends EntryPoint,
+    entryPointVersion extends EntryPointVersion,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined
 >(
@@ -58,11 +57,11 @@ export async function toKernelPluginManager<
         action,
         validAfter = 0,
         validUntil = 0,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         chainId
-    }: KernelPluginManagerParams<entryPoint>
-): Promise<KernelPluginManager<entryPoint>> {
+    }: KernelPluginManagerParams<entryPointVersion>
+): Promise<KernelPluginManager<entryPointVersion>> {
     if (
         (sudo && !satisfies(kernelVersion, sudo?.supportedKernelVersions)) ||
         (regular && !satisfies(kernelVersion, regular?.supportedKernelVersions))
@@ -72,20 +71,19 @@ export async function toKernelPluginManager<
         )
     }
     let pluginEnabled: boolean
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
     const activeValidator = regular || sudo
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
     }
     action = {
-        selector: action?.selector ?? getActionSelector(entryPointVersion),
+        selector: action?.selector ?? getActionSelector(entryPoint.version),
         address: action?.address ?? zeroAddress
     }
     if (
-        entryPointVersion === "v0.7" &&
+        entryPoint.version === "0.7" &&
         (action.address.toLowerCase() !== zeroAddress.toLowerCase() ||
             action.selector.toLowerCase() !==
-                getActionSelector(entryPointVersion).toLowerCase()) &&
+                getActionSelector(entryPoint.version).toLowerCase()) &&
         kernelVersion === "0.3.0"
     ) {
         action.hook = {
@@ -105,7 +103,7 @@ export async function toKernelPluginManager<
         if (!action) {
             throw new Error("Action data must be set")
         }
-        if (entryPointVersion === "v0.6") {
+        if (entryPoint.version === "0.6") {
             if (regular) {
                 if (pluginEnabled) {
                     return ValidatorMode.plugin
@@ -163,7 +161,7 @@ export async function toKernelPluginManager<
             throw new Error("Action data must be set")
         }
         if (!regular) throw new Error("regular validator not set")
-        if (entryPointVersion === "v0.6") {
+        if (entryPoint.version === "0.6") {
             return regular.isEnabled(accountAddress, selector)
         }
         const isEnabled =
@@ -195,7 +193,7 @@ export async function toKernelPluginManager<
             chainId = client.chain?.id ?? (await getChainId(client))
         }
         let ownerSig: Hex
-        if (entryPointVersion === "v0.6") {
+        if (entryPoint.version === "0.6") {
             const typeData = await getPluginsEnableTypedDataV1({
                 accountAddress,
                 chainId,
@@ -276,7 +274,7 @@ export async function toKernelPluginManager<
                 throw new Error("Action data must be set")
             }
             if (!regular) throw new Error("regular validator not set")
-            if (entryPointVersion === "v0.6") {
+            if (entryPoint.version === "0.6") {
                 return await encodeModuleInstallCallDataEpV06({
                     accountAddress,
                     selector: action.selector,
@@ -292,7 +290,7 @@ export async function toKernelPluginManager<
         signUserOperation: async (userOperation) => {
             const userOpSig =
                 await activeValidator.signUserOperation(userOperation)
-            if (entryPointVersion === "v0.6") {
+            if (entryPoint.version === "0.6") {
                 return concatHex([
                     await getSignatureData(
                         userOperation.sender,
@@ -320,7 +318,7 @@ export async function toKernelPluginManager<
         getDummySignature: async (userOperation) => {
             const userOpSig =
                 await activeValidator.getDummySignature(userOperation)
-            if (entryPointVersion === "v0.6") {
+            if (entryPoint.version === "0.6") {
                 return concatHex([
                     await getSignatureData(
                         userOperation.sender,
@@ -342,10 +340,10 @@ export async function toKernelPluginManager<
             if (!action) {
                 throw new Error("Action data must be set")
             }
-            if (entryPointVersion === "v0.6") {
+            if (entryPoint.version === "0.6") {
                 if (customNonceKey > maxUint192) {
                     throw new Error(
-                        "Custom nonce key must be equal or less than maxUint192 for v0.6"
+                        "Custom nonce key must be equal or less than maxUint192 for 0.6"
                     )
                 }
 
