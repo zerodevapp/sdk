@@ -136,15 +136,12 @@ export type KernelAccountClientActions<
      * @param args - {@link UninstallPermissionParameters}
      * @returns The [Transaction](https://viem.sh/docs/glossary/terms.html#transaction) hash. {@link SendTransactionReturnType}
      */
-    uninstallPlugin: <
-        TChainOverride extends Chain | undefined = Chain | undefined
-    >(
+    uninstallPlugin: (
         args: UninstallPluginParameters<
             entryPoint,
             TTransport,
             TChain,
-            TSmartAccount,
-            TChainOverride
+            TSmartAccount
         >
     ) => Promise<Hash>
     /**

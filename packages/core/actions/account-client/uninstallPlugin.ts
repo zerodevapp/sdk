@@ -1,6 +1,6 @@
 import {
-    type SendTransactionWithPaymasterParameters,
-    sendTransaction
+    type SendTransactionsWithPaymasterParameters,
+    sendTransactions
 } from "permissionless/actions/smartAccount"
 import type { EntryPoint, Prettify } from "permissionless/types"
 import {
@@ -25,15 +25,15 @@ export type UninstallPluginParameters<
         | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined =
         | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
+        | undefined
 > = Prettify<
-    SendTransactionWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount,
-        TChainOverride
+    Partial<
+        SendTransactionsWithPaymasterParameters<
+            entryPoint,
+            TTransport,
+            TChain,
+            TAccount
+        >
     > & {
         plugin: KernelValidator<entryPoint, string>
         hook?: KernelValidatorHook
@@ -48,18 +48,11 @@ export async function uninstallPlugin<
         | KernelSmartAccount<entryPoint, TTransport, TChain>
         | undefined =
         | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
+        | undefined
 >(
     client: Client<TTransport, TChain, TAccount>,
     args: Prettify<
-        UninstallPluginParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount,
-            TChainOverride
-        >
+        UninstallPluginParameters<entryPoint, TTransport, TChain, TAccount>
     >
 ): Promise<Hash> {
     const {
@@ -94,23 +87,21 @@ export async function uninstallPlugin<
     const hookData = (await hook?.getEnableData(account.address)) ?? "0x"
     return await getAction(
         client,
-        sendTransaction<
-            TTransport,
-            TChain,
-            TAccount,
-            entryPoint,
-            TChainOverride
-        >,
-        "sendTransaction"
+        sendTransactions<TTransport, TChain, TAccount, entryPoint>,
+        "sendTransactions"
     )({
         ...args,
-        to: account.address,
-        data: encodeFunctionData({
-            abi: KernelV3AccountAbi,
-            functionName: "uninstallValidation",
-            args: [validatorId, validatorData, hookData]
-        }),
-        value: 0n,
+        transactions: [
+            {
+                to: account.address,
+                data: encodeFunctionData({
+                    abi: KernelV3AccountAbi,
+                    functionName: "uninstallValidation",
+                    args: [validatorId, validatorData, hookData]
+                }),
+                value: 0n
+            }
+        ],
         account,
         middleware
     })

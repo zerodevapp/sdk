@@ -1,5 +1,17 @@
 # @zerodev/sdk
 
+## 5.3.26
+
+### Patch Changes
+
+- Fixed uninstallPlugin which required transactions param
+
+## 5.3.25
+
+### Patch Changes
+
+- Changed uninstallPlugin to use sendTransaction instead of sendTransaction so that execute can be used to call uninstallValidation
+
 ## 5.3.24
 
 ### Patch Changes
