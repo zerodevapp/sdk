@@ -101,7 +101,7 @@
         }
     },
     "peerDependencies": {
-        "viem": ">=2.16.3 <2.18.0",
+        "viem": ">=2.16.3 <=2.21.40",
         "permissionless": ">=0.1.44 <=0.1.45"
     },
     "dependencies": {
