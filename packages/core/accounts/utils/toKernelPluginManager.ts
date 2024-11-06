@@ -1,10 +1,8 @@
 import { satisfies } from "semver"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
-    type Transport,
     concat,
     concatHex,
     maxUint16,
@@ -13,6 +11,7 @@ import {
     toHex,
     zeroAddress
 } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import { getChainId } from "viem/actions"
 import { encodeModuleInstallCallData as encodeModuleInstallCallDataEpV06 } from "../../accounts/kernel/utils/account/ep0_6/encodeModuleInstallCallData.js"
 import {
@@ -33,9 +32,10 @@ import { getPluginsEnableTypedData as getPluginsEnableTypedDataV1 } from "../ker
 import { getEncodedPluginsData as getEncodedPluginsDataV2 } from "../kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
 import { getPluginsEnableTypedData as getPluginsEnableTypedDataV2 } from "../kernel/utils/plugins/ep0_7/getPluginsEnableTypedData.js"
 import { isPluginInitialized } from "../kernel/utils/plugins/ep0_7/isPluginInitialized.js"
-import type { EntryPointVersion } from "viem/account-abstraction";
 
-export function isKernelPluginManager<entryPointVersion extends EntryPointVersion>(
+export function isKernelPluginManager<
+    entryPointVersion extends EntryPointVersion
+>(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
 ): plugin is KernelPluginManager<entryPointVersion> {
@@ -43,11 +43,9 @@ export function isKernelPluginManager<entryPointVersion extends EntryPointVersio
 }
 
 export async function toKernelPluginManager<
-    entryPointVersion extends EntryPointVersion,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         sudo,
         regular,
@@ -315,9 +313,9 @@ export async function toKernelPluginManager<
             validAfter,
             validUntil
         }),
-        getDummySignature: async (userOperation) => {
+        getStubSignature: async (userOperation) => {
             const userOpSig =
-                await activeValidator.getDummySignature(userOperation)
+                await activeValidator.getStubSignature(userOperation)
             if (entryPoint.version === "0.6") {
                 return concatHex([
                     await getSignatureData(

@@ -40,9 +40,9 @@
         "merkletreejs": "^0.3.11"
     },
     "peerDependencies": {
-        "viem": ">=2.16.3 <2.18.0",
+        "viem": "^2.21.40",
         "@zerodev/sdk": "^5.2.1",
         "@zerodev/webauthn-key": "^5.3.0",
-        "permissionless": ">=0.1.44 <=0.1.45"
+        "permissionless": "^0.2.13"
     }
 }

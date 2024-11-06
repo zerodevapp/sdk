@@ -1,5 +1,6 @@
 import { type Address, type Hex, encodePacked, toBytes } from "viem"
-import type { CallType, KernelEncodeCallDataArgs } from "../../types/index.js"
+import type { CallType } from "../../types/index.js"
+import type { KernelSmartAccountImplementation } from "../kernel/createKernelAccount.js"
 
 export const MULTISEND_ADDRESS = "0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c"
 
@@ -31,7 +32,9 @@ const encodeCall = (call: {
     return encoded.slice(2)
 }
 
-export const encodeMultiSend = (calls: KernelEncodeCallDataArgs): Hex => {
+export const encodeMultiSend = (
+    calls: Parameters<KernelSmartAccountImplementation<"0.6">["encodeCalls"]>[0]
+): Hex => {
     if (!Array.isArray(calls)) {
         throw new Error("Invalid multiSend calls, should use an array of calls")
     }

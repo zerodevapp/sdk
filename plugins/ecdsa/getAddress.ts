@@ -7,11 +7,6 @@ import {
 } from "@zerodev/sdk"
 import type { GetKernelVersion } from "@zerodev/sdk/types"
 import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
-import { getEntryPointVersion } from "permissionless"
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint"
 import {
     type Address,
     type Hex,
@@ -26,17 +21,17 @@ import {
     toHex,
     zeroAddress
 } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import { getValidatorAddress } from "./toECDSAValidatorPlugin.js"
 
-const getInitCodeHash = async <entryPoint extends EntryPoint>(
+const getInitCodeHash = async <entryPointVersion extends EntryPointVersion>(
     publicClient: PublicClient,
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>
+    entryPoint: { address: Address; version: entryPointVersion },
+    kernelVersion: GetKernelVersion<entryPointVersion>
 ): Promise<Hex> => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+    validateKernelVersionWithEntryPoint(entryPoint.version, kernelVersion)
     const addresses = constants.KernelVersionToAddressesMap[kernelVersion]
-    if (entryPointVersion === "v0.6") {
+    if (entryPoint.version === "0.6") {
         return await initCodeHashV0_6(publicClient, addresses.factoryAddress)
     }
     return initCodeHashV0_7(addresses.accountImplementationAddress)
@@ -146,33 +141,32 @@ const generateSaltForV07 = (
     return keccak256(packedData)
 }
 
-export type GetKernelAddressFromECDSAParams<entryPoint extends EntryPoint> = {
-    entryPointAddress: entryPoint
-    kernelVersion: GetKernelVersion<entryPoint>
+export type GetKernelAddressFromECDSAParams<
+    entryPointVersion extends EntryPointVersion
+> = {
+    entryPoint: { address: Address; version: entryPointVersion }
+    kernelVersion: GetKernelVersion<entryPointVersion>
     eoaAddress: Address
     index: bigint
-    hookAddress?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
-        ? never
-        : Address
-    hookData?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE ? never : Hex
-    initConfig?: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE ? never : Hex[]
+    hookAddress?: entryPointVersion extends "0.6" ? never : Address
+    hookData?: entryPointVersion extends "0.6" ? never : Hex
+    initConfig?: entryPointVersion extends "0.6" ? never : Hex[]
 } & (
     | { publicClient: PublicClient; initCodeHash?: never }
     | { publicClient?: never; initCodeHash: Hex }
 )
 
-export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
-    params: GetKernelAddressFromECDSAParams<entryPoint>
-) {
-    const entryPointVersion = getEntryPointVersion(params.entryPointAddress)
+export async function getKernelAddressFromECDSA<
+    entryPointVersion extends EntryPointVersion
+>(params: GetKernelAddressFromECDSAParams<entryPointVersion>) {
     validateKernelVersionWithEntryPoint(
-        params.entryPointAddress,
+        params.entryPoint.version,
         params.kernelVersion
     )
     const kernelAddresses =
         constants.KernelVersionToAddressesMap[params.kernelVersion]
     const ecdsaValidatorAddress = getValidatorAddress(
-        params.entryPointAddress,
+        params.entryPoint,
         params.kernelVersion
     )
     const bytecodeHash = await (async () => {
@@ -182,14 +176,14 @@ export async function getKernelAddressFromECDSA<entryPoint extends EntryPoint>(
         if ("publicClient" in params && params.publicClient) {
             return await getInitCodeHash(
                 params.publicClient,
-                params.entryPointAddress,
+                params.entryPoint,
                 params.kernelVersion
             )
         }
         throw new Error("Either initCodeHash or publicClient must be provided")
     })()
     let salt: Hex
-    if (entryPointVersion === "v0.6") {
+    if (params.entryPoint.version === "0.6") {
         salt = generateSaltForV06(
             params.eoaAddress,
             params.index,

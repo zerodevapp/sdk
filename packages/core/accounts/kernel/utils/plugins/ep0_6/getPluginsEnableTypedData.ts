@@ -1,7 +1,3 @@
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint"
 import {
     type Address,
     type CustomSource,
@@ -16,13 +12,11 @@ import type {
     PluginValidityData
 } from "../../../../../types/index.js"
 
-export type Kernel2_0_plugins<entryPoint extends EntryPoint> = {
-    validator: KernelValidator<entryPoint>
+export type Kernel2_0_plugins = {
+    validator: KernelValidator
     action: Action
 }
-export const getPluginsEnableTypedData = async <
-    entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V06_TYPE
->({
+export const getPluginsEnableTypedData = async ({
     accountAddress,
     chainId,
     kernelVersion,
@@ -34,7 +28,7 @@ export const getPluginsEnableTypedData = async <
     accountAddress: Address
     chainId: number
     kernelVersion: string
-} & Kernel2_0_plugins<entryPoint> &
+} & Kernel2_0_plugins &
     PluginValidityData): Promise<
     Parameters<CustomSource["signTypedData"]>[0]
 > => {

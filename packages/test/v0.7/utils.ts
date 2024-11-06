@@ -1,7 +1,7 @@
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     type KernelAccountClient,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
     createKernelAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient
@@ -11,16 +11,6 @@ import {
     createWeightedECDSAValidator,
     getRecoveryAction
 } from "@zerodev/weighted-ecdsa-validator"
-import { ENTRYPOINT_ADDRESS_V07, createBundlerClient } from "permissionless"
-import type { Middleware } from "permissionless/actions/smartAccount"
-import {
-    createPimlicoBundlerClient,
-    createPimlicoPaymasterClient
-} from "permissionless/clients/pimlico"
-import type {
-    ENTRYPOINT_ADDRESS_V07_TYPE,
-    EntryPoint
-} from "permissionless/types"
 import {
     http,
     type Address,
@@ -48,13 +38,18 @@ import type { Policy } from "../../../plugins/permission/types"
 import { EntryPointAbi } from "../abis/EntryPoint"
 
 import type { Action } from "@zerodev/sdk/types"
-import type { SmartAccountSigner } from "permissionless/accounts"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
 import { config } from "../config.js"
 import { Test_ERC20Address } from "../utils.js"
 
 import { type RequestListener, createServer } from "http"
 import type { AddressInfo } from "net"
+import {
+    type EntryPointVersion,
+    type PaymasterActions,
+    type SmartAccount,
+    entryPoint07Address
+} from "viem/account-abstraction"
 import { getChainId } from "viem/actions"
 import { createSessionAccount } from "../../../plugins/multi-tenant-session-account/index.js"
 import type { Delegation } from "../../../plugins/multi-tenant-session-account/types.js"
@@ -64,7 +59,7 @@ export const index = 11111111111111111n // 4323343754343333324343655324644454878
 export const kernelVersion = "0.3.1"
 const DEFAULT_PROVIDER = "PIMLICO"
 const testingChain = allChains.sepolia.id
-const projectId = config["v0.7"][testingChain].projectId
+const projectId = config["0.7"][testingChain].projectId
 
 export const validateEnvironmentVariables = (envVars: string[]): void => {
     const unsetEnvVars = envVars.filter((envVar) => !process.env[envVar])
@@ -99,49 +94,11 @@ export const waitForNonceUpdate = async (): Promise<void> => {
     return sleep(10000)
 }
 
-export const getEntryPoint = (): ENTRYPOINT_ADDRESS_V07_TYPE => {
-    return ENTRYPOINT_ADDRESS_V07
-}
-
-export const getEcdsaKernelAccountWithRandomSigner = async (
-    initConfig?: Hex[],
-    chain?: number
-) => {
-    return getEcdsaKernelAccountWithPrivateKey(
-        "0xdfbb0d855aafff58aa0ae92aa9d03e88562bad9befe209f5693db89b65cc4a9a" ??
-            "0x3688628d97b817ee5e25dfce254ba4d87b5fd894449fce6c2acc60fdf98906de" ??
-            generatePrivateKey(),
-        initConfig,
-        chain
-    )
-}
-
-const getEcdsaKernelAccountWithPrivateKey = async (
-    privateKey: Hex,
-    initConfig?: Hex[],
-    chain?: number
-) => {
-    if (!privateKey) {
-        throw new Error("privateKey cannot be empty")
-    }
-
-    const publicClient = await getPublicClient(chain)
-    const signer = privateKeyToAccount(privateKey)
-    const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
-        entryPoint: getEntryPoint(),
-        signer: { ...signer, source: "local" as "local" | "external" },
-        kernelVersion
-    })
-
-    return createKernelAccount(publicClient, {
-        entryPoint: getEntryPoint(),
-        plugins: {
-            sudo: ecdsaValidatorPlugin
-        },
-        index,
-        kernelVersion,
-        initConfig
-    })
+export const getEntryPoint = (): {
+    address: Address
+    version: EntryPointVersion
+} => {
+    return { address: entryPoint07Address, version: "0.7" }
 }
 
 export const generateRandomBigIntIndex = (): bigint => {
@@ -229,7 +186,7 @@ export const getPaymasterRpc = (_projectId?: string): string => {
 }
 
 export const getPublicClient = async (chain?: number) => {
-    const rpcUrl = config["v0.7"][chain ?? testingChain].rpcUrl
+    const rpcUrl = config["0.7"][chain ?? testingChain].rpcUrl
     if (!rpcUrl) {
         throw new Error("RPC_URL environment variable not set")
     }
@@ -284,10 +241,25 @@ export const getTestingChain = (chainId?: number): Chain => {
 
 export const getKernelAccountClient = async ({
     account,
-    middleware
-}: Middleware<ENTRYPOINT_ADDRESS_V07_TYPE> & {
-    account?: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
-} = {}) => {
+    paymaster
+}: {
+    paymaster?: {
+        /** Retrieves paymaster-related User Operation properties to be used for sending the User Operation. */
+        getPaymasterData?: PaymasterActions["getPaymasterData"] | undefined
+        /** Retrieves paymaster-related User Operation properties to be used for gas estimation. */
+        getPaymasterStubData?:
+            | PaymasterActions["getPaymasterStubData"]
+            | undefined
+    }
+} & {
+    account?: SmartAccount<KernelSmartAccountImplementation>
+} = {}): Promise<
+    KernelAccountClient<
+        Transport,
+        Chain,
+        SmartAccount<KernelSmartAccountImplementation>
+    >
+> => {
     const chain = getTestingChain()
     const resolvedAccount = account ?? (await getSignerToEcdsaKernelAccount())
 
@@ -295,8 +267,7 @@ export const getKernelAccountClient = async ({
         account: resolvedAccount,
         chain,
         bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
-        middleware,
-        entryPoint: getEntryPoint()
+        paymaster
     })
 }
 
@@ -311,7 +282,7 @@ export const getSignerToEcdsaKernelAccount = async () => {
 
 export const getBundlerRpc = (_projectId?: string): string => {
     const zeroDevProjectId = _projectId ?? projectId
-    const zeroDevBundlerRpcHost = config["v0.7"][testingChain].bundlerUrl
+    const zeroDevBundlerRpcHost = config["0.7"][testingChain].bundlerUrl
     if (!zeroDevProjectId || !zeroDevBundlerRpcHost) {
         throw new Error(
             "ZERODEV_PROJECT_ID and ZERODEV_BUNDLER_RPC_HOST environment variables must be set"
@@ -712,13 +683,12 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
     }
 }
 
-export async function mintToAccount<entryPoint extends EntryPoint>(
+export async function mintToAccount(
     publicClient: PublicClient,
     ecdsaSmartAccountClient: KernelAccountClient<
-        entryPoint,
         Transport,
         Chain,
-        KernelSmartAccount<entryPoint, Transport, Chain>
+        SmartAccount<KernelSmartAccountImplementation>
     >,
     target: Address,
     amount: bigint

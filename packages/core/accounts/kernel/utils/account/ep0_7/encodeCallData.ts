@@ -1,34 +1,44 @@
-import type { EntryPoint } from "permissionless/types"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import { EXEC_TYPE } from "../../../../../constants.js"
-import type { KernelSmartAccount } from "../../../createKernelAccount.js"
+import type { CallType } from "../../../../../types/kernel.js"
+import type { KernelSmartAccountImplementation } from "../../../createKernelAccount.js"
 import { encodeExecuteBatchCall } from "../../ep0_7/encodeExecuteBatchCall.js"
 import { encodeExecuteDelegateCall } from "../../ep0_7/encodeExecuteDelegateCall.js"
 import { encodeExecuteSingleCall } from "../../ep0_7/encodeExecuteSingleCall.js"
 
 export const encodeCallData = async <
-    entryPoint extends EntryPoint = EntryPoint
+    entryPointVersion extends EntryPointVersion = EntryPointVersion
 >(
-    tx: Parameters<KernelSmartAccount<entryPoint>["encodeCallData"]>[0],
+    calls: Parameters<
+        KernelSmartAccountImplementation<entryPointVersion>["encodeCalls"]
+    >[0],
+    callType?: CallType | undefined,
     includeHooks?: boolean
 ) => {
-    if (Array.isArray(tx)) {
-        if (tx.some((t) => t.callType === "delegatecall")) {
+    if (calls.length > 1) {
+        if (callType === "delegatecall") {
             throw new Error("Cannot batch delegatecall")
         }
         // Encode a batched call
         return encodeExecuteBatchCall(
-            tx,
+            calls,
             {
                 execType: EXEC_TYPE.DEFAULT
             },
             includeHooks
         )
+    }
+
+    const call = calls.length === 0 ? undefined : calls[0]
+
+    if (!call) {
+        throw new Error("No calls to encode")
     }
 
     // Default to `call`
-    if (!tx.callType || tx.callType === "call") {
+    if (!callType || callType === "call") {
         return encodeExecuteSingleCall(
-            tx,
+            call,
             {
                 execType: EXEC_TYPE.DEFAULT
             },
@@ -36,9 +46,9 @@ export const encodeCallData = async <
         )
     }
 
-    if (tx.callType === "delegatecall") {
+    if (callType === "delegatecall") {
         return encodeExecuteDelegateCall(
-            { to: tx.to, data: tx.data },
+            { to: call.to, data: call.data },
             {
                 execType: EXEC_TYPE.DEFAULT
             },

@@ -1,5 +1,3 @@
-import { ENTRYPOINT_ADDRESS_V06, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import { satisfies } from "semver"
 import {
     type Address,
@@ -10,8 +8,10 @@ import {
     hexToSignature,
     isHex,
     pad,
-    signatureToHex
+    signatureToHex,
+    toHex
 } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import type { CALL_TYPE, EXEC_TYPE } from "./constants.js"
 import type { GetKernelVersion } from "./types/kernel.js"
@@ -40,9 +40,9 @@ export const hasKernelFeature = (
 }
 
 export const getERC20PaymasterApproveCall = async <
-    entryPoint extends EntryPoint
+    entryPointVersion extends EntryPointVersion
 >(
-    client: ZeroDevPaymasterClient<entryPoint>,
+    client: ZeroDevPaymasterClient<entryPointVersion>,
     {
         gasToken,
         approveAmount,
@@ -50,7 +50,7 @@ export const getERC20PaymasterApproveCall = async <
     }: {
         gasToken: Address
         approveAmount: bigint
-        entryPoint: Address
+        entryPoint: { address: Address; version: entryPointVersion }
     }
 ): Promise<{ to: Address; value: bigint; data: Hex }> => {
     const response = await client.request({
@@ -58,7 +58,7 @@ export const getERC20PaymasterApproveCall = async <
         params: [
             {
                 chainId: client.chain?.id as number,
-                entryPointAddress: entryPoint
+                entryPointAddress: entryPoint.address
             }
         ]
     })
@@ -106,16 +106,15 @@ export const getExecMode = ({
 }
 
 export const validateKernelVersionWithEntryPoint = <
-    entryPoint extends EntryPoint
+    entryPointVersion extends EntryPointVersion
 >(
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>
+    entryPointVersion: EntryPointVersion,
+    kernelVersion: GetKernelVersion<entryPointVersion>
 ) => {
     if (
-        (entryPointAddress === ENTRYPOINT_ADDRESS_V06 &&
+        (entryPointVersion === "0.6" &&
             !satisfies(kernelVersion, ">=0.2.2 || <=0.2.4")) ||
-        (entryPointAddress === ENTRYPOINT_ADDRESS_V07 &&
-            !satisfies(kernelVersion, ">=0.3.0"))
+        (entryPointVersion === "0.7" && !satisfies(kernelVersion, ">=0.3.0"))
     ) {
         throw new Error(
             "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0 for EntryPointV0.7"
@@ -125,4 +124,33 @@ export const validateKernelVersionWithEntryPoint = <
 
 export const satisfiesRange = (version: string, range: string): boolean => {
     return satisfies(version, range)
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: it's a recursive function, so it's hard to type
+export function deepHexlify(obj: any): any {
+    if (typeof obj === "function") {
+        return undefined
+    }
+    if (obj == null || typeof obj === "string" || typeof obj === "boolean") {
+        return obj
+    }
+
+    if (typeof obj === "bigint") {
+        return toHex(obj)
+    }
+
+    if (obj._isBigNumber != null || typeof obj !== "object") {
+        return toHex(obj).replace(/^0x0/, "0x")
+    }
+    if (Array.isArray(obj)) {
+        return obj.map((member) => deepHexlify(member))
+    }
+    return Object.keys(obj).reduce(
+        // biome-ignore lint/suspicious/noExplicitAny: it's a recursive function, so it's hard to type
+        (set: any, key: string) => {
+            set[key] = deepHexlify(obj[key])
+            return set
+        },
+        {}
+    )
 }

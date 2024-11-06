@@ -1,8 +1,6 @@
 import {
     type Address,
-    type Chain,
     type Client,
-    type Transport,
     decodeFunctionResult,
     encodeFunctionData,
     publicActions
@@ -16,11 +14,8 @@ export type AccountMetadata = {
     version: string
     chainId: bigint
 }
-export const accountMetadata = async <
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<TTransport, TChain, undefined>,
+export const accountMetadata = async (
+    client: Client,
     accountAddress: Address,
     kernelVersion: KERNEL_VERSION_TYPE,
     chainId?: number

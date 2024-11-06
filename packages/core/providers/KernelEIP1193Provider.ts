@@ -1,19 +1,16 @@
 import { EventEmitter } from "events"
-import type { KernelAccountClient } from "@zerodev/sdk"
-import type { EntryPoint } from "permissionless/types"
 import type {
     EIP1193Parameters,
     EIP1193RequestFn,
     Hash,
     SendTransactionParameters
 } from "viem"
+import type { KernelAccountClient } from "../clients/kernelAccountClient.js"
 
-export class KernelEIP1193Provider<
-    entryPoint extends EntryPoint
-> extends EventEmitter {
-    private kernelClient: KernelAccountClient<entryPoint>
+export class KernelEIP1193Provider extends EventEmitter {
+    private kernelClient: KernelAccountClient
 
-    constructor(kernelClient: KernelAccountClient<entryPoint>) {
+    constructor(kernelClient: KernelAccountClient) {
         super()
         this.kernelClient = kernelClient
     }

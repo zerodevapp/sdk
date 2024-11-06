@@ -18,3 +18,5 @@ export type {
 export { ValidatorMode } from "./kernel.js"
 
 export type WithRequired<T, K extends keyof T> = Required<Pick<T, K>>
+
+export type PartialPick<T, K extends keyof T> = Partial<Pick<T, K>>

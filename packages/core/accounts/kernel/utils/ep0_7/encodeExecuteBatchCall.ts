@@ -7,7 +7,7 @@ import {
 } from "./encodeExecuteCall.js"
 
 export const encodeExecuteBatchCall = (
-    args: CallArgs[],
+    args: readonly CallArgs[],
     options: Omit<EncodeExecuteOptions, "callType">,
     includeHooks?: boolean
 ) => {
@@ -36,8 +36,8 @@ export const encodeExecuteBatchCall = (
             args.map((arg) => {
                 return {
                     target: arg.to,
-                    value: arg.value,
-                    callData: arg.data
+                    value: arg.value || 0n,
+                    callData: arg.data || "0x"
                 }
             })
         ]

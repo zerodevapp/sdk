@@ -25,20 +25,6 @@ import {
 import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import { getRecoveryAction } from "@zerodev/weighted-ecdsa-validator/constants.js"
 import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V06,
-    createBundlerClient
-} from "permissionless"
-import {
-    type SmartAccount,
-    signerToSimpleSmartAccount
-} from "permissionless/accounts"
-import type { Middleware } from "permissionless/actions/smartAccount"
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types"
-import {
     http,
     type AbiItem,
     type Address,

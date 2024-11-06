@@ -1,67 +1,28 @@
-import type { SendTransactionWithPaymasterParameters } from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import {
-    AccountOrClientNotFoundError,
-    parseAccount
-} from "permissionless/utils"
 import type { Chain, Client, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { readContract } from "viem/actions"
-import { getAction } from "viem/utils"
-import type { KernelSmartAccount } from "../../accounts/index.js"
+import { getAction, parseAccount } from "viem/utils"
 import { KernelV3AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
-
-export type GetKernelV3ModuleCurrentNonceParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
-> = Prettify<
-    SendTransactionWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount,
-        TChainOverride
-    >
->
+import { AccountNotFoundError } from "../../errors/index.js"
 
 export async function getKernelV3ModuleCurrentNonce<
-    entryPoint extends EntryPoint,
     TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
->(
-    client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<
-        GetKernelV3ModuleCurrentNonceParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount,
-            TChainOverride
-        >
-    >
-): Promise<number> {
-    const { account: account_ = client.account } = args
-    if (!account_) throw new AccountOrClientNotFoundError()
+    TAccount extends SmartAccount | undefined = SmartAccount | undefined
+>(client: Client<TTransport, TChain, TAccount>): Promise<number> {
+    const account_ = client.account
+    if (!account_)
+        throw new AccountNotFoundError({
+            docsPath: "/docs/actions/wallet/sendTransaction"
+        })
 
-    const account = parseAccount(account_) as KernelSmartAccount<entryPoint>
+    const account = parseAccount(account_) as SmartAccount
 
     try {
         const nonce = await getAction(
             client,
             readContract,
-            "sendTransaction"
+            "readContract"
         )({
             abi: KernelV3AccountAbi,
             address: account.address,

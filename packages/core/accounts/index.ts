@@ -1,11 +1,14 @@
 export {
     createKernelAccount,
-    type KernelSmartAccount,
+    type CreateKernelAccountParameters,
+    type CreateKernelAccountReturnType,
+    type KernelSmartAccountImplementation,
     KERNEL_ADDRESSES
 } from "./kernel/createKernelAccount.js"
 export {
     createKernelAccountV1,
-    type KernelSmartAccountV1
+    type CreateKernelAccountV1ReturnType,
+    type KernelSmartAccountV1Implementation
 } from "./kernel/v1/createKernelAccountV1.js"
 export { createKernelAccountV0_2 } from "./kernel/v2/createKernelAccountV0_2.js"
 export { KernelAccountV2Abi } from "./kernel/v2/abi/KernelAccountV2Abi.js"

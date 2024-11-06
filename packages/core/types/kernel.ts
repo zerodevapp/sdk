@@ -1,30 +1,28 @@
+import type { Address, CustomSource, Hex, LocalAccount, PartialBy } from "viem"
 import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types"
-import type { GetEntryPointVersion } from "permissionless/types/entrypoint"
-import type {
+    EntryPointVersion,
     UserOperation,
-    UserOperationWithBigIntAsHex
-} from "permissionless/types/userOperation"
-import type { Address, CustomSource, Hex, LocalAccount } from "viem"
-import type { PartialBy } from "viem/types/utils"
+    entryPoint06Abi,
+    entryPoint07Abi
+} from "viem/account-abstraction"
 import type { VALIDATOR_TYPE } from "../constants.js"
-export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
+export type ZeroDevPaymasterRpcSchema<
+    entryPointVersion extends EntryPointVersion
+> = [
     {
         Method: "zd_sponsorUserOperation"
         Parameters: [
             {
                 chainId: number
-                userOp: GetEntryPointVersion<entryPoint> extends "v0.6"
+                userOp: entryPointVersion extends "0.6"
                     ? PartialBy<
-                          UserOperationWithBigIntAsHex<"v0.6">,
+                          UserOperation<"0.6">,
                           | "callGasLimit"
                           | "preVerificationGas"
                           | "verificationGasLimit"
                       >
                     : PartialBy<
-                          UserOperationWithBigIntAsHex<"v0.7">,
+                          UserOperation<"0.7">,
                           | "callGasLimit"
                           | "preVerificationGas"
                           | "verificationGasLimit"
@@ -40,7 +38,7 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
                 shouldConsume?: boolean
             }
         ]
-        ReturnType: GetEntryPointVersion<entryPoint> extends "v0.6"
+        ReturnType: entryPointVersion extends "0.6"
             ? {
                   paymasterAndData: Hex
                   preVerificationGas: Hex
@@ -81,7 +79,7 @@ export type ZeroDevPaymasterRpcSchema<entryPoint extends EntryPoint> = [
         Parameters: [
             {
                 chainId: number
-                userOp: UserOperationWithBigIntAsHex<"v0.6">
+                userOp: UserOperation<"0.6">
                 entryPointAddress: Address
                 tokenAddress: Address
             }
@@ -121,28 +119,28 @@ export type ValidatorType = Extract<
     "PERMISSION" | "SECONDARY"
 >
 
-export type KernelValidator<
-    entryPoint extends EntryPoint,
-    Name extends string = string
-> = LocalAccount<Name> & {
-    validatorType: ValidatorType
-    supportedKernelVersions: string
-    getNonceKey: (
-        accountAddress?: Address,
-        customNonceKey?: bigint
-    ) => Promise<bigint>
-    getDummySignature(
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        pluginEnableSignature?: Hex
-    ): Promise<Hex>
-    signUserOperation: (
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
-        pluginEnableSignature?: Hex
-    ) => Promise<Hex>
-    getEnableData(accountAddress?: Address): Promise<Hex>
-    isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
-    getIdentifier: () => Hex
-}
+export type KernelValidator<Name extends string = string> =
+    LocalAccount<Name> & {
+        validatorType: ValidatorType
+        supportedKernelVersions: string
+        getNonceKey: (
+            accountAddress?: Address,
+            customNonceKey?: bigint
+        ) => Promise<bigint>
+        getStubSignature(
+            userOperation: UserOperation,
+            pluginEnableSignature?: Hex
+        ): Promise<Hex>
+        signUserOperation: (
+            userOperation: UserOperation & {
+                chainId?: number | undefined
+            },
+            pluginEnableSignature?: Hex
+        ) => Promise<Hex>
+        getEnableData(accountAddress?: Address): Promise<Hex>
+        isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
+        getIdentifier: () => Hex
+    }
 
 export type KernelValidatorHook = {
     getEnableData(accountAddress?: Address): Promise<Hex>
@@ -156,10 +154,10 @@ export type ValidatorInitData = {
     initConfig?: Hex[]
 }
 
-export type KernelPluginManager<entryPoint extends EntryPoint> =
-    KernelValidator<entryPoint> & {
-        sudoValidator?: KernelValidator<entryPoint>
-        regularValidator?: KernelValidator<entryPoint>
+export type KernelPluginManager<entryPointVersion extends EntryPointVersion> =
+    KernelValidator & {
+        sudoValidator?: KernelValidator
+        regularValidator?: KernelValidator
         hook?: KernelValidatorHook
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
@@ -171,12 +169,12 @@ export type KernelPluginManager<entryPoint extends EntryPoint> =
             accountAddress: Address
         ) => Promise<Parameters<CustomSource["signTypedData"]>[0]>
         signUserOperationWithActiveValidator: (
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+            userOperation: UserOperation<entryPointVersion>
         ) => Promise<Hex>
     }
 
-export type PluginInstallData<entryPoint extends EntryPoint> =
-    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
+export type PluginInstallData<entryPointVersion extends EntryPointVersion> =
+    entryPointVersion extends "0.6"
         ? {
               selector: Hex
               executor: Address
@@ -188,14 +186,19 @@ export type PluginInstallData<entryPoint extends EntryPoint> =
         : // TODO: Add support for EP v0.7
           never
 
-export type KernelPluginManagerParams<entryPoint extends EntryPoint> = {
-    sudo?: KernelValidator<entryPoint>
-    regular?: KernelValidator<entryPoint>
+export type KernelPluginManagerParams<
+    entryPointVersion extends EntryPointVersion
+> = {
+    sudo?: KernelValidator
+    regular?: KernelValidator
     hook?: KernelValidatorHook
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     action?: Action
-    entryPoint: entryPoint
+    entryPoint: {
+        address: Address
+        version: entryPointVersion
+    }
     kernelVersion: KERNEL_VERSION_TYPE
     chainId?: number
 } & Partial<PluginValidityData>
@@ -223,19 +226,17 @@ export enum ValidatorMode {
 
 export type CallType = "call" | "delegatecall"
 
-export type KernelEncodeCallDataArgs =
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }
-    | {
-          to: Address
-          value: bigint
-          data: Hex
-          callType: CallType | undefined
-      }[]
+export type KernelEncodeCallDataArgs = {
+    to: Address
+    value: bigint
+    data: Hex
+    callType: CallType | undefined
+}[]
+
+export type GetEntryPointAbi<entryPointVersion extends EntryPointVersion> =
+    entryPointVersion extends "0.6"
+        ? typeof entryPoint06Abi
+        : typeof entryPoint07Abi
 
 export type Execution = {
     target: Address
@@ -251,7 +252,7 @@ export type KERNEL_VERSION_TYPE =
     | KERNEL_V2_VERSION_TYPE
     | KERNEL_V3_VERSION_TYPE
 
-export type GetKernelVersion<entryPoint extends EntryPoint> =
-    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
+export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
+    entryPointVersion extends "0.6"
         ? KERNEL_V2_VERSION_TYPE
         : KERNEL_V3_VERSION_TYPE

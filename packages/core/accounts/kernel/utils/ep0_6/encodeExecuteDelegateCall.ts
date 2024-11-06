@@ -6,6 +6,6 @@ export const encodeExecuteDelegateCall = (args: DelegateCallArgs) => {
     return encodeFunctionData({
         abi: KernelExecuteAbi,
         functionName: "executeDelegateCall",
-        args: [args.to, args.data]
+        args: [args.to, args.data || "0x"]
     })
 }

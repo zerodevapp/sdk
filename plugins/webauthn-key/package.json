@@ -39,6 +39,6 @@
         "@simplewebauthn/browser": "^8.3.4"
     },
     "peerDependencies": {
-        "viem": ">=2.16.3 <2.18.0"
+        "viem": "^2.21.40"
     }
 }
