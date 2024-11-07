@@ -26,15 +26,15 @@ import {
     hashTypedData,
     validateTypedData
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
 import { getValidatorAddress } from "./index.js"
-import {
-    type EntryPointVersion,
-    getUserOperationHash,
-    type UserOperation
-} from "viem/account-abstraction"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
