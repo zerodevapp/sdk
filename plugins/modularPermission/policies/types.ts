@@ -1,9 +1,5 @@
-import type { UserOperation } from "permissionless"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
 import type { Abi, Address, Hex } from "viem"
+import type { UserOperation } from "viem/account-abstraction"
 import type { PolicyFlags } from "../constants.js"
 import type { Permission } from "../types.js"
 
@@ -31,11 +27,9 @@ export type GasPolicyParams = PolicyParams & {
     paymasterAddress?: Address
 }
 
-export type Policy<entryPoint extends EntryPoint> = {
+export type Policy = {
     getPolicyData: () => Hex
-    getSignaturePolicyData: (
-        userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-    ) => Hex
+    getSignaturePolicyData: (userOperation: UserOperation) => Hex
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:

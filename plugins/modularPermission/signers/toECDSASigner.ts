@@ -1,32 +1,24 @@
 import { constants, fixSignedData } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
-import type { Address, LocalAccount, TypedDataDefinition } from "viem"
+import type { LocalAccount, TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
 import { ECDSA_SIGNER_CONTRACT } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "./types.js"
 
-export type ECDSAModularSignerParams<
-    TSource extends string = "custom",
-    TAddress extends Address = Address
-> = ModularSignerParams & {
-    signer: SmartAccountSigner<TSource, TAddress>
+export type ECDSAModularSignerParams = ModularSignerParams & {
+    signer: LocalAccount
 }
 
-export function toECDSASigner<
-    TSource extends string = "custom",
-    TAddress extends Address = Address
->({
+export function toECDSASigner({
     signer,
     signerContractAddress = ECDSA_SIGNER_CONTRACT
-}: ECDSAModularSignerParams<TSource, TAddress>): ModularSigner {
+}: ECDSAModularSignerParams): ModularSigner {
     const viemSigner: LocalAccount = {
         ...signer,
         signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         }
     } as LocalAccount
     const account = toAccount({
@@ -35,7 +27,9 @@ export function toECDSASigner<
             return fixSignedData(await viemSigner.signMessage({ message }))
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
