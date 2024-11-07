@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.4.0-beta.0
+
+### Minor Changes
+
+- Update for `viem@2.18.x`
+
 ## 5.3.3
 
 ### Patch Changes

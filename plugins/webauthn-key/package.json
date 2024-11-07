@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/webauthn-key",
-    "version": "5.3.3",
+    "version": "5.4.0-beta.0",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
