@@ -9,8 +9,8 @@ import {
     type Transport,
     encodeFunctionData
 } from "viem"
-import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type { SmartAccount } from "viem/account-abstraction"
+import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 
 const SessionKeyValidatorAbi = [
     {

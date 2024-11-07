@@ -1,12 +1,14 @@
+import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
 import type { Hex } from "viem"
+import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
 import {
     isSessionKeyValidatorPlugin,
     serializeSessionKeyAccountParams
 } from "./utils.js"
-import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
-import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
 
-export const serializeSessionKeyAccount = async <entryPointVersion extends EntryPointVersion>(
+export const serializeSessionKeyAccount = async <
+    entryPointVersion extends EntryPointVersion
+>(
     account: SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>,
     privateKey?: Hex
 ): Promise<string> => {

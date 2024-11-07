@@ -1,24 +1,24 @@
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import type { Action, KernelSmartAccountImplementation } from "@zerodev/sdk"
 import { addressToEmptyAccount, createKernelAccount } from "@zerodev/sdk"
 import {
-    deserializeSessionKeyAccount,
     ParamOperator,
+    type SessionKeyPlugin,
+    deserializeSessionKeyAccount,
     serializeSessionKeyAccount,
-    signerToSessionKeyValidator,
-    type SessionKeyPlugin
+    signerToSessionKeyValidator
 } from "@zerodev/session-key"
 import type { Hex } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import {
+    Test_ERC20Address,
     getEntryPoint,
     getPublicClient,
     index,
-    kernelVersion,
-    Test_ERC20Address
+    kernelVersion
 } from "./common"
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
-import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 
 export const getSessionKeyToSessionKeyKernelAccount = async (
     sessionKeyPlugin: SessionKeyPlugin,
@@ -100,9 +100,8 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
         kernelVersion
     })
 
-    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
-        account
-    )
+    const serializedSessionKeyAccountParams =
+        await serializeSessionKeyAccount(account)
 
     return await deserializeSessionKeyAccount(
         publicClient,

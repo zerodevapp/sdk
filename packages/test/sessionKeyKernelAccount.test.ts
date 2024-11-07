@@ -2,9 +2,9 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountAbi,
+    type KernelAccountClient,
     type KernelSmartAccountImplementation,
-    type ZeroDevPaymasterClient,
-    type KernelAccountClient
+    type ZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import {
     Operation,
@@ -31,6 +31,7 @@ import {
     toFunctionSelector,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import { TEST_ERC20Abi } from "./abis/Test_ERC20Abi.js"
@@ -47,7 +48,6 @@ import {
     getZeroDevPaymasterClient,
     kernelVersion
 } from "./utils_0_6"
-import type { SmartAccount } from "viem/account-abstraction"
 
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient
@@ -244,9 +244,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             paymaster: zerodevPaymaster
         })
 
@@ -315,9 +314,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             paymaster: zerodevPaymaster
         })
 
@@ -483,9 +481,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            ),
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
             paymaster: zerodevPaymaster
         })
 
@@ -531,9 +528,8 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account = await getSessionKeyToSessionKeyKernelAccount(
-            sessionKeyPlugin
-        )
+        const account =
+            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
             await serializeSessionKeyAccount(account, sessionPrivateKey)
 
@@ -596,9 +592,8 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account: await getSessionKeyToSessionKeyKernelAccount(
-                sessionKeyPlugin
-            )
+            account:
+                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         })
 
         const amountToTransfer = 10000n
@@ -640,9 +635,8 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account = await getSessionKeyToSessionKeyKernelAccount(
-            sessionKeyPlugin
-        )
+        const account =
+            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
         const serializedSessionKeyAccountParams =
             await serializeSessionKeyAccount(account)
 

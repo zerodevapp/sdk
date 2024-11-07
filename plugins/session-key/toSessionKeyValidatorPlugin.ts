@@ -20,6 +20,11 @@ import { KernelAccountAbi } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
 import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type {
     SessionKeyData,
@@ -32,11 +37,6 @@ import {
     fixSignedData,
     getPermissionFromABI
 } from "./utils.js"
-import {
-    getUserOperationHash,
-    type UserOperation,
-    type EntryPointVersion
-} from "viem/account-abstraction"
 
 export enum Operation {
     Call = 0,
