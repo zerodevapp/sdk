@@ -1,5 +1,7 @@
-import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint"
+import type {
+    KernelAccountClient,
+    KernelSmartAccountImplementation
+} from "@zerodev/sdk"
 import {
     type Address,
     type Chain,
@@ -8,6 +10,7 @@ import {
     encodeFunctionData
 } from "viem"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
+import type { SmartAccount } from "viem/account-abstraction"
 
 const SessionKeyValidatorAbi = [
     {
@@ -287,22 +290,17 @@ const SessionKeyValidatorAbi = [
     }
 ]
 
-export const revokeSessionKey = async <
-    entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE,
-    TChain extends Chain | undefined = Chain | undefined,
-    TTransport extends Transport = Transport
->(
+export const revokeSessionKey = async (
     accountClient: KernelAccountClient<
-        entryPoint,
-        TTransport,
-        TChain,
-        KernelSmartAccount<entryPoint, TTransport, TChain>
+        Transport,
+        Chain,
+        SmartAccount<KernelSmartAccountImplementation>
     >,
     sessionKeyAddress: Address = "0x"
 ): Promise<Hex> => {
     return await accountClient.sendUserOperation({
-        userOperation: {
-            callData: await accountClient.account.encodeCallData({
+        callData: await accountClient.account.encodeCalls([
+            {
                 to: SESSION_KEY_VALIDATOR_ADDRESS,
                 value: 0n,
                 data: encodeFunctionData({
@@ -310,7 +308,7 @@ export const revokeSessionKey = async <
                     functionName: "disable",
                     args: [sessionKeyAddress]
                 })
-            })
-        }
+            }
+        ])
     })
 }

@@ -1,12 +1,8 @@
 import {
     type Address,
-    type Chain,
     type Client,
     type EncodeDeployDataParameters,
     type Hex,
-    type PublicActions,
-    type PublicRpcSchema,
-    type Transport,
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
@@ -109,17 +105,8 @@ const getAccountInitCode = async ({
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
-export async function createKernelAccountV0_2<
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<
-        TTransport,
-        TChain,
-        undefined,
-        PublicRpcSchema,
-        PublicActions<TTransport, TChain>
-    >,
+export async function createKernelAccountV0_2(
+    client: Client,
     {
         plugins,
         entryPoint,

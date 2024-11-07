@@ -1,40 +1,35 @@
-import {
-    KernelAccountAbi,
-    type KernelSmartAccount,
-    createKernelAccount
-} from "@zerodev/sdk"
+import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
-import { toKernelPluginManager } from "@zerodev/sdk/accounts"
+import {
+    type KernelSmartAccountImplementation,
+    toKernelPluginManager
+} from "@zerodev/sdk/accounts"
 import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
-import { getEntryPointVersion } from "permissionless"
-import type { SmartAccountSigner } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint"
-import type { Address, Chain, Hex, Transport } from "viem"
+import type { Address, Client, Hex, LocalAccount } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
+import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
 
 export const deserializeSessionKeyAccount = async <
-    entryPoint extends EntryPoint,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Parameters<typeof createKernelAccount>[0],
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>,
+    client: Client,
+    entryPoint: { address: Address; version: entryPointVersion },
+    kernelVersion: GetKernelVersion<entryPointVersion>,
     sessionKeyAccountParams: string,
-    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>,
+    sessionKeySigner?: LocalAccount,
     validatorAddress: Address = SESSION_KEY_VALIDATOR_ADDRESS
-): Promise<KernelSmartAccount<entryPoint, Transport, Chain | undefined>> => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-
-    if (entryPointVersion !== "v0.6") {
+): Promise<
+    SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>
+> => {
+    if (entryPoint.version !== "0.6") {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
-    let signer: SmartAccountSigner<string, Hex>
+    let signer: LocalAccount
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
     else if (sessionKeySigner) signer = sessionKeySigner
     else throw new Error("No signer or serialized sessionKey provided")
@@ -42,7 +37,7 @@ export const deserializeSessionKeyAccount = async <
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
         validatorData: params.sessionKeyParams,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         validatorAddress
     })
@@ -56,7 +51,7 @@ export const deserializeSessionKeyAccount = async <
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
         action: params.action,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         ...params.validityData
     })
@@ -64,8 +59,8 @@ export const deserializeSessionKeyAccount = async <
     return createKernelAccount(client, {
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress,
+        address: params.accountParams.accountAddress,
+        entryPoint,
         kernelVersion
     })
 }
@@ -76,7 +71,7 @@ export const decodeParamsFromInitCode = (initCode: Hex) => {
     if (initCode === "0x") return { index, validatorInitData }
     const createAccountFunctionData = decodeFunctionData({
         abi: KernelFactoryAbi,
-        data: `0x${initCode.slice(42)}`
+        data: initCode
     })
     if (createAccountFunctionData.functionName === "createAccount") {
         index = createAccountFunctionData.args[2]

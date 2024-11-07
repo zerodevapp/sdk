@@ -4,29 +4,26 @@ import {
     createKernelAccountV0_2
 } from "@zerodev/sdk/accounts"
 import type { ValidatorInitData } from "@zerodev/sdk/types"
-import type { GetKernelVersion } from "@zerodev/sdk/types/kernel.js"
-import type { SmartAccountSigner } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint"
-import type { Address, Hex } from "viem"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type { Address, Client, Hex, LocalAccount } from "viem"
 import { decodeFunctionData } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import { signerToSessionKeyValidator } from "./toSessionKeyValidatorPlugin.js"
 import { deserializeSessionKeyAccountParams } from "./utils.js"
+import type { EntryPointVersion } from "viem/account-abstraction"
 
 export const deserializeSessionKeyAccountV0_2 = async <
-    entryPoint extends EntryPoint,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Parameters<typeof createKernelAccountV0_2>[0],
-    entryPointAddress: entryPoint,
+    client: Client,
+    entryPoint: { address: Address; version: entryPointVersion },
     sessionKeyAccountParams: string,
-    sessionKeySigner?: SmartAccountSigner<TSource, TAddress>,
+    sessionKeySigner?: LocalAccount,
     validatorAddress: Address = SESSION_KEY_VALIDATOR_ADDRESS
 ) => {
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
-    let signer: SmartAccountSigner<string, Hex>
+    let signer: LocalAccount
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
     else if (sessionKeySigner) signer = sessionKeySigner
     else throw new Error("No signer or serialized sessionKey provided")
@@ -34,8 +31,8 @@ export const deserializeSessionKeyAccountV0_2 = async <
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {
         signer,
         validatorData: params.sessionKeyParams,
-        entryPoint: entryPointAddress,
-        kernelVersion: "0.0.2" as GetKernelVersion<entryPoint>,
+        entryPoint,
+        kernelVersion: "0.0.2" as GetKernelVersion<entryPointVersion>,
         validatorAddress
     })
 
@@ -49,15 +46,15 @@ export const deserializeSessionKeyAccountV0_2 = async <
         validatorInitData,
         action: params.action,
         kernelVersion: "0.0.2",
-        entryPoint: entryPointAddress,
+        entryPoint,
         ...params.validityData
     })
 
     return createKernelAccountV0_2(client, {
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
-        entryPoint: entryPointAddress
+        address: params.accountParams.accountAddress,
+        entryPoint: { address: entryPoint.address, version: "0.6" }
     })
 }
 

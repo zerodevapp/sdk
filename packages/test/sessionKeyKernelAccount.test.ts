@@ -2,20 +2,19 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
     KernelAccountAbi,
-    type KernelAccountClient,
-    type KernelSmartAccount
+    type KernelSmartAccountImplementation,
+    type ZeroDevPaymasterClient,
+    type KernelAccountClient
 } from "@zerodev/sdk"
 import {
     Operation,
     ParamOperator,
-    type SessionKeyPlugin,
     anyPaymaster,
     deserializeSessionKeyAccount,
     deserializeSessionKeyAccountParams,
     serializeSessionKeyAccount,
     signerToSessionKeyValidator
 } from "@zerodev/session-key"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     http,
     type Address,
@@ -27,7 +26,6 @@ import {
     createPublicClient,
     encodeFunctionData,
     getAbiItem,
-    getFunctionSelector,
     pad,
     parseEther,
     toFunctionSelector,
@@ -42,20 +40,20 @@ import {
     Test_ERC20Address,
     getEntryPoint,
     getKernelAccountClient,
-    getKernelBundlerClient,
     getPublicClient,
     getSessionKeyToSessionKeyKernelAccount,
     getSignerToEcdsaKernelAccount,
     getSignerToSessionKeyKernelAccount,
     getZeroDevPaymasterClient,
     kernelVersion
-} from "./utils.js"
+} from "./utils_0_6"
+import type { SmartAccount } from "viem/account-abstraction"
 
 describe("Session Key kernel Account", async () => {
     let publicClient: PublicClient
     const client = await createPublicClient({
         chain: sepolia,
-        transport: http(config["v0.6"][sepolia.id].rpcUrl as string)
+        transport: http(config["0.6"][sepolia.id].rpcUrl as string)
     })
     const executeBatchSelector = toFunctionSelector(
         getAbiItem({
@@ -73,17 +71,16 @@ describe("Session Key kernel Account", async () => {
     let owner: PrivateKeyAccount
     let accountAddress: Address
     let ecdsaSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        SmartAccount<KernelSmartAccountImplementation<"0.6">>
     >
     let sessionKeySmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        SmartAccount<KernelSmartAccountImplementation<"0.6">>
     >
+    let zerodevPaymaster: ZeroDevPaymasterClient
 
     async function mintToAccount(amount: bigint) {
         const balanceBefore = await client.readContract({
@@ -119,33 +116,17 @@ describe("Session Key kernel Account", async () => {
         publicClient = await getPublicClient()
         testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
         owner = privateKeyToAccount(testPrivateKey)
+        zerodevPaymaster = getZeroDevPaymasterClient()
 
         sessionKeySmartAccountClient = await getKernelAccountClient({
             account: await getSignerToSessionKeyKernelAccount(),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
-        accountAddress = (await sessionKeySmartAccountClient.account
-            ?.address) as Address
+        accountAddress = sessionKeySmartAccountClient.account.address
 
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
     })
 
@@ -205,15 +186,7 @@ describe("Session Key kernel Account", async () => {
                     selector: transfer20ActionSelector
                 }
             ),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = 10000n
@@ -231,18 +204,15 @@ describe("Session Key kernel Account", async () => {
         })
         const userOpHash =
             await _sessionKeySmartAccountClient.sendUserOperation({
-                userOperation: {
-                    callData: transferData
-                }
+                callData: transferData
             })
         console.log(
             "jiffyScanLink:",
             `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
         )
-        const bundlerClient = getKernelBundlerClient()
         const {
             receipt: { transactionHash: transferTransactionHash }
-        } = await bundlerClient.waitForUserOperationReceipt({
+        } = await _sessionKeySmartAccountClient.waitForUserOperationReceipt({
             hash: userOpHash
         })
 
@@ -274,17 +244,10 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin
+            ),
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = 10000n
@@ -352,17 +315,10 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin
+            ),
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = 10000n
@@ -442,15 +398,7 @@ describe("Session Key kernel Account", async () => {
                     address: zeroAddress
                 }
             ),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = 10000n
@@ -478,8 +426,8 @@ describe("Session Key kernel Account", async () => {
             args: [accountAddress, owner.address]
         })
         const transferTransactionHash =
-            await _sessionKeySmartAccountClient.sendTransactions({
-                transactions: [
+            await _sessionKeySmartAccountClient.sendTransaction({
+                calls: [
                     {
                         to: Test_ERC20Address,
                         data: increaseAllowanceData,
@@ -535,17 +483,10 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin
+            ),
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = parseEther("0.0000000001")
@@ -590,8 +531,9 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account =
-            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
+        const account = await getSessionKeyToSessionKeyKernelAccount(
+            sessionKeyPlugin
+        )
         const serializedSessionKeyAccountParams =
             await serializeSessionKeyAccount(account, sessionPrivateKey)
 
@@ -602,15 +544,7 @@ describe("Session Key kernel Account", async () => {
                 kernelVersion,
                 serializedSessionKeyAccountParams
             ),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = parseEther("0.000001")
@@ -662,8 +596,9 @@ describe("Session Key kernel Account", async () => {
         )
 
         const _sessionKeySmartAccountClient = await getKernelAccountClient({
-            account:
-                await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
+            account: await getSessionKeyToSessionKeyKernelAccount(
+                sessionKeyPlugin
+            )
         })
 
         const amountToTransfer = 10000n
@@ -705,8 +640,9 @@ describe("Session Key kernel Account", async () => {
                 }
             }
         )
-        const account =
-            await getSessionKeyToSessionKeyKernelAccount(sessionKeyPlugin)
+        const account = await getSessionKeyToSessionKeyKernelAccount(
+            sessionKeyPlugin
+        )
         const serializedSessionKeyAccountParams =
             await serializeSessionKeyAccount(account)
 
@@ -762,15 +698,7 @@ describe("Session Key kernel Account", async () => {
                     )
                 }
             ),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
 
         const amountToTransfer = 10000n
@@ -788,26 +716,25 @@ describe("Session Key kernel Account", async () => {
         })
         const userOpHash =
             await _sessionKeySmartAccountClient.sendUserOperation({
-                userOperation: {
-                    callData:
-                        await _sessionKeySmartAccountClient.account.encodeCallData(
+                callData:
+                    await _sessionKeySmartAccountClient.account.encodeCalls(
+                        [
                             {
                                 to: TOKEN_ACTION_ADDRESS,
                                 data: transferData,
-                                value: 0n,
-                                callType: "delegatecall"
+                                value: 0n
                             }
-                        )
-                }
+                        ],
+                        "delegatecall"
+                    )
             })
         console.log(
             "jiffyScanLink:",
             `https://jiffyscan.xyz/userOpHash/${userOpHash}?network=sepolia/`
         )
-        const bundlerClient = getKernelBundlerClient()
         const {
             receipt: { transactionHash: transferTransactionHash }
-        } = await bundlerClient.waitForUserOperationReceipt({
+        } = await _sessionKeySmartAccountClient.waitForUserOperationReceipt({
             hash: userOpHash
         })
 

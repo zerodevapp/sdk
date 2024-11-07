@@ -2,11 +2,9 @@ import type { TypedData } from "abitype"
 import {
     type Abi,
     type Address,
-    type Chain,
     type Client,
     type Hex,
     type LocalAccount,
-    type Transport,
     type TypedDataDefinition,
     keccak256,
     pad,
@@ -14,12 +12,7 @@ import {
     zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
-import {
-    getChainId,
-    readContract,
-    signMessage,
-    signTypedData
-} from "viem/actions"
+import { getChainId, readContract, signMessage } from "viem/actions"
 import { concat, concatHex, getAction } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
@@ -27,12 +20,6 @@ import { KernelAccountAbi } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
 import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
-import { getEntryPointVersion, getUserOperationHash } from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import { SESSION_KEY_VALIDATOR_ADDRESS } from "./index.js"
 import type {
     SessionKeyData,
@@ -45,6 +32,11 @@ import {
     fixSignedData,
     getPermissionFromABI
 } from "./utils.js"
+import {
+    getUserOperationHash,
+    type UserOperation,
+    type EntryPointVersion
+} from "viem/account-abstraction"
 
 export enum Operation {
     Call = 0,
@@ -63,32 +55,26 @@ export enum ParamOperator {
 export const anyPaymaster = "0x0000000000000000000000000000000000000001"
 
 export async function signerToSessionKeyValidator<
-    entryPoint extends EntryPoint,
+    entryPointVersion extends EntryPointVersion,
     TAbi extends Abi | readonly unknown[],
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSource extends string = "custom",
-    TAddress extends Address = Address,
     TFunctionName extends string | undefined = string
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         signer,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion: _,
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
-        signer: SmartAccountSigner<TSource, TAddress>
+        signer: LocalAccount
         validatorData?: SessionKeyData<TAbi, TFunctionName>
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: { address: Address; version: entryPointVersion }
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
-): Promise<SessionKeyPlugin<entryPoint>> {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-
-    if (entryPointVersion !== "v0.6") {
+): Promise<SessionKeyPlugin> {
+    if (entryPoint.version !== "0.6") {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
     const sessionKeyData: SessionKeyData<TAbi, TFunctionName> = {
@@ -125,7 +111,9 @@ export async function signerToSessionKeyValidator<
     const viemSigner: LocalAccount = {
         ...signer,
         signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         }
     } as LocalAccount
 
@@ -139,7 +127,9 @@ export async function signerToSessionKeyValidator<
             return signMessage(client, { account: viemSigner, message })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -147,13 +137,7 @@ export async function signerToSessionKeyValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account: viemSigner,
-                    ...typedData
-                }
-            )
+            return viemSigner.signTypedData(typedData)
         }
     })
 
@@ -265,8 +249,12 @@ export async function signerToSessionKeyValidator<
 
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
-                userOperation: { ...userOperation, signature: "0x" },
-                entryPoint: entryPointAddress,
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
 
@@ -289,7 +277,7 @@ export async function signerToSessionKeyValidator<
             return 0n
         },
 
-        async getDummySignature(userOperation) {
+        async getStubSignature(userOperation) {
             return concat([
                 signer.address,
                 constants.DUMMY_ECDSA_SIG,
