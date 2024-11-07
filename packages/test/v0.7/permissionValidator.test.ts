@@ -4,14 +4,12 @@ import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
     type KernelAccountClient,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
     KernelV3AccountAbi,
+    type ZeroDevPaymasterClient,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
-import type { BundlerClient } from "permissionless"
-import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types"
 import {
     type Address,
     type Chain,
@@ -28,6 +26,7 @@ import {
     toFunctionSelector,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import {
@@ -51,12 +50,10 @@ import { ParamCondition } from "../../../plugins/permission/policies/types"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi"
 import { TOKEN_ACTION_ADDRESS, config } from "../config"
-import { Test_ERC20Address } from "../utils"
 import {
+    Test_ERC20Address,
     getEntryPoint,
     getKernelAccountClient,
-    getKernelBundlerClient,
-    getPimlicoBundlerClient,
     getPublicClient,
     getSessionKeySignerToPermissionKernelAccount,
     getSignerToEcdsaKernelAccount,
@@ -78,23 +75,20 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Permission kernel Account", () => {
-    let publicClient: PublicClient<Transport, Chain>
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let publicClient: PublicClient
     let ecdsaSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
+        SmartAccount<KernelSmartAccountImplementation>
     >
-    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let owner: PrivateKeyAccount
     let gasPolicy: Policy
     let permissionSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE, Transport, Chain>
+        SmartAccount<KernelSmartAccountImplementation>
     >
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     async function mintToAccount(target: Address, amount: bigint) {
         const balanceBefore = await publicClient.readContract({
@@ -141,22 +135,13 @@ describe("Permission kernel Account", () => {
         const testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
         owner = privateKeyToAccount(testPrivateKey)
         publicClient = await getPublicClient()
-        bundlerClient = getKernelBundlerClient()
-        pimlicoBundlerClient = getPimlicoBundlerClient()
 
         const ecdsaAccount = await getSignerToEcdsaKernelAccount()
 
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: ecdsaAccount,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
         gasPolicy = await toGasPolicy({
             allowed: parseEther("10"),
@@ -168,15 +153,7 @@ describe("Permission kernel Account", () => {
 
         permissionSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToRootPermissionKernelAccount([sudoPolicy]),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
     })
 
@@ -215,7 +192,7 @@ describe("Permission kernel Account", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -282,7 +259,7 @@ describe("Permission kernel Account", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -312,7 +289,7 @@ describe("Permission kernel Account", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -392,15 +369,7 @@ describe("Permission kernel Account", () => {
                 ])
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: accountWithSudoAndRegular,
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             const response = await permissionSmartAccountClient.sendTransaction(
@@ -418,25 +387,26 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClientSudo =
                 await getKernelAccountClient({
                     account: accountWithSudo,
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            const zeroDevPaymaster = getZeroDevPaymasterClient()
-                            return zeroDevPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            })
-                        }
-                    }
+                    paymaster: zeroDevPaymaster
                 })
 
-            const response2 =
+            const response2UOHash =
                 await permissionSmartAccountClientSudo.uninstallPlugin({
                     plugin
                 })
-            console.log("Uninstall Transaction hash:", response2)
+            const response2 =
+                await permissionSmartAccountClientSudo.waitForUserOperationReceipt(
+                    {
+                        hash: response2UOHash
+                    }
+                )
+            console.log(
+                "Uninstall Transaction hash:",
+                response2.receipt.transactionHash
+            )
             const transactionReceipt =
                 await publicClient.waitForTransactionReceipt({
-                    hash: response2
+                    hash: response2.receipt.transactionHash
                 })
 
             let policyAndSignerUninstalled = false
@@ -463,22 +433,20 @@ describe("Permission kernel Account", () => {
             let errMsg = ""
             try {
                 await permissionSmartAccountClient.sendUserOperation({
-                    userOperation: {
-                        callData:
-                            await permissionSmartAccountClient.account.encodeCallData(
-                                {
-                                    to: zeroAddress,
-                                    value: 0n,
-                                    data: "0x"
-                                }
-                            )
-                    }
+                    callData:
+                        await permissionSmartAccountClient.account.encodeCalls([
+                            {
+                                to: zeroAddress,
+                                value: 0n,
+                                data: "0x"
+                            }
+                        ])
                 })
             } catch (error) {
                 errMsg = error.message
             }
             expect(errMsg).toMatch(
-                "UserOperation reverted during simulation with reason: 0x756688fe"
+                "UserOperation reverted during simulation with reason: AA23 reverted 0x756688fe"
             )
         },
         TEST_TIMEOUT
@@ -497,28 +465,12 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: accountWithSudoAndRegular,
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
             const permissionSmartAccountClientWithRegular =
                 await getKernelAccountClient({
                     account: accountWithRegular,
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            const zeroDevPaymaster = getZeroDevPaymasterClient()
-                            return zeroDevPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            })
-                        }
-                    }
+                    paymaster: zeroDevPaymaster
                 })
 
             const response = await permissionSmartAccountClient.sendTransaction(
@@ -536,28 +488,27 @@ describe("Permission kernel Account", () => {
             const permissionSmartAccountClientSudo =
                 await getKernelAccountClient({
                     account: accountWithSudo,
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            const zeroDevPaymaster = getZeroDevPaymasterClient()
-                            return zeroDevPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            })
-                        }
-                    }
+                    paymaster: zeroDevPaymaster
                 })
 
             const currentNonce =
-                await permissionSmartAccountClientSudo.getKernelV3ModuleCurrentNonce(
-                    {}
-                )
+                await permissionSmartAccountClientSudo.getKernelV3ModuleCurrentNonce()
             console.log({ currentNonce })
 
-            const response2 =
+            const response2UOHash =
                 await permissionSmartAccountClientSudo.invalidateNonce({
                     nonceToSet: currentNonce + 1
                 })
-            console.log("Invalidate nonce transaction hash:", response2)
+            const response2 =
+                await permissionSmartAccountClientSudo.waitForUserOperationReceipt(
+                    {
+                        hash: response2UOHash
+                    }
+                )
+            console.log(
+                "Invalidate nonce transaction hash:",
+                response2.receipt.transactionHash
+            )
 
             let errMsg = ""
             try {
@@ -571,7 +522,7 @@ describe("Permission kernel Account", () => {
             }
             console.log(errMsg)
             expect(errMsg).toMatch(
-                "UserOperation reverted during simulation with reason: 0x756688fe"
+                "UserOperation reverted during simulation with reason: AA23 reverted 0x756688fe"
             )
         },
         TEST_TIMEOUT
@@ -588,15 +539,7 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToRootPermissionKernelAccount([
                     gasPolicy
                 ]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             console.log("Gas policy account")
@@ -625,15 +568,7 @@ describe("Permission kernel Account", () => {
                     await getSignerToRootPermissionWithSecondaryValidatorKernelAccount(
                         [await toSudoPolicy({})]
                     ),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             const response = await permissionSmartAccountClient.sendTransaction(
@@ -661,15 +596,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([gasPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             console.log("Gas policy account")
@@ -704,15 +631,7 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToPermissionKernelAccount([
                     timestampPolicy
                 ]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             const response = await permissionSmartAccountClient.sendTransaction(
@@ -742,15 +661,7 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToPermissionKernelAccount([
                     signaturePolicy
                 ]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             const response = await permissionSmartAccountClient.sendTransaction(
@@ -784,15 +695,7 @@ describe("Permission kernel Account", () => {
                 account: await getSignerToPermissionKernelAccount([
                     rateLimitPolicy
                 ]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await sleep(2 * 5000)
@@ -852,15 +755,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -932,15 +827,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -1014,15 +901,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -1096,15 +975,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -1176,15 +1047,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: await getSignerToPermissionKernelAccount([callPolicy]),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -1276,18 +1139,7 @@ describe("Permission kernel Account", () => {
 
             const permissionSmartAccountClient = await getKernelAccountClient({
                 account: deserilizedAccount,
-                middleware: {
-                    gasPrice: async () =>
-                        (await pimlicoBundlerClient.getUserOperationGasPrice())
-                            .fast,
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(
@@ -1354,15 +1206,7 @@ describe("Permission kernel Account", () => {
                         )
                     }
                 ),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        const zeroDevPaymaster = getZeroDevPaymasterClient()
-                        return zeroDevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint: getEntryPoint()
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             await mintToAccount(

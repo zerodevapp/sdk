@@ -11,18 +11,9 @@ import type {
     KERNEL_VERSION_TYPE,
     ValidatorInitData
 } from "@zerodev/sdk/types"
-import { getEntryPointVersion } from "permissionless"
-import type { SmartAccountSigner } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types"
-import type {
-    Chain,
-    Client,
-    Hex,
-    PublicActions,
-    PublicRpcSchema,
-    Transport
-} from "viem"
+import type { Address, Client, Hex } from "viem"
 import { decodeFunctionData } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
 import type { DecodeFunctionDataReturnType } from "viem/utils"
 import {
@@ -40,25 +31,15 @@ import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
 
 export const deserializePermissionAccount = async <
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<
-        TTransport,
-        TChain,
-        undefined,
-        PublicRpcSchema,
-        PublicActions<TTransport, TChain>
-    >,
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>,
+    client: Client,
+    entryPoint: { address: Address; version: entryPointVersion },
+    kernelVersion: GetKernelVersion<entryPointVersion>,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
 ) => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-
-    if (entryPointVersion !== "v0.7") {
+    if (entryPoint.version !== "0.7") {
         throw new Error("Only EntryPoint 0.7 is supported")
     }
     const params = deserializePermissionAccountParams(
@@ -67,9 +48,7 @@ export const deserializePermissionAccount = async <
     let signer: ModularSigner
     if (params.privateKey)
         signer = toECDSASigner({
-            signer: privateKeyToAccount(
-                params.privateKey
-            ) as SmartAccountSigner<"privateKey", `0x${string}`>
+            signer: privateKeyToAccount(params.privateKey)
         })
     else if (modularSigner) signer = modularSigner
     else throw new Error("No signer or serialized sessionKey provided")
@@ -81,7 +60,7 @@ export const deserializePermissionAccount = async <
                 createPolicyFromParams(policy)
             ) || []
         ),
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion
     })
 
@@ -93,17 +72,17 @@ export const deserializePermissionAccount = async <
         pluginEnableSignature: params.enableSignature,
         validatorInitData,
         action: params.action,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         ...params.validityData
     })
 
     return createKernelAccount(client, {
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         plugins: kernelPluginManager,
         index,
-        deployedAccountAddress: params.accountParams.accountAddress,
+        address: params.accountParams.accountAddress,
         useMetaFactory
     })
 }
@@ -133,7 +112,6 @@ export const decodeParamsFromInitCode = (
 ) => {
     let index: bigint | undefined
     let validatorInitData: ValidatorInitData | undefined
-    const initCodeWithoutFactoryAddress: Hex = `0x${initCode.slice(42)}`
     let deployWithFactoryFunctionData:
         | DecodeFunctionDataReturnType<typeof KernelFactoryStakerAbi>
         | DecodeFunctionDataReturnType<typeof KernelV3FactoryAbi>
@@ -141,12 +119,12 @@ export const decodeParamsFromInitCode = (
     try {
         deployWithFactoryFunctionData = decodeFunctionData({
             abi: KernelFactoryStakerAbi,
-            data: initCodeWithoutFactoryAddress
+            data: initCode
         })
     } catch (error) {
         deployWithFactoryFunctionData = decodeFunctionData({
             abi: KernelV3FactoryAbi,
-            data: initCodeWithoutFactoryAddress
+            data: initCode
         })
         useMetaFactory = false
     }

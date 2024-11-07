@@ -1,6 +1,5 @@
-import type { KernelSmartAccount } from "@zerodev/sdk"
+import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
-import type { EntryPoint } from "permissionless/types"
 import {
     type Hex,
     concatHex,
@@ -9,22 +8,20 @@ import {
     hashTypedData,
     keccak256
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import type { PermissionPlugin } from "./types.js"
 import {
     isPermissionValidatorPlugin,
     serializePermissionAccountParams
 } from "./utils.js"
 
-export type MultiChainPermissionAccountsParams<entryPoint extends EntryPoint> =
-    {
-        account: KernelSmartAccount<entryPoint>
-        privateKey?: Hex
-    }
+export type MultiChainPermissionAccountsParams = {
+    account: SmartAccount<KernelSmartAccountImplementation>
+    privateKey?: Hex
+}
 
-export const serializeMultiChainPermissionAccounts = async <
-    entryPoint extends EntryPoint
->(
-    params: MultiChainPermissionAccountsParams<entryPoint>[]
+export const serializeMultiChainPermissionAccounts = async (
+    params: MultiChainPermissionAccountsParams[]
 ): Promise<string[]> => {
     if (params.length === 0) return []
 
@@ -33,7 +30,7 @@ export const serializeMultiChainPermissionAccounts = async <
             throw new Error("Account plugin is not a permission validator")
         }
         return (
-            param.account.kernelPluginManager as PermissionPlugin<entryPoint>
+            param.account.kernelPluginManager as PermissionPlugin
         ).getPluginSerializationParams()
     })
 

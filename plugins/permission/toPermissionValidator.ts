@@ -1,18 +1,19 @@
 import { KernelV3AccountAbi } from "@zerodev/sdk"
-import { getEntryPointVersion, getUserOperationHash } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
-    type Transport,
     concat,
     encodeAbiParameters,
     keccak256,
     slice,
     zeroAddress
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { getChainId, readContract } from "viem/actions"
 import { getAction } from "viem/utils"
 import { PolicyFlags } from "./constants.js"
@@ -25,23 +26,20 @@ import type {
 } from "./types.js"
 
 export async function toPermissionValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         signer,
         policies,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion: _,
         flag = PolicyFlags.FOR_ALL_VALIDATION
-    }: PermissionPluginParams<entryPoint>
-): Promise<PermissionPlugin<entryPoint>> {
+    }: PermissionPluginParams<entryPointVersion>
+): Promise<PermissionPlugin> {
     const chainId = await getChainId(client)
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
-    if (entryPointVersion !== "v0.7") {
+    if (entryPoint.version !== "0.7") {
         throw new Error("Only EntryPoint 0.7 is supported")
     }
 
@@ -101,8 +99,12 @@ export async function toPermissionValidator<
 
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
-                userOperation: { ...userOperation, signature: "0x" },
-                entryPoint: entryPointAddress,
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId
             })
 
@@ -119,7 +121,7 @@ export async function toPermissionValidator<
             return 0n
         },
 
-        async getDummySignature(_userOperation) {
+        async getStubSignature(_userOperation) {
             return concat(["0xff", signer.getDummySignature()])
         },
         getPluginSerializationParams: (): PermissionData => {
