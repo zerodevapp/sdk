@@ -2,22 +2,12 @@ import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import {
-    type UserOperation,
-    getEntryPointVersion,
-    getUserOperationHash
-} from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
-import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
     type LocalAccount,
-    type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
-    encodeFunctionData,
     zeroAddress
 } from "viem"
 import { toAccount } from "viem/accounts"
@@ -28,9 +18,19 @@ import {
     MULTI_CHAIN_WEIGHTED_VALIDATOR_ADDRESS_V07,
     SIGNER_TYPE,
     decodeSignatures,
-    encodeSignatures
+    encodeSignatures,
+    sortByPublicKey
 } from "./index.js"
 import { encodeWebAuthnPubKey } from "./signers/toWebAuthnSigner.js"
+import {
+    type EntryPointVersion,
+    getUserOperationHash,
+    type UserOperation
+} from "viem/account-abstraction"
+import {
+    SignTransactionNotSupportedBySmartAccountError,
+    validateKernelVersionWithEntryPoint
+} from "@zerodev/sdk"
 
 export type WeightedSigner = {
     account: LocalAccount
@@ -48,49 +48,42 @@ export interface WeightedValidatorConfig {
     delay?: number // in seconds
 }
 
-// Sort addresses in descending order
-const sortByPublicKey = (
-    a: { publicKey: Hex } | { getPublicKey: () => Hex },
-    b: { publicKey: Hex } | { getPublicKey: () => Hex }
-) => {
-    if ("publicKey" in a && "publicKey" in b)
-        return a.publicKey.toLowerCase() < b.publicKey.toLowerCase() ? 1 : -1
-    else if ("getPublicKey" in a && "getPublicKey" in b)
-        return a.getPublicKey().toLowerCase() < b.getPublicKey().toLowerCase()
-            ? 1
-            : -1
-    else return 0
-}
-
-export const getValidatorAddress = (entryPointAddress: EntryPoint): Address => {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-    if (entryPointVersion === "v0.6")
+export const getValidatorAddress = <
+    entryPointVersion extends EntryPointVersion
+>(
+    entryPoint: { address: Address; version: entryPointVersion },
+    kernelVersion: GetKernelVersion<entryPointVersion>,
+    validatorAddress?: Address
+): Address => {
+    validateKernelVersionWithEntryPoint(entryPoint.version, kernelVersion)
+    if (entryPoint.version === "0.6")
         throw new Error("EntryPoint v0.6 not supported")
-    return MULTI_CHAIN_WEIGHTED_VALIDATOR_ADDRESS_V07
+    return validatorAddress ?? MULTI_CHAIN_WEIGHTED_VALIDATOR_ADDRESS_V07
 }
 
 export async function createMultiChainWeightedValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         config,
-        entryPoint: entryPointAddress,
+        entryPoint,
         signer,
-        validatorAddress,
-        kernelVersion: _
+        validatorAddress: _validatorAddress,
+        kernelVersion
     }: {
         config?: WeightedValidatorConfig
         signer: WeightedSigner
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: { address: Address; version: entryPointVersion }
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
-): Promise<KernelValidator<entryPoint, "MultiChainWeightedValidator">> {
-    validatorAddress =
-        validatorAddress ?? getValidatorAddress(entryPointAddress)
+): Promise<KernelValidator<"MultiChainWeightedValidator">> {
+    const validatorAddress = getValidatorAddress(
+        entryPoint,
+        kernelVersion,
+        _validatorAddress
+    )
     if (!validatorAddress) {
         throw new Error("Validator address not provided")
     }
@@ -144,7 +137,7 @@ export async function createMultiChainWeightedValidator<
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -167,8 +160,7 @@ export async function createMultiChainWeightedValidator<
         supportedKernelVersions: ">=0.3.0",
         address: validatorAddress,
         source: "MultiChainWeightedValidator",
-        getIdentifier: () =>
-            validatorAddress ?? getValidatorAddress(entryPointAddress),
+        getIdentifier: () => validatorAddress,
         async getEnableData() {
             if (!config) return "0x"
             return concatHex([
@@ -197,9 +189,7 @@ export async function createMultiChainWeightedValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
+        async signUserOperation(userOperation) {
             let signatures: readonly Hex[] = []
             let merkleData: Hex = "0x"
             if (userOperation.signature !== "0x") {
@@ -215,8 +205,9 @@ export async function createMultiChainWeightedValidator<
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
 
@@ -227,9 +218,7 @@ export async function createMultiChainWeightedValidator<
             return encodeSignatures(merkleData, [...signatures, lastSignature])
         },
 
-        async getDummySignature(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
+        async getStubSignature(userOperation) {
             let signatures: readonly Hex[] = []
             let merkleData: Hex = "0x"
             if (userOperation.signature !== "0x") {
@@ -258,9 +247,7 @@ export async function createMultiChainWeightedValidator<
                         "readContract"
                     )({
                         abi: MultiChainWeightedValidatorAbi,
-                        address:
-                            validatorAddress ??
-                            getValidatorAddress(entryPointAddress),
+                        address: validatorAddress,
                         functionName: "multiChainWeightedStorage",
                         args: [kernelAccountAddress]
                     })
@@ -272,9 +259,7 @@ export async function createMultiChainWeightedValidator<
                             "readContract"
                         )({
                             abi: MultiChainWeightedValidatorAbi,
-                            address:
-                                validatorAddress ??
-                                getValidatorAddress(entryPointAddress),
+                            address: validatorAddress,
                             functionName: "guardian",
                             args: [BigInt(index), kernelAccountAddress]
                         })
@@ -305,123 +290,4 @@ export async function createMultiChainWeightedValidator<
             }
         }
     }
-}
-
-// TODO: move to client actions?
-// -- approveUpdateConfigUserOp
-// -- sendUpdateConfigUserOp
-export function getUpdateConfigCall<entryPoint extends EntryPoint>(
-    entryPointAddress: entryPoint,
-    config: WeightedValidatorConfig
-): {
-    to: Address
-    value: bigint
-    data: Hex
-} {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
-
-    // Check if sum of weights is equal or greater than threshold
-    let totalWeight = 0
-    for (const signer of config.signers) {
-        totalWeight += signer.weight
-    }
-    if (totalWeight < config.threshold) {
-        throw new Error(
-            `Sum of weights (${totalWeight}) is less than threshold (${config.threshold})`
-        )
-    }
-
-    // sort signers by address in descending order
-    const configSigners = config
-        ? [...config.signers]
-              .map((signer) =>
-                  typeof signer.publicKey === "object"
-                      ? {
-                            ...signer,
-                            publicKey: encodeWebAuthnPubKey(
-                                signer.publicKey
-                            ) as Hex
-                        }
-                      : { ...signer, publicKey: signer.publicKey as Hex }
-              )
-              .sort(sortByPublicKey)
-        : []
-
-    return {
-        to: validatorAddress,
-        value: 0n,
-        data: encodeFunctionData({
-            abi: MultiChainWeightedValidatorAbi,
-            functionName: "renew",
-            args: [
-                concatHex([
-                    toHex(config.threshold, { size: 3 }),
-                    toHex(config.delay || 0, { size: 6 }),
-                    encodeAbiParameters(
-                        [{ name: "guardiansData", type: "bytes[]" }],
-                        [
-                            configSigners.map((cfg) =>
-                                concatHex([
-                                    cfg.publicKey.length === 42
-                                        ? SIGNER_TYPE.ECDSA
-                                        : SIGNER_TYPE.PASSKEY,
-                                    toHex(cfg.weight, { size: 3 }),
-                                    cfg.publicKey
-                                ])
-                            )
-                        ]
-                    )
-                ])
-            ]
-        })
-    }
-}
-
-export async function getCurrentSigners<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<TTransport, TChain, undefined>,
-    {
-        entryPoint: entryPointAddress,
-        multiChainWeightedAccountAddress
-    }: {
-        entryPoint: entryPoint
-        multiChainWeightedAccountAddress: Address
-    }
-): Promise<Array<{ encodedPublicKey: Hex; weight: number }>> {
-    const validatorAddress = getValidatorAddress(entryPointAddress)
-
-    const multiChainWeightedStorage = await getAction(
-        client,
-        readContract,
-        "readContract"
-    )({
-        abi: MultiChainWeightedValidatorAbi,
-        address: validatorAddress,
-        functionName: "multiChainWeightedStorage",
-        args: [multiChainWeightedAccountAddress]
-    })
-
-    const guardiansLength = multiChainWeightedStorage[3]
-
-    const signers: Array<{ encodedPublicKey: Hex; weight: number }> = []
-    for (let i = 0; i < guardiansLength; i++) {
-        const guardian = await getAction(
-            client,
-            readContract,
-            "readContract"
-        )({
-            abi: MultiChainWeightedValidatorAbi,
-            address: validatorAddress,
-            functionName: "guardian",
-            args: [BigInt(i), multiChainWeightedAccountAddress]
-        })
-        signers.push({
-            encodedPublicKey: guardian[2],
-            weight: guardian[1]
-        })
-    }
-    return signers
 }

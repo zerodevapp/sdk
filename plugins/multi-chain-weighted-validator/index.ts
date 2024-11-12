@@ -13,6 +13,11 @@ import {
     type SendUserOperationWithApprovalsParameters,
     sendUserOperationWithApprovals
 } from "./actions/sendUserOperationWithApprovals.js"
+import { getCurrentSigners } from "./actions/getCurrentSigners.js"
+import {
+    type UpdateSignersDataParameters,
+    updateSignersData
+} from "./actions/updateSignersData.js"
 import {
     type MultiChainWeightedKernelAccountClientActions,
     multiChainWeightedKernelAccountClientActions
@@ -33,15 +38,11 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createMultiChainWeightedValidator,
-    getCurrentSigners,
-    getUpdateConfigCall,
     getValidatorAddress
 } from "./toMultiChainWeightedValidatorPlugin.js"
 
 export {
     createMultiChainWeightedValidator,
-    getUpdateConfigCall,
-    getCurrentSigners,
     type WeightedValidatorConfig,
     type WeightedSigner,
     getValidatorAddress,
@@ -61,7 +62,10 @@ export {
     type MultiChainWeightedKernelAccountClient,
     createMultiChainWeightedKernelAccountClient,
     type MultiChainWeightedKernelAccountClientActions,
-    multiChainWeightedKernelAccountClientActions
+    multiChainWeightedKernelAccountClientActions,
+    type UpdateSignersDataParameters,
+    getCurrentSigners,
+    updateSignersData
 }
 export * from "./constants.js"
 export * from "./utils.js"
