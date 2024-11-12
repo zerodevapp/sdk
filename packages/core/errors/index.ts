@@ -15,3 +15,11 @@ export class AccountNotFoundError extends BaseError {
         )
     }
 }
+
+export class SignTransactionNotSupportedBySmartAccountError extends BaseError {
+    constructor() {
+        super("Smart account signer doesn't need to sign transactions", {
+            name: "SignTransactionNotSupportedError"
+        })
+    }
+}

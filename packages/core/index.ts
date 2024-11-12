@@ -66,3 +66,4 @@ export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/get
 export { isProviderSet, setPimlicoAsProvider } from "./clients/utils.js"
 export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"
 export { isPluginInitialized } from "./accounts/kernel/utils/plugins/ep0_7/isPluginInitialized.js"
+export * from "./errors/index.js"
