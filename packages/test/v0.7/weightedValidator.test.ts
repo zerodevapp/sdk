@@ -116,13 +116,9 @@ describe("weightedValidator", () => {
 
                 const client = createWeightedKernelAccountClient({
                     account,
-                    entryPoint,
                     chain,
                     bundlerTransport: http(bundlerUrl),
-                    middleware: {
-                        sponsorUserOperation:
-                            paymasterClient.sponsorUserOperation
-                    }
+                    paymaster: paymasterClient
                 })
                 return client
             }
@@ -131,33 +127,33 @@ describe("weightedValidator", () => {
             const client2 = await createWeightedAccountClient(ecdsaSigner2)
 
             const signature1 = await client1.approveUserOperation({
-                userOperation: {
-                    callData: await client1.account.encodeCallData({
+                callData: await client1.account.encodeCalls([
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                }
+                    }
+                ])
             })
 
             const signature2 = await client2.approveUserOperation({
-                userOperation: {
-                    callData: await client2.account.encodeCallData({
+                calls: [
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                }
+                    }
+                ]
             })
 
             const userOpHash = await client2.sendUserOperationWithSignatures({
-                userOperation: {
-                    callData: await client1.account.encodeCallData({
+                callData: await client1.account.encodeCalls([
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                },
+                    }
+                ]),
                 signatures: [signature1, signature2]
             })
 

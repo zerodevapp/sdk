@@ -1,23 +1,13 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
-    KERNEL_ADDRESSES,
     type KernelAccountClient,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
+    type ZeroDevPaymasterClient,
     getCustomNonceKeyFromString
 } from "@zerodev/sdk"
 import { signerToSessionKeyValidator } from "@zerodev/session-key"
 import dotenv from "dotenv"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V06,
-    bundlerActions
-} from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    SmartAccount
-} from "permissionless/accounts"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -33,12 +23,13 @@ import {
     findUserOperationEvent,
     getEntryPoint,
     getKernelAccountClient,
-    getKernelBundlerClient,
     getPublicClient,
     getSignersToWeightedEcdsaKernelAccount,
     getZeroDevPaymasterClient,
+    kernelVersion,
     waitForNonceUpdate
-} from "./utils.js"
+} from "./utils_0_6"
+import type { SmartAccount } from "viem/account-abstraction"
 
 dotenv.config()
 
@@ -75,31 +66,22 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Weighted ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+    let account: SmartAccount<KernelSmartAccountImplementation<"0.6">>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let kernelClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        SmartAccount<KernelSmartAccountImplementation<"0.6">>
     >
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
         account = await getSignersToWeightedEcdsaKernelAccount()
         publicClient = await getPublicClient()
-        bundlerClient = getKernelBundlerClient()
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         kernelClient = await getKernelAccountClient({
             account,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const zerodevPaymaster = getZeroDevPaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
     })
 
@@ -107,16 +89,6 @@ describe("Weighted ECDSA kernel Account", () => {
         expect(account.address).toBeString()
         expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
-    })
-
-    test("Account should throw when trying to sign a transaction", async () => {
-        await expect(async () => {
-            await account.signTransaction({
-                to: zeroAddress,
-                value: 0n,
-                data: "0x"
-            })
-        }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
     // test(
@@ -150,9 +122,11 @@ describe("Weighted ECDSA kernel Account", () => {
     test(
         "Client deploy contract",
         async () => {
-            const response = await kernelClient.deployContract({
-                abi: GreeterAbi,
-                bytecode: GreeterBytecode
+            const response = await kernelClient.sendTransaction({
+                callData: await kernelClient.account.encodeDeployCallData({
+                    abi: GreeterAbi,
+                    bytecode: GreeterBytecode
+                })
             })
 
             expect(response).toBeString()
@@ -173,8 +147,8 @@ describe("Weighted ECDSA kernel Account", () => {
     test(
         "Smart account client send multiple transactions",
         async () => {
-            const response = await kernelClient.sendTransactions({
-                transactions: [
+            const response = await kernelClient.sendTransaction({
+                calls: [
                     {
                         to: zeroAddress,
                         value: 0n,
@@ -226,8 +200,8 @@ describe("Weighted ECDSA kernel Account", () => {
         "Client signs and then sends UserOp with paymaster",
         async () => {
             const userOp = await kernelClient.signUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
+                callData: await kernelClient.account.encodeCalls([
+                    {
                         to: process.env.GREETER_ADDRESS as Address,
                         value: 0n,
                         data: encodeFunctionData({
@@ -235,19 +209,16 @@ describe("Weighted ECDSA kernel Account", () => {
                             functionName: "setGreeting",
                             args: ["hello world"]
                         })
-                    })
-                }
+                    }
+                ])
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const bundlerClient = kernelClient.extend(
-                bundlerActions(getEntryPoint())
-            )
-            const userOpHash = await bundlerClient.sendUserOperation({
-                userOperation: userOp
+            const userOpHash = await kernelClient.sendUserOperation({
+                ...userOp
             })
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
 
@@ -260,18 +231,20 @@ describe("Weighted ECDSA kernel Account", () => {
         "Client send UserOp with delegatecall",
         async () => {
             const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
-                        to: zeroAddress,
-                        value: 0n,
-                        data: "0x",
-                        callType: "delegatecall"
-                    })
-                }
+                callData: await kernelClient.account.encodeCalls(
+                    [
+                        {
+                            to: zeroAddress,
+                            value: 0n,
+                            data: "0x"
+                        }
+                    ],
+                    "delegatecall"
+                )
             })
 
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
 
@@ -285,25 +258,25 @@ describe("Weighted ECDSA kernel Account", () => {
         async () => {
             const customNonceKey = getCustomNonceKeyFromString(
                 "Hello, World!",
-                ENTRYPOINT_ADDRESS_V06
+                "0.6"
             )
 
-            const nonce = await account.getNonce(customNonceKey)
+            const nonce = await account.getNonce({ key: customNonceKey })
 
             const userOpHash = await kernelClient.sendUserOperation({
-                userOperation: {
-                    callData: await kernelClient.account.encodeCallData({
+                callData: await kernelClient.account.encodeCalls([
+                    {
                         to: zeroAddress,
                         value: 0n,
                         data: "0x"
-                    }),
-                    nonce
-                }
+                    }
+                ]),
+                nonce
             })
             console.log("userOpHash", userOpHash)
 
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
         },
@@ -345,7 +318,8 @@ describe("Weighted ECDSA kernel Account", () => {
                     signer: sessionKeySigner,
                     validatorData: {
                         permissions: []
-                    }
+                    },
+                    kernelVersion
                 }
             )
 
@@ -353,33 +327,22 @@ describe("Weighted ECDSA kernel Account", () => {
                 await getSignersToWeightedEcdsaKernelAccount(sessionKeyPlugin)
             const sessionKeyClient = await getKernelAccountClient({
                 account: sessionKeyAccount,
-                middleware: {
-                    sponsorUserOperation: async ({
-                        userOperation,
-                        entryPoint
-                    }) => {
-                        const zerodevPaymaster = getZeroDevPaymasterClient()
-                        return zerodevPaymaster.sponsorUserOperation({
-                            userOperation,
-                            entryPoint
-                        })
-                    }
-                }
+                paymaster: zeroDevPaymaster
             })
 
             const userOpHash = await sessionKeyClient.sendUserOperation({
-                userOperation: {
-                    callData: await sessionKeyAccount.encodeCallData({
+                callData: await sessionKeyAccount.encodeCalls([
+                    {
                         to: zeroAddress,
                         value: 0n,
                         data: "0x"
-                    })
-                }
+                    }
+                ])
             })
 
             expect(userOpHash).toHaveLength(66)
 
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
         },

@@ -37,8 +37,7 @@
     "peerDependencies": {
         "viem": "^2.21.40",
         "@zerodev/sdk": "^5.2.15",
-        "@zerodev/webauthn-key": "^5.3.0",
-        "permissionless": "^0.2.13"
+        "@zerodev/webauthn-key": "^5.3.0"
     },
     "dependencies": {
         "@simplewebauthn/browser": "^9.0.1",

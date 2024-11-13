@@ -1,85 +1,80 @@
-import {
-    AccountOrClientNotFoundError,
-    type UserOperation,
-    estimateUserOperationGas,
-    parseAccount
-} from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type {
-    PrepareUserOperationRequestParameters,
-    PrepareUserOperationRequestReturnType,
-    SponsorUserOperationReturnType
-} from "permissionless/actions/smartAccount"
-import type {
-    ENTRYPOINT_ADDRESS_V07_TYPE,
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types"
-import type { StateOverrides } from "permissionless/types/bundler"
 import type { Chain, Client, Transport } from "viem"
 import { estimateFeesPerGas, getChainId } from "viem/actions"
 import type { Prettify } from "viem/chains"
-import { getAction } from "viem/utils"
+import { getAction, parseAccount } from "viem/utils"
 import { ecdsaGetMultiUserOpDummySignature } from "../ecdsa/ecdsaGetMultiUserOpDummySignature.js"
 import { webauthnGetMultiUserOpDummySignature } from "../webauthn/webauthnGetMultiUserOpDummySignature.js"
 import { ValidatorType } from "./type.js"
+import type {
+    PrepareUserOperationParameters,
+    PrepareUserOperationRequest,
+    PrepareUserOperationReturnType,
+    SmartAccount,
+    UserOperation,
+    UserOperationCall
+} from "viem/account-abstraction"
+import { AccountNotFoundError } from "@zerodev/sdk"
 
 export async function prepareMultiUserOpRequest<
-    entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V07_TYPE,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    const calls extends readonly unknown[],
+    const request extends PrepareUserOperationRequest<
+        account,
+        accountOverride,
+        calls
+    >,
+    accountOverride extends SmartAccount | undefined = undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<
-        PrepareUserOperationRequestParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >
+    client: Client<Transport, Chain | undefined, account>,
+    args_: PrepareUserOperationParameters<
+        account,
+        accountOverride,
+        calls,
+        request
     >,
     validatorType: ValidatorType,
-    numOfUserOps: number,
-    stateOverrides?: StateOverrides
-): Promise<Prettify<PrepareUserOperationRequestReturnType<entryPoint>>> {
+    numOfUserOps: number
+): Promise<
+    PrepareUserOperationReturnType<account, accountOverride, calls, request>
+> {
+    const args = args_ as PrepareUserOperationParameters
     const {
         account: account_ = client.account,
-        userOperation: partialUserOperation,
-        middleware
+        stateOverride,
+        ...partialUserOperation
     } = args
 
-    if (!account_) throw new AccountOrClientNotFoundError()
+    if (!account_) throw new AccountNotFoundError()
 
-    const account = parseAccount(account_) as SmartAccount<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
-        string,
-        TTransport,
-        TChain
-    >
+    const account = parseAccount(account_) as SmartAccount
 
-    const [sender, nonce, factory, factoryData, callData, gasEstimation] =
-        await Promise.all([
+    const [sender, nonce, factory, callData, gasEstimation] = await Promise.all(
+        [
             partialUserOperation.sender || account.address,
             partialUserOperation.nonce || account.getNonce(),
-            partialUserOperation.factory || account.getFactory(),
-            partialUserOperation.factoryData || account.getFactoryData(),
-            partialUserOperation.callData,
+            partialUserOperation.factory && partialUserOperation.factoryData
+                ? {
+                      factory: partialUserOperation.factory,
+                      factoryData: partialUserOperation.factoryData
+                  }
+                : account.getFactoryArgs(),
+            partialUserOperation.calls
+                ? account.encodeCalls(
+                      partialUserOperation.calls as UserOperationCall[]
+                  )
+                : partialUserOperation.callData,
             !partialUserOperation.maxFeePerGas ||
             !partialUserOperation.maxPriorityFeePerGas
                 ? estimateFeesPerGas(account.client)
                 : undefined
-        ])
+        ]
+    )
 
-    const userOperation: UserOperation<"v0.7"> = {
+    const userOperation: UserOperation<"0.7"> = {
         sender,
         nonce,
-        factory: factory,
-        factoryData: factoryData,
+        factory: factory.factory,
+        factoryData: factory.factoryData,
         callData,
         callGasLimit: partialUserOperation.callGasLimit || BigInt(0),
         verificationGasLimit:
@@ -97,15 +92,15 @@ export async function prepareMultiUserOpRequest<
         signature: partialUserOperation.signature || "0x"
     }
 
-    if (typeof middleware === "function") {
-        return middleware({
-            userOperation,
-            entryPoint: account.entryPoint
-        } as {
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-            entryPoint: entryPoint
-        }) as Promise<PrepareUserOperationRequestReturnType<entryPoint>>
-    }
+    // if (typeof middleware === "function") {
+    //     return middleware({
+    //         userOperation,
+    //         entryPoint: account.entryPoint
+    //     } as {
+    //         userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
+    //         entryPoint: entryPoint
+    //     }) as Promise<PrepareUserOperationRequestReturnType<entryPoint>>
+    // }
 
     if (middleware && typeof middleware !== "function" && middleware.gasPrice) {
         const gasPrice = await middleware.gasPrice()
