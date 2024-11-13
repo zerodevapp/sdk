@@ -12,7 +12,8 @@ export type {
     KERNEL_V2_VERSION_TYPE,
     KERNEL_V3_VERSION_TYPE,
     KERNEL_VERSION_TYPE,
-    GetKernelVersion
+    GetKernelVersion,
+    GetEntryPointAbi
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"

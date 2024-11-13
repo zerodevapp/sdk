@@ -45,3 +45,5 @@ export {
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType
 } from "./paymaster/estimateGasInERC20.js"
+
+export * from "./public/index.js"

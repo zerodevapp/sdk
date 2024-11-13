@@ -7,3 +7,4 @@ export {
     type InvalidEntryPointError,
     getSenderAddress
 } from "./getSenderAddress.js"
+export { isSmartAccountDeployed } from "./isSmartAccountDeployed.js"

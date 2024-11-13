@@ -4,26 +4,12 @@ import {
     createInvoiceCall,
     withdrawCall
 } from "@zerodev/cab"
-import { KernelV3ExecuteAbi } from "@zerodev/sdk"
-import {
-    AccountOrClientNotFoundError,
-    deepHexlify,
-    parseAccount
-} from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetAccountParameter,
-    GetEntryPointVersion,
-    Prettify,
-    UserOperation
-} from "permissionless/types"
+import { AccountNotFoundError, KernelV3ExecuteAbi } from "@zerodev/sdk"
 import {
     http,
     type Address,
     type Chain,
     type Client,
-    type GetChainParameter,
     type Hash,
     type Hex,
     type Transport,
@@ -37,7 +23,6 @@ import {
     toHex
 } from "viem"
 import { getChainId } from "viem/actions"
-import type { SessionAccount } from "../account/createSessionAccount.js"
 import {
     CAB_PAYMASTER_SERVER_URL,
     DMVersionToAddressMap
@@ -53,45 +38,29 @@ import {
     getEnforcerAddress
 } from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
 import { toDelegationHash } from "../utils/index.js"
+import type {
+    GetSmartAccountParameter,
+    SmartAccount
+} from "viem/account-abstraction"
+import { parseAccount } from "viem/accounts"
+import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 
 export type EncodeCallDataWithCABParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
-> = Prettify<
-    GetAccountParameter<entryPoint, TTransport, TChain, TAccount> &
-        GetChainParameter<TChain, TChainOverride> & {
-            calls: { to: Address; value: bigint; data: Hex }[]
-            repayTokens: RepayTokens
-            enforcerVersion?: ENFORCER_VERSION
-        }
->
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = SmartAccount | undefined
+> = GetSmartAccountParameter<account, accountOverride> & {
+    calls: { to: Address; value: bigint; data: Hex }[]
+    repayTokens: RepayTokens
+    enforcerVersion?: ENFORCER_VERSION
+}
 
 export async function encodeCallDataWithCAB<
-    TChain extends Chain | undefined,
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChainOverride extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: EncodeCallDataWithCABParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount,
-        TChainOverride
-    >
+    client: Client<Transport, chain, account>,
+    args: EncodeCallDataWithCABParameters<account, accountOverride>
 ): Promise<Hash> {
     const cabEnforcerAddress = getEnforcerAddress(
         args.enforcerVersion ?? "v0_2"
@@ -99,17 +68,13 @@ export async function encodeCallDataWithCAB<
     const { account: account_ = client.account, calls, repayTokens } = args
 
     if (!account_) {
-        throw new AccountOrClientNotFoundError({
-            docsPath: "/docs/actions/wallet/sendTransaction"
-        })
+        throw new AccountNotFoundError()
     }
 
-    const account = parseAccount(account_) as SessionAccount<entryPoint>
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<SessionAccountImplementation>
     const chainId = client.chain ? client.chain.id : await getChainId(client)
-
-    if (account.type !== "local") {
-        throw new Error("RPC account type not supported")
-    }
 
     const cabClient = createPublicClient({
         transport: http(CAB_PAYMASTER_SERVER_URL)
@@ -183,8 +148,8 @@ export async function encodeCallDataWithCAB<
                 preVerificationGas: 0n,
                 paymasterPostOpGasLimit: 0n,
                 paymasterVerificationGasLimit: 0n
-            }) as Partial<UserOperation<GetEntryPointVersion<entryPoint>>>,
-            account.entryPoint,
+            }),
+            account.entryPoint.address,
             // @ts-expect-error
             chainId,
             // @ts-expect-error
@@ -284,8 +249,8 @@ export async function encodeCallDataWithCAB<
                     preVerificationGas: 0n,
                     paymasterPostOpGasLimit: 0n,
                     paymasterVerificationGasLimit: 0n
-                }) as Partial<UserOperation<GetEntryPointVersion<entryPoint>>>,
-                account.entryPoint,
+                }),
+                account.entryPoint.address,
                 // @ts-expect-error
                 chainId,
                 // @ts-expect-error
@@ -397,7 +362,7 @@ export async function encodeCallDataWithCAB<
             args: cabEnforcerArgs
         }
     }
-    return await account.encodeCallData([
+    return await account.encodeCalls([
         ...withdrawCall({
             accountAddress: delegatorAccountAddress,
             paymaster: cabPaymasterTokensResponse.paymaster,

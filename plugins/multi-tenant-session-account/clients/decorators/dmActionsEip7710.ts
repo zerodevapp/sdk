@@ -1,5 +1,3 @@
-import type { SmartAccount } from "permissionless/accounts"
-import type { EntryPoint } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
 import {
     type EncodeCallDataWithCABParameters,
@@ -14,106 +12,65 @@ import {
     signDelegation
 } from "../../actions/index.js"
 import type { ENFORCER_VERSION } from "../../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
+import type { SmartAccount } from "viem/account-abstraction"
 
 export type DMActionsEip7710<
-    TEntryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
     TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<TEntryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<TEntryPoint, string, TTransport, TChain>
-        | undefined
+    TSmartAccount extends SmartAccount | undefined = SmartAccount | undefined
 > = {
-    signDelegation: (
-        args: SignDelegationParameters<
-            TEntryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >
+    signDelegation: <
+        accountOverride extends SmartAccount | undefined =
+            | SmartAccount
+            | undefined
+    >(
+        args: Parameters<
+            typeof signDelegation<TSmartAccount, TChain, accountOverride>
+        >[1]
     ) => Promise<Hash>
-    encodeCallDataWithCAB: <TChainOverride extends Chain | undefined>(
-        args: EncodeCallDataWithCABParameters<
-            TEntryPoint,
-            TTransport,
-            TChain,
-            TAccount,
-            TChainOverride
-        >
+    encodeCallDataWithCAB: (
+        args: Parameters<typeof encodeCallDataWithCAB<TSmartAccount, TChain>>[1]
     ) => Promise<Hash>
     installDMAndDelegate: (
-        args: SendInstallDMAndDelegateUserOperationParameters<
-            TEntryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >
+        args: SendInstallDMAndDelegateUserOperationParameters
     ) => Promise<Hash>
     installDMAsExecutor: (
-        args: SendInstallDMAsExecutorUserOperationParameters<
-            TEntryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >
+        args: SendInstallDMAsExecutorUserOperationParameters
     ) => Promise<Hash>
-    delegate: (
-        args: SendDelegateUserOperationParameters<
-            TEntryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >
-    ) => Promise<Hash>
+    delegate: (args: SendDelegateUserOperationParameters) => Promise<Hash>
 }
 
-const dmActionsEip7710 =
-    <
-        TEntryPoint extends EntryPoint,
-        TTransport extends Transport,
+function dmActionsEip7710({
+    enforcerVersion
+}: {
+    enforcerVersion: ENFORCER_VERSION
+}) {
+    return <
         TChain extends Chain | undefined = Chain | undefined,
-        TAccount extends
-            | SmartAccount<TEntryPoint, string, TTransport, TChain>
-            | undefined =
-            | SmartAccount<TEntryPoint, string, TTransport, TChain>
+        TSmartAccount extends SmartAccount | undefined =
+            | SmartAccount
+            | undefined,
+        accountOverride extends SmartAccount | undefined =
+            | SmartAccount
             | undefined
-    >({
-        enforcerVersion
-    }: {
-        enforcerVersion: ENFORCER_VERSION
-    }) =>
-    (
-        client: Client<TTransport, TChain, TAccount>
-    ): DMActionsEip7710<TEntryPoint, TTransport, TChain, TAccount> => ({
+    >(
+        client: Client<Transport, TChain, TSmartAccount>
+    ): DMActionsEip7710<TChain, TSmartAccount> => ({
         signDelegation: (args) =>
             signDelegation(
-                client as Client<TTransport, TChain, TAccount>,
+                client as Client<Transport, TChain, TSmartAccount>,
                 {
                     ...args
-                } as SignDelegationParameters<
-                    TEntryPoint,
-                    TTransport,
-                    TChain,
-                    TAccount
-                >
+                } as SignDelegationParameters<TSmartAccount, accountOverride>
             ),
         encodeCallDataWithCAB: (args) =>
-            encodeCallDataWithCAB(
-                client as Client<TTransport, TChain, TAccount>,
-                {
-                    ...args,
-                    enforcerVersion: enforcerVersion
-                } as EncodeCallDataWithCABParameters<
-                    TEntryPoint,
-                    TTransport,
-                    TChain,
-                    TAccount
-                >
-            ),
+            encodeCallDataWithCAB(client, {
+                ...args,
+                enforcerVersion: enforcerVersion
+            } as EncodeCallDataWithCABParameters<TSmartAccount, accountOverride>),
         installDMAndDelegate: (args) => installDMAndDelegate(client, args),
-        installDMAsExecutor: (args) => installDMAsExecutor(client, { ...args }),
+        installDMAsExecutor: (args) => installDMAsExecutor(client, args),
         delegate: (args) => delegate(client, args)
     })
+}
 
 export { dmActionsEip7710 }

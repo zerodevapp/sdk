@@ -1,27 +1,11 @@
 import { fixSignedData } from "@zerodev/sdk"
 import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
 import {
-    type UserOperation,
-    getAccountNonce,
-    getUserOperationHash,
-    isSmartAccountDeployed
-} from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccount,
-    type SmartAccountSigner,
-    toSmartAccount
-} from "permissionless/accounts"
-import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
-import {
     type Address,
-    type Chain,
+    type Assign,
     type Client,
     type Hex,
     type LocalAccount,
-    type PublicActions,
-    type PublicRpcSchema,
-    type Transport,
     type TypedData,
     type TypedDataDefinition,
     concatHex,
@@ -33,7 +17,7 @@ import {
     toHex
 } from "viem"
 import { toAccount } from "viem/accounts"
-import { getChainId, signMessage, signTypedData } from "viem/actions"
+import { getChainId, signMessage } from "viem/actions"
 import { MultiTenantSessionAccountAbi } from "../abi/MultiTenantSessionAccountAbi.js"
 import {
     DMVersionToAddressMap,
@@ -44,30 +28,51 @@ import {
     getDelegationTupleType,
     toDelegationHash
 } from "../utils/delegationManager.js"
+import {
+    entryPoint06Abi,
+    entryPoint07Abi,
+    entryPoint07Address,
+    type EntryPointVersion,
+    getUserOperationHash,
+    type SmartAccount,
+    type SmartAccountImplementation,
+    toSmartAccount,
+    type UserOperation
+} from "viem/account-abstraction"
+import type { CallType, GetEntryPointAbi } from "@zerodev/sdk/types"
+import { getAccountNonce, isSmartAccountDeployed } from "@zerodev/sdk/actions"
 
-export type SessionAccount<
-    entryPoint extends EntryPoint,
-    transport extends Transport = Transport,
-    chain extends Chain | undefined = Chain | undefined
-> = SmartAccount<entryPoint, "multiTenantSessionAccount", transport, chain> & {
-    delegations: Delegation[]
-    encodeCallData: (
-        args: SessionAccountEncodeCallDataArgs,
-        _delegations?: Delegation[]
-    ) => Promise<Hex>
-}
+export type SessionAccountImplementation<
+    entryPointVersion extends EntryPointVersion = "0.7"
+> = Assign<
+    SmartAccountImplementation<
+        GetEntryPointAbi<entryPointVersion>,
+        entryPointVersion
+    >,
+    {
+        sign: NonNullable<SmartAccountImplementation["sign"]>
+        delegations: Delegation[]
+        encodeCalls: (
+            calls: Parameters<SmartAccountImplementation["encodeCalls"]>[0],
+            callType?: CallType | undefined,
+            _delegations?: Delegation[]
+        ) => Promise<Hex>
+    }
+>
 
 export type CreateSessionAccountParameters<
-    entryPoint extends EntryPoint,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion = "0.7"
 > = {
-    entryPoint: entryPoint
-    sessionKeySigner: SmartAccountSigner<TSource, TAddress>
+    entryPoint: { address: Address; version: entryPointVersion }
+    sessionKeySigner: LocalAccount
     delegations: Delegation[]
     multiTenantSessionAccountAddress?: Address
     delegatorInitCode?: Hex
 }
+
+export type CreateSessionAccountReturnType<
+    entryPointVersion extends EntryPointVersion = "0.7"
+> = SmartAccount<SessionAccountImplementation<entryPointVersion>>
 
 export type SessionAccountEncodeCallDataArgs =
     | {
@@ -82,32 +87,24 @@ export type SessionAccountEncodeCallDataArgs =
       }[]
 
 export async function createSessionAccount<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<
-        TTransport,
-        TChain,
-        undefined,
-        PublicRpcSchema,
-        PublicActions<TTransport, TChain>
-    >,
+    client: Client,
     {
-        entryPoint: entryPointAddress,
+        entryPoint,
         delegations,
         sessionKeySigner,
         multiTenantSessionAccountAddress:
             accountAddress = MULTI_TENANT_SESSION_ACCOUNT_ADDRESS,
         delegatorInitCode = "0x"
-    }: CreateSessionAccountParameters<entryPoint, TSource, TAddress>
-): Promise<SessionAccount<entryPoint, TTransport, TChain>> {
+    }: CreateSessionAccountParameters<entryPointVersion>
+): Promise<CreateSessionAccountReturnType<entryPointVersion>> {
     const viemSigner: LocalAccount = {
         ...sessionKeySigner,
         signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         }
     } as LocalAccount
 
@@ -120,7 +117,9 @@ export async function createSessionAccount<
             return signMessage(client, { account: viemSigner, message })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -128,18 +127,9 @@ export async function createSessionAccount<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account: viemSigner,
-                    ...typedData
-                }
-            )
+            return viemSigner.signTypedData(typedData)
         }
     })
-    const getInitCode = async () => {
-        return "0x" as Hex
-    }
     const getDelegations = async () => {
         delegations.unshift({
             delegate: accountAddress,
@@ -220,149 +210,158 @@ export async function createSessionAccount<
         return delegatorInitCode
     }
 
-    return {
+    const _entryPoint = {
+        address: entryPoint?.address ?? entryPoint07Address,
+        abi: ((entryPoint?.version ?? "0.7") === "0.6"
+            ? entryPoint06Abi
+            : entryPoint07Abi) as GetEntryPointAbi<entryPointVersion>,
+        version: entryPoint?.version ?? "0.7"
+    } as const
+
+    return toSmartAccount<SessionAccountImplementation<entryPointVersion>>({
+        client,
+        entryPoint: _entryPoint,
         delegations,
-        ...toSmartAccount({
-            client,
-            source: "multiTenantSessionAccount",
-            entryPoint: entryPointAddress,
-            address: accountAddress,
-            encodeCallData: async (
-                tx: SessionAccountEncodeCallDataArgs,
-                _delegations?: Delegation[]
-            ) => {
-                const isBatch = Array.isArray(tx)
-                const executeUserOpSig = toFunctionSelector(
-                    getAbiItem({
-                        abi: MultiTenantSessionAccountAbi,
-                        name: "executeUserOp"
-                    })
-                )
+        async getAddress() {
+            return accountAddress
+        },
+        async encodeCalls(calls, _callType, _delegations) {
+            const isBatch = calls.length > 1
 
-                const execMode = concatHex([
-                    isBatch ? "0x01" : "0x00", // 1 byte
-                    "0x00", // 1 byte
-                    "0x00000000", // 4 bytes
-                    "0x00000000", // 4 bytes
-                    pad("0x00000000", { size: 22 })
-                ])
-                const execData = isBatch
-                    ? encodeAbiParameters(
-                          [
-                              {
-                                  name: "executionBatch",
-                                  type: "tuple[]",
-                                  components: [
-                                      {
-                                          name: "target",
-                                          type: "address"
-                                      },
-                                      {
-                                          name: "value",
-                                          type: "uint256"
-                                      },
-                                      {
-                                          name: "callData",
-                                          type: "bytes"
-                                      }
-                                  ]
-                              }
-                          ],
-                          [
-                              tx.map((arg) => {
-                                  return {
-                                      target: arg.to,
-                                      value: arg.value,
-                                      callData: arg.data
-                                  }
-                              })
-                          ]
-                      )
-                    : concatHex([tx.to, toHex(tx.value, { size: 32 }), tx.data])
+            const call = calls.length === 0 ? undefined : calls[0]
 
-                return concatHex([
-                    executeUserOpSig,
-                    encodeAbiParameters(
-                        [
-                            getDelegationTupleType(true),
-                            {
-                                type: "bytes32",
-                                name: "execMode"
-                            },
-                            {
-                                type: "bytes",
-                                name: "execData"
-                            },
-                            {
-                                type: "bytes",
-                                name: "delegatorInitCode"
-                            }
-                        ],
-                        [
-                            _delegations ?? delegations,
-                            execMode,
-                            execData,
-                            await getDelegatorInitCode()
-                        ]
-                    )
-                ])
-            },
-
-            encodeDeployCallData: async (_tx) => {
-                throw new Error("encodeDeployCallData not supported yet")
-            },
-            getDummySignature: async () => {
-                const signature = fixSignedData(DUMMY_ECDSA_SIG)
-                const { r, s, v, yParity } = parseSignature(signature)
-                return concatHex([r, s, toHex(v ?? yParity, { size: 1 })])
-            },
-            async getFactory() {
-                return undefined
-            },
-            async getFactoryData() {
-                return undefined
-            },
-            getInitCode,
-            getNonce: () => {
-                const key = pad(sessionAccount.address, {
-                    dir: "right",
-                    size: 24
-                })
-                return getAccountNonce(client, {
-                    sender: accountAddress,
-                    entryPoint: entryPointAddress,
-                    key: BigInt(key)
-                })
-            },
-            signMessage: async () => {
-                throw new Error("signMessage not supported yet")
-            },
-            signTransaction: () => {
-                throw new SignTransactionNotSupportedBySmartAccount()
-            },
-            signTypedData: async () => {
-                throw new Error("signTypedData not supported yet")
-            },
-            signUserOperation: async (
-                userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-            ) => {
-                const hash = getUserOperationHash<entryPoint>({
-                    userOperation: {
-                        ...userOperation,
-                        signature: "0x"
-                    },
-                    entryPoint: entryPointAddress,
-                    chainId: chainId
-                })
-                const signature = fixSignedData(
-                    await signMessage(client, {
-                        account: viemSigner,
-                        message: { raw: hash }
-                    })
-                )
-                const { r, s, v, yParity } = parseSignature(signature)
-                return concatHex([r, s, toHex(v ?? yParity, { size: 1 })])
+            if (!call) {
+                throw new Error("No calls to encode")
             }
-        })
-    }
+
+            const executeUserOpSig = toFunctionSelector(
+                getAbiItem({
+                    abi: MultiTenantSessionAccountAbi,
+                    name: "executeUserOp"
+                })
+            )
+
+            const execMode = concatHex([
+                isBatch ? "0x01" : "0x00", // 1 byte
+                "0x00", // 1 byte
+                "0x00000000", // 4 bytes
+                "0x00000000", // 4 bytes
+                pad("0x00000000", { size: 22 })
+            ])
+            const execData = isBatch
+                ? encodeAbiParameters(
+                      [
+                          {
+                              name: "executionBatch",
+                              type: "tuple[]",
+                              components: [
+                                  {
+                                      name: "target",
+                                      type: "address"
+                                  },
+                                  {
+                                      name: "value",
+                                      type: "uint256"
+                                  },
+                                  {
+                                      name: "callData",
+                                      type: "bytes"
+                                  }
+                              ]
+                          }
+                      ],
+                      [
+                          calls.map((arg) => {
+                              return {
+                                  target: arg.to,
+                                  value: arg.value || 0n,
+                                  callData: arg.data || "0x"
+                              }
+                          })
+                      ]
+                  )
+                : concatHex([
+                      call.to,
+                      toHex(call.value || 0n, { size: 32 }),
+                      call.data || "0x"
+                  ])
+
+            return concatHex([
+                executeUserOpSig,
+                encodeAbiParameters(
+                    [
+                        getDelegationTupleType(true),
+                        {
+                            type: "bytes32",
+                            name: "execMode"
+                        },
+                        {
+                            type: "bytes",
+                            name: "execData"
+                        },
+                        {
+                            type: "bytes",
+                            name: "delegatorInitCode"
+                        }
+                    ],
+                    [
+                        _delegations ?? delegations,
+                        execMode,
+                        execData,
+                        await getDelegatorInitCode()
+                    ]
+                )
+            ])
+        },
+        getStubSignature: async () => {
+            const signature = fixSignedData(DUMMY_ECDSA_SIG)
+            const { r, s, v, yParity } = parseSignature(signature)
+            return concatHex([r, s, toHex(v ?? yParity, { size: 1 })])
+        },
+        async getFactoryArgs() {
+            return {
+                factory: undefined,
+                factoryData: undefined
+            }
+        },
+        getNonce: () => {
+            const key = pad(sessionAccount.address, {
+                dir: "right",
+                size: 24
+            })
+            return getAccountNonce(client, {
+                address: accountAddress,
+                entryPointAddress: entryPoint.address,
+                key: BigInt(key)
+            })
+        },
+        async sign({ hash }) {
+            return this.signMessage({ message: hash })
+        },
+        signMessage: async () => {
+            throw new Error("signMessage not supported yet")
+        },
+        signTypedData: async () => {
+            throw new Error("signTypedData not supported yet")
+        },
+        signUserOperation: async (userOperation) => {
+            const hash = getUserOperationHash({
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
+                chainId: chainId
+            })
+            const signature = fixSignedData(
+                await signMessage(client, {
+                    account: viemSigner,
+                    message: { raw: hash }
+                })
+            )
+            const { r, s, v, yParity } = parseSignature(signature)
+            return concatHex([r, s, toHex(v ?? yParity, { size: 1 })])
+        }
+    })
 }

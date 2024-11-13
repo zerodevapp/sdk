@@ -1,31 +1,30 @@
-import { AccountOrClientNotFoundError, parseAccount } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type { SendTransactionWithPaymasterParameters } from "permissionless/actions/smartAccount"
-import { sendTransaction } from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import type { Address, Chain, Client, Hash, Transport } from "viem"
+import type {
+    Address,
+    Chain,
+    Client,
+    Hash,
+    Prettify,
+    SendTransactionParameters,
+    Transport
+} from "viem"
 import { encodeFunctionData } from "viem"
-import { getAction } from "viem/utils"
+import { getAction, parseAccount } from "viem/utils"
 import { DelegationManagerAbi } from "../abi/DelegationManagerAbi.js"
 import { DMVersionToAddressMap, ROOT_AUTHORITY } from "../constants.js"
 import type { Delegation } from "../types.js"
+import type {
+    SendUserOperationParameters,
+    SmartAccount
+} from "viem/account-abstraction"
+import { AccountNotFoundError } from "@zerodev/sdk"
+import { sendTransaction } from "@zerodev/sdk/actions"
 
 export type SendDelegateUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    chain extends Chain | undefined = Chain | undefined,
+    chainOverride extends Chain | undefined = Chain | undefined
 > = Prettify<
-    SendTransactionWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    > & {
+    Partial<SendTransactionParameters<chain, account, chainOverride>> & {
         delegation?: Delegation
         sessionKeyAddress: Delegation["delegate"]
         caveats: Delegation["caveats"]
@@ -34,22 +33,11 @@ export type SendDelegateUserOperationParameters<
 >
 
 export async function delegate<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: SendDelegateUserOperationParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >
+    client: Client<Transport, chain, account>,
+    args: SendDelegateUserOperationParameters
 ): Promise<Hash> {
     const {
         account: account_ = client.account,
@@ -61,42 +49,36 @@ export async function delegate<
     } = args
 
     if (!account_) {
-        throw new AccountOrClientNotFoundError({
-            docsPath: "/docs/actions/wallet/sendTransaction"
-        })
+        throw new AccountNotFoundError()
     }
 
-    const account = parseAccount(account_) as SmartAccount<
-        entryPoint,
-        string,
-        TTransport,
-        TChain
-    >
-
-    if (account.type !== "local") {
-        throw new Error("RPC account type not supported")
-    }
+    const account = parseAccount(account_) as SmartAccount
 
     return await getAction(
         client,
-        sendTransaction<TTransport, TChain, TAccount, entryPoint>,
+        sendTransaction,
         "sendTransaction"
     )({
         ...args,
-        to: delegationManagerAddress,
-        data: encodeFunctionData({
-            abi: DelegationManagerAbi,
-            functionName: "delegate",
-            args: [
-                delegation ?? {
-                    delegate: sessionKeyAddress,
-                    caveats,
-                    authority: ROOT_AUTHORITY,
-                    delegator: account.address,
-                    salt: 0n,
-                    signature: "0x"
-                }
-            ]
-        })
-    })
+        calls: [
+            {
+                to: delegationManagerAddress,
+                data: encodeFunctionData({
+                    abi: DelegationManagerAbi,
+                    functionName: "delegate",
+                    args: [
+                        delegation ?? {
+                            delegate: sessionKeyAddress,
+                            caveats,
+                            authority: ROOT_AUTHORITY,
+                            delegator: account.address,
+                            salt: 0n,
+                            signature: "0x"
+                        }
+                    ]
+                }),
+                value: 0n
+            }
+        ]
+    } as SendTransactionParameters | SendUserOperationParameters)
 }

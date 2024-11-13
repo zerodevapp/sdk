@@ -1,44 +1,31 @@
-import { AccountOrClientNotFoundError, parseAccount } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetAccountParameter,
-    Prettify
-} from "permissionless/types"
 import type { Address, Chain, Client, Hash, Transport } from "viem"
 import { decodeAbiParameters } from "viem"
 import { getChainId } from "viem/actions"
 import { DMVersionToAddressMap } from "../constants.js"
 import type { Delegation } from "../types.js"
+import type {
+    GetSmartAccountParameter,
+    SmartAccount
+} from "viem/account-abstraction"
+import { AccountNotFoundError } from "@zerodev/sdk"
+import { parseAccount } from "viem/accounts"
+import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 
 export type SignDelegationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
-> = Prettify<
-    {
-        delegation: Delegation
-        delegationManagerAddress?: Address
-    } & GetAccountParameter<entryPoint, TTransport, TChain, TAccount>
->
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = SmartAccount | undefined
+> = {
+    delegation: Delegation
+    delegationManagerAddress?: Address
+} & GetSmartAccountParameter<account, accountOverride>
 
 export async function signDelegation<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: SignDelegationParameters<entryPoint, TTransport, TChain, TAccount>
+    client: Client<Transport, chain, account>,
+    args: SignDelegationParameters<account, accountOverride>
 ): Promise<Hash> {
     const {
         account: account_ = client.account,
@@ -48,23 +35,14 @@ export async function signDelegation<
     } = args
 
     if (!account_) {
-        throw new AccountOrClientNotFoundError({
-            docsPath: "/docs/actions/wallet/sendTransaction"
-        })
+        throw new AccountNotFoundError()
     }
 
-    const account = parseAccount(account_) as SmartAccount<
-        entryPoint,
-        string,
-        TTransport,
-        TChain
-    >
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<SessionAccountImplementation>
 
     const chainId = client.chain ? client.chain.id : await getChainId(client)
-
-    if (account.type !== "local") {
-        throw new Error("RPC account type not supported")
-    }
 
     const signature = await account.signTypedData({
         domain: {
