@@ -1,6 +1,8 @@
-import { fixSignedData } from "@zerodev/sdk"
+import {
+    fixSignedData,
+    SignTransactionNotSupportedBySmartAccountError
+} from "@zerodev/sdk"
 import type { TypedData } from "abitype"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     type Hex,
     type LocalAccount,
@@ -106,7 +108,7 @@ export async function toRemoteSigner({
             return fixSignedData(await signMessageWithRemoteSigner(message))
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
