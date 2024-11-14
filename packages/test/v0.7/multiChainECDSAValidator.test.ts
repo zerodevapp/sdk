@@ -39,7 +39,7 @@ import {
 import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
-import { signUserOperations } from "../../../plugins/multi-chain-ecdsa-validator/_types/index.js"
+import { signUserOperations } from "../../../plugins/multichain/_types/index.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
