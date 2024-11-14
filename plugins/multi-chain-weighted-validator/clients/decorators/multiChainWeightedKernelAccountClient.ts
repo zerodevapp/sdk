@@ -1,4 +1,5 @@
 import type { Chain, Client, Hash, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     type ApproveUserOperationParameters,
     type ApproveUserOperationReturnType,
@@ -8,7 +9,6 @@ import {
     type SendUserOperationWithApprovalsParameters,
     sendUserOperationWithApprovals
 } from "../../actions/sendUserOperationWithApprovals.js"
-import type { SmartAccount } from "viem/account-abstraction"
 
 export type MultiChainWeightedKernelAccountClientActions = {
     /**

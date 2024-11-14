@@ -1,3 +1,5 @@
+import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
+import { AccountNotFoundError } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
 import {
     type Chain,
@@ -7,6 +9,11 @@ import {
     type Transport,
     publicActions
 } from "viem"
+import type {
+    GetSmartAccountParameter,
+    SmartAccount,
+    UserOperation
+} from "viem/account-abstraction"
 import {
     encodeAbiParameters,
     hashTypedData,
@@ -15,13 +22,6 @@ import {
     parseAccount
 } from "viem/utils"
 import { getValidatorAddress } from "../toMultiChainWeightedValidatorPlugin.js"
-import type {
-    GetSmartAccountParameter,
-    SmartAccount,
-    UserOperation
-} from "viem/account-abstraction"
-import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
-import { AccountNotFoundError } from "@zerodev/sdk"
 
 export type ApproveUserOperationParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

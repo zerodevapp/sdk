@@ -1,8 +1,15 @@
-import type { KernelValidator } from "@zerodev/sdk/types"
+export { toMultiChainECDSAValidator } from "./toMultiChainECDSAValidator.js"
+export {
+    type SignUserOperationsParameters,
+    type SignUserOperationsRequest,
+    type SignUserOperationsReturnType,
+    signUserOperations
+} from "./actions/index.js"
 
-export type { KernelValidator }
-export * from "./ecdsa/index.js"
-export * from "./webauthn/index.js"
-export * from "./actions/index.js"
+export { ecdsaGetMultiUserOpDummySignature } from "./utils/ecdsaGetMultiUserOpDummySignature.js"
+export {
+    type MultiChainUserOpConfigForEnable,
+    ecdsaSignUserOpsWithEnable
+} from "./utils/ecdsaSignUserOpsWithEnable.js"
+
 export * from "./constants.js"
-export * from "./multiChainClient.js"

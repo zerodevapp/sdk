@@ -1,13 +1,13 @@
-import { privateKeyToAccount } from "viem/accounts"
-import { getEntryPoint, getPublicClient, kernelVersion, index } from "./common"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
-    createKernelAccount,
-    type KernelSmartAccountImplementation
+    type KernelSmartAccountImplementation,
+    createKernelAccount
 } from "@zerodev/sdk"
-import type { SmartAccount } from "viem/account-abstraction"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import type { Hex } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
+import { privateKeyToAccount } from "viem/accounts"
+import { getEntryPoint, getPublicClient, index, kernelVersion } from "./common"
 
 export const getSignersToWeightedEcdsaKernelAccount = async (): Promise<
     SmartAccount<KernelSmartAccountImplementation>

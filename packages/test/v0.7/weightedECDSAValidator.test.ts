@@ -11,6 +11,7 @@ import {
     type Transport,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     getEntryPoint,
     getKernelAccountClient,
@@ -18,7 +19,6 @@ import {
     getSignersToWeightedEcdsaKernelAccount,
     getZeroDevPaymasterClient
 } from "./utils"
-import type { SmartAccount } from "viem/account-abstraction"
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/

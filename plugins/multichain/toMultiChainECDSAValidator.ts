@@ -1,54 +1,49 @@
+import { SignTransactionNotSupportedBySmartAccountError } from "@zerodev/sdk"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
 import type {
     Address,
-    Chain,
     Client,
     Hex,
     LocalAccount,
-    Transport,
     TypedDataDefinition
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
-import { signMessage, signTypedData } from "viem/actions"
+import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
-import { MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS } from "../constants.js"
+import { MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS } from "./constants.js"
+import { ecdsaGetMultiUserOpDummySignature } from "./utils/ecdsaGetMultiUserOpDummySignature.js"
 
 export async function toMultiChainECDSAValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         signer,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion: _,
-        validatorAddress
+        validatorAddress: validatorAddress_,
+        multiChainIds
     }: {
-        signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        signer: LocalAccount
+        entryPoint: { address: Address; version: entryPointVersion }
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
+        multiChainIds?: number[]
     }
-): Promise<KernelValidator<entryPoint, "MultiChainECDSAValidator">> {
-    validatorAddress = validatorAddress ?? MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS
+): Promise<KernelValidator<"MultiChainECDSAValidator">> {
+    const validatorAddress =
+        validatorAddress_ ?? MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS
     // Get the private key related account
     const viemSigner: LocalAccount = {
         ...signer,
         signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         }
     } as LocalAccount
 
@@ -62,7 +57,7 @@ export async function toMultiChainECDSAValidator<
             return signMessage(client, { account: viemSigner, message })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -70,13 +65,7 @@ export async function toMultiChainECDSAValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account: viemSigner,
-                    ...typedData
-                }
-            )
+            return viemSigner.signTypedData(typedData)
         }
     })
 
@@ -98,15 +87,14 @@ export async function toMultiChainECDSAValidator<
             }
             return 0n
         },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
-            const hash = getUserOperationHash<entryPoint>({
+        async signUserOperation(userOperation) {
+            const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -115,8 +103,20 @@ export async function toMultiChainECDSAValidator<
             })
             return signature
         },
-        async getDummySignature(_userOperation) {
-            return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+        async getStubSignature(userOperation) {
+            if (!multiChainIds)
+                return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
+            return ecdsaGetMultiUserOpDummySignature(
+                {
+                    ...userOperation,
+                    callGasLimit: 0n,
+                    preVerificationGas: 0n,
+                    verificationGasLimit: 0n
+                } as UserOperation,
+                multiChainIds.length,
+                entryPoint,
+                chainId
+            )
         },
         async isEnabled(
             _kernelAccountAddress: Address,

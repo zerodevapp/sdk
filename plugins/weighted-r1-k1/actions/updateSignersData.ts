@@ -1,4 +1,9 @@
 import {
+    AccountNotFoundError,
+    type KernelSmartAccountImplementation
+} from "@zerodev/sdk"
+import { encodeWebAuthnPubKey } from "@zerodev/webauthn-key"
+import {
     type Chain,
     type Client,
     type Hash,
@@ -9,26 +14,21 @@ import {
     encodeFunctionData,
     toHex
 } from "viem"
-import { getAction, parseAccount } from "viem/utils"
-import { sortByPublicKey } from "../utils.js"
 import {
-    sendUserOperation,
     type SendUserOperationParameters,
-    type SmartAccount
+    type SmartAccount,
+    sendUserOperation
 } from "viem/account-abstraction"
-import {
-    AccountNotFoundError,
-    type KernelSmartAccountImplementation
-} from "@zerodev/sdk"
-import {
-    getValidatorAddress,
-    sendUserOperationWithSignatures,
-    type SendUserOperationWithSignaturesParameters,
-    SIGNER_TYPE,
-    type WeightedValidatorConfig
-} from "../index.js"
-import { encodeWebAuthnPubKey } from "@zerodev/webauthn-key"
+import { getAction, parseAccount } from "viem/utils"
 import { WeightedValidatorAbi } from "../abi.js"
+import {
+    SIGNER_TYPE,
+    type SendUserOperationWithSignaturesParameters,
+    type WeightedValidatorConfig,
+    getValidatorAddress,
+    sendUserOperationWithSignatures
+} from "../index.js"
+import { sortByPublicKey } from "../utils.js"
 
 export type UpdateSignersDataParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

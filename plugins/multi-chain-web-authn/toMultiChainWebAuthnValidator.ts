@@ -1,4 +1,5 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
+import { SignTransactionNotSupportedBySmartAccountError } from "@zerodev/sdk"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import {
@@ -11,27 +12,28 @@ import {
     uint8ArrayToHexString
 } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { EntryPoint, GetEntryPointVersion } from "permissionless/types"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type SignableMessage,
-    type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
     getTypesForEIP712Domain,
     hashTypedData,
     validateTypedData
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
-import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "../constants.js"
+import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "./constants.js"
+import { webauthnGetMultiUserOpDummySignature } from "./utils/webauthnGetMultiUserOpDummySignature.js"
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
@@ -117,26 +119,26 @@ const signMessageUsingWebAuthn = async (
 }
 
 export async function toMultiChainWebAuthnValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         webAuthnKey,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion: _,
         rpId,
-        validatorAddress
+        validatorAddress,
+        multiChainIds
     }: {
         webAuthnKey: WebAuthnKey
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: { address: Address; version: entryPointVersion }
+        kernelVersion: GetKernelVersion<entryPointVersion>
         rpId?: string
         validatorAddress?: Address
+        multiChainIds?: number[]
     }
 ): Promise<
-    KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
+    KernelValidator<"MultiChainWebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
@@ -155,7 +157,7 @@ export async function toMultiChainWebAuthnValidator<
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -225,15 +227,14 @@ export async function toMultiChainWebAuthnValidator<
             }
             return 0n
         },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
-            const hash = getUserOperationHash<entryPoint>({
+        async signUserOperation(userOperation) {
+            const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -257,32 +258,45 @@ export async function toMultiChainWebAuthnValidator<
 
             return encodedSignature
         },
-        async getDummySignature(_userOperation) {
-            const signature = encodeAbiParameters(
-                [
-                    { name: "authenticatorData", type: "bytes" },
-                    { name: "clientDataJSON", type: "string" },
-                    { name: "responseTypeLocation", type: "uint256" },
-                    { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
-                ],
-                [
-                    "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
-                    1n,
-                    44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-                    false
-                ]
-            )
+        async getStubSignature(userOperation) {
+            if (!multiChainIds) {
+                const signature = encodeAbiParameters(
+                    [
+                        { name: "authenticatorData", type: "bytes" },
+                        { name: "clientDataJSON", type: "string" },
+                        { name: "responseTypeLocation", type: "uint256" },
+                        { name: "r", type: "uint256" },
+                        { name: "s", type: "uint256" },
+                        { name: "usePrecompiled", type: "bool" }
+                    ],
+                    [
+                        "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
+                        '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
+                        1n,
+                        44941127272049826721201904734628716258498742255959991581049806490182030242267n,
+                        9910254599581058084911561569808925251374718953855182016200087235935345969636n,
+                        false
+                    ]
+                )
 
-            return encodeAbiParameters(
-                [
-                    { name: "merkleData", type: "bytes" },
-                    { name: "signature", type: "bytes" }
-                ],
-                ["0x", signature]
+                return encodeAbiParameters(
+                    [
+                        { name: "merkleData", type: "bytes" },
+                        { name: "signature", type: "bytes" }
+                    ],
+                    ["0x", signature]
+                )
+            }
+            return webauthnGetMultiUserOpDummySignature(
+                {
+                    ...userOperation,
+                    callGasLimit: 0n,
+                    preVerificationGas: 0n,
+                    verificationGasLimit: 0n
+                } as UserOperation,
+                multiChainIds.length,
+                entryPoint,
+                chainId
             )
         },
         async isEnabled(
@@ -293,35 +307,34 @@ export async function toMultiChainWebAuthnValidator<
         },
         getSerializedData() {
             return serializeMultiChainWebAuthnValidatorData({
-                entryPoint: entryPointAddress,
+                entryPoint,
                 validatorAddress: currentValidatorAddress,
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
                 authenticatorId: webAuthnKey.authenticatorId,
                 authenticatorIdHash: webAuthnKey.authenticatorIdHash,
-                rpId
+                rpId,
+                multiChainIds
             })
         }
     }
 }
 
 export async function deserializeMultiChainWebAuthnValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         serializedData,
-        entryPoint: entryPointAddress,
+        entryPoint: _,
         kernelVersion
     }: {
         serializedData: string
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: { address: Address; version: entryPointVersion }
+        kernelVersion: GetKernelVersion<entryPointVersion>
     }
 ): Promise<
-    KernelValidator<entryPoint, "MultiChainWebAuthnValidator"> & {
+    KernelValidator<"MultiChainWebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
@@ -332,7 +345,8 @@ export async function deserializeMultiChainWebAuthnValidator<
         pubKeyY,
         authenticatorId,
         authenticatorIdHash,
-        rpId
+        rpId,
+        multiChainIds
     } = deserializeMultiChainWebAuthnValidatorData(serializedData)
 
     // Fetch chain id
@@ -348,7 +362,7 @@ export async function deserializeMultiChainWebAuthnValidator<
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new SignTransactionNotSupportedBySmartAccountError()
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -415,15 +429,14 @@ export async function deserializeMultiChainWebAuthnValidator<
             }
             return 0n
         },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
-            const hash = getUserOperationHash<entryPoint>({
+        async signUserOperation(userOperation) {
+            const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
                 },
-                entryPoint: entryPointAddress,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -447,32 +460,46 @@ export async function deserializeMultiChainWebAuthnValidator<
 
             return encodedSignature
         },
-        async getDummySignature(_userOperation) {
-            const signature = encodeAbiParameters(
-                [
-                    { name: "authenticatorData", type: "bytes" },
-                    { name: "clientDataJSON", type: "string" },
-                    { name: "responseTypeLocation", type: "uint256" },
-                    { name: "r", type: "uint256" },
-                    { name: "s", type: "uint256" },
-                    { name: "usePrecompiled", type: "bool" }
-                ],
-                [
-                    "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-                    '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
-                    1n,
-                    44941127272049826721201904734628716258498742255959991581049806490182030242267n,
-                    9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-                    false
-                ]
-            )
+        async getStubSignature(userOperation) {
+            if (!multiChainIds) {
+                const signature = encodeAbiParameters(
+                    [
+                        { name: "authenticatorData", type: "bytes" },
+                        { name: "clientDataJSON", type: "string" },
+                        { name: "responseTypeLocation", type: "uint256" },
+                        { name: "r", type: "uint256" },
+                        { name: "s", type: "uint256" },
+                        { name: "usePrecompiled", type: "bool" }
+                    ],
+                    [
+                        "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
+                        '{"type":"webauthn.get","challenge":"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE","origin":"http://localhost:3000","crossOrigin":false, "other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}',
+                        1n,
+                        44941127272049826721201904734628716258498742255959991581049806490182030242267n,
+                        9910254599581058084911561569808925251374718953855182016200087235935345969636n,
+                        false
+                    ]
+                )
 
-            return encodeAbiParameters(
-                [
-                    { name: "merkleData", type: "bytes" },
-                    { name: "signature", type: "bytes" }
-                ],
-                ["0x", signature]
+                return encodeAbiParameters(
+                    [
+                        { name: "merkleData", type: "bytes" },
+                        { name: "signature", type: "bytes" }
+                    ],
+                    ["0x", signature]
+                )
+            }
+
+            return webauthnGetMultiUserOpDummySignature(
+                {
+                    ...userOperation,
+                    callGasLimit: 0n,
+                    preVerificationGas: 0n,
+                    verificationGasLimit: 0n
+                } as UserOperation,
+                multiChainIds.length,
+                entryPoint,
+                chainId
             )
         },
         async isEnabled(
@@ -496,13 +523,14 @@ export async function deserializeMultiChainWebAuthnValidator<
 }
 
 type MultiChainWebAuthnValidatorSerializedData = {
-    entryPoint: Address
+    entryPoint: { address: Address; version: EntryPointVersion }
     validatorAddress: Address
     pubKeyX: bigint
     pubKeyY: bigint
     authenticatorId: string
     authenticatorIdHash: Hex
     rpId?: string
+    multiChainIds?: number[]
 }
 
 function serializeMultiChainWebAuthnValidatorData(

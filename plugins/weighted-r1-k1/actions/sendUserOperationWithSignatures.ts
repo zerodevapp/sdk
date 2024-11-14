@@ -15,20 +15,20 @@ import {
     zeroAddress
 } from "viem"
 import {
+    type PrepareUserOperationParameters,
+    type SendUserOperationParameters,
+    type SmartAccount,
+    type UserOperation,
+    prepareUserOperation,
+    sendUserOperation
+} from "viem/account-abstraction"
+import {
     getAbiItem,
     getAction,
     parseAccount,
     toFunctionSelector
 } from "viem/utils"
 import { encodeSignatures } from "../utils.js"
-import {
-    prepareUserOperation,
-    type PrepareUserOperationParameters,
-    sendUserOperation,
-    type SendUserOperationParameters,
-    type SmartAccount,
-    type UserOperation
-} from "viem/account-abstraction"
 
 export type SendUserOperationWithSignaturesParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

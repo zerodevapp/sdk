@@ -5,6 +5,11 @@ import {
     isPluginInitialized
 } from "@zerodev/sdk"
 import type { Chain, Client, Hex, Transport } from "viem"
+import type {
+    PrepareUserOperationParameters,
+    SmartAccount,
+    UserOperationCall
+} from "viem/account-abstraction"
 import {
     encodeAbiParameters,
     getAbiItem,
@@ -14,11 +19,6 @@ import {
     toFunctionSelector
 } from "viem/utils"
 import { getValidatorAddress } from "../toWeightedValidatorPlugin.js"
-import type {
-    PrepareUserOperationParameters,
-    SmartAccount,
-    UserOperationCall
-} from "viem/account-abstraction"
 
 export type ApproveUserOperationParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

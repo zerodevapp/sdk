@@ -12,6 +12,7 @@ import {
     CAB_PAYMASTER_SERVER_URL,
     getInstallDMAsExecutorCallData
 } from "@zerodev/session-account"
+import type { SessionAccountImplementation } from "@zerodev/session-account"
 import {
     type ENFORCER_VERSION,
     ParamCondition,
@@ -28,6 +29,7 @@ import {
     parseEther,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
 import { dmActionsEip7710 } from "../../../plugins/multi-tenant-session-account/clients"
@@ -37,6 +39,7 @@ import type { Delegation } from "../../../plugins/multi-tenant-session-account/t
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { config } from "../config"
 import {
+    Test_ERC20Address,
     getBundlerRpc,
     getEcdsaKernelAccountWithRandomSigner,
     getEntryPoint,
@@ -45,11 +48,8 @@ import {
     getPublicClient,
     getSessionAccount,
     getZeroDevPaymasterClient,
-    mintToAccount,
-    Test_ERC20Address
+    mintToAccount
 } from "./utils"
-import type { SmartAccount } from "viem/account-abstraction"
-import type { SessionAccountImplementation } from "@zerodev/session-account"
 
 const TEST_TIMEOUT = 1000000
 
@@ -130,11 +130,13 @@ describe("7710 SessionAccount", () => {
                 paymaster: zeroDevPaymaster
             })
             const userOpHash = await sessionAccountClient.sendUserOperation({
-                callData: await sessionAccount.encodeCalls([{
-                    to: zeroAddress,
-                    data: "0x",
-                    value: 0n
-                }])
+                callData: await sessionAccount.encodeCalls([
+                    {
+                        to: zeroAddress,
+                        data: "0x",
+                        value: 0n
+                    }
+                ])
             })
             const receipt =
                 await sessionAccountClient.waitForUserOperationReceipt({
@@ -223,15 +225,18 @@ describe("7710 SessionAccount", () => {
                 args: [sessionKeyAccount.address, amountToTransfer]
             })
             const userOpHash = await sessionAccountClient.sendUserOperation({
-                callData: await sessionAccount.encodeCalls([{
-                    to: Test_ERC20Address,
-                    data: transferData,
-                    value: 0n
-                }])
+                callData: await sessionAccount.encodeCalls([
+                    {
+                        to: Test_ERC20Address,
+                        data: transferData,
+                        value: 0n
+                    }
+                ])
             })
-            const receipt = await sessionAccountClient.waitForUserOperationReceipt({
-                hash: userOpHash
-            })
+            const receipt =
+                await sessionAccountClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
             console.log(
                 "transactionHash",
                 `https://sepolia.etherscan.io/tx/${receipt.receipt.transactionHash}`

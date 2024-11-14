@@ -9,11 +9,11 @@ import {
     type ApproveUserOperationReturnType,
     approveUserOperation
 } from "./actions/approveUserOperation.js"
+import { getCurrentSigners } from "./actions/getCurrentSigners.js"
 import {
     type SendUserOperationWithApprovalsParameters,
     sendUserOperationWithApprovals
 } from "./actions/sendUserOperationWithApprovals.js"
-import { getCurrentSigners } from "./actions/getCurrentSigners.js"
 import {
     type UpdateSignersDataParameters,
     updateSignersData

@@ -1,4 +1,5 @@
 import type { Chain, Client, Hash, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     type EncodeCallDataWithCABParameters,
     type SendDelegateUserOperationParameters,
@@ -12,7 +13,6 @@ import {
     signDelegation
 } from "../../actions/index.js"
 import type { ENFORCER_VERSION } from "../../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
-import type { SmartAccount } from "viem/account-abstraction"
 
 export type DMActionsEip7710<
     TChain extends Chain | undefined = Chain | undefined,
@@ -66,7 +66,10 @@ function dmActionsEip7710({
             encodeCallDataWithCAB(client, {
                 ...args,
                 enforcerVersion: enforcerVersion
-            } as EncodeCallDataWithCABParameters<TSmartAccount, accountOverride>),
+            } as EncodeCallDataWithCABParameters<
+                TSmartAccount,
+                accountOverride
+            >),
         installDMAndDelegate: (args) => installDMAndDelegate(client, args),
         installDMAsExecutor: (args) => installDMAsExecutor(client, args),
         delegate: (args) => delegate(client, args)

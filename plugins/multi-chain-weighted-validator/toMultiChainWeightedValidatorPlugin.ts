@@ -1,3 +1,7 @@
+import {
+    SignTransactionNotSupportedBySmartAccountError,
+    validateKernelVersionWithEntryPoint
+} from "@zerodev/sdk"
 import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
@@ -10,6 +14,11 @@ import {
     encodeAbiParameters,
     zeroAddress
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
 import { concatHex, getAction, toHex } from "viem/utils"
@@ -22,15 +31,6 @@ import {
     sortByPublicKey
 } from "./index.js"
 import { encodeWebAuthnPubKey } from "./signers/toWebAuthnSigner.js"
-import {
-    type EntryPointVersion,
-    getUserOperationHash,
-    type UserOperation
-} from "viem/account-abstraction"
-import {
-    SignTransactionNotSupportedBySmartAccountError,
-    validateKernelVersionWithEntryPoint
-} from "@zerodev/sdk"
 
 export type WeightedSigner = {
     account: LocalAccount

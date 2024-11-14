@@ -3,11 +3,11 @@ import {
     type KernelValidator,
     createKernelAccount
 } from "@zerodev/sdk"
+import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
 import type { Hex } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
-import { getEntryPoint, getPublicClient, index, kernelVersion } from "./common"
 import { privateKeyToAccount } from "viem/accounts"
-import { createWeightedECDSAValidator } from "@zerodev/weighted-ecdsa-validator"
+import { getEntryPoint, getPublicClient, index, kernelVersion } from "./common"
 
 export const getSignersToWeightedEcdsaKernelAccount = async (
     plugin?: KernelValidator

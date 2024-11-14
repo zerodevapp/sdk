@@ -1,3 +1,4 @@
+import { AccountNotFoundError } from "@zerodev/sdk"
 import {
     type Chain,
     type Client,
@@ -7,18 +8,17 @@ import {
     encodeAbiParameters,
     publicActions
 } from "viem"
+import {
+    type PrepareUserOperationParameters,
+    type SendUserOperationParameters,
+    type SmartAccount,
+    type UserOperation,
+    prepareUserOperation,
+    sendUserOperation
+} from "viem/account-abstraction"
 import { getAction, parseAccount } from "viem/utils"
 import { encodeSignatures } from "../utils.js"
 import type { ApproveUserOperationReturnType } from "./approveUserOperation.js"
-import {
-    prepareUserOperation,
-    type PrepareUserOperationParameters,
-    sendUserOperation,
-    type SendUserOperationParameters,
-    type SmartAccount,
-    type UserOperation
-} from "viem/account-abstraction"
-import { AccountNotFoundError } from "@zerodev/sdk"
 
 export type SendUserOperationWithApprovalsParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

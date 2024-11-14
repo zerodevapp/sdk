@@ -1,6 +1,6 @@
 import {
-    createKernelAccountClient,
-    type KernelAccountClientActions
+    type KernelAccountClientActions,
+    createKernelAccountClient
 } from "@zerodev/sdk"
 import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
 import type {
@@ -11,11 +11,11 @@ import type {
     RpcSchema,
     Transport
 } from "viem"
+import type { BundlerActions, SmartAccount } from "viem/account-abstraction"
 import {
     type WeightedKernelAccountClientActions,
     weightedKernelAccountClientActions
 } from "./decorators/weightedKernelAccountClient.js"
-import type { BundlerActions, SmartAccount } from "viem/account-abstraction"
 
 export type WeightedKernelAccountClient<
     transport extends Transport = Transport,
@@ -29,9 +29,9 @@ export type WeightedKernelAccountClient<
         chain extends Chain
             ? chain
             : // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            client extends Client<any, infer chain>
-            ? chain
-            : undefined,
+              client extends Client<any, infer chain>
+              ? chain
+              : undefined,
         account,
         rpcSchema extends RpcSchema
             ? [...BundlerRpcSchema, ...rpcSchema]

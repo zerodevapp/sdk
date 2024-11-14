@@ -1,22 +1,29 @@
 import { MerkleTree } from "merkletreejs"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
-import { type Hex, concatHex, encodeAbiParameters, keccak256 } from "viem"
+import {
+    type Address,
+    type Hex,
+    concatHex,
+    encodeAbiParameters,
+    keccak256
+} from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 
 export const webauthnGetMultiUserOpDummySignature = <
-    entryPoint extends EntryPoint
+    entryPointVersion extends EntryPointVersion
 >(
-    userOperation: UserOperation<GetEntryPointVersion<entryPoint>>,
+    userOperation: UserOperation<entryPointVersion>,
     numOfUserOps: number,
-    entryPoint: entryPoint,
+    entryPoint: { address: Address; version: entryPointVersion },
     chainId: number
 ): Hex => {
-    const userOpHash = getUserOperationHash<entryPoint>({
+    const userOpHash = getUserOperationHash({
         userOperation,
-        entryPoint,
+        entryPointAddress: entryPoint.address,
+        entryPointVersion: entryPoint.version,
         chainId
     })
 

@@ -14,16 +14,16 @@ import {
     keccak256,
     parseAbiParameters
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { getChainId, readContract } from "viem/actions"
 import { getAction } from "viem/utils"
 import { WeightedValidatorAbi } from "./abi.js"
 import { getValidatorAddress } from "./index.js"
-import {
-    getUserOperationHash,
-    type UserOperation,
-    type EntryPointVersion
-} from "viem/account-abstraction"
 
 export interface WeightedECDSAValidatorConfig {
     threshold: number

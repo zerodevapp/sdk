@@ -1,20 +1,20 @@
 import type { Chain, Client, Hash, Hex, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     type ApproveUserOperationParameters,
     approveUserOperation
 } from "../../actions/approveUserOperation.js"
 import {
+    type GetCurrentSignersReturnType,
+    getCurrentSigners
+} from "../../actions/getCurrentSigners.js"
+import {
     type SendUserOperationWithSignaturesParameters,
     sendUserOperationWithSignatures
 } from "../../actions/sendUserOperationWithSignatures.js"
-import type { SmartAccount } from "viem/account-abstraction"
 import {
-    getCurrentSigners,
-    type GetCurrentSignersReturnType
-} from "../../actions/getCurrentSigners.js"
-import {
-    updateSignersData,
-    type UpdateSignersDataParameters
+    type UpdateSignersDataParameters,
+    updateSignersData
 } from "../../actions/updateSignersData.js"
 
 export type WeightedKernelAccountClientActions<

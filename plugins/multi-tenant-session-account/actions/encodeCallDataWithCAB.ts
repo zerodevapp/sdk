@@ -22,7 +22,13 @@ import {
     pad,
     toHex
 } from "viem"
+import type {
+    GetSmartAccountParameter,
+    SmartAccount
+} from "viem/account-abstraction"
+import { parseAccount } from "viem/accounts"
 import { getChainId } from "viem/actions"
+import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 import {
     CAB_PAYMASTER_SERVER_URL,
     DMVersionToAddressMap
@@ -38,12 +44,6 @@ import {
     getEnforcerAddress
 } from "../enforcers/cab-paymaster/toCABPaymasterEnforcer.js"
 import { toDelegationHash } from "../utils/index.js"
-import type {
-    GetSmartAccountParameter,
-    SmartAccount
-} from "viem/account-abstraction"
-import { parseAccount } from "viem/accounts"
-import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 
 export type EncodeCallDataWithCABParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

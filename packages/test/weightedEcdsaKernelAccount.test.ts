@@ -17,6 +17,7 @@ import {
     getContract,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { GreeterAbi, GreeterBytecode } from "./abis/Greeter.js"
 import {
@@ -29,7 +30,6 @@ import {
     kernelVersion,
     waitForNonceUpdate
 } from "./utils_0_6"
-import type { SmartAccount } from "viem/account-abstraction"
 
 dotenv.config()
 

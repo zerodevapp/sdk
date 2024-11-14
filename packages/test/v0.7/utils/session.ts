@@ -1,7 +1,7 @@
+import { type Delegation, createSessionAccount } from "@zerodev/session-account"
+import type { Hex } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { getEntryPoint, getPublicClient } from "./common"
-import { createSessionAccount, type Delegation } from "@zerodev/session-account"
-import type { Hex } from "viem"
 
 export const getSessionAccount = async (
     delegations: Delegation[],

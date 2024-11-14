@@ -1,15 +1,10 @@
 import {
     type Action,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
     KernelV3AccountAbi,
     getEncodedPluginsData
 } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
-import type { UserOperation } from "permissionless"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
 import {
     type Hex,
     concatHex,
@@ -21,10 +16,17 @@ import {
     toFunctionSelector,
     zeroAddress
 } from "viem"
+import type {
+    EntryPointVersion,
+    SmartAccount,
+    UserOperation
+} from "viem/account-abstraction"
 
-type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
-    account: KernelSmartAccount<EntryPoint>
-    userOp: UserOperation<GetEntryPointVersion<entryPoint>>
+type MultiChainUserOpConfigForEnable<
+    entryPointVersion extends EntryPointVersion
+> = {
+    account: SmartAccount<KernelSmartAccountImplementation>
+    userOp: UserOperation<entryPointVersion>
 }
 
 /**
@@ -32,11 +34,13 @@ type MultiChainUserOpConfigForEnable<entryPoint extends EntryPoint> = {
  * @dev Sign user operations with enable signatures for multi-chain validator
  * @returns Signed user operations
  */
-export const webauthnSignUserOpsWithEnable = async ({
+export const webauthnSignUserOpsWithEnable = async <
+    entryPointVersion extends EntryPointVersion
+>({
     multiChainUserOpConfigsForEnable
 }: {
-    multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<EntryPoint>[]
-}): Promise<UserOperation<GetEntryPointVersion<EntryPoint>>[]> => {
+    multiChainUserOpConfigsForEnable: MultiChainUserOpConfigForEnable<entryPointVersion>[]
+}): Promise<UserOperation<entryPointVersion>[]> => {
     const pluginEnableTypedDatas = await Promise.all(
         multiChainUserOpConfigsForEnable.map(async (config) => {
             return config.account.kernelPluginManager.getPluginsEnableTypedData(
