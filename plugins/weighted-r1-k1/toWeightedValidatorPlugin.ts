@@ -1,4 +1,8 @@
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import {
@@ -65,7 +69,7 @@ export async function createWeightedValidator<
     }: {
         config?: WeightedValidatorConfig
         signer: WeightedSigner
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }

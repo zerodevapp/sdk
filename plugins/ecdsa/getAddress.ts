@@ -5,7 +5,7 @@ import {
     KernelV3_1AccountAbi,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
-import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type { EntryPointType, GetKernelVersion } from "@zerodev/sdk/types"
 import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
 import {
     type Address,
@@ -26,7 +26,7 @@ import { getValidatorAddress } from "./toECDSAValidatorPlugin.js"
 
 const getInitCodeHash = async <entryPointVersion extends EntryPointVersion>(
     publicClient: PublicClient,
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>
 ): Promise<Hex> => {
     validateKernelVersionWithEntryPoint(entryPoint.version, kernelVersion)
@@ -144,7 +144,7 @@ const generateSaltForV07 = (
 export type GetKernelAddressFromECDSAParams<
     entryPointVersion extends EntryPointVersion
 > = {
-    entryPoint: { address: Address; version: entryPointVersion }
+    entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: GetKernelVersion<entryPointVersion>
     eoaAddress: Address
     index: bigint

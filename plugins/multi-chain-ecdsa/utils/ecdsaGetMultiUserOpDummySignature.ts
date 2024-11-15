@@ -1,11 +1,6 @@
+import type { EntryPointType } from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
-import {
-    type Address,
-    type Hex,
-    concatHex,
-    encodeAbiParameters,
-    keccak256
-} from "viem"
+import { type Hex, concatHex, encodeAbiParameters, keccak256 } from "viem"
 import {
     type EntryPointVersion,
     type UserOperation,
@@ -17,7 +12,7 @@ export const ecdsaGetMultiUserOpDummySignature = <
 >(
     userOperation: UserOperation<entryPointVersion>,
     numOfUserOps: number,
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     chainId: number
 ): Hex => {
     const userOpHash = getUserOperationHash({

@@ -2,7 +2,11 @@ import {
     satisfiesRange,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import { WebAuthnMode, toWebAuthnKey } from "@zerodev/webauthn-key"
 import { type Address, zeroAddress } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
@@ -36,7 +40,7 @@ export const kernelVersionRangeToContractVersionToValidator: {
 export const getValidatorAddress = <
     entryPointVersion extends EntryPointVersion
 >(
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorContractVersion: PasskeyValidatorContractVersion,
     validatorAddress?: Address

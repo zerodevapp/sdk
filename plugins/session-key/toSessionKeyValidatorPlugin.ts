@@ -4,7 +4,6 @@ import {
     type Address,
     type Client,
     type Hex,
-    type LocalAccount,
     type TypedDataDefinition,
     keccak256,
     pad,
@@ -16,9 +15,13 @@ import { getChainId, readContract, signMessage } from "viem/actions"
 import { concat, concatHex, getAction } from "viem/utils"
 import { SessionKeyValidatorAbi } from "./abi/SessionKeyValidatorAbi.js"
 
-import { KernelAccountAbi } from "@zerodev/sdk"
+import { KernelAccountAbi, toSigner } from "@zerodev/sdk"
 import { constants } from "@zerodev/sdk"
-import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    Signer
+} from "@zerodev/sdk/types"
 import { MerkleTree } from "merkletreejs"
 import {
     type EntryPointVersion,
@@ -67,9 +70,9 @@ export async function signerToSessionKeyValidator<
         validatorData,
         validatorAddress = SESSION_KEY_VALIDATOR_ADDRESS
     }: {
-        signer: LocalAccount
+        signer: Signer
         validatorData?: SessionKeyData<TAbi, TFunctionName>
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
@@ -108,14 +111,7 @@ export async function signerToSessionKeyValidator<
             },
             operation: perm.operation ?? Operation.Call
         })) ?? []
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new Error(
-                "Smart account signer doesn't need to sign transactions"
-            )
-        }
-    } as LocalAccount
+    const viemSigner = await toSigner({ signer })
 
     // // Fetch chain id
     const [chainId] = await Promise.all([getChainId(client)])
@@ -169,7 +165,7 @@ export async function signerToSessionKeyValidator<
             enabledLastNonce ??
             (await getSessionNonces(kernelAccountAddress)).lastNonce + 1n
         return concat([
-            signer.address,
+            viemSigner.address,
             pad(merkleTree.getHexRoot() as Hex, { size: 32 }),
             pad(toHex(sessionKeyData?.validAfter ?? 0), {
                 size: 6
@@ -264,7 +260,7 @@ export async function signerToSessionKeyValidator<
             })
             const fixedSignature = fixSignedData(signature)
             return concat([
-                signer.address,
+                viemSigner.address,
                 fixedSignature,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
@@ -279,7 +275,7 @@ export async function signerToSessionKeyValidator<
 
         async getStubSignature(userOperation) {
             return concat([
-                signer.address,
+                viemSigner.address,
                 constants.DUMMY_ECDSA_SIG,
                 getEncodedPermissionProofData(userOperation.callData)
             ])
@@ -312,7 +308,7 @@ export async function signerToSessionKeyValidator<
                     args: [signer.address as Address, kernelAccountAddress]
                 })
                 const enableDataHex = concatHex([
-                    signer.address,
+                    viemSigner.address,
                     pad(enableData[0], { size: 32 }),
                     pad(toHex(enableData[1]), { size: 6 }),
                     pad(toHex(enableData[2]), { size: 6 }),

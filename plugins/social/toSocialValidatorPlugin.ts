@@ -1,10 +1,13 @@
 import { OAuthExtension } from "@magic-ext/oauth"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import { Magic } from "magic-sdk"
-import { providerToSmartAccountSigner } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint"
-import type { Chain, Client, Transport } from "viem"
+import type { Client } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 
 export async function isAuthorized({
     projectId
@@ -41,21 +44,19 @@ export async function initiateLogin({
 }
 
 export async function getSocialValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         entryPoint: entryPointAddress,
         kernelVersion,
         projectId
     }: {
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: EntryPointType<entryPointVersion>
+        kernelVersion: GetKernelVersion<entryPointVersion>
         projectId: string
     }
-): Promise<KernelValidator<entryPoint, "SocialValidator">> {
+): Promise<KernelValidator<"SocialValidator">> {
     const magic = await getMagic({ projectId })
 
     const authorized = await isAuthorized({ projectId })
@@ -64,10 +65,9 @@ export async function getSocialValidator<
     }
 
     const magicProvider = await magic.wallet.getProvider()
-    const smartAccountSigner = await providerToSmartAccountSigner(magicProvider)
 
     const ecdsaValidator = await signerToEcdsaValidator(client, {
-        signer: smartAccountSigner,
+        signer: magicProvider,
         entryPoint: entryPointAddress,
         kernelVersion
     })

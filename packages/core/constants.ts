@@ -1,5 +1,11 @@
 import { type Address, type Hex, zeroAddress } from "viem"
+import {
+    type EntryPointVersion,
+    entryPoint06Address,
+    entryPoint07Address
+} from "viem/account-abstraction"
 import type {
+    EntryPointType,
     KERNEL_V2_VERSION_TYPE,
     KERNEL_V3_VERSION_TYPE,
     KERNEL_VERSION_TYPE
@@ -111,4 +117,18 @@ export const KernelFactoryToInitCodeHashMap: { [key: Address]: Hex } = {
         "0xee9d8350bd899dd261db689aafd87eb8a30f085adbaff48152399438ff4eed73",
     "0x6723b44Abeec4E71eBE3232BD5B455805baDD22f":
         "0x6fe6e6ea30eddce942b9618033ab8429f9ddac594053bec8a6744fffc71976e2"
+}
+
+export const getEntryPoint = <TEntryPointVersion extends EntryPointVersion>(
+    entryPointVersion: TEntryPointVersion
+): EntryPointType<TEntryPointVersion> => {
+    if (entryPointVersion === "0.6")
+        return {
+            address: entryPoint06Address,
+            version: entryPointVersion
+        }
+    return {
+        address: entryPoint07Address,
+        version: entryPointVersion
+    }
 }

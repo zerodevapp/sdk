@@ -163,6 +163,7 @@ export async function mintToAccount(
                 to: Test_ERC20Address,
                 data: mintData
             })
+        console.log({ mintTransactionHash })
 
         const balanceAfter = await publicClient.readContract({
             abi: TEST_ERC20Abi,

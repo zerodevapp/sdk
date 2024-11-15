@@ -2,7 +2,11 @@ import {
     satisfiesRange,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
-import type { Action, GetKernelVersion } from "@zerodev/sdk/types"
+import type {
+    Action,
+    EntryPointType,
+    GetKernelVersion
+} from "@zerodev/sdk/types"
 import { type Address, toFunctionSelector, zeroAddress } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 
@@ -37,7 +41,7 @@ export const kernelVersionRangeToValidator: {
 export const getValidatorAddress = <
     entryPointVersion extends EntryPointVersion
 >(
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorAddress?: Address
 ): Address => {

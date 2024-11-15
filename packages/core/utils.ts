@@ -14,7 +14,7 @@ import {
 import type { EntryPointVersion } from "viem/account-abstraction"
 import type { ZeroDevPaymasterClient } from "./clients/paymasterClient.js"
 import type { CALL_TYPE, EXEC_TYPE } from "./constants.js"
-import type { GetKernelVersion } from "./types/kernel.js"
+import type { EntryPointType, GetKernelVersion } from "./types/kernel.js"
 
 export enum KERNEL_FEATURES {
     ERC1271_SIG_WRAPPER = "ERC1271_SIG_WRAPPER",
@@ -50,7 +50,7 @@ export const getERC20PaymasterApproveCall = async <
     }: {
         gasToken: Address
         approveAmount: bigint
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
     }
 ): Promise<{ to: Address; value: bigint; data: Hex }> => {
     const response = await client.request({

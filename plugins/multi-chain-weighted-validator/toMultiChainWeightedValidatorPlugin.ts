@@ -1,15 +1,20 @@
 import {
     SignTransactionNotSupportedBySmartAccountError,
+    toSigner,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator,
+    Signer
+} from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
 import {
     type Address,
     type Client,
     type Hex,
-    type LocalAccount,
     type TypedDataDefinition,
     encodeAbiParameters,
     zeroAddress
@@ -33,7 +38,7 @@ import {
 import { encodeWebAuthnPubKey } from "./signers/toWebAuthnSigner.js"
 
 export type WeightedSigner = {
-    account: LocalAccount
+    account: Signer
     getDummySignature: () => Hex
     getPublicKey: () => Hex
     type: SIGNER_TYPE
@@ -51,7 +56,7 @@ export interface WeightedValidatorConfig {
 export const getValidatorAddress = <
     entryPointVersion extends EntryPointVersion
 >(
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorAddress?: Address
 ): Address => {
@@ -74,7 +79,7 @@ export async function createMultiChainWeightedValidator<
     }: {
         config?: WeightedValidatorConfig
         signer: WeightedSigner
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
@@ -123,11 +128,12 @@ export async function createMultiChainWeightedValidator<
                 signer.getPublicKey().toLowerCase()
         )
     }
+    const viemSigner = await toSigner({ signer: signer.account })
 
     const account = toAccount({
         address: zeroAddress, // note that this address is not used
         async signMessage({ message }) {
-            const signature = await signer.account.signMessage({
+            const signature = await viemSigner.signMessage({
                 message
             })
 
@@ -145,7 +151,7 @@ export async function createMultiChainWeightedValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            const signature = await signer.account.signTypedData(typedData)
+            const signature = await viemSigner.signTypedData(typedData)
 
             return concatHex([
                 toHex(getIndexOfSigner(), { size: 1 }),

@@ -34,6 +34,7 @@ import {
 import { KernelVersionToAddressesMap } from "../../constants.js"
 import type {
     CallType,
+    EntryPointType,
     GetEntryPointAbi,
     GetKernelVersion,
     KernelPluginManager,
@@ -96,10 +97,7 @@ export type CreateKernelAccountParameters<
               "entryPoint" | "kernelVersion"
           >
         | KernelPluginManager<entryPointVersion>
-    entryPoint: {
-        address: Address
-        version: entryPointVersion
-    }
+    entryPoint: EntryPointType<entryPointVersion>
     index?: bigint
     factoryAddress?: Address
     accountImplementationAddress?: Address

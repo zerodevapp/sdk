@@ -83,7 +83,7 @@ describe("weightedValidator", () => {
                 })
                 const pKey =
                     "0xd565cc0ff5dc317e52fb4e9be3c2d5cfd86734a98ffbb97f103e3bac009b30d9"
-                const someSigner = toStandaloneECDSASigner({
+                const someSigner = await toStandaloneECDSASigner({
                     signer: privateKeyToAccount(pKey)
                 })
                 const kernelVersion = KERNEL_V3_1

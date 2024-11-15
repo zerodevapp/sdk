@@ -2,7 +2,7 @@ import type { Address, Hex } from "viem"
 import type { PartialBy } from "viem"
 import type { EntryPointVersion, UserOperation } from "viem/account-abstraction"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
-import type { PartialPick } from "../../types/index.js"
+import type { EntryPointType, PartialPick } from "../../types/index.js"
 import { deepHexlify } from "../../utils.js"
 
 export type SponsorUserOperationParameters<
@@ -21,10 +21,7 @@ export type SponsorUserOperationParameters<
               | "paymasterVerificationGasLimit"
               | "paymasterPostOpGasLimit"
           >
-    entryPoint: {
-        address: Address
-        version: entryPointVersion
-    }
+    entryPoint: EntryPointType<entryPointVersion>
     gasToken?: Hex
     shouldOverrideFee?: boolean
     shouldConsume?: boolean

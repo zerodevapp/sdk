@@ -1,6 +1,7 @@
 import type { KernelValidator } from "@zerodev/sdk"
 import type {
     Action,
+    EntryPointType,
     GetKernelVersion,
     PluginValidityData
 } from "@zerodev/sdk/types"
@@ -55,7 +56,7 @@ export type PermissionPluginParams<
 > = {
     signer: ModularSigner
     policies: Policy[]
-    entryPoint: { address: Address; version: entryPointVersion }
+    entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: GetKernelVersion<entryPointVersion>
     flag?: PolicyFlags
 }

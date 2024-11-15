@@ -1,6 +1,5 @@
 import type {
     Abi,
-    Address,
     Chain,
     Client,
     ContractFunctionArgs,
@@ -45,6 +44,7 @@ import {
     type SponsorUserOperationReturnType,
     sponsorUserOperation
 } from "../../actions/paymaster/sponsorUserOperation.js"
+import type { EntryPointType } from "../../types/kernel.js"
 import type { ZeroDevPaymasterClient } from "../paymasterClient.js"
 
 export type ZeroDevPaymasterClientActions<
@@ -62,10 +62,9 @@ export type ZeroDevPaymasterClientActions<
 }
 
 export const zerodevPaymasterActions =
-    <entryPointVersion extends EntryPointVersion>(entryPoint: {
-        address: Address
-        version: entryPointVersion
-    }) =>
+    <entryPointVersion extends EntryPointVersion>(
+        entryPoint: EntryPointType<entryPointVersion>
+    ) =>
     (client: Client): ZeroDevPaymasterClientActions<entryPointVersion> => ({
         sponsorUserOperation: async (
             args: Omit<

@@ -1,5 +1,9 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import {
     type WebAuthnKey,
     b64ToBytes,
@@ -133,7 +137,7 @@ export async function toPasskeyValidator<
         validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorContractVersion: PasskeyValidatorContractVersion
         validatorAddress?: Address
@@ -297,7 +301,7 @@ export async function deserializePasskeyValidator<
         kernelVersion
     }: {
         serializedData: string
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
     }
 ): Promise<

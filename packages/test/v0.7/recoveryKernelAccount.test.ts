@@ -1,10 +1,12 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { getValidatorAddress } from "@zerodev/ecdsa-validator/index.js"
-import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type {
+    KernelAccountClient,
+    KernelSmartAccountImplementation,
+    ZeroDevPaymasterClient
+} from "@zerodev/sdk"
 import dotenv from "dotenv"
-import { type BundlerClient, bundlerActions } from "permissionless"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Address,
     type Chain,
@@ -15,6 +17,7 @@ import {
     parseAbi,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
     getEntryPoint,
@@ -24,7 +27,7 @@ import {
     getZeroDevPaymasterClient,
     kernelVersion,
     validateEnvironmentVariables
-} from "./utils.js"
+} from "./utils"
 
 dotenv.config()
 
@@ -47,41 +50,27 @@ const TEST_TIMEOUT = 1000000
 const recoveryExecutorFunction =
     "function doRecovery(address _validator, bytes calldata _data)"
 describe("Recovery kernel Account", () => {
-    let recoveryAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
-    let publicClient: PublicClient
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let recoveryAccount: SmartAccount<KernelSmartAccountImplementation>
     let recoveryKernelClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
     let accountAddress: Address
     let newSigner: PrivateKeyAccount
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
-        publicClient = await getPublicClient()
         const newSignerPrivateKey = generatePrivateKey()
         newSigner = privateKeyToAccount(newSignerPrivateKey)
 
         recoveryAccount = await getRecoveryKernelAccount()
         accountAddress = recoveryAccount.address
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         recoveryKernelClient = await getKernelAccountClient({
             account: recoveryAccount,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const zerodevPaymaster = getZeroDevPaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
-
-        bundlerClient = recoveryKernelClient.extend(
-            bundlerActions(getEntryPoint())
-        )
     })
 
     test("Account address should be a valid Ethereum address", async () => {
@@ -95,26 +84,21 @@ describe("Recovery kernel Account", () => {
         "Recover the account",
         async () => {
             const userOpHash = await recoveryKernelClient.sendUserOperation({
-                userOperation: {
-                    callData: encodeFunctionData({
-                        abi: parseAbi([recoveryExecutorFunction]),
-                        functionName: "doRecovery",
-                        args: [
-                            getValidatorAddress(getEntryPoint(), kernelVersion),
-                            newSigner.address
-                        ]
-                    }),
-                    preVerificationGas: 84700n,
-                    callGasLimit: 1273781n,
-                    verificationGasLimit: 726789n
-                }
+                callData: encodeFunctionData({
+                    abi: parseAbi([recoveryExecutorFunction]),
+                    functionName: "doRecovery",
+                    args: [
+                        getValidatorAddress(getEntryPoint(), kernelVersion),
+                        newSigner.address
+                    ]
+                })
             })
             console.log("userOpHash:", userOpHash)
 
             expect(userOpHash).toHaveLength(66)
 
             const transactionReceipt =
-                await bundlerClient.waitForUserOperationReceipt({
+                await recoveryKernelClient.waitForUserOperationReceipt({
                     hash: userOpHash
                 })
             console.log(
@@ -129,23 +113,21 @@ describe("Recovery kernel Account", () => {
         "Send the tx with new Signer",
         async () => {
             const userOpHash = await recoveryKernelClient.sendUserOperation({
-                userOperation: {
-                    callData: encodeFunctionData({
-                        abi: parseAbi([recoveryExecutorFunction]),
-                        functionName: "doRecovery",
-                        args: [
-                            getValidatorAddress(getEntryPoint(), kernelVersion),
-                            newSigner.address
-                        ]
-                    })
-                }
+                callData: encodeFunctionData({
+                    abi: parseAbi([recoveryExecutorFunction]),
+                    functionName: "doRecovery",
+                    args: [
+                        getValidatorAddress(getEntryPoint(), kernelVersion),
+                        newSigner.address
+                    ]
+                })
             })
             console.log("userOpHash:", userOpHash)
 
             expect(userOpHash).toHaveLength(66)
 
             const transactionReceipt =
-                await bundlerClient.waitForUserOperationReceipt({
+                await recoveryKernelClient.waitForUserOperationReceipt({
                     hash: userOpHash
                 })
             console.log(

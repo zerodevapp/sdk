@@ -1,77 +1,37 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import { verifyMessage } from "@ambire/signature-validator"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { toSpendingLimitHook } from "@zerodev/hooks"
 import {
-    getKernelAddressFromECDSA,
-    signerToEcdsaValidator
-} from "@zerodev/ecdsa-validator"
-import {
-    constants,
-    EIP1271Abi,
-    KERNEL_ADDRESSES,
     type KernelAccountClient,
-    type KernelSmartAccount,
-    KernelV3ExecuteAbi,
-    createKernelAccount,
-    getCustomNonceKeyFromString,
-    verifyEIP6492Signature
+    type KernelSmartAccountImplementation,
+    type ZeroDevPaymasterClient,
+    createKernelAccount
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
-import { ethers } from "ethers"
 import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V07,
-    bundlerActions
-} from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type { PimlicoBundlerClient } from "permissionless/clients/pimlico.js"
-import type {
-    ENTRYPOINT_ADDRESS_V07_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint.js"
-import {
-    type Address,
     type Chain,
-    type GetContractReturnType,
-    type Hex,
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
-    decodeEventLog,
-    decodeFunctionData,
-    encodeFunctionData,
-    erc20Abi,
-    getContract,
-    hashMessage,
-    hashTypedData,
-    zeroAddress
+    encodeFunctionData
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { toSpendingLimitHook } from "../../../plugins/hooks/toSpendingLimitHook.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/toSudoPolicy.js"
 import { toECDSASigner } from "../../../plugins/permission/signers/toECDSASigner.js"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
-import { EntryPointAbi } from "../abis/EntryPoint.js"
-import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi.js"
-import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
-import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
-import { Test_ERC20Address } from "../utils.js"
 import {
-    findUserOperationEvent,
-    getEcdsaKernelAccountWithRandomSigner,
+    Test_ERC20Address,
     getEntryPoint,
     getKernelAccountClient,
-    getPimlicoBundlerClient,
     getPublicClient,
-    getSignerToEcdsaKernelAccount,
     getZeroDevPaymasterClient,
-    index,
     kernelVersion,
     mintToAccount,
-    validateEnvironmentVariables,
-    waitForNonceUpdate
-} from "./utils.js"
+    validateEnvironmentVariables
+} from "./utils"
 
 dotenv.config()
 
@@ -97,23 +57,22 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Spending Limit Hook", () => {
-    let accountWithSudo: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
-    let accountWithRegular: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let accountWithSudo: SmartAccount<KernelSmartAccountImplementation>
+    let accountWithRegular: SmartAccount<KernelSmartAccountImplementation>
     let ownerAccount1: PrivateKeyAccount
     let ownerAccount2: PrivateKeyAccount
     let publicClient: PublicClient
     let kernelClientWithSudo: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
     let kernelClientWithRegular: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
         // const ownerPrivateKey = process.env.TEST_PRIVATE_KEY
@@ -182,30 +141,16 @@ describe("Spending Limit Hook", () => {
         console.log("accountWithSudo", accountWithSudo.address)
         console.log("accountWithRegular", accountWithRegular.address)
 
+        zeroDevPaymaster = getZeroDevPaymasterClient()
+
         kernelClientWithSudo = await getKernelAccountClient({
             account: accountWithSudo,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
 
         kernelClientWithRegular = await getKernelAccountClient({
             account: accountWithRegular,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
 
         const amountToMint = 10000n

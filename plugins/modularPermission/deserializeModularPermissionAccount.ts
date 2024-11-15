@@ -1,8 +1,12 @@
 import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import { toKernelPluginManager } from "@zerodev/sdk/accounts"
-import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
-import type { Address, Client, Hex } from "viem"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    ValidatorInitData
+} from "@zerodev/sdk/types"
+import type { Client, Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
@@ -22,7 +26,7 @@ export const deserializeModularPermissionAccount = async <
     entryPointVersion extends EntryPointVersion
 >(
     client: Client,
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     modularPermissionAccountParams: string,
     modularSigner?: ModularSigner
@@ -32,7 +36,7 @@ export const deserializeModularPermissionAccount = async <
     )
     let signer: ModularSigner
     if (params.privateKey)
-        signer = toECDSASigner({
+        signer = await toECDSASigner({
             signer: privateKeyToAccount(params.privateKey)
         })
     else if (modularSigner) signer = modularSigner

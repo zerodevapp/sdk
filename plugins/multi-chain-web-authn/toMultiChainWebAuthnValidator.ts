@@ -1,6 +1,10 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
 import { SignTransactionNotSupportedBySmartAccountError } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import {
     b64ToBytes,
@@ -131,7 +135,7 @@ export async function toMultiChainWebAuthnValidator<
         multiChainIds
     }: {
         webAuthnKey: WebAuthnKey
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         rpId?: string
         validatorAddress?: Address
@@ -330,7 +334,7 @@ export async function deserializeMultiChainWebAuthnValidator<
         kernelVersion
     }: {
         serializedData: string
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
     }
 ): Promise<
@@ -523,7 +527,7 @@ export async function deserializeMultiChainWebAuthnValidator<
 }
 
 type MultiChainWebAuthnValidatorSerializedData = {
-    entryPoint: { address: Address; version: EntryPointVersion }
+    entryPoint: EntryPointType<EntryPointVersion>
     validatorAddress: Address
     pubKeyX: bigint
     pubKeyY: bigint

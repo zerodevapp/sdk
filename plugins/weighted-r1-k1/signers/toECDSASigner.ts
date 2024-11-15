@@ -1,23 +1,19 @@
-import { constants, fixSignedData } from "@zerodev/sdk"
+import { constants, fixSignedData, toSigner } from "@zerodev/sdk"
+import type { Signer } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import type { LocalAccount, TypedDataDefinition } from "viem"
+import type { TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
 import { SIGNER_TYPE } from "../constants.js"
 import type { WeightedSigner } from "../toWeightedValidatorPlugin.js"
 
 export type ECDSASignerParams = {
-    signer: LocalAccount
+    signer: Signer
 }
 
-export function toECDSASigner({ signer }: ECDSASignerParams): WeightedSigner {
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new Error(
-                "Smart account signer doesn't need to sign transactions"
-            )
-        }
-    } as LocalAccount
+export async function toECDSASigner({
+    signer
+}: ECDSASignerParams): Promise<WeightedSigner> {
+    const viemSigner = await toSigner({ signer })
     const account = toAccount({
         address: viemSigner.address,
         async signMessage({ message }) {

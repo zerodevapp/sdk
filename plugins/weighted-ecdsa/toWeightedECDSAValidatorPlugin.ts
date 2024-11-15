@@ -1,5 +1,10 @@
-import { KernelAccountAbi } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import { KernelAccountAbi, toSigner } from "@zerodev/sdk"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator,
+    Signer
+} from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type Address,
@@ -51,8 +56,8 @@ export async function createWeightedECDSAValidator<
         validatorAddress: _validatorAddress
     }: {
         config?: WeightedECDSAValidatorConfig
-        signers: Array<LocalAccount>
-        entryPoint: { address: Address; version: entryPointVersion }
+        signers: Array<Signer>
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
@@ -79,8 +84,13 @@ export async function createWeightedECDSAValidator<
     // sort signers by address in descending order
     const configSigners = config ? [...config.signers].sort(sortByAddress) : []
 
+    const signers_: LocalAccount[] = []
+    for (const signer of _signers) {
+        signers_.push(await toSigner({ signer }))
+    }
+
     // sort signers by address in descending order
-    const signers = _signers.sort(sortByAddress)
+    const signers = signers_.sort(sortByAddress)
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -306,7 +316,7 @@ export async function createWeightedECDSAValidator<
 export function getUpdateConfigCall<
     entryPointVersion extends EntryPointVersion
 >(
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     newConfig: WeightedECDSAValidatorConfig
 ): {
@@ -346,7 +356,7 @@ export async function getCurrentSigners<
         multiSigAccountAddress,
         validatorAddress: _validatorAddress
     }: {
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         multiSigAccountAddress: Address
         validatorAddress?: Address

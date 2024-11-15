@@ -1,13 +1,15 @@
-import { SignTransactionNotSupportedBySmartAccountError } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
-import type { TypedData } from "abitype"
+import {
+    SignTransactionNotSupportedBySmartAccountError,
+    toSigner
+} from "@zerodev/sdk"
 import type {
-    Address,
-    Client,
-    Hex,
-    LocalAccount,
-    TypedDataDefinition
-} from "viem"
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator,
+    Signer
+} from "@zerodev/sdk/types"
+import type { TypedData } from "abitype"
+import type { Address, Client, Hex, TypedDataDefinition } from "viem"
 import {
     type EntryPointVersion,
     type UserOperation,
@@ -30,8 +32,8 @@ export async function toMultiChainECDSAValidator<
         validatorAddress: validatorAddress_,
         multiChainIds
     }: {
-        signer: LocalAccount
-        entryPoint: { address: Address; version: entryPointVersion }
+        signer: Signer
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
         multiChainIds?: number[]
@@ -40,12 +42,7 @@ export async function toMultiChainECDSAValidator<
     const validatorAddress =
         validatorAddress_ ?? MULTI_CHAIN_ECDSA_VALIDATOR_ADDRESS
     // Get the private key related account
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccountError()
-        }
-    } as LocalAccount
+    const viemSigner = await toSigner({ signer })
 
     // Fetch chain id
     const chainId = await getChainId(client)

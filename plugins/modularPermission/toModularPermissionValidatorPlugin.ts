@@ -1,5 +1,5 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
-import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type { EntryPointType, GetKernelVersion } from "@zerodev/sdk/types"
 import {
     type Address,
     type Client,
@@ -44,7 +44,7 @@ export async function createPermissionValidator<
         validUntil?: number
         validAfter?: number
         policies: Policy[]
-        entryPoint: { address: Address; version: entryPointVersion }
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }

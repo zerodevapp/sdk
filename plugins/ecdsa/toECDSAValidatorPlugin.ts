@@ -1,12 +1,16 @@
-import { validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
+import { toSigner, validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
 import { satisfiesRange } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator,
+    Signer
+} from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
 import {
     type Address,
     type Client,
     type Hex,
-    type LocalAccount,
     type TypedDataDefinition,
     zeroAddress
 } from "viem"
@@ -22,7 +26,7 @@ import { kernelVersionRangeToValidator } from "./constants.js"
 export const getValidatorAddress = <
     entryPointVersion extends EntryPointVersion
 >(
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorAddress?: Address
 ): Address => {
@@ -50,8 +54,8 @@ export async function signerToEcdsaValidator<
         kernelVersion,
         validatorAddress: _validatorAddress
     }: {
-        signer: LocalAccount
-        entryPoint: { address: Address; version: entryPointVersion }
+        signer: Signer
+        entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
@@ -61,15 +65,7 @@ export async function signerToEcdsaValidator<
         kernelVersion,
         _validatorAddress
     )
-    // Get the private key related account
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new Error(
-                "Smart account signer doesn't need to sign transactions"
-            )
-        }
-    } as LocalAccount
+    const viemSigner = await toSigner({ signer })
 
     // Fetch chain id
     const chainId = await getChainId(client)

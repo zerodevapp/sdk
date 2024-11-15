@@ -1,13 +1,17 @@
-import { fixSignedData } from "@zerodev/sdk"
+import { fixSignedData, toSigner } from "@zerodev/sdk"
 import { getAccountNonce, isSmartAccountDeployed } from "@zerodev/sdk/actions"
 import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
-import type { CallType, GetEntryPointAbi } from "@zerodev/sdk/types"
+import type {
+    CallType,
+    EntryPointType,
+    GetEntryPointAbi,
+    Signer
+} from "@zerodev/sdk/types"
 import {
     type Address,
     type Assign,
     type Client,
     type Hex,
-    type LocalAccount,
     type TypedData,
     type TypedDataDefinition,
     concatHex,
@@ -63,8 +67,8 @@ export type SessionAccountImplementation<
 export type CreateSessionAccountParameters<
     entryPointVersion extends EntryPointVersion = "0.7"
 > = {
-    entryPoint: { address: Address; version: entryPointVersion }
-    sessionKeySigner: LocalAccount
+    entryPoint: EntryPointType<entryPointVersion>
+    sessionKeySigner: Signer
     delegations: Delegation[]
     multiTenantSessionAccountAddress?: Address
     delegatorInitCode?: Hex
@@ -99,14 +103,7 @@ export async function createSessionAccount<
         delegatorInitCode = "0x"
     }: CreateSessionAccountParameters<entryPointVersion>
 ): Promise<CreateSessionAccountReturnType<entryPointVersion>> {
-    const viemSigner: LocalAccount = {
-        ...sessionKeySigner,
-        signTransaction: (_, __) => {
-            throw new Error(
-                "Smart account signer doesn't need to sign transactions"
-            )
-        }
-    } as LocalAccount
+    const viemSigner = await toSigner({ signer: sessionKeySigner })
 
     const chainId = await getChainId(client)
 

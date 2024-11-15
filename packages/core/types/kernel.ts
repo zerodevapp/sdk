@@ -195,10 +195,7 @@ export type KernelPluginManagerParams<
     pluginEnableSignature?: Hex
     validatorInitData?: ValidatorInitData
     action?: Action
-    entryPoint: {
-        address: Address
-        version: entryPointVersion
-    }
+    entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: KERNEL_VERSION_TYPE
     chainId?: number
 } & Partial<PluginValidityData>
@@ -256,3 +253,8 @@ export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
     entryPointVersion extends "0.6"
         ? KERNEL_V2_VERSION_TYPE
         : KERNEL_V3_VERSION_TYPE
+
+export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
+    address: Address
+    version: entryPointVersion
+}

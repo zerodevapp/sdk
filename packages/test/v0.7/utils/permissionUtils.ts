@@ -24,7 +24,7 @@ export const getSignerToPermissionKernelAccount = async (
     }
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
-    const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+    const ecdsaModularSigner = await toECDSASigner({ signer: signer1 })
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -63,7 +63,7 @@ export const getSessionKeySignerToPermissionKernelAccount = async (
         )
     }
     const publicClient = await getPublicClient()
-    const ecdsaModularSigner = toECDSASigner({ signer: sessionKeySigner })
+    const ecdsaModularSigner = await toECDSASigner({ signer: sessionKeySigner })
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -95,7 +95,7 @@ export const getSignerToRootPermissionKernelAccount = async (
 ): Promise<SmartAccount<KernelSmartAccountImplementation>> => {
     const publicClient = await getPublicClient()
     const signer1 = privateKeyToAccount(generatePrivateKey())
-    const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+    const ecdsaModularSigner = await toECDSASigner({ signer: signer1 })
 
     const permissionPlugin = await toPermissionValidator(publicClient, {
         entryPoint: getEntryPoint(),
@@ -120,7 +120,7 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
     ): Promise<SmartAccount<KernelSmartAccountImplementation>> => {
         const publicClient = await getPublicClient()
         const signer1 = privateKeyToAccount(generatePrivateKey())
-        const ecdsaModularSigner = toECDSASigner({ signer: signer1 })
+        const ecdsaModularSigner = await toECDSASigner({ signer: signer1 })
 
         const permissionPlugin = await toPermissionValidator(publicClient, {
             entryPoint: getEntryPoint(),
@@ -131,7 +131,7 @@ export const getSignerToRootPermissionWithSecondaryValidatorKernelAccount =
 
         const privateKey2 = generatePrivateKey()
         const signer2 = privateKeyToAccount(privateKey2)
-        const ecdsaModularSigner2 = toECDSASigner({ signer: signer2 })
+        const ecdsaModularSigner2 = await toECDSASigner({ signer: signer2 })
         const permissionSessionKeyPlugin = await toPermissionValidator(
             publicClient,
             {
@@ -168,7 +168,7 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
 
     const privateKey2 = generatePrivateKey()
     const signer2 = privateKeyToAccount(privateKey2)
-    const ecdsaModularSigner2 = toECDSASigner({ signer: signer2 })
+    const ecdsaModularSigner2 = await toECDSASigner({ signer: signer2 })
     const permissionSessionKeyPlugin = await toPermissionValidator(
         publicClient,
         {
@@ -207,7 +207,7 @@ export const getSignerToPermissionKernelAccountAndPlugin = async (
 
     const privateKey3 = generatePrivateKey()
     const signer3 = privateKeyToAccount(privateKey3)
-    const ecdsaModularSigner3 = toECDSASigner({ signer: signer3 })
+    const ecdsaModularSigner3 = await toECDSASigner({ signer: signer3 })
     const permissionSessionKeyPlugin2 = await toPermissionValidator(
         publicClient,
         {

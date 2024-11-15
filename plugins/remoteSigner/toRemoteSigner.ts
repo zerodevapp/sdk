@@ -1,6 +1,6 @@
 import {
-    fixSignedData,
-    SignTransactionNotSupportedBySmartAccountError
+    SignTransactionNotSupportedBySmartAccountError,
+    fixSignedData
 } from "@zerodev/sdk"
 import type { TypedData } from "abitype"
 import {

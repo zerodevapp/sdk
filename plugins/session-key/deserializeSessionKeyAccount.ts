@@ -1,10 +1,15 @@
-import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
+import { KernelAccountAbi, createKernelAccount, toSigner } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
 import {
     type KernelSmartAccountImplementation,
     toKernelPluginManager
 } from "@zerodev/sdk/accounts"
-import type { GetKernelVersion, ValidatorInitData } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    Signer,
+    ValidatorInitData
+} from "@zerodev/sdk/types"
 import type { Address, Client, Hex, LocalAccount } from "viem"
 import { decodeFunctionData } from "viem"
 import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
@@ -17,10 +22,10 @@ export const deserializeSessionKeyAccount = async <
     entryPointVersion extends EntryPointVersion
 >(
     client: Client,
-    entryPoint: { address: Address; version: entryPointVersion },
+    entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     sessionKeyAccountParams: string,
-    sessionKeySigner?: LocalAccount,
+    sessionKeySigner?: Signer,
     validatorAddress: Address = SESSION_KEY_VALIDATOR_ADDRESS
 ): Promise<
     SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>
@@ -31,7 +36,8 @@ export const deserializeSessionKeyAccount = async <
     const params = deserializeSessionKeyAccountParams(sessionKeyAccountParams)
     let signer: LocalAccount
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
-    else if (sessionKeySigner) signer = sessionKeySigner
+    else if (sessionKeySigner)
+        signer = await toSigner({ signer: sessionKeySigner })
     else throw new Error("No signer or serialized sessionKey provided")
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {

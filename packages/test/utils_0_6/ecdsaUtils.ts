@@ -26,7 +26,7 @@ export const getEcdsaKernelAccountWithRandomSigner = async (chain?: number) => {
     )
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async (
+export const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
     chain?: number
 ): Promise<SmartAccount<KernelSmartAccountImplementation<"0.6">>> => {
