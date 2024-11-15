@@ -1,11 +1,5 @@
 {
-    "workspaces": [
-        "packages/*",
-        "templates/*",
-        "plugins/*",
-        "wallet",
-        "walletconnect"
-    ],
+    "workspaces": ["packages/*", "templates/*", "plugins/*"],
     "private": true,
     "author": "ZeroDev",
     "type": "module",
