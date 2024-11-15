@@ -44,39 +44,28 @@ import {
     type SponsorUserOperationReturnType,
     sponsorUserOperation
 } from "../../actions/paymaster/sponsorUserOperation.js"
-import type { EntryPointType } from "../../types/kernel.js"
 import type { ZeroDevPaymasterClient } from "../paymasterClient.js"
 
-export type ZeroDevPaymasterClientActions<
-    entryPointVersion extends EntryPointVersion
-> = {
+export type ZeroDevPaymasterClientActions = {
     /**
      * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
      */
     sponsorUserOperation: (
-        args: SponsorUserOperationParameters<entryPointVersion>
-    ) => Promise<SponsorUserOperationReturnType<entryPointVersion>>
+        args: SponsorUserOperationParameters
+    ) => Promise<SponsorUserOperationReturnType>
     estimateGasInERC20: (
         args: EstimateGasInERC20Parameters
     ) => Promise<EstimateGasInERC20ReturnType>
 }
 
 export const zerodevPaymasterActions =
-    <entryPointVersion extends EntryPointVersion>(
-        entryPoint: EntryPointType<entryPointVersion>
-    ) =>
-    (client: Client): ZeroDevPaymasterClientActions<entryPointVersion> => ({
-        sponsorUserOperation: async (
-            args: Omit<
-                SponsorUserOperationParameters<entryPointVersion>,
-                "entryPoint"
-            >
-        ) =>
+    <entryPointVersion extends EntryPointVersion>() =>
+    (client: Client): ZeroDevPaymasterClientActions => ({
+        sponsorUserOperation: async (args: SponsorUserOperationParameters) =>
             sponsorUserOperation(
                 client as ZeroDevPaymasterClient<entryPointVersion>,
                 {
-                    ...args,
-                    entryPoint
+                    ...args
                 }
             ),
         estimateGasInERC20: async (args: EstimateGasInERC20Parameters) =>

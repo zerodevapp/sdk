@@ -1,7 +1,10 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
-import { ecdsaSignUserOpsWithEnable } from "@zerodev/multi-chain-ecdsa-validator"
+import {
+    ecdsaSignUserOpsWithEnable,
+    signUserOperations
+} from "@zerodev/multi-chain-ecdsa-validator"
 import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator"
 import {
     EIP1271Abi,
@@ -39,7 +42,6 @@ import {
 import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
-import { signUserOperations } from "../../../plugins/multichain/_types/index.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
@@ -882,14 +884,14 @@ describe("MultiChainECDSAValidator", () => {
             const sepoliaSessionKeySigner = privateKeyToAccount(
                 generatePrivateKey()
             )
-            const sepoliaEcdsaModularSigner = toECDSASigner({
+            const sepoliaEcdsaModularSigner = await toECDSASigner({
                 signer: sepoliaSessionKeySigner
             })
 
             const optimismSepoliaSessionKeySigner = privateKeyToAccount(
                 generatePrivateKey()
             )
-            const optimismSepoliaEcdsaModularSigner = toECDSASigner({
+            const optimismSepoliaEcdsaModularSigner = await toECDSASigner({
                 signer: optimismSepoliaSessionKeySigner
             })
 
@@ -1063,11 +1065,11 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaSessionKeyAccount.address
             )
 
-            const sepoliaEmptySessionKeySigner = toECDSASigner({
+            const sepoliaEmptySessionKeySigner = await toECDSASigner({
                 signer: sepoliaEmptyAccount
             })
 
-            const optimismSepoliaEmptySessionKeySigner = toECDSASigner({
+            const optimismSepoliaEmptySessionKeySigner = await toECDSASigner({
                 signer: optimismSepoliaEmptyAccount
             })
 
@@ -1139,11 +1141,11 @@ describe("MultiChainECDSAValidator", () => {
                 ])
 
             // get real session key signers
-            const sepoliaSessionKeySigner = toECDSASigner({
+            const sepoliaSessionKeySigner = await toECDSASigner({
                 signer: sepoliaSessionKeyAccount
             })
 
-            const optimismSepoliaSessionKeySigner = toECDSASigner({
+            const optimismSepoliaSessionKeySigner = await toECDSASigner({
                 signer: optimismSepoliaSessionKeyAccount
             })
 

@@ -1,60 +1,29 @@
-import type { Address, Hex } from "viem"
-import type { PartialBy } from "viem"
-import type { EntryPointVersion, UserOperation } from "viem/account-abstraction"
+import { type Address, type Hex, type Prettify, isAddressEqual } from "viem"
+import {
+    type EntryPointVersion,
+    type GetPaymasterDataParameters,
+    type GetPaymasterStubDataReturnType,
+    entryPoint06Address
+} from "viem/account-abstraction"
 import type { ZeroDevPaymasterClient } from "../../clients/paymasterClient.js"
-import type { EntryPointType, PartialPick } from "../../types/index.js"
 import { deepHexlify } from "../../utils.js"
 
-export type SponsorUserOperationParameters<
-    entryPointVersion extends EntryPointVersion
-> = {
-    userOperation: entryPointVersion extends "0.6"
-        ? PartialBy<
-              UserOperation<"0.6">,
-              "callGasLimit" | "preVerificationGas" | "verificationGasLimit"
-          >
-        : PartialBy<
-              UserOperation<"0.7">,
-              | "callGasLimit"
-              | "preVerificationGas"
-              | "verificationGasLimit"
-              | "paymasterVerificationGasLimit"
-              | "paymasterPostOpGasLimit"
-          >
-    entryPoint: EntryPointType<entryPointVersion>
+export type SponsorUserOperationParameters = {
+    userOperation: GetPaymasterDataParameters
     gasToken?: Hex
     shouldOverrideFee?: boolean
     shouldConsume?: boolean
 }
 
-export type SponsorUserOperationReturnType<
-    entryPointVersion extends EntryPointVersion
-> = entryPointVersion extends "0.6"
-    ? Pick<
-          UserOperation<"0.6">,
-          | "callGasLimit"
-          | "verificationGasLimit"
-          | "preVerificationGas"
-          | "paymasterAndData"
-      > &
-          PartialPick<
-              UserOperation<"0.6">,
-              "maxFeePerGas" | "maxPriorityFeePerGas"
-          >
-    : Pick<
-          UserOperation<"0.7">,
-          | "callGasLimit"
-          | "verificationGasLimit"
-          | "preVerificationGas"
-          | "paymaster"
-          | "paymasterVerificationGasLimit"
-          | "paymasterPostOpGasLimit"
-          | "paymasterData"
-      > &
-          PartialPick<
-              UserOperation<"0.7">,
-              "maxFeePerGas" | "maxPriorityFeePerGas"
-          >
+export type SponsorUserOperationReturnType = Prettify<
+    GetPaymasterStubDataReturnType & {
+        maxFeePerGas?: bigint | undefined
+        maxPriorityFeePerGas?: bigint | undefined
+        callGasLimit?: bigint | undefined
+        verificationGasLimit?: bigint | undefined
+        preVerificationGas?: bigint | undefined
+    }
+>
 
 /**
  * Returns paymasterAndData & updated gas parameters required to sponsor a userOperation.
@@ -63,15 +32,28 @@ export const sponsorUserOperation = async <
     entryPointVersion extends EntryPointVersion
 >(
     client: ZeroDevPaymasterClient<entryPointVersion>,
-    args: SponsorUserOperationParameters<entryPointVersion>
-): Promise<SponsorUserOperationReturnType<entryPointVersion>> => {
+    args: SponsorUserOperationParameters
+): Promise<SponsorUserOperationReturnType> => {
+    console.log({ args })
+    const {
+        userOperation: {
+            chainId,
+            entryPointAddress,
+            context,
+            // @ts-ignore
+            calls,
+            // @ts-ignore
+            account,
+            ..._userOperation
+        }
+    } = args
     const response = await client.request({
         method: "zd_sponsorUserOperation",
         params: [
             {
                 chainId: client.chain?.id as number,
-                userOp: deepHexlify(args.userOperation),
-                entryPointAddress: args.entryPoint.address,
+                userOp: deepHexlify(_userOperation),
+                entryPointAddress: entryPointAddress,
                 gasTokenData: args.gasToken && {
                     tokenAddress: args.gasToken
                 },
@@ -80,18 +62,19 @@ export const sponsorUserOperation = async <
             }
         ]
     })
-    if (args.entryPoint.version === "0.6") {
+    if (isAddressEqual(entryPointAddress, entryPoint06Address)) {
         return {
             paymasterAndData: response.paymasterAndData,
             preVerificationGas: BigInt(response.preVerificationGas),
             verificationGasLimit: BigInt(response.verificationGasLimit),
             callGasLimit: BigInt(response.callGasLimit),
-            maxFeePerGas:
-                response.maxFeePerGas && BigInt(response.maxFeePerGas),
-            maxPriorityFeePerGas:
-                response.maxPriorityFeePerGas &&
-                BigInt(response.maxPriorityFeePerGas)
-        } as SponsorUserOperationReturnType<entryPointVersion>
+            maxFeePerGas: response.maxFeePerGas
+                ? BigInt(response.maxFeePerGas)
+                : args.userOperation.maxFeePerGas,
+            maxPriorityFeePerGas: response.maxPriorityFeePerGas
+                ? BigInt(response.maxPriorityFeePerGas)
+                : args.userOperation.maxPriorityFeePerGas
+        } as SponsorUserOperationReturnType
     }
     const responseV07 = response as {
         preVerificationGas: Hex
@@ -116,9 +99,11 @@ export const sponsorUserOperation = async <
         ),
         paymasterPostOpGasLimit: BigInt(responseV07.paymasterPostOpGasLimit),
         paymasterData: responseV07.paymasterData,
-        maxFeePerGas: response.maxFeePerGas && BigInt(response.maxFeePerGas),
-        maxPriorityFeePerGas:
-            response.maxPriorityFeePerGas &&
-            BigInt(response.maxPriorityFeePerGas)
-    } as SponsorUserOperationReturnType<entryPointVersion>
+        maxFeePerGas: response.maxFeePerGas
+            ? BigInt(response.maxFeePerGas)
+            : args.userOperation.maxFeePerGas,
+        maxPriorityFeePerGas: response.maxPriorityFeePerGas
+            ? BigInt(response.maxPriorityFeePerGas)
+            : args.userOperation.maxPriorityFeePerGas
+    } as SponsorUserOperationReturnType
 }

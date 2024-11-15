@@ -11,14 +11,16 @@ import {
 import {
     type PaymasterActions,
     type SmartAccount,
-    entryPoint07Address,
     paymasterActions
 } from "viem/account-abstraction"
 import type {
     EntryPointType,
     ZeroDevPaymasterRpcSchema
 } from "../types/kernel.js"
-import { zerodevPaymasterActions } from "./decorators/kernel.js"
+import {
+    type ZeroDevPaymasterClientActions,
+    zerodevPaymasterActions
+} from "./decorators/kernel.js"
 
 export type ZeroDevPaymasterClient<
     entryPointVersion extends "0.6" | "0.7" = "0.7",
@@ -40,7 +42,7 @@ export type ZeroDevPaymasterClient<
         rpcSchema extends RpcSchema
             ? [...ZeroDevPaymasterRpcSchema<entryPointVersion>, ...rpcSchema]
             : ZeroDevPaymasterRpcSchema<entryPointVersion>,
-        PaymasterActions
+        PaymasterActions & ZeroDevPaymasterClientActions
     >
 >
 
@@ -88,7 +90,6 @@ export const createZeroDevPaymasterClient = (
     const {
         key = "public",
         name = "ZeroDev Paymaster Client",
-        entryPoint,
         transport
     } = parameters
     const client = createClient({
@@ -103,10 +104,5 @@ export const createZeroDevPaymasterClient = (
         name,
         type: "zerodevPaymasterClient"
     })
-    return client.extend(paymasterActions).extend(
-        zerodevPaymasterActions({
-            address: entryPoint?.address ?? entryPoint07Address,
-            version: entryPoint?.version ?? "0.7"
-        })
-    )
+    return client.extend(paymasterActions).extend(zerodevPaymasterActions())
 }

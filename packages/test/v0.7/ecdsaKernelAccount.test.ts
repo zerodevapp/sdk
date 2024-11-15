@@ -115,6 +115,13 @@ describe("ECDSA kernel Account", () => {
         kernelClient = await getKernelAccountClient({
             account,
             paymaster: zeroDevPaymaster
+            // paymaster: {
+            //     getPaymasterData(parameters) {
+            //         return zeroDevPaymaster.sponsorUserOperation({
+            //             userOperation: parameters
+            //         })
+            //     }
+            // },
         })
         greeterContract = getContract({
             abi: GreeterAbi,
@@ -617,6 +624,13 @@ describe("ECDSA kernel Account", () => {
             const kernelClient = await getKernelAccountClient({
                 account,
                 paymaster: zeroDevPaymaster
+                // paymaster: {
+                //     getPaymasterData(parameters) {
+                //         return zeroDevPaymaster.sponsorUserOperation({
+                //             userOperation: parameters
+                //         })
+                //     }
+                // }
             })
 
             const response = await kernelClient.sendTransaction({
@@ -791,6 +805,13 @@ describe("ECDSA kernel Account", () => {
             const kernelClient = await getKernelAccountClient({
                 account: initialEcdsaSmartAccount,
                 paymaster: zeroDevPaymaster
+                // paymaster: {
+                //     getPaymasterData(parameters) {
+                //         return zeroDevPaymaster.sponsorUserOperation({
+                //             userOperation: parameters
+                //         })
+                //     }
+                // }
             })
 
             // Send an initial tx to deploy the account
