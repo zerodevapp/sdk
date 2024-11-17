@@ -143,14 +143,12 @@ describe("MultiChainECDSAValidator", () => {
 
         sepoliaZeroDevPaymasterClient = createZeroDevPaymasterClient({
             chain: sepolia,
-            transport: http(SEPOLIA_ZERODEV_PAYMASTER_RPC_URL),
-            entryPoint: getEntryPoint()
+            transport: http(SEPOLIA_ZERODEV_PAYMASTER_RPC_URL)
         })
 
         opSepoliaZeroDevPaymasterClient = createZeroDevPaymasterClient({
             chain: optimismSepolia,
-            transport: http(OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL),
-            entryPoint: getEntryPoint()
+            transport: http(OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL)
         })
 
         signer = privateKeyToAccount(PRIVATE_KEY as Hex)

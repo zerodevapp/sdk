@@ -109,7 +109,6 @@ describe("weightedValidator", () => {
                 console.log(`Account address: ${account.address}`)
 
                 const paymasterClient = createZeroDevPaymasterClient({
-                    entryPoint,
                     chain,
                     transport: http(paymasterUrl)
                 })

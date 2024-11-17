@@ -13,10 +13,7 @@ import {
     type SmartAccount,
     paymasterActions
 } from "viem/account-abstraction"
-import type {
-    EntryPointType,
-    ZeroDevPaymasterRpcSchema
-} from "../types/kernel.js"
+import type { ZeroDevPaymasterRpcSchema } from "../types/kernel.js"
 import {
     type ZeroDevPaymasterClientActions,
     zerodevPaymasterActions
@@ -35,9 +32,9 @@ export type ZeroDevPaymasterClient<
         chain extends Chain
             ? chain
             : // biome-ignore lint/suspicious/noExplicitAny: We need any to infer the chain type
-              client extends Client<any, infer chain>
-              ? chain
-              : undefined,
+            client extends Client<any, infer chain>
+            ? chain
+            : undefined,
         account,
         rpcSchema extends RpcSchema
             ? [...ZeroDevPaymasterRpcSchema<entryPointVersion>, ...rpcSchema]
@@ -47,7 +44,6 @@ export type ZeroDevPaymasterClient<
 >
 
 export type ZeroDevPaymasterClientConfig<
-    entryPointVersion extends "0.6" | "0.7" = "0.7" | "0.6",
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
     account extends SmartAccount | undefined = SmartAccount | undefined,
@@ -64,9 +60,7 @@ export type ZeroDevPaymasterClientConfig<
         | "rpcSchema"
         | "transport"
     >
-> & {
-    entryPoint?: EntryPointType<entryPointVersion>
-}
+>
 /**
  * Creates a ZeroDev-specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/clients/chains.html).
  *

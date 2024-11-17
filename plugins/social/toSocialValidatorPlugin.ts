@@ -48,7 +48,7 @@ export async function getSocialValidator<
 >(
     client: Client,
     {
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         projectId
     }: {
@@ -68,7 +68,7 @@ export async function getSocialValidator<
 
     const ecdsaValidator = await signerToEcdsaValidator(client, {
         signer: magicProvider,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion
     })
 

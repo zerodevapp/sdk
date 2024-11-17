@@ -34,7 +34,6 @@ export const sponsorUserOperation = async <
     client: ZeroDevPaymasterClient<entryPointVersion>,
     args: SponsorUserOperationParameters
 ): Promise<SponsorUserOperationReturnType> => {
-    console.log({ args })
     const {
         userOperation: {
             chainId,

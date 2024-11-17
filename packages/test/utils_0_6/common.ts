@@ -74,8 +74,7 @@ export const getZeroDevPaymasterClient = () => {
 
     return createZeroDevPaymasterClient({
         chain: chain,
-        transport: http(getPaymasterRpc()),
-        entryPoint: getEntryPoint()
+        transport: http(getPaymasterRpc())
     })
 }
 

@@ -220,8 +220,9 @@ export const getSignerToSessionKeyKernelV2Account = async () => {
         index
     })
 
-    const serializedSessionKeyAccountParams =
-        await serializeSessionKeyAccount(account)
+    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
+        account
+    )
 
     return await deserializeSessionKeyAccountV0_2(
         publicClient,
@@ -365,8 +366,9 @@ export const getSignerToSessionKeyKernelAccount = async (): Promise<
         kernelVersion
     })
 
-    const serializedSessionKeyAccountParams =
-        await serializeSessionKeyAccount(account)
+    const serializedSessionKeyAccountParams = await serializeSessionKeyAccount(
+        account
+    )
 
     return await deserializeSessionKeyAccount(
         publicClient,
@@ -560,8 +562,7 @@ export const getZeroDevPaymasterClient = () => {
 
     return createZeroDevPaymasterClient({
         chain: chain,
-        transport: http(getPaymasterRpc()),
-        entryPoint: getEntryPoint()
+        transport: http(getPaymasterRpc())
     })
 }
 
