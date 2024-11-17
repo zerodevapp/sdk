@@ -32,9 +32,9 @@ export type ZeroDevPaymasterClient<
         chain extends Chain
             ? chain
             : // biome-ignore lint/suspicious/noExplicitAny: We need any to infer the chain type
-            client extends Client<any, infer chain>
-            ? chain
-            : undefined,
+              client extends Client<any, infer chain>
+              ? chain
+              : undefined,
         account,
         rpcSchema extends RpcSchema
             ? [...ZeroDevPaymasterRpcSchema<entryPointVersion>, ...rpcSchema]

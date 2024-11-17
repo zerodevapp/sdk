@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.2.0
+
+### Minor Changes
+
+- Migrate to using `viem@2.18.x` with native AA modules instead of `permissionless`
+
 ## 5.1.3
 
 ### Patch Changes
