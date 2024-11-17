@@ -2,7 +2,7 @@ import { encodeFunctionData } from "viem"
 import { KernelExecuteAbi } from "../../abi/KernelAccountAbi.js"
 import type { CallArgs } from "../types.js"
 
-export const encodeExecuteBatchCall = (args: CallArgs[]) => {
+export const encodeExecuteBatchCall = (args: readonly CallArgs[]) => {
     return encodeFunctionData({
         abi: KernelExecuteAbi,
         functionName: "executeBatch",
@@ -10,8 +10,8 @@ export const encodeExecuteBatchCall = (args: CallArgs[]) => {
             args.map((arg) => {
                 return {
                     to: arg.to,
-                    value: arg.value,
-                    data: arg.data
+                    value: arg.value || 0n,
+                    data: arg.data || "0x"
                 }
             })
         ]

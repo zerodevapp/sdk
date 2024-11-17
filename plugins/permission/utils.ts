@@ -1,4 +1,3 @@
-import type { EntryPoint } from "permissionless/types"
 import type { PermissionAccountParams, PermissionPlugin } from "./types.js"
 
 export function base64ToBytes(base64: string) {
@@ -11,10 +10,10 @@ export function bytesToBase64(bytes: Uint8Array) {
     return btoa(binString)
 }
 
-export function isPermissionValidatorPlugin<entryPoint extends EntryPoint>(
+export function isPermissionValidatorPlugin(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
-): plugin is PermissionPlugin<entryPoint> {
+): plugin is PermissionPlugin {
     return plugin?.getPluginSerializationParams !== undefined
 }
 

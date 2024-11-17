@@ -1,38 +1,28 @@
-import { constants, fixSignedData } from "@zerodev/sdk"
+import { constants, fixSignedData, toSigner } from "@zerodev/sdk"
+import type { Signer } from "@zerodev/sdk/types"
 import type { TypedData } from "abitype"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
-import type { Address, LocalAccount, TypedDataDefinition } from "viem"
+import type { TypedDataDefinition } from "viem"
 import { toAccount } from "viem/accounts"
 import { SIGNER_TYPE } from "../constants.js"
 import type { WeightedSigner } from "../toMultiChainWeightedValidatorPlugin.js"
 
-export type ECDSASignerParams<
-    TSource extends string = "custom",
-    TAddress extends Address = Address
-> = {
-    signer: SmartAccountSigner<TSource, TAddress>
+export type ECDSASignerParams = {
+    signer: Signer
 }
 
-export function toECDSASigner<
-    TSource extends string = "custom",
-    TAddress extends Address = Address
->({ signer }: ECDSASignerParams<TSource, TAddress>): WeightedSigner {
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
-        }
-    } as LocalAccount
+export async function toECDSASigner({
+    signer
+}: ECDSASignerParams): Promise<WeightedSigner> {
+    const viemSigner = await toSigner({ signer })
     const account = toAccount({
         address: viemSigner.address,
         async signMessage({ message }) {
             return fixSignedData(await viemSigner.signMessage({ message }))
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,

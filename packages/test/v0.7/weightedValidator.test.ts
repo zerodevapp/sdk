@@ -83,7 +83,7 @@ describe("weightedValidator", () => {
                 })
                 const pKey =
                     "0xd565cc0ff5dc317e52fb4e9be3c2d5cfd86734a98ffbb97f103e3bac009b30d9"
-                const someSigner = toStandaloneECDSASigner({
+                const someSigner = await toStandaloneECDSASigner({
                     signer: privateKeyToAccount(pKey)
                 })
                 const kernelVersion = KERNEL_V3_1
@@ -109,20 +109,15 @@ describe("weightedValidator", () => {
                 console.log(`Account address: ${account.address}`)
 
                 const paymasterClient = createZeroDevPaymasterClient({
-                    entryPoint,
                     chain,
                     transport: http(paymasterUrl)
                 })
 
                 const client = createWeightedKernelAccountClient({
                     account,
-                    entryPoint,
                     chain,
                     bundlerTransport: http(bundlerUrl),
-                    middleware: {
-                        sponsorUserOperation:
-                            paymasterClient.sponsorUserOperation
-                    }
+                    paymaster: paymasterClient
                 })
                 return client
             }
@@ -131,33 +126,33 @@ describe("weightedValidator", () => {
             const client2 = await createWeightedAccountClient(ecdsaSigner2)
 
             const signature1 = await client1.approveUserOperation({
-                userOperation: {
-                    callData: await client1.account.encodeCallData({
+                callData: await client1.account.encodeCalls([
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                }
+                    }
+                ])
             })
 
             const signature2 = await client2.approveUserOperation({
-                userOperation: {
-                    callData: await client2.account.encodeCallData({
+                calls: [
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                }
+                    }
+                ]
             })
 
             const userOpHash = await client2.sendUserOperationWithSignatures({
-                userOperation: {
-                    callData: await client1.account.encodeCallData({
+                callData: await client1.account.encodeCalls([
+                    {
                         to: zeroAddress,
                         data: "0x",
                         value: BigInt(0)
-                    })
-                },
+                    }
+                ]),
                 signatures: [signature1, signature2]
             })
 

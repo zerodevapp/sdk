@@ -6,6 +6,6 @@ export const encodeExecuteSingleCall = (args: CallArgs) => {
     return encodeFunctionData({
         abi: KernelExecuteAbi,
         functionName: "execute",
-        args: [args.to, args.value, args.data, 0]
+        args: [args.to, args.value || 0n, args.data || "0x", 0]
     })
 }

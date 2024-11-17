@@ -1,37 +1,36 @@
-import { validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
+import { toSigner, validateKernelVersionWithEntryPoint } from "@zerodev/sdk"
 import { satisfiesRange } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
-import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
 import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator,
+    Signer
+} from "@zerodev/sdk/types"
+import type { TypedData } from "abitype"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
-    type LocalAccount,
-    type Transport,
     type TypedDataDefinition,
     zeroAddress
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
-import { signMessage, signTypedData } from "viem/actions"
-import { getChainId } from "viem/actions"
+import { getChainId, signMessage } from "viem/actions"
 import { kernelVersionRangeToValidator } from "./constants.js"
 
-export const getValidatorAddress = <entryPoint extends EntryPoint>(
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>,
+export const getValidatorAddress = <
+    entryPointVersion extends EntryPointVersion
+>(
+    entryPoint: EntryPointType<entryPointVersion>,
+    kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorAddress?: Address
 ): Address => {
-    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+    validateKernelVersionWithEntryPoint(entryPoint.version, kernelVersion)
     const ecdsaValidatorAddress = Object.entries(
         kernelVersionRangeToValidator
     ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]
@@ -46,37 +45,27 @@ export const getValidatorAddress = <entryPoint extends EntryPoint>(
 }
 
 export async function signerToEcdsaValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSource extends string = "custom",
-    TAddress extends Address = Address
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         signer,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         validatorAddress: _validatorAddress
     }: {
-        signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        signer: Signer
+        entryPoint: EntryPointType<entryPointVersion>
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
-): Promise<KernelValidator<entryPoint, "ECDSAValidator">> {
+): Promise<KernelValidator<"ECDSAValidator">> {
     const validatorAddress = getValidatorAddress(
-        entryPointAddress,
+        entryPoint,
         kernelVersion,
         _validatorAddress
     )
-    // Get the private key related account
-    const viemSigner: LocalAccount = {
-        ...signer,
-        signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
-        }
-    } as LocalAccount
+    const viemSigner = await toSigner({ signer })
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -88,7 +77,9 @@ export async function signerToEcdsaValidator<
             return signMessage(client, { account: viemSigner, message })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -96,13 +87,7 @@ export async function signerToEcdsaValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account: viemSigner,
-                    ...typedData
-                }
-            )
+            return viemSigner.signTypedData(typedData)
         }
     })
 
@@ -126,15 +111,14 @@ export async function signerToEcdsaValidator<
             return 0n
         },
         // Sign a user operation
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
-            const hash = getUserOperationHash<entryPoint>({
+        async signUserOperation(userOperation) {
+            const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -145,7 +129,7 @@ export async function signerToEcdsaValidator<
         },
 
         // Get simple dummy signature
-        async getDummySignature() {
+        async getStubSignature() {
             return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
         },
 

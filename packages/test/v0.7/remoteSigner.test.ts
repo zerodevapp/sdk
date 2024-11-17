@@ -4,13 +4,11 @@ import { verifyMessage } from "@ambire/signature-validator"
 import {
     EIP1271Abi,
     type KernelAccountClient,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
+    type ZeroDevPaymasterClient,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
-import type { BundlerClient } from "permissionless"
-import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
 import {
     type Address,
     type Chain,
@@ -20,6 +18,8 @@ import {
     hashTypedData,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
+import { sepolia } from "viem/chains"
 import { toSudoPolicy } from "../../../plugins/permission/policies"
 import {
     RemoteSignerMode,
@@ -31,9 +31,7 @@ import {
     getEcdsaKernelAccountWithRemoteSigner,
     getEntryPoint,
     getKernelAccountClient,
-    getKernelBundlerClient,
     getPermissionKernelAccountWithRemoteSigner,
-    getPimlicoBundlerClient,
     getPublicClient,
     getZeroDevPaymasterClient
 } from "./utils"
@@ -49,25 +47,20 @@ const TEST_TIMEOUT = 1000000
 describe("Remote Signer", () => {
     let remoteSignerAddress: Address
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let ecdsaSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
-    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let permissionSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
         publicClient = await getPublicClient()
-        bundlerClient = getKernelBundlerClient()
-        pimlicoBundlerClient = getPimlicoBundlerClient()
 
         const remoteSigner = await toRemoteSigner({
             apiKey: process.env.ZERODEV_API_KEY as string,
@@ -78,18 +71,10 @@ describe("Remote Signer", () => {
 
         const ecdsaAccount =
             await getEcdsaKernelAccountWithRemoteSigner(remoteSigner)
-
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: ecdsaAccount,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
         const sudoPolicy = await toSudoPolicy({})
 
@@ -98,15 +83,7 @@ describe("Remote Signer", () => {
                 remoteSigner,
                 [sudoPolicy]
             ),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
     })
 
@@ -150,7 +127,7 @@ describe("Remote Signer", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -226,7 +203,7 @@ describe("Remote Signer", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -256,7 +233,7 @@ describe("Remote Signer", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

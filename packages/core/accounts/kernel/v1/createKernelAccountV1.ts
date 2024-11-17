@@ -1,54 +1,56 @@
 import {
-    ENTRYPOINT_ADDRESS_V06,
-    getAccountNonce,
-    getEntryPointVersion,
-    getSenderAddress,
-    getUserOperationHash,
-    isSmartAccountDeployed
-} from "permissionless"
-import {
-    SignTransactionNotSupportedBySmartAccount,
-    type SmartAccountSigner
-} from "permissionless/accounts"
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types"
-import {
+    type Account,
     type Address,
+    type Assign,
     type Chain,
     type Client,
-    type Hash,
+    type EIP1193Provider,
     type Hex,
     type LocalAccount,
-    type PublicActions,
-    type PublicRpcSchema,
+    type OneOf,
     type Transport,
     type TypedData,
     type TypedDataDefinition,
-    concatHex,
+    type WalletClient,
+    createNonceManager,
     encodeFunctionData
 } from "viem"
+import {
+    type SmartAccount,
+    type SmartAccountImplementation,
+    entryPoint06Abi,
+    entryPoint06Address,
+    getUserOperationHash,
+    toSmartAccount
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
-import { getChainId, signMessage, signTypedData } from "viem/actions"
-import type { KernelEncodeCallDataArgs } from "../../../types/kernel.js"
-import { wrapSignatureWith6492 } from "../../utils/6492.js"
-import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
+import { getChainId, signMessage } from "viem/actions"
+import {
+    getAccountNonce,
+    getSenderAddress
+} from "../../../actions/public/index.js"
+import type { CallType, GetEntryPointAbi } from "../../../types/kernel.js"
 import {
     MULTISEND_ADDRESS,
     encodeMultiSend,
     multiSendAbi
 } from "../../utils/multisend.js"
-import type { KernelSmartAccount } from "../createKernelAccount.js"
 
-export type KernelSmartAccountV1<
-    entryPoint extends EntryPoint,
-    transport extends Transport = Transport,
-    chain extends Chain | undefined = Chain | undefined
-> = Omit<
-    KernelSmartAccount<entryPoint, transport, chain>,
-    "kernelPluginManager" | "kernelVersion"
+export type KernelSmartAccountV1Implementation = Assign<
+    SmartAccountImplementation<GetEntryPointAbi<"0.6">, "0.6">,
+    {
+        sign: NonNullable<SmartAccountImplementation["sign"]>
+        encodeCalls: (
+            calls: Parameters<SmartAccountImplementation["encodeCalls"]>[0],
+            callType?: CallType | undefined
+        ) => Promise<Hex>
+        generateInitCode: () => Promise<Hex>
+        encodeModuleInstallCallData: () => Promise<Hex>
+    }
 >
+
+export type CreateKernelAccountV1ReturnType =
+    SmartAccount<KernelSmartAccountV1Implementation>
 
 const createAccountAbi = [
     {
@@ -92,43 +94,33 @@ const KERNEL_V1_ADDRESSES: {
     ENTRYPOINT_V0_6: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 }
 
-export async function createKernelAccountV1<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSource extends string = string,
-    TAddress extends Address = Address
->(
-    client: Client<
-        TTransport,
-        TChain,
-        undefined,
-        PublicRpcSchema,
-        PublicActions<TTransport, TChain>
-    >,
+export async function createKernelAccountV1(
+    client: Client,
     {
         signer,
-        entryPoint: entryPointAddress,
+        address,
+        entryPoint,
         index = 0n
     }: {
-        signer: SmartAccountSigner<TSource, TAddress>
-        entryPoint: entryPoint
+        signer: OneOf<
+            | EIP1193Provider
+            | WalletClient<Transport, Chain | undefined, Account>
+            | LocalAccount
+        >
+        entryPoint: {
+            address: Address
+            version: "0.6"
+        }
+        address?: Address
         index?: bigint
     }
-): Promise<KernelSmartAccountV1<entryPoint, TTransport, TChain>> {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-
-    if (
-        entryPointVersion !== "v0.6" ||
-        entryPointAddress !== ENTRYPOINT_ADDRESS_V06
-    ) {
-        throw new Error("Only EntryPoint 0.6 is supported")
-    }
-
+): Promise<CreateKernelAccountV1ReturnType> {
     const viemSigner: LocalAccount = {
         ...signer,
         signTransaction: (_, __) => {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         }
     } as LocalAccount
 
@@ -136,43 +128,45 @@ export async function createKernelAccountV1<
     const chainId = await getChainId(client)
 
     const generateInitCode = async (): Promise<Hex> => {
-        return concatHex([
-            KERNEL_V1_ADDRESSES.FACTORY_ADDRESS,
-            encodeFunctionData({
-                abi: createAccountAbi,
-                functionName: "createAccount",
-                args: [signer.address, index]
-            })
-        ]) as Hex
+        return encodeFunctionData({
+            abi: createAccountAbi,
+            functionName: "createAccount",
+            args: [signer.address, index]
+        })
     }
 
-    const initCode = await generateInitCode()
-    const accountAddress = await getSenderAddress<ENTRYPOINT_ADDRESS_V06_TYPE>(
-        client,
-        {
-            initCode,
-            entryPoint: entryPointAddress
+    const getFactoryArgs = async () => {
+        return {
+            factory: KERNEL_V1_ADDRESSES.FACTORY_ADDRESS,
+            factoryData: await generateInitCode()
         }
-    )
+    }
+
+    // Fetch account address and chain id
+    let accountAddress =
+        address ??
+        (await (async () => {
+            const { factory, factoryData } = await getFactoryArgs()
+
+            // Get the sender address based on the init code
+            return await getSenderAddress(client, {
+                factory,
+                factoryData,
+                entryPointAddress: entryPoint.address
+            })
+        })())
 
     if (!accountAddress) throw new Error("Account address not found")
-
-    let smartAccountDeployed = await isSmartAccountDeployed(
-        client,
-        accountAddress
-    )
 
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            const [isDeployed, signature] = await Promise.all([
-                isSmartAccountDeployed(client, accountAddress),
-                signer.signMessage({ message })
-            ])
-            return create6492Signature(isDeployed, signature)
+            return viemSigner.signMessage({ message })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -180,94 +174,71 @@ export async function createKernelAccountV1<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return signTypedData<TTypedData, TPrimaryType, TChain, undefined>(
-                client,
-                {
-                    account: viemSigner,
-                    ...typedData
-                }
-            )
+            return viemSigner.signTypedData(typedData)
         }
     })
 
-    // const isAccountDeployed = async (): Promise<boolean> => {
-    //     const contractCode = await getBytecode(client, {
-    //         address: accountAddress
-    //     })
-
-    //     return (contractCode?.length ?? 0) > 2
-    // }
-
-    const create6492Signature = async (
-        isDeployed: boolean,
-        signature: Hash
-    ): Promise<Hash> => {
-        if (isDeployed) {
-            return signature
-        }
-
-        const [factoryAddress, factoryCalldata] =
-            parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )
-
-        return wrapSignatureWith6492({
-            factoryAddress,
-            factoryCalldata,
-            signature
-        })
+    const _entryPoint = {
+        address: entryPoint?.address ?? entryPoint06Address,
+        abi: entryPoint06Abi,
+        version: entryPoint?.version ?? "0.6"
     }
 
-    return {
+    return toSmartAccount<KernelSmartAccountV1Implementation>({
         ...account,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
             throw new Error("Not implemented")
         },
+        nonceKeyManager: createNonceManager({
+            source: { get: () => 0, set: () => {} }
+        }),
+        async sign({ hash }) {
+            return account.signMessage({ message: hash })
+        },
+        async signMessage({ message }) {
+            return account.signMessage({ message })
+        },
+        async signTypedData<
+            const TTypedData extends TypedData | Record<string, unknown>,
+            TPrimaryType extends
+                | keyof TTypedData
+                | "EIP712Domain" = keyof TTypedData
+        >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
+            return viemSigner.signTypedData(typedData)
+        },
+        async getAddress() {
+            if (accountAddress) return accountAddress
+
+            const { factory, factoryData } = await getFactoryArgs()
+
+            // Get the sender address based on the init code
+            accountAddress = await getSenderAddress(client, {
+                factory,
+                factoryData,
+                entryPointAddress: entryPoint.address
+            })
+
+            return accountAddress
+        },
+        getFactoryArgs,
         client: client,
-        publicKey: accountAddress,
-        entryPoint: entryPointAddress,
-        source: "kernelSmartAccount",
-        async getFactory() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return KERNEL_V1_ADDRESSES.FACTORY_ADDRESS
-        },
-
-        async getFactoryData() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )[1]
-        },
+        entryPoint: _entryPoint,
         async getNonce() {
             return getAccountNonce(client, {
-                sender: accountAddress,
-                entryPoint: entryPointAddress
+                address: accountAddress,
+                entryPointAddress: entryPoint.address
             })
         },
         async signUserOperation(userOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
+                    sender: userOperation.sender ?? (await this.getAddress()),
                     signature: "0x"
                 },
-                entryPoint: entryPointAddress,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
             const signature = await signMessage(client, {
@@ -276,26 +247,27 @@ export async function createKernelAccountV1<
             })
             return signature
         },
-        async getInitCode() {
-            if (smartAccountDeployed) return "0x"
+        // async getInitCode() {
+        //     if (smartAccountDeployed) return "0x"
 
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
+        //     smartAccountDeployed = await isSmartAccountDeployed(
+        //         client,
+        //         accountAddress
+        //     )
 
-            if (smartAccountDeployed) return "0x"
-            return generateInitCode()
-        },
-        async encodeCallData(_tx) {
-            const tx = _tx as KernelEncodeCallDataArgs
-
-            if (Array.isArray(tx)) {
+        //     if (smartAccountDeployed) return "0x"
+        //     return generateInitCode()
+        // },
+        async encodeCalls(calls, callType): Promise<Hex> {
+            if (calls.length > 1) {
+                if (callType === "delegatecall") {
+                    throw new Error("Cannot batch delegatecall")
+                }
                 // Encode a batched call using multiSend
                 const multiSendCallData = encodeFunctionData({
                     abi: multiSendAbi,
                     functionName: "multiSend",
-                    args: [encodeMultiSend(tx)]
+                    args: [encodeMultiSend(calls)]
                 })
 
                 return encodeFunctionData({
@@ -305,34 +277,37 @@ export async function createKernelAccountV1<
                 })
             }
 
+            const call = calls.length === 0 ? undefined : calls[0]
+
+            if (!call) {
+                throw new Error("No calls to encode")
+            }
+
             // Default to `call`
-            if (!tx.callType || tx.callType === "call") {
-                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
-                    return tx.data
+            if (!callType || callType === "call") {
+                if (call.to.toLowerCase() === accountAddress.toLowerCase()) {
+                    return call.data || "0x"
                 }
 
                 return encodeFunctionData({
                     abi: executeAndRevertAbi,
                     functionName: "executeAndRevert",
-                    args: [tx.to, tx.value || 0n, tx.data, 0n]
+                    args: [call.to, call.value || 0n, call.data, 0n]
                 })
             }
 
-            if (tx.callType === "delegatecall") {
+            if (callType === "delegatecall") {
                 return encodeFunctionData({
                     abi: executeAndRevertAbi,
                     functionName: "executeAndRevert",
-                    args: [tx.to, tx.value || 0n, tx.data, 1n]
+                    args: [call.to, call.value || 0n, call.data, 1n]
                 })
             }
 
             throw new Error("Invalid call type")
         },
-        async encodeDeployCallData() {
-            return "0x"
-        },
-        async getDummySignature() {
+        async getStubSignature() {
             return "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
         }
-    }
+    })
 }

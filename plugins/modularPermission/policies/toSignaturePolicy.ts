@@ -1,13 +1,12 @@
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import { concatHex, encodeAbiParameters } from "viem"
 import { PolicyFlags, SIGNATURE_POLICY_CONTRACT } from "../constants.js"
 import type { Policy, SignaturePolicyParams } from "./types.js"
 
-export async function toSignaturePolicy<entryPoint extends EntryPoint>({
+export async function toSignaturePolicy({
     policyAddress = SIGNATURE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.NOT_FOR_VALIDATE_USEROP,
     allowedRequestors
-}: SignaturePolicyParams): Promise<Policy<entryPoint>> {
+}: SignaturePolicyParams): Promise<Policy> {
     return {
         getPolicyData: () => {
             return encodeAbiParameters(

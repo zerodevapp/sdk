@@ -1,15 +1,18 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
+import type {
+    KernelAccountClient,
+    KernelSmartAccountImplementation,
+    ZeroDevPaymasterClient
+} from "@zerodev/sdk"
 import dotenv from "dotenv"
-import { type BundlerClient, bundlerActions } from "permissionless"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/types/entrypoint.js"
 import {
     type Chain,
     type PublicClient,
     type Transport,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey } from "viem/accounts"
 import {
     getEcdsaKernelAccountWithPrivateKey,
@@ -18,7 +21,7 @@ import {
     getPublicClient,
     getRecoveryKernelAccount,
     getZeroDevPaymasterClient
-} from "./utils.js"
+} from "./utils_0_6"
 
 dotenv.config()
 
@@ -51,16 +54,15 @@ const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Recovery kernel Account", () => {
-    let ownerAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
-    let recoveryAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+    let ownerAccount: SmartAccount<KernelSmartAccountImplementation<"0.6">>
+    let recoveryAccount: SmartAccount<KernelSmartAccountImplementation<"0.6">>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V06_TYPE>
     let ownerKernelClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        SmartAccount<KernelSmartAccountImplementation<"0.6">>
     >
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
         publicClient = await getPublicClient()
@@ -68,23 +70,12 @@ describe("Recovery kernel Account", () => {
         ownerAccount =
             await getEcdsaKernelAccountWithPrivateKey(ownerPrivateKey)
 
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         recoveryAccount = await getRecoveryKernelAccount(ownerAccount.address)
         ownerKernelClient = await getKernelAccountClient({
             account: ownerAccount,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const zerodevPaymaster = getZeroDevPaymasterClient()
-                    return zerodevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
-
-        bundlerClient = ownerKernelClient.extend(
-            bundlerActions(getEntryPoint())
-        )
     })
 
     test("Account address should be a valid Ethereum address", async () => {
@@ -106,17 +97,14 @@ describe("Recovery kernel Account", () => {
                 txHash
             )
             const userOpHash = await ownerKernelClient.sendUserOperation({
-                userOperation: {
-                    callData:
-                        await recoveryAccount.encodeModuleInstallCallData()
-                }
+                callData: await recoveryAccount.encodeModuleInstallCallData()
             })
             console.log("userOpHash:", userOpHash)
 
             expect(userOpHash).toHaveLength(66)
 
             const transactionReceipt =
-                await bundlerClient.waitForUserOperationReceipt({
+                await ownerKernelClient.waitForUserOperationReceipt({
                     hash: userOpHash
                 })
             console.log(

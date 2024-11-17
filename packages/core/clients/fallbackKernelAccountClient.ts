@@ -1,21 +1,19 @@
-import type { EntryPoint } from "permissionless/types"
-import type { Chain, Transport } from "viem"
-import type { KernelSmartAccount } from "../accounts/index.js"
+import type { Chain, Client, RpcSchema, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import type { KernelAccountClient } from "./kernelAccountClient.js"
 
 export const createFallbackKernelAccountClient = <
-    TEntryPoint extends EntryPoint,
-    TTransport extends Transport,
-    TChain extends Chain | undefined,
-    TSmartAccount extends
-        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
-        | undefined
+    transport extends Transport,
+    chain extends Chain | undefined = undefined,
+    account extends SmartAccount | undefined = undefined,
+    client extends Client | undefined = undefined,
+    rpcSchema extends RpcSchema | undefined = undefined
 >(
     clients: Array<
-        KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount>
+        KernelAccountClient<transport, chain, account, client, rpcSchema>
     >,
     onError?: (error: Error, clientUrl: string) => Promise<void>
-): KernelAccountClient<TEntryPoint, TTransport, TChain, TSmartAccount> => {
+): KernelAccountClient<transport, chain, account, client, rpcSchema> => {
     // Function to create a fallback method for a given property.
     // This method will try each client in sequence until one succeeds or all fail.
     function createFallbackMethod(prop: PropertyKey) {

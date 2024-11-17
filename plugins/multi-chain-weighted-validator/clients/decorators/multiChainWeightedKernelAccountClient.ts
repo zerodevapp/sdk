@@ -1,11 +1,5 @@
-import {
-    type KernelAccountClientActions,
-    type KernelSmartAccount,
-    kernelAccountClientActions
-} from "@zerodev/sdk"
-import type { Middleware } from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
 import type { Chain, Client, Hash, Transport } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     type ApproveUserOperationParameters,
     type ApproveUserOperationReturnType,
@@ -16,39 +10,15 @@ import {
     sendUserOperationWithApprovals
 } from "../../actions/sendUserOperationWithApprovals.js"
 
-export type MultiChainWeightedKernelAccountClientActions<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TSmartAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
-> = Omit<
-    KernelAccountClientActions<entryPoint, TTransport, TChain, TSmartAccount>,
-    | "sendUserOperation"
-    | "sendTransaction"
-    | "writeContract"
-    | "sendTransactions"
-> & {
+export type MultiChainWeightedKernelAccountClientActions = {
     /**
      * Approve a user operation with the given transport, chain, smart account and signer.
      *
      * @param args - Parameters for the approveUserOperation function
      * @returns A promise that resolves to the result of the approveUserOperation function
      */
-    approveUserOperation: <TTransport extends Transport>(
-        args: Prettify<
-            Parameters<
-                typeof approveUserOperation<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >
-            >[1]
-        >
+    approveUserOperation: (
+        args: ApproveUserOperationParameters
     ) => Promise<ApproveUserOperationReturnType>
     /**
      * Sends a user operation with the given transport, chain, smart account and signer.
@@ -56,78 +26,23 @@ export type MultiChainWeightedKernelAccountClientActions<
      * @param args - Parameters for the sendUserOperationWithSignatures function
      * @returns A promise that resolves to the result of the sendUserOperationWithSignatures function
      */
-    sendUserOperationWithApprovals: <TTransport extends Transport>(
-        args: Prettify<
-            Parameters<
-                typeof sendUserOperationWithApprovals<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >
-            >[1]
-        >
+    sendUserOperationWithApprovals: (
+        args: SendUserOperationWithApprovalsParameters
     ) => Promise<Hash>
 }
-export function multiChainWeightedKernelAccountClientActions<
-    entryPoint extends EntryPoint
->({ middleware }: Middleware<entryPoint>) {
+export function multiChainWeightedKernelAccountClientActions() {
     return <
-        TTransport extends Transport,
         TChain extends Chain | undefined = Chain | undefined,
-        TSmartAccount extends
-            | KernelSmartAccount<entryPoint, TTransport, TChain>
-            | undefined =
-            | KernelSmartAccount<entryPoint, TTransport, TChain>
+        TSmartAccount extends SmartAccount | undefined =
+            | SmartAccount
             | undefined
     >(
-        client: Client<TTransport, TChain, TSmartAccount>
-    ): MultiChainWeightedKernelAccountClientActions<
-        entryPoint,
-        TTransport,
-        TChain,
-        TSmartAccount
-    > => {
-        const baseActions = kernelAccountClientActions({ middleware })(client)
-        const {
-            sendUserOperation,
-            sendTransaction,
-            writeContract,
-            sendTransactions,
-            ...rest
-        } = baseActions
+        client: Client<Transport, TChain, TSmartAccount>
+    ): MultiChainWeightedKernelAccountClientActions => {
         return {
-            ...rest,
-            approveUserOperation: (args) =>
-                approveUserOperation<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >(client, {
-                    ...args,
-                    middleware
-                } as ApproveUserOperationParameters<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >),
+            approveUserOperation: (args) => approveUserOperation(client, args),
             sendUserOperationWithApprovals: (args) =>
-                sendUserOperationWithApprovals<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >(client, {
-                    ...args,
-                    middleware
-                } as SendUserOperationWithApprovalsParameters<
-                    entryPoint,
-                    TTransport,
-                    TChain,
-                    TSmartAccount
-                >)
+                sendUserOperationWithApprovals(client, args)
         }
     }
 }

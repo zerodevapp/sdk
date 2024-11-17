@@ -1,74 +1,56 @@
-import { AccountOrClientNotFoundError, parseAccount } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type { SendTransactionWithPaymasterParameters } from "permissionless/actions/smartAccount"
-import { sendTransaction } from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import type { Chain, Client, Hash, Transport } from "viem"
-import { getAction } from "viem/utils"
+import { AccountNotFoundError } from "@zerodev/sdk"
+import { sendTransaction } from "@zerodev/sdk/actions"
+import type {
+    Chain,
+    Client,
+    Hash,
+    Prettify,
+    SendTransactionParameters,
+    Transport
+} from "viem"
+import type {
+    SendUserOperationParameters,
+    SmartAccount
+} from "viem/account-abstraction"
+import { getAction, parseAccount } from "viem/utils"
+import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 import { getInstallDMAsExecutorCallData } from "../utils/delegationManager.js"
 
 export type SendInstallDMAsExecutorUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
-> = Prettify<
-    SendTransactionWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >
->
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    chain extends Chain | undefined = Chain | undefined,
+    chainOverride extends Chain | undefined = Chain | undefined
+> = Prettify<Partial<SendTransactionParameters<chain, account, chainOverride>>>
 
 export async function installDMAsExecutor<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: SendInstallDMAsExecutorUserOperationParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >
+    client: Client<Transport, chain, account>,
+    args: SendInstallDMAsExecutorUserOperationParameters
 ): Promise<Hash> {
     const { account: account_ = client.account } = args
 
     if (!account_) {
-        throw new AccountOrClientNotFoundError({
-            docsPath: "/docs/actions/wallet/sendTransaction"
-        })
+        throw new AccountNotFoundError()
     }
 
-    const account = parseAccount(account_) as SmartAccount<
-        entryPoint,
-        string,
-        TTransport,
-        TChain
-    >
-
-    if (account.type !== "local") {
-        throw new Error("RPC account type not supported")
-    }
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<SessionAccountImplementation>
 
     return await getAction(
         client,
-        sendTransaction<TTransport, TChain, TAccount, entryPoint>,
+        sendTransaction,
         "sendTransaction"
     )({
         ...args,
-        to: account.address,
-        data: getInstallDMAsExecutorCallData()
-    })
+        calls: [
+            {
+                to: account.address,
+                data: getInstallDMAsExecutorCallData(),
+                value: 0n
+            }
+        ]
+    } as SendTransactionParameters | SendUserOperationParameters)
 }

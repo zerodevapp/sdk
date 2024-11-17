@@ -1,5 +1,11 @@
 # @zerodev/remote-signer
 
+## 5.3.0
+
+### Minor Changes
+
+- Migrate to using `viem@2.18.x` with native AA modules instead of `permissionless`
+
 ## 5.2.4
 
 ### Patch Changes

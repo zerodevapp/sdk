@@ -1,5 +1,17 @@
 # @zerodev/permissions
 
+## 5.5.0
+
+### Minor Changes
+
+- Migrate to using `viem@2.18.x` with native AA modules instead of `permissionless`
+
+## 5.5.0-beta.0
+
+### Minor Changes
+
+- Migrate to using `viem@2.18.x` with native AA modules instead of `permissionless`
+
 ## 5.4.10
 
 ### Patch Changes

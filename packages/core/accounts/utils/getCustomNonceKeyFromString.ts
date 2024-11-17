@@ -1,6 +1,5 @@
-import { getEntryPointVersion } from "permissionless"
-import type { EntryPoint } from "permissionless/types"
 import { keccak256, toHex } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 
 const hashAndTruncate = (input: string, byteSize: number): bigint => {
     const hash = keccak256(toHex(input))
@@ -10,11 +9,9 @@ const hashAndTruncate = (input: string, byteSize: number): bigint => {
 
 export const getCustomNonceKeyFromString = (
     input: string,
-    entryPoint: EntryPoint
+    entryPointVersion: EntryPointVersion
 ) => {
-    const entryPointVersion = getEntryPointVersion(entryPoint)
-
-    if (entryPointVersion === "v0.6") {
+    if (entryPointVersion === "0.6") {
         return hashAndTruncate(input, 24) // 24 bytes for v0.6
     }
     return hashAndTruncate(input, 2) // 2 bytes for v0.7

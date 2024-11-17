@@ -2,10 +2,14 @@ import {
     satisfiesRange,
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import { WebAuthnMode, toWebAuthnKey } from "@zerodev/webauthn-key"
-import type { EntryPoint } from "permissionless/types/entrypoint.js"
 import { type Address, zeroAddress } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import {
     PasskeyValidatorContractVersion,
     deserializePasskeyValidator,
@@ -33,13 +37,15 @@ export const kernelVersionRangeToContractVersionToValidator: {
     }
 }
 
-export const getValidatorAddress = <entryPoint extends EntryPoint>(
-    entryPointAddress: entryPoint,
-    kernelVersion: GetKernelVersion<entryPoint>,
+export const getValidatorAddress = <
+    entryPointVersion extends EntryPointVersion
+>(
+    entryPoint: EntryPointType<entryPointVersion>,
+    kernelVersion: GetKernelVersion<entryPointVersion>,
     validatorContractVersion: PasskeyValidatorContractVersion,
     validatorAddress?: Address
 ): Address => {
-    validateKernelVersionWithEntryPoint(entryPointAddress, kernelVersion)
+    validateKernelVersionWithEntryPoint(entryPoint.version, kernelVersion)
     const passKeyValidatorAddress = Object.entries(
         kernelVersionRangeToContractVersionToValidator
     ).find(([range]) => satisfiesRange(kernelVersion, range))?.[1]?.[

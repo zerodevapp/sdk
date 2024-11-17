@@ -1,80 +1,48 @@
-import type { SmartAccount } from "permissionless/accounts"
-import { prepareUserOperationRequest } from "permissionless/actions/smartAccount"
-import type {
-    PrepareUserOperationRequestParameters,
-    PrepareUserOperationRequestReturnType
-} from "permissionless/actions/smartAccount"
-import type {
-    EntryPoint,
-    GetEntryPointVersion,
-    Prettify,
-    UserOperation
-} from "permissionless/types"
-import {
-    AccountOrClientNotFoundError,
-    parseAccount
-} from "permissionless/utils"
 import type { Chain, Client, Transport } from "viem"
-import { getAction } from "viem/utils"
+import {
+    type PrepareUserOperationParameters,
+    type PrepareUserOperationReturnType,
+    type SmartAccount,
+    type UserOperation,
+    prepareUserOperation
+} from "viem/account-abstraction"
+import { getAction, parseAccount } from "viem/utils"
+import { AccountNotFoundError } from "../../errors"
 
 export type SignUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
-> = PrepareUserOperationRequestParameters<
-    entryPoint,
-    TTransport,
-    TChain,
-    TAccount
->
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = SmartAccount | undefined,
+    calls extends readonly unknown[] = readonly unknown[]
+> = PrepareUserOperationParameters<account, accountOverride, calls>
 
-export type SignUserOperationReturnType<entryPoint extends EntryPoint> =
-    PrepareUserOperationRequestReturnType<entryPoint>
+export type SignUserOperationReturnType = PrepareUserOperationReturnType
 
 export async function signUserOperation<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    chain extends Chain | undefined = Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined,
+    calls extends readonly unknown[] = readonly unknown[]
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<
-        SignUserOperationParameters<entryPoint, TTransport, TChain, TAccount>
-    >
-): Promise<SignUserOperationReturnType<entryPoint>> {
+    client: Client<Transport, chain, account>,
+    args: SignUserOperationParameters<account, accountOverride, calls>
+): Promise<SignUserOperationReturnType> {
     const { account: account_ = client.account } = args
-    if (!account_) throw new AccountOrClientNotFoundError()
+    if (!account_)
+        throw new AccountNotFoundError({
+            docsPath: "/docs/actions/wallet/sendTransaction"
+        })
 
-    const account = parseAccount(account_) as SmartAccount<
-        entryPoint,
-        string,
-        TTransport,
-        TChain
-    >
+    const account = parseAccount(account_) as SmartAccount
 
     const userOperation = await getAction(
         client,
-        prepareUserOperationRequest<entryPoint, TTransport, TChain, TAccount>,
-        "prepareUserOperationRequest"
-    )({ ...args, account } as PrepareUserOperationRequestParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >)
+        prepareUserOperation,
+        "prepareUserOperation"
+    )({ ...args, account } as PrepareUserOperationParameters)
 
     userOperation.signature = await account.signUserOperation(
-        userOperation as UserOperation<GetEntryPointVersion<entryPoint>>
+        userOperation as UserOperation
     )
 
-    return userOperation as SignUserOperationReturnType<entryPoint>
+    return userOperation
 }

@@ -1,5 +1,4 @@
-import type { EntryPointVersion } from "permissionless/types"
-import type { Chain } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import {
     baseSepolia,
     optimismSepolia,
@@ -17,7 +16,7 @@ export const config: {
         }
     }
 } = {
-    "v0.6": {
+    "0.6": {
         [sepolia.id]: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
@@ -25,7 +24,7 @@ export const config: {
             projectId: process.env.ZERODEV_PROJECT_ID_SEPOLIA || ""
         }
     },
-    "v0.7": {
+    "0.7": {
         [sepolia.id]: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",

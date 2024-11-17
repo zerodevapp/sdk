@@ -1,43 +1,36 @@
 import {
-    getAccountNonce,
-    getEntryPointVersion,
-    getSenderAddress,
-    isSmartAccountDeployed
-} from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types"
-import {
     type Address,
-    type Chain,
     type Client,
     type EncodeDeployDataParameters,
-    type Hash,
     type Hex,
-    type PublicActions,
-    type PublicRpcSchema,
-    type Transport,
     type TypedDataDefinition,
     concatHex,
+    createNonceManager,
     encodeDeployData,
     encodeFunctionData,
     getTypesForEIP712Domain,
-    hashMessage,
     hashTypedData,
     parseAbi,
     validateTypedData
 } from "viem"
+import {
+    type UserOperation,
+    entryPoint06Abi,
+    entryPoint06Address,
+    toSmartAccount
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
+import { getChainId } from "viem/actions"
+import { getAction } from "viem/utils"
+import {
+    getAccountNonce,
+    getSenderAddress
+} from "../../../actions/public/index.js"
 import type {
     GetKernelVersion,
-    KernelEncodeCallDataArgs,
     KernelPluginManager,
     KernelPluginManagerParams
 } from "../../../types/kernel.js"
-import { wrapSignatureWith6492 } from "../../utils/6492.js"
-import { parseFactoryAddressAndCallDataFromAccountInitCode } from "../../utils/index.js"
 import {
     MULTISEND_ADDRESS,
     encodeMultiSend,
@@ -47,7 +40,10 @@ import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../../utils/toKernelPluginManager.js"
-import type { KernelSmartAccount } from "../createKernelAccount.js"
+import type {
+    CreateKernelAccountReturnType,
+    KernelSmartAccountImplementation
+} from "../createKernelAccount.js"
 import { KernelAccountV2Abi } from "./abi/KernelAccountV2Abi.js"
 import { KernelFactoryV2Abi } from "./abi/KernelFactoryV2Abi.js"
 
@@ -100,35 +96,6 @@ const getAccountInitCode = async ({
 }
 
 /**
- * Check the validity of an existing account address, or fetch the pre-deterministic account address for a kernel smart wallet
- * @param client
- * @param entryPoint
- * @param initCodeProvider
- */
-const getAccountAddress = async <
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->({
-    client,
-    entryPoint: entryPointAddress,
-    initCodeProvider
-}: {
-    client: Client<TTransport, TChain, undefined>
-    initCodeProvider: () => Promise<Hex>
-    entryPoint: entryPoint
-}): Promise<Address> => {
-    // Find the init code for this account
-    const initCode = await initCodeProvider()
-
-    // Get the sender address based on the init code
-    return getSenderAddress(client, {
-        initCode,
-        entryPoint: entryPointAddress as ENTRYPOINT_ADDRESS_V06_TYPE
-    })
-}
-
-/**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
  * @param privateKey
@@ -138,43 +105,31 @@ const getAccountAddress = async <
  * @param ecdsaValidatorAddress
  * @param deployedAccountAddress
  */
-export async function createKernelAccountV0_2<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
->(
-    client: Client<
-        TTransport,
-        TChain,
-        undefined,
-        PublicRpcSchema,
-        PublicActions<TTransport, TChain>
-    >,
+export async function createKernelAccountV0_2(
+    client: Client,
     {
         plugins,
-        entryPoint: entryPointAddress,
+        entryPoint,
         index = 0n,
         factoryAddress = KERNEL_ADDRESSES.FACTORY_ADDRESS,
-        deployedAccountAddress
+        address
     }: {
         plugins:
             | Omit<
-                  KernelPluginManagerParams<entryPoint>,
+                  KernelPluginManagerParams<"0.6">,
                   "entryPoint" | "kernelVersion"
               >
-            | KernelPluginManager<entryPoint>
-        entryPoint: entryPoint
+            | KernelPluginManager<"0.6">
+        entryPoint: {
+            address: Address
+            version: "0.6"
+        }
         index?: bigint
         factoryAddress?: Address
-        deployedAccountAddress?: Address
+        address?: Address
     }
-): Promise<KernelSmartAccount<entryPoint, TTransport, TChain>> {
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
-
-    if (entryPointVersion !== "v0.6") {
-        throw new Error("Only EntryPoint 0.6 is supported")
-    }
-    const kernelPluginManager = isKernelPluginManager<entryPoint>(plugins)
+): Promise<CreateKernelAccountReturnType<"0.6">> {
+    const kernelPluginManager = isKernelPluginManager<"0.6">(plugins)
         ? plugins
         : await toKernelPluginManager(client, {
               sudo: plugins.sudo,
@@ -182,7 +137,7 @@ export async function createKernelAccountV0_2<
               action: plugins.action,
               pluginEnableSignature: plugins.pluginEnableSignature,
               kernelVersion: "0.0.2",
-              entryPoint: entryPointAddress
+              entryPoint
           })
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
@@ -196,97 +151,86 @@ export async function createKernelAccountV0_2<
         })
     }
 
-    // Fetch account address and chain id
-    const accountAddress =
-        deployedAccountAddress ??
-        (await getAccountAddress<entryPoint, TTransport, TChain>({
-            client,
-            entryPoint: entryPointAddress,
-            initCodeProvider: generateInitCode
-        }))
+    const getFactoryArgs = async () => {
+        return {
+            factory: factoryAddress,
+            factoryData: await generateInitCode()
+        }
+    }
 
-    if (!accountAddress) throw new Error("Account address not found")
+    // Fetch account address
+    let accountAddress =
+        address ??
+        (await (async () => {
+            const { factory, factoryData } = await getFactoryArgs()
+
+            // Get the sender address based on the init code
+            return await getSenderAddress(client, {
+                factory,
+                factoryData,
+                entryPointAddress: entryPoint.address
+            })
+        })())
 
     // Build the EOA Signer
     const account = toAccount({
         address: accountAddress,
         async signMessage({ message }) {
-            const messageHash = hashMessage(message)
-            const [isDeployed, signature] = await Promise.all([
-                isSmartAccountDeployed(client, accountAddress),
-                kernelPluginManager.signMessage({
-                    message: {
-                        raw: messageHash
-                    }
-                })
-            ])
-            return create6492Signature(isDeployed, signature)
+            return kernelPluginManager.signMessage({
+                message
+            })
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData(typedData) {
+            const _typedData = typedData as TypedDataDefinition
             const types = {
                 EIP712Domain: getTypesForEIP712Domain({
-                    domain: typedData.domain
+                    domain: _typedData.domain
                 }),
-                ...typedData.types
+                ..._typedData.types
             }
 
             // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
             // as we can't statically check this with TypeScript.
             validateTypedData({
-                domain: typedData.domain,
-                message: typedData.message,
-                primaryType: typedData.primaryType,
+                domain: _typedData.domain,
+                message: _typedData.message,
+                primaryType: _typedData.primaryType,
                 types: types
-            } as TypedDataDefinition)
+            })
 
             const typedHash = hashTypedData(typedData)
-            const [isDeployed, signature] = await Promise.all([
-                isSmartAccountDeployed(client, accountAddress),
-                kernelPluginManager.signMessage({
-                    message: {
-                        raw: typedHash
-                    }
-                })
-            ])
-            return create6492Signature(isDeployed, signature)
+            return kernelPluginManager.signMessage({
+                message: {
+                    raw: typedHash
+                }
+            })
         }
     })
 
-    let smartAccountDeployed = await isSmartAccountDeployed(
-        client,
-        accountAddress
-    )
+    const _entryPoint = {
+        address: entryPoint?.address ?? entryPoint06Address,
+        abi: entryPoint06Abi,
+        version: entryPoint?.version ?? "0.6"
+    }
+    let chainId: number
 
-    const create6492Signature = async (
-        isDeployed: boolean,
-        signature: Hash
-    ): Promise<Hash> => {
-        if (isDeployed) {
-            return signature
-        }
-
-        const [factoryAddress, factoryCalldata] =
-            parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )
-
-        return wrapSignatureWith6492({
-            factoryAddress,
-            factoryCalldata,
-            signature
-        })
+    const getMemoizedChainId = async () => {
+        if (chainId) return chainId
+        chainId = client.chain
+            ? client.chain.id
+            : await getAction(client, getChainId, "getChainId")({})
+        return chainId
     }
 
-    return {
-        ...account,
-        kernelVersion: "0.0.2" as GetKernelVersion<entryPoint>,
+    return toSmartAccount<KernelSmartAccountImplementation<"0.6">>({
+        kernelVersion: "0.0.2" as GetKernelVersion<"0.6">,
         client: client,
-        publicKey: accountAddress,
-        entryPoint: entryPointAddress,
-        source: "kernelSmartAccount",
+        entryPoint: _entryPoint,
         kernelPluginManager,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
@@ -294,65 +238,56 @@ export async function createKernelAccountV0_2<
                 accountAddress
             )
         },
-        async getFactory() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return factoryAddress
+        nonceKeyManager: createNonceManager({
+            source: { get: () => 0, set: () => {} }
+        }),
+        async sign({ hash }) {
+            return account.signMessage({ message: hash })
         },
-
-        async getFactoryData() {
-            if (smartAccountDeployed) return undefined
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return undefined
-
-            return parseFactoryAddressAndCallDataFromAccountInitCode(
-                await generateInitCode()
-            )[1]
+        async signMessage(message) {
+            return account.signMessage(message)
         },
+        async signTypedData(typedData) {
+            return account.signTypedData(typedData)
+        },
+        getFactoryArgs,
+        async getAddress() {
+            if (accountAddress) return accountAddress
 
+            const { factory, factoryData } = await getFactoryArgs()
+
+            // Get the sender address based on the init code
+            accountAddress = await getSenderAddress(client, {
+                factory,
+                factoryData,
+                entryPointAddress: entryPoint.address
+            })
+
+            return accountAddress
+        },
         // Get the nonce of the smart account
-        async getNonce(customNonceKey?: bigint) {
+        async getNonce(_args) {
             const key = await kernelPluginManager.getNonceKey(
                 accountAddress,
-                customNonceKey
+                _args?.key
             )
             return getAccountNonce(client, {
-                sender: accountAddress,
-                entryPoint: entryPointAddress,
+                address: accountAddress,
+                entryPointAddress: entryPoint.address,
                 key
             })
         },
 
         // Sign a user operation
-        async signUserOperation(userOperation) {
-            return kernelPluginManager.signUserOperation(userOperation)
+        async signUserOperation(parameters) {
+            const { chainId = await getMemoizedChainId(), ...userOperation } =
+                parameters
+            return kernelPluginManager.signUserOperation({
+                ...userOperation,
+                sender: userOperation.sender ?? (await this.getAddress()),
+                chainId
+            })
         },
-
-        // Encode the init code
-        async getInitCode() {
-            if (smartAccountDeployed) return "0x"
-
-            smartAccountDeployed = await isSmartAccountDeployed(
-                client,
-                accountAddress
-            )
-
-            if (smartAccountDeployed) return "0x"
-            return generateInitCode()
-        },
-
         // Encode the deploy call data
         async encodeDeployCallData(_tx) {
             return encodeFunctionData({
@@ -379,13 +314,12 @@ export async function createKernelAccountV0_2<
         },
 
         // Encode a call
-        async encodeCallData(_tx) {
-            const tx = _tx as KernelEncodeCallDataArgs
-            if (Array.isArray(tx)) {
+        async encodeCalls(calls, callType): Promise<Hex> {
+            if (calls.length > 1) {
                 const multiSendCallData = encodeFunctionData({
                     abi: multiSendAbi,
                     functionName: "multiSend",
-                    args: [encodeMultiSend(tx)]
+                    args: [encodeMultiSend(calls)]
                 })
                 return encodeFunctionData({
                     abi: KernelAccountV2Abi,
@@ -394,23 +328,29 @@ export async function createKernelAccountV0_2<
                 })
             }
 
+            const call = calls.length === 0 ? undefined : calls[0]
+
+            if (!call) {
+                throw new Error("No calls to encode")
+            }
+
             // Default to `call`
-            if (!tx.callType || tx.callType === "call") {
-                if (tx.to.toLowerCase() === accountAddress.toLowerCase()) {
-                    return tx.data
+            if (!callType || callType === "call") {
+                if (call.to.toLowerCase() === accountAddress.toLowerCase()) {
+                    return call.data || "0x"
                 }
                 return encodeFunctionData({
                     abi: KernelAccountV2Abi,
                     functionName: "execute",
-                    args: [tx.to, tx.value, tx.data, 0]
+                    args: [call.to, call.value || 0n, call.data || "0x", 0]
                 })
             }
 
-            if (tx.callType === "delegatecall") {
+            if (callType === "delegatecall") {
                 return encodeFunctionData({
                     abi: KernelAccountV2Abi,
                     functionName: "execute",
-                    args: [tx.to, 0n, tx.data, 1]
+                    args: [call.to, 0n, call.data || "0x", 1]
                 })
             }
 
@@ -418,8 +358,13 @@ export async function createKernelAccountV0_2<
         },
 
         // Get simple dummy signature
-        async getDummySignature(userOperation) {
-            return kernelPluginManager.getDummySignature(userOperation)
+        async getStubSignature(userOperation) {
+            if (!userOperation) {
+                throw new Error("No user operation provided")
+            }
+            return kernelPluginManager.getStubSignature(
+                userOperation as UserOperation
+            )
         }
-    }
+    })
 }

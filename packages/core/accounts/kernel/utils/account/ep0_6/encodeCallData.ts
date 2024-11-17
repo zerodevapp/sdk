@@ -1,30 +1,40 @@
-import type { EntryPoint } from "permissionless/types"
-import type { KernelSmartAccount } from "../../../createKernelAccount.js"
+import type { EntryPointVersion } from "viem/account-abstraction"
+import type { CallType } from "../../../../../types/kernel.js"
+import type { KernelSmartAccountImplementation } from "../../../createKernelAccount.js"
 import { encodeExecuteBatchCall } from "../../ep0_6/encodeExecuteBatchCall.js"
 import { encodeExecuteDelegateCall } from "../../ep0_6/encodeExecuteDelegateCall.js"
 import { encodeExecuteSingleCall } from "../../ep0_6/encodeExecuteSingleCall.js"
 
 export const encodeCallData = async <
-    entryPoint extends EntryPoint = EntryPoint
+    entryPointVersion extends EntryPointVersion = EntryPointVersion
 >(
-    tx: Parameters<KernelSmartAccount<entryPoint>["encodeCallData"]>[0]
+    calls: Parameters<
+        KernelSmartAccountImplementation<entryPointVersion>["encodeCalls"]
+    >[0],
+    callType?: CallType | undefined
 ) => {
-    if (Array.isArray(tx)) {
-        if (tx.some((t) => t.callType === "delegatecall")) {
+    if (calls.length > 1) {
+        if (callType === "delegatecall") {
             throw new Error("Cannot batch delegatecall")
         }
-        return encodeExecuteBatchCall(tx)
+        return encodeExecuteBatchCall(calls)
+    }
+
+    const call = calls.length === 0 ? undefined : calls[0]
+
+    if (!call) {
+        throw new Error("No calls to encode")
     }
 
     // Default to `call`
-    if (!tx.callType || tx.callType === "call") {
-        return encodeExecuteSingleCall(tx)
+    if (!callType || callType === "call") {
+        return encodeExecuteSingleCall(call)
     }
 
-    if (tx.callType === "delegatecall") {
+    if (callType === "delegatecall") {
         return encodeExecuteDelegateCall({
-            to: tx.to,
-            data: tx.data
+            to: call.to,
+            data: call.data
         })
     }
 

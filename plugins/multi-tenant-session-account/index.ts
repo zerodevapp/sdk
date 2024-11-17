@@ -1,6 +1,8 @@
 export {
     type CreateSessionAccountParameters,
-    type SessionAccount,
+    type CreateSessionAccountReturnType,
+    type SessionAccountEncodeCallDataArgs,
+    type SessionAccountImplementation,
     createSessionAccount
 } from "./account/createSessionAccount.js"
 

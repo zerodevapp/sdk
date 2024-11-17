@@ -1,5 +1,4 @@
 import { MerkleTree } from "merkletreejs"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import {
     type Abi,
     type Hex,
@@ -32,14 +31,13 @@ export enum Operation {
 }
 
 export async function toMerklePolicy<
-    entryPoint extends EntryPoint,
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string
 >({
     policyAddress = MERKLE_POLICY_CONTRACT,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     permissions = []
-}: MerklePolicyParams<TAbi, TFunctionName>): Promise<Policy<entryPoint>> {
+}: MerklePolicyParams<TAbi, TFunctionName>): Promise<Policy> {
     const generatedPermissionParams = permissions?.map((perm) =>
         getPermissionFromABI({
             abi: perm.abi as Abi,

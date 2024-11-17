@@ -1,11 +1,12 @@
 import type { KernelValidator } from "@zerodev/sdk"
 import type {
     Action,
+    EntryPointType,
     GetKernelVersion,
     PluginValidityData
 } from "@zerodev/sdk/types"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
+import type { EntryPointVersion } from "viem/account-abstraction"
 import type { PolicyFlags } from "./constants.js"
 import type {
     CallPolicyParams,
@@ -16,10 +17,7 @@ import type {
     TimestampPolicyParams
 } from "./policies/index.js"
 
-export type PermissionPlugin<entryPoint extends EntryPoint> = KernelValidator<
-    entryPoint,
-    "PermissionValidator"
-> & {
+export type PermissionPlugin = KernelValidator<"PermissionValidator"> & {
     getPluginSerializationParams: () => PermissionData
 }
 
@@ -53,11 +51,13 @@ export type Policy = {
         | (TimestampPolicyParams & { type: "timestamp" })
 }
 
-export type PermissionPluginParams<entryPoint extends EntryPoint> = {
+export type PermissionPluginParams<
+    entryPointVersion extends EntryPointVersion
+> = {
     signer: ModularSigner
     policies: Policy[]
-    entryPoint: entryPoint
-    kernelVersion: GetKernelVersion<entryPoint>
+    entryPoint: EntryPointType<entryPointVersion>
+    kernelVersion: GetKernelVersion<entryPointVersion>
     flag?: PolicyFlags
 }
 

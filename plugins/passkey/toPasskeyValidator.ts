@@ -1,5 +1,9 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/typescript-types"
-import type { GetKernelVersion, KernelValidator } from "@zerodev/sdk/types"
+import type {
+    EntryPointType,
+    GetKernelVersion,
+    KernelValidator
+} from "@zerodev/sdk/types"
 import {
     type WebAuthnKey,
     b64ToBytes,
@@ -13,27 +17,24 @@ import {
     uint8ArrayToHexString
 } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
-import { type UserOperation, getUserOperationHash } from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type {
-    EntryPoint,
-    GetEntryPointVersion
-} from "permissionless/types/entrypoint"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
     type LocalAccount,
     type SignTypedDataParameters,
     type SignableMessage,
-    type Transport,
     type TypedDataDefinition,
     encodeAbiParameters,
     getTypesForEIP712Domain,
     hashTypedData,
     validateTypedData
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { signMessage } from "viem/actions"
 import { getChainId } from "viem/actions"
@@ -125,31 +126,29 @@ export enum PasskeyValidatorContractVersion {
 }
 
 export async function toPasskeyValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         webAuthnKey,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion,
         validatorContractVersion,
         validatorAddress: _validatorAddress
     }: {
         webAuthnKey: WebAuthnKey
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: EntryPointType<entryPointVersion>
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorContractVersion: PasskeyValidatorContractVersion
         validatorAddress?: Address
     }
 ): Promise<
-    KernelValidator<entryPoint, "WebAuthnValidator"> & {
+    KernelValidator<"WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
     const validatorAddress = getValidatorAddress(
-        entryPointAddress,
+        entryPoint,
         kernelVersion,
         validatorContractVersion,
         _validatorAddress
@@ -166,7 +165,9 @@ export async function toPasskeyValidator<
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -233,15 +234,14 @@ export async function toPasskeyValidator<
             }
             return 0n
         },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
+        async signUserOperation(userOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
 
@@ -251,7 +251,7 @@ export async function toPasskeyValidator<
             })
             return signature
         },
-        async getDummySignature() {
+        async getStubSignature() {
             return encodeAbiParameters(
                 [
                     { name: "authenticatorData", type: "bytes" },
@@ -280,7 +280,7 @@ export async function toPasskeyValidator<
 
         getSerializedData() {
             return serializePasskeyValidatorData({
-                entryPoint: entryPointAddress,
+                entryPoint,
                 validatorAddress,
                 pubKeyX: webAuthnKey.pubX,
                 pubKeyY: webAuthnKey.pubY,
@@ -292,27 +292,25 @@ export async function toPasskeyValidator<
 }
 
 export async function deserializePasskeyValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         serializedData,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion
     }: {
         serializedData: string
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        entryPoint: EntryPointType<entryPointVersion>
+        kernelVersion: GetKernelVersion<entryPointVersion>
     }
 ): Promise<
-    KernelValidator<entryPoint, "WebAuthnValidator"> & {
+    KernelValidator<"WebAuthnValidator"> & {
         getSerializedData: () => string
     }
 > {
     const {
-        entryPoint,
+        entryPoint: _entryPoint,
         validatorAddress,
         pubKeyX,
         pubKeyY,
@@ -333,7 +331,9 @@ export async function deserializePasskeyValidator<
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,
@@ -395,15 +395,14 @@ export async function deserializePasskeyValidator<
         async getNonceKey() {
             return 0n
         },
-        async signUserOperation(
-            userOperation: UserOperation<GetEntryPointVersion<entryPoint>>
-        ) {
+        async signUserOperation(userOperation) {
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,
                     signature: "0x"
-                },
-                entryPoint: entryPointAddress,
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
 
@@ -413,7 +412,7 @@ export async function deserializePasskeyValidator<
             })
             return signature
         },
-        async getDummySignature() {
+        async getStubSignature() {
             return encodeAbiParameters(
                 [
                     { name: "authenticatorData", type: "bytes" },
@@ -442,7 +441,7 @@ export async function deserializePasskeyValidator<
         },
         getSerializedData() {
             return serializePasskeyValidatorData({
-                entryPoint,
+                entryPoint: _entryPoint,
                 validatorAddress,
                 pubKeyX,
                 pubKeyY,

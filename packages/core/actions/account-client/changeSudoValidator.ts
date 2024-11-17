@@ -1,22 +1,25 @@
 import {
-    type SendUserOperationParameters,
-    sendUserOperation
-} from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import {
-    AccountOrClientNotFoundError,
-    parseAccount
-} from "permissionless/utils"
-import {
     type Chain,
     type Client,
     type Hash,
     type Hex,
+    type Prettify,
     type Transport,
     zeroAddress
 } from "viem"
-import { concatHex, encodeFunctionData, getAction, pad } from "viem/utils"
-import type { KernelSmartAccount } from "../../accounts/index.js"
+import {
+    type SendUserOperationParameters,
+    type SmartAccount,
+    sendUserOperation
+} from "viem/account-abstraction"
+import {
+    concatHex,
+    encodeFunctionData,
+    getAction,
+    pad,
+    parseAccount
+} from "viem/utils"
+import type { KernelSmartAccountImplementation } from "../../accounts/index.js"
 import { KernelV3_1AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_1/KernelAccountAbi.js"
 import {
     KERNEL_V3_0,
@@ -24,72 +27,43 @@ import {
     KernelVersionToAddressesMap,
     VALIDATOR_TYPE
 } from "../../constants.js"
+import { AccountNotFoundError } from "../../errors/index.js"
 import type {
     KernelValidator,
     KernelValidatorHook
 } from "../../types/kernel.js"
 
-type OptionalUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
-> = Omit<
-    SendUserOperationParameters<entryPoint, TTransport, TChain, TAccount>,
-    "userOperation"
-> & {
-    userOperation?: SendUserOperationParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >["userOperation"]
-}
-
 export type ChangeSudoValidatorParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = undefined,
+    calls extends readonly unknown[] = readonly unknown[]
 > = Prettify<
-    OptionalUserOperationParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    > & {
-        sudoValidator: KernelValidator<entryPoint, string>
+    Partial<SendUserOperationParameters<account, accountOverride, calls>> & {
+        sudoValidator: KernelValidator<string>
         hook?: KernelValidatorHook
     }
 >
 
 export async function changeSudoValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined,
+    calls extends readonly unknown[] = readonly unknown[]
 >(
-    client: Client<TTransport, TChain, TAccount>,
+    client: Client<Transport, chain, account>,
     args: Prettify<
-        ChangeSudoValidatorParameters<entryPoint, TTransport, TChain, TAccount>
+        ChangeSudoValidatorParameters<account, accountOverride, calls>
     >
 ): Promise<Hash> {
     const { account: account_ = client.account, sudoValidator, hook } = args
-    if (!account_) throw new AccountOrClientNotFoundError()
+    if (!account_)
+        throw new AccountNotFoundError({
+            docsPath: "/docs/actions/wallet/sendTransaction"
+        })
 
-    const account = parseAccount(account_) as KernelSmartAccount<entryPoint>
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<KernelSmartAccountImplementation>
 
     let rootValidatorId: Hex
     if (
@@ -122,29 +96,31 @@ export async function changeSudoValidator<
     if (account.kernelVersion === KERNEL_V3_0) {
         return await getAction(
             client,
-            sendUserOperation<entryPoint, TTransport, TChain, TAccount>,
+            sendUserOperation,
             "sendUserOperation"
         )({
             ...args,
-            userOperation: {
-                callData: await account.encodeCallData({
-                    to: KernelVersionToAddressesMap[KERNEL_V3_1]
-                        .accountImplementationAddress,
-                    value: 0n,
-                    data: encodeFunctionData({
-                        abi: KernelV3_1AccountAbi,
-                        functionName: "changeRootValidator",
-                        args: [rootValidatorId, hookId, validatorData, hookData]
-                    }),
-                    callType: "delegatecall"
-                })
-            }
-        } as SendUserOperationParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >)
+            callData: await account.encodeCalls(
+                [
+                    {
+                        to: KernelVersionToAddressesMap[KERNEL_V3_1]
+                            .accountImplementationAddress,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: KernelV3_1AccountAbi,
+                            functionName: "changeRootValidator",
+                            args: [
+                                rootValidatorId,
+                                hookId,
+                                validatorData,
+                                hookData
+                            ]
+                        })
+                    }
+                ],
+                "delegatecall"
+            )
+        } as SendUserOperationParameters)
     }
 
     /**
@@ -152,12 +128,12 @@ export async function changeSudoValidator<
      */
     return await getAction(
         client,
-        sendUserOperation<entryPoint, TTransport, TChain, TAccount>,
+        sendUserOperation,
         "sendUserOperation"
     )({
         ...args,
-        userOperation: {
-            callData: await account.encodeCallData({
+        callData: await account.encodeCalls([
+            {
                 to: account.address,
                 value: 0n,
                 data: encodeFunctionData({
@@ -165,7 +141,7 @@ export async function changeSudoValidator<
                     functionName: "changeRootValidator",
                     args: [rootValidatorId, hookId, validatorData, hookData]
                 })
-            })
-        }
-    } as SendUserOperationParameters<entryPoint, TTransport, TChain, TAccount>)
+            }
+        ])
+    } as SendUserOperationParameters)
 }

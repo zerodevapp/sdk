@@ -1,8 +1,6 @@
 import type { KernelValidator } from "@zerodev/sdk"
 import type { Action, PluginValidityData } from "@zerodev/sdk/types"
 import type { ExtractAbiFunction, ExtractAbiFunctionNames } from "abitype"
-import type { Pretty } from "abitype/src/types.js"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import type {
     Abi,
     AbiFunction,
@@ -17,10 +15,21 @@ import type {
 import type { Operation, ParamOperator } from "./policies/toMerklePolicy.js"
 import type { Policy } from "./policies/types.js"
 
-export interface ModularPermissionData<entryPoint extends EntryPoint> {
+/**
+ * Taken from: https://github.com/wevm/abitype/blob/main/packages/abitype/src/types.ts
+ * Combines members of an intersection into a readable type.
+ *
+ * @link https://twitter.com/mattpocockuk/status/1622730173446557697?s=20&t=NdpAcmEFXY01xkqU3KO0Mg
+ * @example
+ * type Result = Pretty<{ a: string } | { b: string } | { c: number, d: bigint }>
+ * //   ^? type Result = { a: string; b: string; c: number; d: bigint }
+ */
+export type Pretty<type> = { [key in keyof type]: type[key] } & unknown
+
+export interface ModularPermissionData {
     validUntil?: number
     validAfter?: number
-    policies?: Policy<entryPoint>[]
+    policies?: Policy[]
 }
 
 export type ExportModularPermissionAccountParams = {
@@ -28,8 +37,8 @@ export type ExportModularPermissionAccountParams = {
     accountAddress: Address
 }
 
-export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
-    modularPermissionParams: ModularPermissionData<entryPoint>
+export type ModularPermissionAccountParams = {
+    modularPermissionParams: ModularPermissionData
     action: Action
     validityData: PluginValidityData
     accountParams: ExportModularPermissionAccountParams
@@ -37,9 +46,9 @@ export type ModularPermissionAccountParams<entryPoint extends EntryPoint> = {
     privateKey?: Hex
 }
 
-export type ModularPermissionPlugin<entryPoint extends EntryPoint> =
-    KernelValidator<entryPoint, "ModularPermissionValidator"> & {
-        getPluginSerializationParams: () => ModularPermissionData<entryPoint>
+export type ModularPermissionPlugin =
+    KernelValidator<"ModularPermissionValidator"> & {
+        getPluginSerializationParams: () => ModularPermissionData
     }
 
 export type Nonces = {

@@ -20,6 +20,21 @@ export {
     type UninstallPluginParameters
 } from "./account-client/uninstallPlugin.js"
 
+export { getKernelV3ModuleCurrentNonce } from "./account-client/getKernelV3ModuleCurrentNonce.js"
+
+export {
+    type InvalidateNonceParameters,
+    invalidateNonce
+} from "./account-client/invalidateNonce.js"
+
+export { sendTransaction } from "./account-client/sendTransaction.js"
+
+export { signMessage } from "./account-client/signMessage.js"
+
+export { signTypedData } from "./account-client/signTypedData.js"
+
+export { writeContract } from "./account-client/writeContract.js"
+
 export {
     changeSudoValidator,
     type ChangeSudoValidatorParameters
@@ -31,8 +46,4 @@ export {
     type EstimateGasInERC20ReturnType
 } from "./paymaster/estimateGasInERC20.js"
 
-export {
-    type SponsorUserOperationEip7677Parameters,
-    type SponsorUserOperationEip7677ReturnType,
-    sponsorUserOperationEip7677
-} from "./paymaster/sponsorUserOperationEip7677.js"
+export * from "./public/index.js"

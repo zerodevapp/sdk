@@ -27,8 +27,6 @@ import {
     type WeightedSigner,
     type WeightedValidatorConfig,
     createWeightedValidator,
-    getCurrentSigners,
-    getUpdateConfigCall,
     getValidatorAddress
 } from "./toWeightedValidatorPlugin.js"
 
@@ -37,8 +35,6 @@ export {
     type WeightedValidatorConfig,
     type WeightedSigner,
     getValidatorAddress,
-    getUpdateConfigCall,
-    getCurrentSigners,
     type KernelValidator,
     toECDSASigner,
     type ECDSASignerParams,

@@ -1,15 +1,15 @@
-import type { KernelSmartAccount } from "@zerodev/sdk"
-import type { EntryPoint } from "permissionless/types"
+import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
 import type { Hex } from "viem"
+import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
 import {
     isModularPermissionValidatorPlugin,
     serializeModularPermissionAccountParams
 } from "./utils.js"
 
 export const serializeModularPermissionAccount = async <
-    entryPoint extends EntryPoint
+    entryPointVersion extends EntryPointVersion
 >(
-    account: KernelSmartAccount<entryPoint>,
+    account: SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>,
     privateKey?: Hex
 ): Promise<string> => {
     if (!isModularPermissionValidatorPlugin(account.kernelPluginManager))
@@ -23,7 +23,7 @@ export const serializeModularPermissionAccount = async <
             account.address
         )
     const accountParams = {
-        initCode: await account.getInitCode(),
+        initCode: await account.generateInitCode(),
         accountAddress: account.address
     }
 

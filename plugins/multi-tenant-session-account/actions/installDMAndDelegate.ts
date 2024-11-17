@@ -1,35 +1,32 @@
-import { AccountOrClientNotFoundError, parseAccount } from "permissionless"
-import type { SmartAccount } from "permissionless/accounts"
-import type { SendTransactionsWithPaymasterParameters } from "permissionless/actions/smartAccount"
-import { sendTransactions } from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import type { Address, Chain, Client, Hash, Transport } from "viem"
+import { AccountNotFoundError } from "@zerodev/sdk"
+import { sendTransaction } from "@zerodev/sdk/actions"
+import type {
+    Address,
+    Chain,
+    Client,
+    Hash,
+    Prettify,
+    SendTransactionParameters,
+    Transport
+} from "viem"
 import { encodeFunctionData } from "viem"
-import { getAction } from "viem/utils"
+import type {
+    SendUserOperationParameters,
+    SmartAccount
+} from "viem/account-abstraction"
+import { getAction, parseAccount } from "viem/utils"
 import { DelegationManagerAbi } from "../abi/DelegationManagerAbi.js"
+import type { SessionAccountImplementation } from "../account/createSessionAccount.js"
 import { DMVersionToAddressMap, ROOT_AUTHORITY } from "../constants.js"
 import type { Delegation } from "../types.js"
 import { getInstallDMAsExecutorCallData } from "../utils/delegationManager.js"
 
 export type SendInstallDMAndDelegateUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    chain extends Chain | undefined = Chain | undefined,
+    chainOverride extends Chain | undefined = Chain | undefined
 > = Prettify<
-    Omit<
-        SendTransactionsWithPaymasterParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount
-        >,
-        "transactions"
-    > & {
+    Partial<SendTransactionParameters<chain, account, chainOverride>> & {
         sessionKeyAddress: Delegation["delegate"]
         caveats: Delegation["caveats"]
         delegationManagerAddress?: Address
@@ -37,22 +34,11 @@ export type SendInstallDMAndDelegateUserOperationParameters<
 >
 
 export async function installDMAndDelegate<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined =
-        | SmartAccount<entryPoint, string, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: SendInstallDMAndDelegateUserOperationParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >
+    client: Client<Transport, chain, account>,
+    args: SendInstallDMAndDelegateUserOperationParameters
 ): Promise<Hash> {
     const {
         account: account_ = client.account,
@@ -63,29 +49,20 @@ export async function installDMAndDelegate<
     } = args
 
     if (!account_) {
-        throw new AccountOrClientNotFoundError({
-            docsPath: "/docs/actions/wallet/sendTransaction"
-        })
+        throw new AccountNotFoundError()
     }
 
-    const account = parseAccount(account_) as SmartAccount<
-        entryPoint,
-        string,
-        TTransport,
-        TChain
-    >
-
-    if (account.type !== "local") {
-        throw new Error("RPC account type not supported")
-    }
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<SessionAccountImplementation>
 
     return await getAction(
         client,
-        sendTransactions<TTransport, TChain, TAccount, entryPoint>,
-        "sendTransactions"
+        sendTransaction,
+        "sendTransaction"
     )({
         ...args,
-        transactions: [
+        calls: [
             {
                 to: account.address,
                 data: getInstallDMAsExecutorCallData(),
@@ -110,10 +87,5 @@ export async function installDMAndDelegate<
                 value: 0n
             }
         ]
-    } as SendTransactionsWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount
-    >)
+    } as SendTransactionParameters | SendUserOperationParameters)
 }

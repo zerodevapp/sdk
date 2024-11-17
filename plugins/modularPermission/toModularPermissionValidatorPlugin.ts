@@ -1,19 +1,20 @@
 import { KernelAccountAbi } from "@zerodev/sdk"
-import type { GetKernelVersion } from "@zerodev/sdk/types"
-import { getEntryPointVersion, getUserOperationHash } from "permissionless"
-import type { EntryPoint } from "permissionless/types/entrypoint"
+import type { EntryPointType, GetKernelVersion } from "@zerodev/sdk/types"
 import {
     type Address,
-    type Chain,
     type Client,
     type Hex,
-    type Transport,
     concat,
     encodeAbiParameters,
     keccak256,
     pad,
     toHex
 } from "viem"
+import {
+    type EntryPointVersion,
+    type UserOperation,
+    getUserOperationHash
+} from "viem/account-abstraction"
 import { getChainId, readContract } from "viem/actions"
 import { getAction } from "viem/utils"
 import { ModularPermissionValidatorAbi } from "./abi/ModularPermissionValidatorAbi.js"
@@ -27,14 +28,12 @@ import type {
 } from "./types.js"
 
 export async function createPermissionValidator<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client<TTransport, TChain, undefined>,
+    client: Client,
     {
         signer,
-        entryPoint: entryPointAddress,
+        entryPoint,
         kernelVersion: _,
         policies,
         validUntil,
@@ -44,16 +43,15 @@ export async function createPermissionValidator<
         signer: ModularSigner
         validUntil?: number
         validAfter?: number
-        policies: Policy<entryPoint>[]
-        entryPoint: entryPoint
-        kernelVersion: GetKernelVersion<entryPoint>
+        policies: Policy[]
+        entryPoint: EntryPointType<entryPointVersion>
+        kernelVersion: GetKernelVersion<entryPointVersion>
         validatorAddress?: Address
     }
-): Promise<ModularPermissionPlugin<entryPoint>> {
+): Promise<ModularPermissionPlugin> {
     const chainId = await getChainId(client)
-    const entryPointVersion = getEntryPointVersion(entryPointAddress)
 
-    if (entryPointVersion !== "v0.6") {
+    if (entryPoint.version !== "0.6") {
         throw new Error("Only EntryPoint 0.6 is supported")
     }
 
@@ -152,8 +150,12 @@ export async function createPermissionValidator<
 
         signUserOperation: async (userOperation): Promise<Hex> => {
             const userOpHash = getUserOperationHash({
-                userOperation: { ...userOperation, signature: "0x" },
-                entryPoint: entryPointAddress,
+                userOperation: {
+                    ...userOperation,
+                    signature: "0x"
+                } as UserOperation<entryPointVersion>,
+                entryPointAddress: entryPoint.address,
+                entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
 
@@ -176,7 +178,7 @@ export async function createPermissionValidator<
             return 0n
         },
 
-        async getDummySignature(userOperation) {
+        async getStubSignature(userOperation) {
             return concat([
                 getPermissionId(),
                 ...policies.map((policy) =>
@@ -185,7 +187,7 @@ export async function createPermissionValidator<
                 signer.getDummySignature()
             ])
         },
-        getPluginSerializationParams: (): ModularPermissionData<entryPoint> => {
+        getPluginSerializationParams: (): ModularPermissionData => {
             return {
                 validAfter,
                 validUntil,

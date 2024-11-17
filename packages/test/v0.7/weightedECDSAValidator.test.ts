@@ -1,20 +1,20 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import type { BundlerClient } from "permissionless"
-import type { PimlicoBundlerClient } from "permissionless/clients/pimlico"
-import type { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types/entrypoint"
+import type {
+    KernelAccountClient,
+    KernelSmartAccountImplementation,
+    ZeroDevPaymasterClient
+} from "@zerodev/sdk"
 import {
     type Chain,
     type PublicClient,
     type Transport,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import {
     getEntryPoint,
     getKernelAccountClient,
-    getKernelBundlerClient,
-    getPimlicoBundlerClient,
     getPublicClient,
     getSignersToWeightedEcdsaKernelAccount,
     getZeroDevPaymasterClient
@@ -29,36 +29,22 @@ const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
 describe("Weighted ECDSA kernel Account", () => {
-    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let account: SmartAccount<KernelSmartAccountImplementation>
     let publicClient: PublicClient
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let kernelClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
-    let pimlicoBundlerClient: PimlicoBundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let zeroDevPaymaster: ZeroDevPaymasterClient
 
     beforeAll(async () => {
         account = await getSignersToWeightedEcdsaKernelAccount()
         publicClient = await getPublicClient()
-        bundlerClient = getKernelBundlerClient()
-        pimlicoBundlerClient = getPimlicoBundlerClient()
+        zeroDevPaymaster = getZeroDevPaymasterClient()
         kernelClient = await getKernelAccountClient({
             account,
-            middleware: {
-                gasPrice: async () =>
-                    (await pimlicoBundlerClient.getUserOperationGasPrice())
-                        .fast,
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = getZeroDevPaymasterClient()
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
     })
 

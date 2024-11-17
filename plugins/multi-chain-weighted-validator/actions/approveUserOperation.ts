@@ -1,77 +1,35 @@
-import type { KernelSmartAccount } from "@zerodev/sdk"
+import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
+import { AccountNotFoundError } from "@zerodev/sdk"
 import { MerkleTree } from "merkletreejs"
-import type { Middleware } from "permissionless/actions/smartAccount"
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint,
-    GetAccountParameter,
-    PartialBy,
-    Prettify,
-    UserOperation
-} from "permissionless/types"
-import {
-    AccountOrClientNotFoundError,
-    parseAccount
-} from "permissionless/utils"
 import {
     type Chain,
     type Client,
     type Hex,
+    type RequiredBy,
     type Transport,
     publicActions
 } from "viem"
+import type {
+    GetSmartAccountParameter,
+    SmartAccount,
+    UserOperation
+} from "viem/account-abstraction"
 import {
     encodeAbiParameters,
     hashTypedData,
     keccak256,
-    parseAbiParameters
+    parseAbiParameters,
+    parseAccount
 } from "viem/utils"
 import { getValidatorAddress } from "../toMultiChainWeightedValidatorPlugin.js"
 
 export type ApproveUserOperationParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = SmartAccount | undefined
 > = {
-    multiChainAccounts: KernelSmartAccount<entryPoint>[]
-    userOperation: entryPoint extends ENTRYPOINT_ADDRESS_V06_TYPE
-        ? PartialBy<
-              UserOperation<"v0.6">,
-              | "sender"
-              | "nonce"
-              | "initCode"
-              | "callGasLimit"
-              | "verificationGasLimit"
-              | "preVerificationGas"
-              | "maxFeePerGas"
-              | "maxPriorityFeePerGas"
-              | "paymasterAndData"
-              | "signature"
-          >
-        : PartialBy<
-              UserOperation<"v0.7">,
-              | "sender"
-              | "nonce"
-              | "factory"
-              | "factoryData"
-              | "callGasLimit"
-              | "verificationGasLimit"
-              | "preVerificationGas"
-              | "maxFeePerGas"
-              | "maxPriorityFeePerGas"
-              | "paymaster"
-              | "paymasterVerificationGasLimit"
-              | "paymasterPostOpGasLimit"
-              | "paymasterData"
-              | "signature"
-          >
-} & GetAccountParameter<entryPoint, TTransport, TChain, TAccount> &
-    Middleware<entryPoint>
+    multiChainAccounts: SmartAccount<KernelSmartAccountImplementation>[]
+    userOperation: RequiredBy<Partial<UserOperation>, "callData">
+} & GetSmartAccountParameter<account, accountOverride>
 
 export type ApproveUserOperationReturnType = {
     signature: Hex
@@ -82,32 +40,30 @@ export type ApproveUserOperationReturnType = {
 }
 
 export async function approveUserOperation<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    chain extends Chain | undefined = Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<
-        ApproveUserOperationParameters<entryPoint, TTransport, TChain, TAccount>
-    >
+    client: Client<Transport, chain, account>,
+    args: ApproveUserOperationParameters<account, accountOverride>
 ): Promise<ApproveUserOperationReturnType> {
     const {
         account: account_ = client.account,
         userOperation,
         multiChainAccounts
     } = args
-    if (!account_) throw new AccountOrClientNotFoundError()
+    if (!account_) throw new AccountNotFoundError()
 
-    const account = parseAccount(account_) as KernelSmartAccount<entryPoint>
-    const validatorAddress = getValidatorAddress(account.entryPoint)
+    const account = parseAccount(
+        account_
+    ) as SmartAccount<KernelSmartAccountImplementation>
+    const validatorAddress = getValidatorAddress(
+        account.entryPoint,
+        account.kernelVersion
+    )
 
     const fetchCallDataAndNonceHash = async (
-        account: KernelSmartAccount<entryPoint>
+        account: SmartAccount
     ): Promise<Hex> => {
         return keccak256(
             encodeAbiParameters(parseAbiParameters("address, bytes, uint256"), [

@@ -2,9 +2,14 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
+    ecdsaSignUserOpsWithEnable,
+    signUserOperations
+} from "@zerodev/multi-chain-ecdsa-validator"
+import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator"
+import {
     EIP1271Abi,
     type KernelAccountClient,
-    type KernelSmartAccount,
+    type KernelSmartAccountImplementation,
     type KernelValidator,
     type ZeroDevPaymasterClient,
     addressToEmptyAccount,
@@ -15,17 +20,6 @@ import {
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
-import {
-    type BundlerClient,
-    ENTRYPOINT_ADDRESS_V07,
-    bundlerActions,
-    deepHexlify
-} from "permissionless"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
-import type {
-    ENTRYPOINT_ADDRESS_V07_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint"
 import {
     http,
     type Address,
@@ -42,19 +36,12 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
+    parseEther,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
-import { ValidatorType } from "../../../plugins/multichain/actions/type.js"
-import { ecdsaPrepareMultiUserOpRequest } from "../../../plugins/multichain/ecdsa/ecdsaPrepareMultiUserOpRequest.js"
-import { ecdsaSignUserOps } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOps.js"
-import { ecdsaSignUserOpsWithEnable } from "../../../plugins/multichain/ecdsa/ecdsaSignUserOpsWithEnable.js"
-import { toMultiChainECDSAValidator } from "../../../plugins/multichain/ecdsa/toMultiChainECDSAValidator.js"
-import {
-    type KernelMultiChainClient,
-    createKernelMultiChainClient
-} from "../../../plugins/multichain/multiChainClient.js"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
 import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
@@ -64,28 +51,31 @@ import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
-import { Test_ERC20Address } from "../utils.js"
 import {
+    Test_ERC20Address,
     findUserOperationEvent,
+    getBundlerRpc,
     getEntryPoint,
+    getPaymasterRpc,
+    getPublicClient,
     kernelVersion,
     mintToAccount,
     validateEnvironmentVariables,
     waitForNonceUpdate
-} from "./utils.js"
+} from "./utils"
 
-const requiredEnvVars = [
-    "TEST_PRIVATE_KEY",
-    "GREETER_ADDRESS",
-    "SEPOLIA_RPC_URL",
-    "OPTIMISM_SEPOLIA_RPC_URL",
-    "SEPOLIA_ZERODEV_RPC_URL",
-    "SEPOLIA_ZERODEV_PAYMASTER_RPC_URL",
-    "OPTIMISM_SEPOLIA_ZERODEV_RPC_URL",
-    "OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL"
-]
+// const requiredEnvVars = [
+//     "TEST_PRIVATE_KEY",
+//     "GREETER_ADDRESS",
+//     "SEPOLIA_RPC_URL",
+//     "OPTIMISM_SEPOLIA_RPC_URL",
+//     "SEPOLIA_ZERODEV_RPC_URL",
+//     "SEPOLIA_ZERODEV_PAYMASTER_RPC_URL",
+//     "OPTIMISM_SEPOLIA_ZERODEV_RPC_URL",
+//     "OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL"
+// ]
 
-validateEnvironmentVariables(requiredEnvVars)
+// validateEnvironmentVariables(requiredEnvVars)
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -95,70 +85,70 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL
-const OPTIMISM_SEPOLIA_RPC_URL = process.env.OPTIMISM_SEPOLIA_RPC_URL
+const SEPOLIA_RPC_URL = process.env.RPC_URL_SEPOLIA
+const OPTIMISM_SEPOLIA_RPC_URL = process.env.RPC_URL_OP_SEPOLIA
 
-const SEPOLIA_ZERODEV_RPC_URL = process.env.SEPOLIA_ZERODEV_RPC_URL
-const SEPOLIA_ZERODEV_PAYMASTER_RPC_URL =
-    process.env.SEPOLIA_ZERODEV_PAYMASTER_RPC_URL
+const SEPOLIA_ZERODEV_RPC_URL = getBundlerRpc(
+    config["0.7"][sepolia.id].projectId
+)
+const SEPOLIA_ZERODEV_PAYMASTER_RPC_URL = getPaymasterRpc(
+    config["0.7"][sepolia.id].projectId
+)
 
-const OPTIMISM_SEPOLIA_ZERODEV_RPC_URL =
-    process.env.OPTIMISM_SEPOLIA_ZERODEV_RPC_URL
-const OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL =
-    process.env.OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL
+const OPTIMISM_SEPOLIA_ZERODEV_RPC_URL = getBundlerRpc(
+    config["0.7"][optimismSepolia.id].projectId
+)
+const OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL = getPaymasterRpc(
+    config["0.7"][optimismSepolia.id].projectId
+)
 
 const PRIVATE_KEY = process.env.TEST_PRIVATE_KEY
 
 describe("MultiChainECDSAValidator", () => {
-    let sepoliaPublicClient: PublicClient
-    let optimismSepoliaPublicClient: PublicClient
+    let sepoliaPublicClient: PublicClient<Transport, typeof sepolia>
+    let optimismSepoliaPublicClient: PublicClient<
+        Transport,
+        typeof optimismSepolia
+    >
 
-    let sepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<ENTRYPOINT_ADDRESS_V07_TYPE>
-    let opSepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let sepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient
+    let opSepoliaZeroDevPaymasterClient: ZeroDevPaymasterClient
 
     let signer: PrivateKeyAccount
-    let sepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
-        string
-    >
-    let optimismsepoliaMultiChainECDSAValidatorPlugin: KernelValidator<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
-        string
-    >
+    let sepoliaMultiChainECDSAValidatorPlugin: KernelValidator<"MultiChainECDSAValidator">
+    let optimismsepoliaMultiChainECDSAValidatorPlugin: KernelValidator<"MultiChainECDSAValidator">
 
-    let account: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+    let account: SmartAccount<KernelSmartAccountImplementation>
     let kernelClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V07_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+        SmartAccount<KernelSmartAccountImplementation>
     >
-    let bundlerClient: BundlerClient<ENTRYPOINT_ADDRESS_V07_TYPE>
     let greeterContract: GetContractReturnType<
         typeof GreeterAbi,
-        typeof multiChainKernelClient,
+        typeof kernelClient,
         Address
     >
     let owner: Address
 
     beforeAll(async () => {
         sepoliaPublicClient = createPublicClient({
-            transport: http(SEPOLIA_RPC_URL)
+            transport: http(SEPOLIA_RPC_URL),
+            chain: sepolia
         })
         optimismSepoliaPublicClient = createPublicClient({
-            transport: http(OPTIMISM_SEPOLIA_RPC_URL)
+            transport: http(OPTIMISM_SEPOLIA_RPC_URL),
+            chain: optimismSepolia
         })
 
         sepoliaZeroDevPaymasterClient = createZeroDevPaymasterClient({
             chain: sepolia,
-            transport: http(SEPOLIA_ZERODEV_PAYMASTER_RPC_URL),
-            entryPoint: getEntryPoint()
+            transport: http(SEPOLIA_ZERODEV_PAYMASTER_RPC_URL)
         })
 
         opSepoliaZeroDevPaymasterClient = createZeroDevPaymasterClient({
             chain: optimismSepolia,
-            transport: http(OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL),
-            entryPoint: getEntryPoint()
+            transport: http(OPTIMISM_SEPOLIA_ZERODEV_PAYMASTER_RPC_URL)
         })
 
         signer = privateKeyToAccount(PRIVATE_KEY as Hex)
@@ -167,13 +157,15 @@ describe("MultiChainECDSAValidator", () => {
             await toMultiChainECDSAValidator(sepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
                 kernelVersion,
-                signer
+                signer,
+                multiChainIds: [sepolia.id, optimismSepolia.id]
             })
         optimismsepoliaMultiChainECDSAValidatorPlugin =
             await toMultiChainECDSAValidator(optimismSepoliaPublicClient, {
                 entryPoint: getEntryPoint(),
                 kernelVersion,
-                signer
+                signer,
+                multiChainIds: [sepolia.id, optimismSepolia.id]
             })
 
         account = await createKernelAccount(sepoliaPublicClient, {
@@ -184,28 +176,17 @@ describe("MultiChainECDSAValidator", () => {
             }
         })
 
-        multiChainKernelClient = createKernelMultiChainClient({
+        kernelClient = createKernelAccountClient({
             account: account,
             chain: sepolia,
             bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    return sepoliaZeroDevPaymasterClient.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: getEntryPoint()
-                    })
-                }
-            },
-            entryPoint: getEntryPoint()
+            paymaster: sepoliaZeroDevPaymasterClient
         })
-        bundlerClient = multiChainKernelClient.extend(
-            bundlerActions(getEntryPoint())
-        )
 
         greeterContract = getContract({
             abi: GreeterAbi,
             address: process.env.GREETER_ADDRESS as Address,
-            client: multiChainKernelClient
+            client: kernelClient
         })
         owner = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex).address
     })
@@ -216,16 +197,6 @@ describe("MultiChainECDSAValidator", () => {
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
         expect(account.address).not.toEqual(zeroAddress)
         console.log("account.address: ", account.address)
-    })
-
-    test("Account should throw when trying to sign a transaction", async () => {
-        await expect(async () => {
-            await account.signTransaction({
-                to: zeroAddress,
-                value: 0n,
-                data: "0x"
-            })
-        }).toThrow(new SignTransactionNotSupportedBySmartAccount())
     })
 
     test(
@@ -264,7 +235,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -341,7 +312,7 @@ describe("MultiChainECDSAValidator", () => {
                 },
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -353,7 +324,7 @@ describe("MultiChainECDSAValidator", () => {
         "Client signMessage should return a valid signature",
         async () => {
             // to make sure kernel is deployed
-            const tx = await multiChainKernelClient.sendTransaction({
+            const tx = await kernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"
@@ -361,7 +332,7 @@ describe("MultiChainECDSAValidator", () => {
             console.log("tx", tx)
 
             const message = "hello world"
-            const response = await multiChainKernelClient.signMessage({
+            const response = await kernelClient.signMessage({
                 message
             })
             console.log("hashMessage(message)", hashMessage(message))
@@ -371,7 +342,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -396,7 +367,7 @@ describe("MultiChainECDSAValidator", () => {
         "Client signMessage should return a valid signature",
         async () => {
             // to make sure kernel is deployed
-            const tx = await multiChainKernelClient.sendTransaction({
+            const tx = await kernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,
                 data: "0x"
@@ -404,7 +375,7 @@ describe("MultiChainECDSAValidator", () => {
             console.log("tx", tx)
 
             const message = "hello world"
-            const response = await multiChainKernelClient.signMessage({
+            const response = await kernelClient.signMessage({
                 message
             })
             console.log("hashMessage(message)", hashMessage(message))
@@ -414,7 +385,7 @@ describe("MultiChainECDSAValidator", () => {
                 message,
                 signature: response,
                 provider: new ethers.providers.JsonRpcProvider(
-                    config["v0.7"][sepolia.id].rpcUrl
+                    config["0.7"][sepolia.id].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()
@@ -465,7 +436,7 @@ describe("MultiChainECDSAValidator", () => {
                 message
             })
 
-            const response = await multiChainKernelClient.signTypedData({
+            const response = await kernelClient.signTypedData({
                 domain,
                 primaryType,
                 types,
@@ -489,23 +460,18 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client deploy contract",
         async () => {
-            const response = await multiChainKernelClient.sendUserOperation({
-                userOperation: {
-                    callData:
-                        await multiChainKernelClient.account.encodeDeployCallData(
-                            {
-                                abi: GreeterAbi,
-                                bytecode: GreeterBytecode
-                            }
-                        )
-                }
+            const response = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeDeployCallData({
+                    abi: GreeterAbi,
+                    bytecode: GreeterBytecode
+                })
             })
 
             expect(response).toBeString()
             expect(response).toHaveLength(TX_HASH_LENGTH)
             expect(response).toMatch(TX_HASH_REGEX)
 
-            const rcpt = await bundlerClient.waitForUserOperationReceipt({
+            const rcpt = await kernelClient.waitForUserOperationReceipt({
                 hash: response
             })
             const transactionReceipt =
@@ -521,8 +487,8 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Smart account client send multiple transactions",
         async () => {
-            const response = await multiChainKernelClient.sendTransactions({
-                transactions: [
+            const response = await kernelClient.sendTransaction({
+                calls: [
                     {
                         to: zeroAddress,
                         value: 0n,
@@ -581,38 +547,35 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
-            const userOp = await multiChainKernelClient.signUserOperation({
-                userOperation: {
-                    callData:
-                        await multiChainKernelClient.account.encodeCallData([
-                            {
-                                to: process.env.GREETER_ADDRESS as Address,
-                                value: 0n,
-                                data: encodeFunctionData({
-                                    abi: GreeterAbi,
-                                    functionName: "setGreeting",
-                                    args: ["hello world"]
-                                })
-                            },
-                            {
-                                to: process.env.GREETER_ADDRESS as Address,
-                                value: 0n,
-                                data: encodeFunctionData({
-                                    abi: GreeterAbi,
-                                    functionName: "setGreeting",
-                                    args: ["hello world 2"]
-                                })
-                            }
-                        ])
-                }
+            const userOp = await kernelClient.signUserOperation({
+                callData: await kernelClient.account.encodeCalls([
+                    {
+                        to: process.env.GREETER_ADDRESS as Address,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world"]
+                        })
+                    },
+                    {
+                        to: process.env.GREETER_ADDRESS as Address,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world 2"]
+                        })
+                    }
+                ])
             })
             expect(userOp.signature).not.toBe("0x")
 
-            const userOpHash = await multiChainKernelClient.sendUserOperation({
-                userOperation: userOp
+            const userOpHash = await kernelClient.sendUserOperation({
+                ...userOp
             })
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
 
@@ -628,19 +591,19 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send UserOp with delegatecall",
         async () => {
-            const accountAddress = multiChainKernelClient.account.address
-            const amountToMint = 10000000n
+            const accountAddress = kernelClient.account.address
+            const amountToMint = parseEther("0.99999")
             const amountToTransfer = 4337n
             await mintToAccount(
                 sepoliaPublicClient,
-                multiChainKernelClient,
+                kernelClient,
                 accountAddress,
                 amountToMint
             )
-            const userOpHash = await multiChainKernelClient.sendUserOperation({
-                userOperation: {
-                    callData:
-                        await multiChainKernelClient.account.encodeCallData({
+            const userOpHash = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeCalls(
+                    [
+                        {
                             to: TOKEN_ACTION_ADDRESS,
                             value: 0n,
                             data: encodeFunctionData({
@@ -651,16 +614,15 @@ describe("MultiChainECDSAValidator", () => {
                                     amountToTransfer,
                                     owner
                                 ]
-                            }),
-                            callType: "delegatecall"
-                        })
-                }
+                            })
+                        }
+                    ],
+                    "delegatecall"
+                )
             })
-            const transaction = await bundlerClient.waitForUserOperationReceipt(
-                {
-                    hash: userOpHash
-                }
-            )
+            const transaction = await kernelClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
             console.log(
                 "transferTransactionHash",
                 `https://sepolia.etherscan.io/tx/${transaction.receipt.transactionHash}`
@@ -699,25 +661,24 @@ describe("MultiChainECDSAValidator", () => {
         async () => {
             const customNonceKey = getCustomNonceKeyFromString(
                 "Hello, World!",
-                ENTRYPOINT_ADDRESS_V07
+                "0.7"
             )
 
-            const nonce = await account.getNonce(customNonceKey)
+            const nonce = await account.getNonce({ key: customNonceKey })
 
-            const userOpHash = await multiChainKernelClient.sendUserOperation({
-                userOperation: {
-                    callData:
-                        await multiChainKernelClient.account.encodeCallData({
-                            to: zeroAddress,
-                            value: 0n,
-                            data: "0x"
-                        }),
-                    nonce
-                }
+            const userOpHash = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeCalls([
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }
+                ]),
+                nonce
             })
 
             expect(userOpHash).toHaveLength(66)
-            await bundlerClient.waitForUserOperationReceipt({
+            await kernelClient.waitForUserOperationReceipt({
                 hash: userOpHash
             })
         },
@@ -727,12 +688,11 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send Transaction with paymaster",
         async () => {
-            const transactionHash =
-                await multiChainKernelClient.sendTransaction({
-                    to: zeroAddress,
-                    value: 0n,
-                    data: "0x"
-                })
+            const transactionHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
             console.log("transactionHash", transactionHash)
 
             expect(transactionHash).toBeString()
@@ -752,8 +712,8 @@ describe("MultiChainECDSAValidator", () => {
     test(
         "Client send multiple Transactions with paymaster",
         async () => {
-            const response = await multiChainKernelClient.sendTransactions({
-                transactions: [
+            const response = await kernelClient.sendTransaction({
+                calls: [
                     {
                         to: zeroAddress,
                         value: 0n,
@@ -788,7 +748,7 @@ describe("MultiChainECDSAValidator", () => {
                     if (event.eventName === "UserOperationEvent") {
                         eventFound = true
                         const userOperation =
-                            await bundlerClient.getUserOperationByHash({
+                            await kernelClient.getUserOperation({
                                 hash: event.args.userOpHash
                             })
                         expect(
@@ -837,117 +797,81 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaKernelAccount.address
             )
 
-            const sepoliaZerodevKernelClient = createKernelMultiChainClient({
+            const sepoliaZerodevKernelClient = createKernelAccountClient({
                 account: sepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                            {
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            }
-                        )
-                    }
-                },
-                entryPoint: getEntryPoint()
+                paymaster: sepoliaZeroDevPaymasterClient
             })
 
             const optimismSepoliaZerodevKernelClient =
-                createKernelMultiChainClient({
+                createKernelAccountClient({
                     account: optimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                {
-                                    userOperation,
-                                    entryPoint: getEntryPoint()
-                                }
-                            )
-                        }
-                    },
-                    entryPoint: getEntryPoint()
+                    paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
             const sepoliaUserOp =
-                await sepoliaZerodevKernelClient.prepareMultiUserOpRequest(
-                    {
-                        userOperation: {
-                            callData:
-                                await sepoliaZerodevKernelClient.account.encodeCallData(
-                                    {
-                                        to: zeroAddress,
-                                        value: BigInt(0),
-                                        data: "0x"
-                                    }
-                                )
-                        }
-                    },
-                    ValidatorType.ECDSA,
-                    2
-                )
+                await sepoliaZerodevKernelClient.prepareUserOperation({
+                    callData:
+                        await sepoliaZerodevKernelClient.account.encodeCalls([
+                            {
+                                to: zeroAddress,
+                                value: BigInt(0),
+                                data: "0x"
+                            }
+                        ])
+                })
 
             const optimismSepoliaUserOp =
-                await optimismSepoliaZerodevKernelClient.prepareMultiUserOpRequest(
-                    {
-                        userOperation: {
-                            callData:
-                                await optimismSepoliaZerodevKernelClient.account.encodeCallData(
-                                    {
-                                        to: zeroAddress,
-                                        value: BigInt(0),
-                                        data: "0x"
-                                    }
-                                )
+                await optimismSepoliaZerodevKernelClient.prepareUserOperation({
+                    callData:
+                        await optimismSepoliaZerodevKernelClient.account.encodeCalls(
+                            [
+                                {
+                                    to: zeroAddress,
+                                    value: BigInt(0),
+                                    data: "0x"
+                                }
+                            ]
+                        )
+                })
+
+            const signedUserOps = await signUserOperations(
+                sepoliaZerodevKernelClient,
+                {
+                    userOperations: [
+                        { ...sepoliaUserOp, chainId: sepolia.id },
+                        {
+                            ...optimismSepoliaUserOp,
+                            chainId: optimismSepolia.id
                         }
-                    },
-                    ValidatorType.ECDSA,
-                    2
-                )
-
-            const signedUserOps = await ecdsaSignUserOps({
-                account: sepoliaKernelAccount,
-                multiUserOps: [
-                    { userOperation: sepoliaUserOp, chainId: sepolia.id },
-                    {
-                        userOperation: optimismSepoliaUserOp,
-                        chainId: optimismSepolia.id
-                    }
-                ],
-                entryPoint: getEntryPoint()
-            })
-
-            const sepoliaBundlerClient = sepoliaZerodevKernelClient.extend(
-                bundlerActions(getEntryPoint())
+                    ]
+                }
             )
 
-            const optimismSepoliaBundlerClient =
-                optimismSepoliaZerodevKernelClient.extend(
-                    bundlerActions(getEntryPoint())
-                )
-
             const sepoliaUserOpHash =
-                await sepoliaBundlerClient.sendUserOperation({
-                    userOperation: signedUserOps[0]
+                await sepoliaZerodevKernelClient.sendUserOperation({
+                    ...signedUserOps[0]
                 })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
-            await sepoliaBundlerClient.waitForUserOperationReceipt({
+            await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaBundlerClient.sendUserOperation({
-                    userOperation: signedUserOps[1]
+                await optimismSepoliaZerodevKernelClient.sendUserOperation({
+                    ...signedUserOps[1]
                 })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
-            await optimismSepoliaBundlerClient.waitForUserOperationReceipt({
-                hash: optimismSepoliaUserOpHash
-            })
+            await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
+                {
+                    hash: optimismSepoliaUserOpHash
+                }
+            )
         },
         TEST_TIMEOUT
     )
@@ -958,14 +882,14 @@ describe("MultiChainECDSAValidator", () => {
             const sepoliaSessionKeySigner = privateKeyToAccount(
                 generatePrivateKey()
             )
-            const sepoliaEcdsaModularSigner = toECDSASigner({
+            const sepoliaEcdsaModularSigner = await toECDSASigner({
                 signer: sepoliaSessionKeySigner
             })
 
             const optimismSepoliaSessionKeySigner = privateKeyToAccount(
                 generatePrivateKey()
             )
-            const optimismSepoliaEcdsaModularSigner = toECDSASigner({
+            const optimismSepoliaEcdsaModularSigner = await toECDSASigner({
                 signer: optimismSepoliaSessionKeySigner
             })
 
@@ -1024,67 +948,42 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaKernelAccount.address
             )
 
-            const sepoliaZerodevKernelClient = createKernelMultiChainClient({
+            const sepoliaZerodevKernelClient = createKernelAccountClient({
                 account: sepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                            {
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            }
-                        )
-                    }
-                },
-                entryPoint: getEntryPoint()
+                paymaster: sepoliaZeroDevPaymasterClient
             })
 
             const optimismSepoliaZerodevKernelClient =
-                createKernelMultiChainClient({
+                createKernelAccountClient({
                     account: optimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                {
-                                    userOperation,
-                                    entryPoint: getEntryPoint()
-                                }
-                            )
-                        }
-                    },
-                    entryPoint: getEntryPoint()
+                    paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
             const sepoliaUserOp =
-                await sepoliaZerodevKernelClient.prepareUserOperationRequest({
-                    userOperation: {
-                        callData: await sepoliaKernelAccount.encodeCallData({
+                await sepoliaZerodevKernelClient.prepareUserOperation({
+                    callData: await sepoliaKernelAccount.encodeCalls([
+                        {
                             to: zeroAddress,
                             value: BigInt(0),
                             data: "0x"
-                        })
-                    }
+                        }
+                    ])
                 })
 
             const optimismSepoliaUserOp =
-                await optimismSepoliaZerodevKernelClient.prepareUserOperationRequest(
-                    {
-                        userOperation: {
-                            callData:
-                                await optimismSepoliaKernelAccount.encodeCallData(
-                                    {
-                                        to: zeroAddress,
-                                        value: BigInt(0),
-                                        data: "0x"
-                                    }
-                                )
+                await optimismSepoliaZerodevKernelClient.prepareUserOperation({
+                    callData: await optimismSepoliaKernelAccount.encodeCalls([
+                        {
+                            to: zeroAddress,
+                            value: BigInt(0),
+                            data: "0x"
                         }
-                    }
-                )
+                    ])
+                })
 
             const signedEnableUserOps = await ecdsaSignUserOpsWithEnable({
                 multiChainUserOpConfigsForEnable: [
@@ -1099,34 +998,27 @@ describe("MultiChainECDSAValidator", () => {
                 ]
             })
 
-            const sepoliaBundlerClient = sepoliaZerodevKernelClient.extend(
-                bundlerActions(getEntryPoint())
-            )
-
-            const optimismSepoliaBundlerClient =
-                optimismSepoliaZerodevKernelClient.extend(
-                    bundlerActions(getEntryPoint())
-                )
-
             const sepoliaUserOpHash =
-                await sepoliaBundlerClient.sendUserOperation({
-                    userOperation: signedEnableUserOps[0]
+                await sepoliaZerodevKernelClient.sendUserOperation({
+                    ...signedEnableUserOps[0]
                 })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
-            await sepoliaBundlerClient.waitForUserOperationReceipt({
+            await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
 
             const optimismSepoliaUserOpHash =
-                await optimismSepoliaBundlerClient.sendUserOperation({
-                    userOperation: signedEnableUserOps[1]
+                await optimismSepoliaZerodevKernelClient.sendUserOperation({
+                    ...signedEnableUserOps[1]
                 })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
-            await optimismSepoliaBundlerClient.waitForUserOperationReceipt({
-                hash: optimismSepoliaUserOpHash
-            })
+            await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
+                {
+                    hash: optimismSepoliaUserOpHash
+                }
+            )
 
             const sepoliaTxHashAfterEnable =
                 await sepoliaZerodevKernelClient.sendTransaction({
@@ -1171,11 +1063,11 @@ describe("MultiChainECDSAValidator", () => {
                 optimismSepoliaSessionKeyAccount.address
             )
 
-            const sepoliaEmptySessionKeySigner = toECDSASigner({
+            const sepoliaEmptySessionKeySigner = await toECDSASigner({
                 signer: sepoliaEmptyAccount
             })
 
-            const optimismSepoliaEmptySessionKeySigner = toECDSASigner({
+            const optimismSepoliaEmptySessionKeySigner = await toECDSASigner({
                 signer: optimismSepoliaEmptyAccount
             })
 
@@ -1247,11 +1139,11 @@ describe("MultiChainECDSAValidator", () => {
                 ])
 
             // get real session key signers
-            const sepoliaSessionKeySigner = toECDSASigner({
+            const sepoliaSessionKeySigner = await toECDSASigner({
                 signer: sepoliaSessionKeyAccount
             })
 
-            const optimismSepoliaSessionKeySigner = toECDSASigner({
+            const optimismSepoliaSessionKeySigner = await toECDSASigner({
                 signer: optimismSepoliaSessionKeyAccount
             })
 
@@ -1279,17 +1171,7 @@ describe("MultiChainECDSAValidator", () => {
                 account: deserializeSepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
-                middleware: {
-                    sponsorUserOperation: async ({ userOperation }) => {
-                        return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                            {
-                                userOperation,
-                                entryPoint: getEntryPoint()
-                            }
-                        )
-                    }
-                },
-                entryPoint: getEntryPoint()
+                paymaster: sepoliaZeroDevPaymasterClient
             })
 
             const optimismSepoliaZerodevKernelClient =
@@ -1297,17 +1179,7 @@ describe("MultiChainECDSAValidator", () => {
                     account: deserializeOptimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
-                    middleware: {
-                        sponsorUserOperation: async ({ userOperation }) => {
-                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                {
-                                    userOperation,
-                                    entryPoint: getEntryPoint()
-                                }
-                            )
-                        }
-                    },
-                    entryPoint: getEntryPoint()
+                    paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
             // send user ops. you don't need additional enables, since it already has the approvals with serialized account

@@ -1,82 +1,109 @@
 import {
-    type KernelSmartAccount,
+    type KernelAccountClientActions,
     createKernelAccountClient
 } from "@zerodev/sdk"
 import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
-import type { EntryPoint } from "permissionless/types"
-import type { BundlerRpcSchema } from "permissionless/types/bundler"
-import type { Chain, Client, Transport } from "viem"
+import type {
+    BundlerRpcSchema,
+    Chain,
+    Client,
+    Prettify,
+    RpcSchema,
+    Transport
+} from "viem"
+import type {
+    BundlerActions,
+    BundlerClientConfig,
+    SmartAccount
+} from "viem/account-abstraction"
 import {
     type MultiChainWeightedKernelAccountClientActions,
     multiChainWeightedKernelAccountClientActions
 } from "./decorators/multiChainWeightedKernelAccountClient.js"
 
 export type MultiChainWeightedKernelAccountClient<
-    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends
-        | KernelSmartAccount<entryPoint, transport, chain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, transport, chain>
-        | undefined
-> = Client<
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    client extends Client | undefined = Client | undefined,
+    rpcSchema extends RpcSchema | undefined = undefined
+> = Prettify<
+    Client<
+        transport,
+        chain extends Chain
+            ? chain
+            : // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+              client extends Client<any, infer chain>
+              ? chain
+              : undefined,
+        account,
+        rpcSchema extends RpcSchema
+            ? [...BundlerRpcSchema, ...rpcSchema]
+            : BundlerRpcSchema,
+        BundlerActions<account> &
+            KernelAccountClientActions<chain, account> &
+            MultiChainWeightedKernelAccountClientActions
+    >
+> & {
+    client: client
+    paymaster: BundlerClientConfig["paymaster"] | undefined
+    paymasterContext: BundlerClientConfig["paymasterContext"] | undefined
+    userOperation: BundlerClientConfig["userOperation"] | undefined
+}
+
+export function createMultiChainWeightedKernelAccountClient<
+    transport extends Transport,
+    chain extends Chain | undefined = undefined,
+    account extends SmartAccount | undefined = undefined,
+    client extends Client | undefined = undefined,
+    rpcSchema extends RpcSchema | undefined = undefined
+>(
+    parameters: SmartAccountClientConfig<
+        transport,
+        chain,
+        account,
+        client,
+        rpcSchema
+    >
+): MultiChainWeightedKernelAccountClient<
     transport,
     chain,
     account,
-    BundlerRpcSchema<entryPoint>,
-    MultiChainWeightedKernelAccountClientActions<
-        entryPoint,
-        transport,
-        chain,
-        account
-    >
+    client,
+    rpcSchema
 >
 
-export const createMultiChainWeightedKernelAccountClient = <
-    TSmartAccount extends
-        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
-        | undefined,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = undefined,
-    TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<
-        infer U
-    >
-        ? U
-        : never
->(
-    parameters: SmartAccountClientConfig<
-        TEntryPoint,
-        TTransport,
-        TChain,
-        TSmartAccount
-    >
-): MultiChainWeightedKernelAccountClient<
-    TEntryPoint,
-    TTransport,
-    TChain,
-    TSmartAccount
-> => {
+export function createMultiChainWeightedKernelAccountClient(
+    parameters: SmartAccountClientConfig
+): MultiChainWeightedKernelAccountClient {
     const {
+        client: client_,
         key = "Account",
         name = "Multi Chain Weighted Kernel Account Client",
-        middleware
+        paymaster,
+        paymasterContext,
+        bundlerTransport,
+        userOperation
     } = parameters
 
-    const client = createKernelAccountClient({
-        ...parameters,
-        name,
-        key
-    })
+    const client = Object.assign(
+        createKernelAccountClient({
+            ...parameters,
+            chain: parameters.chain ?? client_?.chain,
+            bundlerTransport,
+            key,
+            name
+        }),
+        {
+            client: client_,
+            paymaster,
+            paymasterContext,
+            userOperation,
+            type: "multiChainWeightedKernelAccountClient"
+        }
+    )
 
     return client.extend(
-        multiChainWeightedKernelAccountClientActions({
-            middleware
-        })
-    ) as MultiChainWeightedKernelAccountClient<
-        TEntryPoint,
-        TTransport,
-        TChain,
-        TSmartAccount
-    >
+        multiChainWeightedKernelAccountClientActions()
+    ) as MultiChainWeightedKernelAccountClient
 }

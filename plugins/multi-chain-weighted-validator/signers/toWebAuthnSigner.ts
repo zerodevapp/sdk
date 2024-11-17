@@ -10,7 +10,6 @@ import {
     uint8ArrayToHexString
 } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
-import { SignTransactionNotSupportedBySmartAccount } from "permissionless/accounts"
 import {
     type Chain,
     type Client,
@@ -140,7 +139,9 @@ export const toWebAuthnSigner = async <
             ])
         },
         async signTransaction(_, __) {
-            throw new SignTransactionNotSupportedBySmartAccount()
+            throw new Error(
+                "Smart account signer doesn't need to sign transactions"
+            )
         },
         async signTypedData<
             const TTypedData extends TypedData | Record<string, unknown>,

@@ -2,8 +2,11 @@ export {
     createKernelAccount,
     createKernelAccountV0_2,
     createKernelAccountV1,
-    type KernelSmartAccountV1,
-    type KernelSmartAccount,
+    type CreateKernelAccountParameters,
+    type CreateKernelAccountReturnType,
+    type CreateKernelAccountV1ReturnType,
+    type KernelSmartAccountImplementation,
+    type KernelSmartAccountV1Implementation,
     KERNEL_ADDRESSES,
     addressToEmptyAccount,
     EIP1271Abi,
@@ -63,3 +66,5 @@ export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/get
 export { isProviderSet, setPimlicoAsProvider } from "./clients/utils.js"
 export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"
 export { isPluginInitialized } from "./accounts/kernel/utils/plugins/ep0_7/isPluginInitialized.js"
+export * from "./errors/index.js"
+export * from "./utils/index.js"

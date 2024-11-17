@@ -1,7 +1,3 @@
-import type {
-    ENTRYPOINT_ADDRESS_V06_TYPE,
-    EntryPoint
-} from "permissionless/types/entrypoint"
 import { type Address, type Hex, concat, pad, toHex } from "viem"
 import {
     type PluginValidityData,
@@ -9,9 +5,7 @@ import {
 } from "../../../../../types/index.js"
 import type { Kernel2_0_plugins } from "./getPluginsEnableTypedData.js"
 
-export const getEncodedPluginsData = async <
-    entryPoint extends EntryPoint = ENTRYPOINT_ADDRESS_V06_TYPE
->({
+export const getEncodedPluginsData = async ({
     accountAddress,
     enableSignature,
     action,
@@ -21,7 +15,7 @@ export const getEncodedPluginsData = async <
 }: {
     accountAddress: Address
     enableSignature: Hex
-} & Kernel2_0_plugins<entryPoint> &
+} & Kernel2_0_plugins &
     PluginValidityData) => {
     const enableData = await validator.getEnableData(accountAddress)
     const enableDataLength = enableData.length / 2 - 1

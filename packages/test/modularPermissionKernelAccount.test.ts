@@ -1,7 +1,10 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
-import type { KernelAccountClient, KernelSmartAccount } from "@zerodev/sdk"
-import type { ENTRYPOINT_ADDRESS_V06_TYPE } from "permissionless/_types/types"
+import type {
+    KernelAccountClient,
+    KernelSmartAccountImplementation,
+    ZeroDevPaymasterClient
+} from "@zerodev/sdk"
 import {
     type Address,
     type Chain,
@@ -13,6 +16,7 @@ import {
     pad,
     zeroAddress
 } from "viem"
+import type { SmartAccount } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
 import { toGasPolicy } from "../../plugins/modularPermission/policies/toGasPolicy"
 import {
@@ -27,7 +31,7 @@ import {
     getSignerToEcdsaKernelAccount,
     getSignerToModularPermissionKernelAccount,
     getZeroDevPaymasterClient
-} from "./utils"
+} from "./utils_0_6"
 
 const TEST_TIMEOUT = 1000000
 
@@ -38,11 +42,11 @@ describe("Modular Permission kernel Account", async () => {
     let owner: PrivateKeyAccount
 
     let ecdsaSmartAccountClient: KernelAccountClient<
-        ENTRYPOINT_ADDRESS_V06_TYPE,
         Transport,
         Chain,
-        KernelSmartAccount<ENTRYPOINT_ADDRESS_V06_TYPE>
+        SmartAccount<KernelSmartAccountImplementation<"0.6">>
     >
+    let zerodevPaymaster: ZeroDevPaymasterClient
 
     async function mintToAccount(amount: bigint) {
         const balanceBefore = await publicClient.readContract({
@@ -77,20 +81,12 @@ describe("Modular Permission kernel Account", async () => {
         publicClient = await getPublicClient()
         testPrivateKey = process.env.TEST_PRIVATE_KEY as Hex
         owner = privateKeyToAccount(testPrivateKey)
+        zerodevPaymaster = getZeroDevPaymasterClient()
         ecdsaSmartAccountClient = await getKernelAccountClient({
             account: await getSignerToEcdsaKernelAccount(),
-            middleware: {
-                sponsorUserOperation: async ({ userOperation, entryPoint }) => {
-                    const kernelPaymaster = getZeroDevPaymasterClient()
-                    return kernelPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint
-                    })
-                }
-            }
+            paymaster: zerodevPaymaster
         })
-        accountAddress = (await ecdsaSmartAccountClient.account
-            ?.address) as Address
+        accountAddress = ecdsaSmartAccountClient.account.address
     })
 
     test(
@@ -103,18 +99,7 @@ describe("Modular Permission kernel Account", async () => {
                             maxGasAllowedInWei: 1000000000000000000n
                         })
                     ]),
-                    middleware: {
-                        sponsorUserOperation: async ({
-                            userOperation,
-                            entryPoint
-                        }) => {
-                            const kernelPaymaster = getZeroDevPaymasterClient()
-                            return kernelPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint
-                            })
-                        }
-                    }
+                    paymaster: zerodevPaymaster
                 })
 
             const txHash =
@@ -168,18 +153,7 @@ describe("Modular Permission kernel Account", async () => {
                             ]
                         })
                     ]),
-                    middleware: {
-                        sponsorUserOperation: async ({
-                            userOperation,
-                            entryPoint
-                        }) => {
-                            const kernelPaymaster = getZeroDevPaymasterClient()
-                            return kernelPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint
-                            })
-                        }
-                    }
+                    paymaster: zerodevPaymaster
                 })
 
             const txHash =
@@ -215,18 +189,7 @@ describe("Modular Permission kernel Account", async () => {
                             ]
                         })
                     ]),
-                    middleware: {
-                        sponsorUserOperation: async ({
-                            userOperation,
-                            entryPoint
-                        }) => {
-                            const kernelPaymaster = getZeroDevPaymasterClient()
-                            return kernelPaymaster.sponsorUserOperation({
-                                userOperation,
-                                entryPoint
-                            })
-                        }
-                    }
+                    paymaster: zerodevPaymaster
                 })
 
             const txHash =

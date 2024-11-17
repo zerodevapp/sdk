@@ -33,9 +33,9 @@ export const encodeExecuteCall = <TOptions extends EncodeExecuteOptions>(
         calldata = concatHex([
             args.to,
             options.callType !== CALL_TYPE.DELEGATE_CALL
-                ? toHex(args.value, { size: 32 })
+                ? toHex(args.value || 0n, { size: 32 })
                 : "0x", // No value if delegate call
-            args.data
+            args.data || "0x"
         ])
     }
 

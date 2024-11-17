@@ -1,86 +1,57 @@
+import type { Chain, Client, Hash, Prettify, Transport } from "viem"
 import {
-    type SendTransactionWithPaymasterParameters,
-    sendTransaction
-} from "permissionless/actions/smartAccount"
-import type { EntryPoint, Prettify } from "permissionless/types"
-import {
-    AccountOrClientNotFoundError,
-    parseAccount
-} from "permissionless/utils"
-import type { Chain, Client, Hash, Transport } from "viem"
-import { encodeFunctionData, getAction } from "viem/utils"
-import type { KernelSmartAccount } from "../../accounts/index.js"
+    type SendUserOperationParameters,
+    type SmartAccount,
+    sendUserOperation
+} from "viem/account-abstraction"
+import { encodeFunctionData, getAction, parseAccount } from "viem/utils"
 import { KernelV3AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { AccountNotFoundError } from "../../errors/index.js"
 
 export type InvalidateNonceParameters<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
+    account extends SmartAccount | undefined,
+    accountOverride extends SmartAccount | undefined = undefined,
+    calls extends readonly unknown[] = readonly unknown[]
 > = Prettify<
-    SendTransactionWithPaymasterParameters<
-        entryPoint,
-        TTransport,
-        TChain,
-        TAccount,
-        TChainOverride
-    > & {
+    Partial<SendUserOperationParameters<account, accountOverride, calls>> & {
         nonceToSet: number
     }
 >
 
 export async function invalidateNonce<
-    entryPoint extends EntryPoint,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = Chain | undefined,
-    TAccount extends
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, TTransport, TChain>
-        | undefined,
-    TChainOverride extends Chain | undefined = Chain | undefined
+    account extends SmartAccount | undefined,
+    chain extends Chain | undefined,
+    accountOverride extends SmartAccount | undefined = undefined,
+    calls extends readonly unknown[] = readonly unknown[]
 >(
-    client: Client<TTransport, TChain, TAccount>,
-    args: Prettify<
-        InvalidateNonceParameters<
-            entryPoint,
-            TTransport,
-            TChain,
-            TAccount,
-            TChainOverride
-        >
-    >
+    client: Client<Transport, chain, account>,
+    args: Prettify<InvalidateNonceParameters<account, accountOverride, calls>>
 ): Promise<Hash> {
-    const { account: account_ = client.account, middleware, nonceToSet } = args
-    if (!account_) throw new AccountOrClientNotFoundError()
+    const { account: account_ = client.account, nonceToSet } = args
+    if (!account_)
+        throw new AccountNotFoundError({
+            docsPath: "/docs/actions/wallet/sendTransaction"
+        })
 
-    const account = parseAccount(account_) as KernelSmartAccount<entryPoint>
+    const account = parseAccount(account_) as SmartAccount
 
     return await getAction(
         client,
-        sendTransaction<
-            TTransport,
-            TChain,
-            TAccount,
-            entryPoint,
-            TChainOverride
-        >,
-        "sendTransaction"
+        sendUserOperation,
+        "sendUserOperation"
     )({
         ...args,
-        to: account.address,
-        data: encodeFunctionData({
-            abi: KernelV3AccountAbi,
-            functionName: "invalidateNonce",
-            args: [nonceToSet]
-        }),
-        value: 0n,
-        account,
-        middleware
-    })
+        calls: [
+            {
+                to: account.address,
+                data: encodeFunctionData({
+                    abi: KernelV3AccountAbi,
+                    functionName: "invalidateNonce",
+                    args: [nonceToSet]
+                }),
+                value: 0n
+            }
+        ],
+        account
+    } as SendUserOperationParameters)
 }

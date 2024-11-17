@@ -8,10 +8,19 @@ import type {
     ExtractAbiFunction
 } from "abitype"
 import type { ExtractAbiFunctionNames } from "abitype"
-import type { Pretty } from "abitype/src/types.js"
-import type { EntryPoint } from "permissionless/types/entrypoint"
 import type { Abi, AbiStateMutability, Address, Hex, Narrow } from "viem"
 import type { Operation, ParamOperator } from "./toSessionKeyValidatorPlugin.js"
+
+/**
+ * Taken from: https://github.com/wevm/abitype/blob/main/packages/abitype/src/types.ts
+ * Combines members of an intersection into a readable type.
+ *
+ * @link https://twitter.com/mattpocockuk/status/1622730173446557697?s=20&t=NdpAcmEFXY01xkqU3KO0Mg
+ * @example
+ * type Result = Pretty<{ a: string } | { b: string } | { c: number, d: bigint }>
+ * //   ^? type Result = { a: string; b: string; c: number; d: bigint }
+ */
+export type Pretty<type> = { [key in keyof type]: type[key] } & unknown
 
 export type SessionNonces = {
     lastNonce: bigint
@@ -79,10 +88,7 @@ export type SessionKeyAccountParams = {
     privateKey?: Hex
 }
 
-export type SessionKeyPlugin<entryPoint extends EntryPoint> = KernelValidator<
-    entryPoint,
-    "SessionKeyValidator"
-> & {
+export type SessionKeyPlugin = KernelValidator<"SessionKeyValidator"> & {
     getPluginSerializationParams(): SessionKeyData<Abi, string>
 }
 

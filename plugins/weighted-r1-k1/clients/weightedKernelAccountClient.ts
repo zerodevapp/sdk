@@ -1,77 +1,94 @@
 import {
-    type KernelSmartAccount,
+    type KernelAccountClientActions,
     createKernelAccountClient
 } from "@zerodev/sdk"
 import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
-import type { EntryPoint } from "permissionless/types"
-import type { BundlerRpcSchema } from "permissionless/types/bundler"
-import type { Chain, Client, Transport } from "viem"
+import type {
+    BundlerRpcSchema,
+    Chain,
+    Client,
+    Prettify,
+    RpcSchema,
+    Transport
+} from "viem"
+import type { BundlerActions, SmartAccount } from "viem/account-abstraction"
 import {
     type WeightedKernelAccountClientActions,
     weightedKernelAccountClientActions
 } from "./decorators/weightedKernelAccountClient.js"
 
 export type WeightedKernelAccountClient<
-    entryPoint extends EntryPoint,
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
-    account extends
-        | KernelSmartAccount<entryPoint, transport, chain>
-        | undefined =
-        | KernelSmartAccount<entryPoint, transport, chain>
-        | undefined
-> = Client<
-    transport,
-    chain,
-    account,
-    BundlerRpcSchema<entryPoint>,
-    WeightedKernelAccountClientActions<entryPoint, transport, chain, account>
+    account extends SmartAccount | undefined = SmartAccount | undefined,
+    client extends Client | undefined = Client | undefined,
+    rpcSchema extends RpcSchema | undefined = undefined
+> = Prettify<
+    Client<
+        transport,
+        chain extends Chain
+            ? chain
+            : // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+              client extends Client<any, infer chain>
+              ? chain
+              : undefined,
+        account,
+        rpcSchema extends RpcSchema
+            ? [...BundlerRpcSchema, ...rpcSchema]
+            : BundlerRpcSchema,
+        BundlerActions<account> &
+            KernelAccountClientActions<chain, account> &
+            WeightedKernelAccountClientActions<chain, account>
+    >
 >
 
-export const createWeightedKernelAccountClient = <
-    TSmartAccount extends
-        | KernelSmartAccount<TEntryPoint, TTransport, TChain>
-        | undefined,
-    TTransport extends Transport = Transport,
-    TChain extends Chain | undefined = undefined,
-    TEntryPoint extends EntryPoint = TSmartAccount extends KernelSmartAccount<
-        infer U
-    >
-        ? U
-        : never
+export function createWeightedKernelAccountClient<
+    transport extends Transport,
+    chain extends Chain | undefined = undefined,
+    account extends SmartAccount | undefined = undefined,
+    client extends Client | undefined = undefined,
+    rpcSchema extends RpcSchema | undefined = undefined
 >(
     parameters: SmartAccountClientConfig<
-        TEntryPoint,
-        TTransport,
-        TChain,
-        TSmartAccount
+        transport,
+        chain,
+        account,
+        client,
+        rpcSchema
     >
-): WeightedKernelAccountClient<
-    TEntryPoint,
-    TTransport,
-    TChain,
-    TSmartAccount
-> => {
+): WeightedKernelAccountClient<transport, chain, account, client, rpcSchema>
+
+export function createWeightedKernelAccountClient(
+    parameters: SmartAccountClientConfig
+): WeightedKernelAccountClient {
     const {
+        client: client_,
         key = "Account",
         name = "Weighted Kernel Account Client",
-        middleware
+        paymaster,
+        paymasterContext,
+        bundlerTransport,
+        userOperation
     } = parameters
 
-    const client = createKernelAccountClient({
-        ...parameters,
-        name,
-        key
-    })
+    const client = Object.assign(
+        createKernelAccountClient({
+            ...parameters,
+            chain: parameters.chain ?? client_?.chain,
+            bundlerTransport,
+            key,
+            name
+        }),
+        {
+            client: client_,
+            paymaster,
+            paymasterContext,
+            userOperation,
+            type: "weightedKernelAccountClient"
+        }
+    )
 
     return client.extend(
-        weightedKernelAccountClientActions({
-            middleware
-        })
-    ) as WeightedKernelAccountClient<
-        TEntryPoint,
-        TTransport,
-        TChain,
-        TSmartAccount
-    >
+        weightedKernelAccountClientActions()
+    ) as WeightedKernelAccountClient
 }
