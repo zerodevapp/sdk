@@ -1,16 +1,22 @@
 // @ts-expect-error
-import { describe, test } from "bun:test"
+import { beforeAll, describe, expect, test } from "bun:test"
 import { createKernelAccount, createZeroDevPaymasterClient } from "@zerodev/sdk"
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { http, zeroAddress } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
+import { Address, privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
+import {
+    CallPolicyVersion,
+    toCallPolicy
+} from "../../../plugins/permission/policies"
+import { toECDSASigner as toStandaloneECDSASigner } from "../../../plugins/permission/signers"
+import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
 import {
     type WeightedSigner,
     createWeightedKernelAccountClient,
     createWeightedValidator,
     toECDSASigner
-} from "../../../plugins/weighted-r1-k1"
+} from "../../../plugins/weighted-r1-k1/_types"
 import {
     getBundlerRpc,
     getEntryPoint,
@@ -66,10 +72,36 @@ describe("weightedValidator", () => {
                     }
                 )
 
+                const callPolicy = toCallPolicy({
+                    policyVersion: CallPolicyVersion.V0_0_4,
+                    permissions: [
+                        {
+                            target: zeroAddress,
+                            valueLimit: BigInt(0)
+                        }
+                    ]
+                })
+                const pKey =
+                    "0xd565cc0ff5dc317e52fb4e9be3c2d5cfd86734a98ffbb97f103e3bac009b30d9"
+                const someSigner = await toStandaloneECDSASigner({
+                    signer: privateKeyToAccount(pKey)
+                })
+                const kernelVersion = KERNEL_V3_1
+                const permissionValidator = await toPermissionValidator(
+                    publicClient,
+                    {
+                        entryPoint,
+                        kernelVersion,
+                        signer: someSigner,
+                        policies: [callPolicy]
+                    }
+                )
+
                 const account = await createKernelAccount(publicClient, {
                     entryPoint,
                     plugins: {
                         sudo: multiSigValidator
+                        // regular: permissionValidator
                     },
                     kernelVersion: KERNEL_V3_1
                 })
