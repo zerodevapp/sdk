@@ -125,6 +125,11 @@ describe("weightedValidator", () => {
             })
 
             console.log({ userOpHash })
+
+            const rcpt = await client2.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
+            console.log({ txHash: rcpt.receipt.transactionHash })
         },
         TEST_TIMEOUT
     )
