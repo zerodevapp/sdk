@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-sdk
 
+## 5.3.13
+
+### Patch Changes
+
+- fix: Changed import to .js
+
 ## 5.3.12
 
 ### Patch Changes

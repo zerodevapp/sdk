@@ -22,7 +22,7 @@ import {
     type Transport,
     createClient
 } from "viem"
-import { type ValidatorType, prepareMultiUserOpRequest } from "./actions"
+import { type ValidatorType, prepareMultiUserOpRequest } from "./actions/index.js"
 
 export type KernelAccountMultiChainClientActions<
     entryPoint extends EntryPoint,
