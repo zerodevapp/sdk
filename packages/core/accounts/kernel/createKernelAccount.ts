@@ -33,6 +33,7 @@ import {
 } from "../../actions/public/index.js"
 import { KernelVersionToAddressesMap } from "../../constants.js"
 import type {
+    Call,
     CallType,
     EntryPointType,
     GetEntryPointAbi,
@@ -57,6 +58,7 @@ import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/enc
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
+import { decodeExecuteCall } from "./utils/ep0_7/decodeExecuteCall.js"
 
 export type KernelSmartAccountImplementation<
     entryPointVersion extends EntryPointVersion = "0.7"
@@ -71,6 +73,7 @@ export type KernelSmartAccountImplementation<
             calls: Parameters<SmartAccountImplementation["encodeCalls"]>[0],
             callType?: CallType | undefined
         ) => Promise<Hex>
+        decodeCalls?: ((data: Hex) => Promise<readonly Call[]>) | undefined
         kernelVersion: GetKernelVersion<entryPointVersion>
         kernelPluginManager: KernelPluginManager<entryPointVersion>
         generateInitCode: () => Promise<Hex>
@@ -490,6 +493,12 @@ export async function createKernelAccount<
                 return encodeCallDataEpV07(calls, callType, true)
             }
             return encodeCallDataEpV07(calls, callType)
+        },
+        async decodeCalls(data) {
+            if (entryPoint.version === "0.6") {
+                throw Error("EntryPoint v0.6 not supported yet")
+            }
+            return decodeExecuteCall(data)
         },
         async sign({ hash }) {
             return this.signMessage({ message: hash })

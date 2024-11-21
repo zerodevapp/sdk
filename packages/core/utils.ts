@@ -9,6 +9,7 @@ import {
     isHex,
     pad,
     signatureToHex,
+    slice,
     toHex
 } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
@@ -103,6 +104,18 @@ export const getExecMode = ({
         "0x00000000", // 4 bytes
         pad("0x00000000", { size: 22 })
     ])
+}
+
+export const getExexModeTypes = (
+    execModeData: Hex
+): {
+    callType: CALL_TYPE
+    execType: EXEC_TYPE
+} => {
+    return {
+        callType: slice(execModeData, 0, 1) as CALL_TYPE,
+        execType: slice(execModeData, 1, 2) as EXEC_TYPE
+    }
 }
 
 export const validateKernelVersionWithEntryPoint = <

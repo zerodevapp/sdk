@@ -258,3 +258,10 @@ export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
     address: Address
     version: entryPointVersion
 }
+
+export type Call = {
+    to: Hex
+    data?: Hex | undefined
+    value?: bigint | undefined
+    callType?: CallType
+}
