@@ -22,7 +22,7 @@ import type {
     UserOperation
 } from "viem/account-abstraction"
 
-type MultiChainUserOpConfigForEnable<
+export type MultiChainUserOpConfigForEnable<
     entryPointVersion extends EntryPointVersion
 > = {
     account: SmartAccount<KernelSmartAccountImplementation>

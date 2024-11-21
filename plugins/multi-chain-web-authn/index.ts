@@ -1,3 +1,4 @@
+export { toMultiChainWebAuthnValidator } from "./toMultiChainWebAuthnValidator.js"
 export {
     type SignUserOperationsParameters,
     type SignUserOperationsRequest,
@@ -6,5 +7,9 @@ export {
 } from "./actions/index.js"
 
 export { webauthnGetMultiUserOpDummySignature } from "./utils/webauthnGetMultiUserOpDummySignature.js"
-export { webauthnSignUserOpsWithEnable } from "./utils/webauthnSignUserOpsWithEnable.js"
+export {
+    type MultiChainUserOpConfigForEnable,
+    webauthnSignUserOpsWithEnable
+} from "./utils/webauthnSignUserOpsWithEnable.js"
+
 export * from "./constants.js"

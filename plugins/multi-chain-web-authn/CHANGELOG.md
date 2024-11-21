@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.1
+
+### Minor Changes
+
+- Export `toMultiChainWebAuthnValidator` properly
+
 ## 5.4.0
 
 ### Minor Changes
