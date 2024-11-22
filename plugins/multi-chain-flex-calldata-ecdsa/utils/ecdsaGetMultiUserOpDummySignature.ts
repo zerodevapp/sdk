@@ -21,9 +21,10 @@ export const ecdsaGetMultiUserOpDummySignature = (
     })
 
     const dummyUserOpHash = `0x${"a".repeat(64)}`
+    const dummyDestMsgHash = `0x${"a".repeat(64)}`
     const dummyLeaves = Array(numOfUserOps - 1).fill(dummyUserOpHash)
 
-    const leaves = [userOpHash, ...dummyLeaves]
+    const leaves = [userOpHash, ...dummyLeaves, dummyDestMsgHash]
 
     const merkleTree = new MerkleTree(leaves, keccak256, {
         sortPairs: true

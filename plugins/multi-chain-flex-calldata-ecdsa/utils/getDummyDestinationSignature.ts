@@ -3,7 +3,11 @@ import { type Hex, concatHex, encodeAbiParameters, keccak256 } from "viem"
 
 export const getDummyDestinationSignature = (numOfUserOps: number): Hex => {
     const dummyUserOpHash = `0x${"a".repeat(64)}`
-    const leaves = Array(numOfUserOps).fill(dummyUserOpHash)
+    const dummyDestMsgHash = `0x${"b".repeat(64)}`
+    const leaves = [
+        ...Array(numOfUserOps).fill(dummyUserOpHash),
+        dummyDestMsgHash
+    ]
 
     const merkleTree = new MerkleTree(leaves, keccak256, {
         sortPairs: true
@@ -20,7 +24,7 @@ export const getDummyDestinationSignature = (numOfUserOps: number): Hex => {
             { name: "dummyUserOpHash", type: "bytes32" },
             { name: "proof", type: "bytes32[]" }
         ],
-        [leaves[0], merkleProof]
+        [leaves[leaves.length - 1], merkleProof]
     )
 
     const finalDummySig = concatHex([

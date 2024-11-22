@@ -2,7 +2,6 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
 import {
-    ecdsaSignUserOpsWithEnable,
     signUserOperations
 } from "../../../plugins/multi-chain-flex-calldata-ecdsa"
 import { toMultiChainFlexCallDataECDSAValidator } from "../../../plugins/multi-chain-flex-calldata-ecdsa"
@@ -43,7 +42,10 @@ import {
     parseAbiParameters,
     pad
 } from "viem"
-import { createBundlerClient, type SmartAccount } from "viem/account-abstraction"
+import {
+    createBundlerClient,
+    type SmartAccount
+} from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
@@ -818,13 +820,7 @@ describe("MultiChainECDSAValidator", () => {
                 account: sepoliaKernelAccount,
                 chain: sepolia,
                 bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
-                paymaster: {
-                    getPaymasterData(userOperation) {
-                        return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                            { userOperation }
-                        )
-                    }
-                }
+                
             })
 
             const optimismSepoliaZerodevKernelClient =
@@ -832,15 +828,16 @@ describe("MultiChainECDSAValidator", () => {
                     account: optimismSepoliaKernelAccount,
                     chain: optimismSepolia,
                     bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
-                    paymaster: {
-                        getPaymasterData(userOperation) {
-                            return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
-                                { userOperation }
-                            )
-                        }
-                    },
+                    // paymaster: {
+                    //     getPaymasterData(userOperation) {
+                    //         return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
+                    //             { userOperation }
+                    //         )
+                    //     }
+                    // },
                     userOperation: {
-                        estimateFeesPerGas: async ({bundlerClient}) => await getUserOperationGasPrice(bundlerClient)
+                        estimateFeesPerGas: async ({ bundlerClient }) =>
+                            await getUserOperationGasPrice(bundlerClient)
                     }
                 })
 
@@ -928,7 +925,7 @@ describe("MultiChainECDSAValidator", () => {
 
             const callData = await account.encodeCalls([
                 {
-                    to: "0x3177BaC8F8CEd3e0a73E9aD5bF1E9D16195E92D0",
+                    to: "0xfaead24791615033e14f0db667fec3f3d9d379f2",
                     data: encodeFunctionData({
                         abi: LiquidityHubAbi,
                         functionName: "open",
@@ -946,7 +943,7 @@ describe("MultiChainECDSAValidator", () => {
 
             const sepoliaUserOp =
                 await sepoliaZerodevKernelClient.prepareUserOperation({
-                    callData
+                    callData,
                 })
             console.log({ sepoliaUserOp })
 
@@ -965,14 +962,30 @@ describe("MultiChainECDSAValidator", () => {
                             ...optimismSepoliaUserOp,
                             chainId: optimismSepolia.id
                         }
-                    ]
+                    ],
+                    messageHash:
+                        "0x6ea72c6f9a254c682c1ebb9a26b1bf3f8100331d860caa1a1898d0d7eea35411"
                 }
             )
             console.log({ signedUserOps })
+            // const finalSepoliaUserOp =
+            //     await sepoliaZerodevKernelClient.prepareUserOperation({
+            //         ...signedUserOps[0],
+            //     })
+            // console.log({ finalSepoliaUserOp })
 
             const sepoliaUserOpHash =
                 await sepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedUserOps[0]
+                    // ...finalSepoliaUserOp,
+                    ...signedUserOps[0],
+                    paymaster: sepoliaZeroDevPaymasterClient
+                    //  {
+                    //     getPaymasterData(userOperation) {
+                    //         return sepoliaZeroDevPaymasterClient.sponsorUserOperation(
+                    //             { userOperation }
+                    //         )
+                    //     }
+                    // }
                 })
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
@@ -980,9 +993,23 @@ describe("MultiChainECDSAValidator", () => {
                 hash: sepoliaUserOpHash
             })
 
+            // const finalOpSepoliaUserOp =
+            //     await optimismSepoliaZerodevKernelClient.prepareUserOperation({
+            //         ...signedUserOps[1],
+            //     })
+            // console.log({ finalSepoliaUserOp })
+
             const optimismSepoliaUserOpHash =
                 await optimismSepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedUserOps[1]
+                    ...signedUserOps[1],
+                    paymaster: opSepoliaZeroDevPaymasterClient
+                    //  {
+                    //     getPaymasterData(userOperation) {
+                    //         return opSepoliaZeroDevPaymasterClient.sponsorUserOperation(
+                    //             { userOperation }
+                    //         )
+                    //     }
+                    // }
                 })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)

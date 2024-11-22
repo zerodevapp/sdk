@@ -53,6 +53,7 @@ export type SignUserOperationsParameters<
     > = SignUserOperationsRequest<account, accountOverride, calls>
 > = {
     userOperations: request[]
+    messageHash?: Hex
 } & GetSmartAccountParameter<account, accountOverride>
 
 export type FlexData = {
@@ -72,7 +73,11 @@ export async function signUserOperations<
     args_: SignUserOperationsParameters<account, accountOverride, calls>
 ): Promise<SignUserOperationsReturnType> {
     const args = args_ as SignUserOperationsParameters
-    const { account: account_ = client.account, userOperations } = args
+    const {
+        account: account_ = client.account,
+        userOperations,
+        messageHash
+    } = args
     if (!account_) throw new AccountNotFoundError()
 
     const account = parseAccount(
@@ -102,9 +107,13 @@ export async function signUserOperations<
         })
     })
 
-    const merkleTree = new MerkleTree(userOpHashes, keccak256, {
-        sortPairs: true
-    })
+    const merkleTree = new MerkleTree(
+        messageHash ? [...userOpHashes, messageHash] : userOpHashes,
+        keccak256,
+        {
+            sortPairs: true
+        }
+    )
 
     const merkleRoot = merkleTree.getHexRoot() as Hex
     const ecdsaSig = await account.kernelPluginManager.signMessage({
@@ -134,8 +143,7 @@ export async function signUserOperations<
         )
         return concatHex([ecdsaSig, merkleRoot, encodedMerkleProof])
     }
-    let flexCallData: FlexData[] = []
-    let flexCallDataUserOpIndex = 0
+    const flexCallData: { [key: number]: FlexData[] } = {}
     userOperations.map((userOp, index) => {
         if (userOp.callData?.includes("e917a962") && userOp.signature) {
             const dataOffset = slice(userOp.signature, 97)
@@ -155,19 +163,47 @@ export async function signUserOperations<
                 ],
                 dataOffset
             )
-            flexCallData = [..._flexCallData]
-            flexCallDataUserOpIndex = index
+            flexCallData[index] = [..._flexCallData]
         }
     })
+
+    function replaceSubstringAtFixedPosition(
+        originalString: Hex,
+        startIndex: number,
+        newSubstring: string
+    ): Hex {
+        console.log({ newSubstring })
+        console.log({ originalString })
+        const before = originalString.slice(0, startIndex)
+        console.log({ before })
+        const after = originalString.slice(startIndex + newSubstring.length)
+        console.log({ after })
+        console.log({ replaced: before + newSubstring + after })
+        return (before + newSubstring + after) as Hex
+    }
+
+    const replaceDestSigInCallData = (callData: Hex, sig: Hex): Hex => {
+        const index = callData.indexOf("d33d")
+        return replaceSubstringAtFixedPosition(
+            callData,
+            index,
+            sig.substring(2)
+        )
+    }
 
     const signedMultiUserOps = userOperations.map((userOp, index) => {
         return {
             ...userOp,
+            callData:
+                flexCallData[index] && messageHash && userOp.callData
+                    ? replaceDestSigInCallData(
+                          userOp.callData,
+                          encodeMerkleDataWithSig(messageHash, [])
+                      )
+                    : userOp.callData,
             signature: encodeMerkleDataWithSig(
                 userOpHashes[index],
-                index === flexCallDataUserOpIndex
-                    ? flexCallData
-                    : ([] as FlexData[])
+                flexCallData[index] ? flexCallData[index] : ([] as FlexData[])
             )
         }
     })
