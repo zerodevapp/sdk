@@ -1,5 +1,11 @@
 # @zerodev/hooks
 
+## 5.3.1
+
+### Patch Changes
+
+- Use .js imports to fix build issues in all environments
+
 ## 5.3.0
 
 ### Minor Changes

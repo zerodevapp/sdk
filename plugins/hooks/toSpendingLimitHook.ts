@@ -5,7 +5,7 @@ import {
     encodeAbiParameters,
     encodePacked
 } from "viem"
-import { SPENDING_LIMIT_HOOK_V07 } from "./constants"
+import { SPENDING_LIMIT_HOOK_V07 } from "./constants.js"
 
 export type SpendingLimit = {
     token: Address

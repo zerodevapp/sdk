@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.1
+
+### Patch Changes
+
+- Use .js imports to fix build issues in all environments
+
 ## 5.4.0
 
 ### Minor Changes

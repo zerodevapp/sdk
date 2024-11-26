@@ -17,7 +17,7 @@ import {
 import { toAccount } from "viem/accounts"
 
 import { signMessage, signTypedData } from "viem/actions"
-import type { Signer } from "../types"
+import type { Signer } from "../types/index.js"
 
 export async function toSigner({
     signer,

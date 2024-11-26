@@ -7,7 +7,7 @@ import {
     prepareUserOperation
 } from "viem/account-abstraction"
 import { getAction, parseAccount } from "viem/utils"
-import { AccountNotFoundError } from "../../errors"
+import { AccountNotFoundError } from "../../errors/index.js"
 
 export type SignUserOperationParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

@@ -6,7 +6,7 @@ import type { Chain, Client, Hex, Transport } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import { readContract } from "viem/actions"
 import { getAction, parseAccount } from "viem/utils"
-import { MultiChainWeightedValidatorAbi } from "../abi"
+import { MultiChainWeightedValidatorAbi } from "../abi.js"
 import { getValidatorAddress } from "../toMultiChainWeightedValidatorPlugin.js"
 
 export async function getCurrentSigners<

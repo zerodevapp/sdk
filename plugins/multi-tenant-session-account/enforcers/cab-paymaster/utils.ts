@@ -10,7 +10,7 @@ import {
     pad,
     toHex
 } from "viem"
-import type { CABPaymasterEnforcerArgs } from "./toCABPaymasterEnforcer"
+import type { CABPaymasterEnforcerArgs } from "./toCABPaymasterEnforcer.js"
 
 export type SponsorTokenInfo = {
     amount: bigint
