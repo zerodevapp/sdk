@@ -7,6 +7,11 @@ import {
 } from "@zerodev/multi-chain-ecdsa-validator"
 import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator"
 import {
+    type ClientWithChainId,
+    type SendUserOperationsParameters,
+    sendUserOperations
+} from "@zerodev/multi-chain-ecdsa-validator/actions/sendUserOperations.js"
+import {
     EIP1271Abi,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
@@ -94,7 +99,6 @@ const SEPOLIA_ZERODEV_RPC_URL = getBundlerRpc(
 const SEPOLIA_ZERODEV_PAYMASTER_RPC_URL = getPaymasterRpc(
     config["0.7"][sepolia.id].projectId
 )
-
 const OPTIMISM_SEPOLIA_ZERODEV_RPC_URL = getBundlerRpc(
     config["0.7"][optimismSepolia.id].projectId
 )
@@ -812,59 +816,59 @@ describe("MultiChainECDSAValidator", () => {
                     paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
-            const sepoliaUserOp =
-                await sepoliaZerodevKernelClient.prepareUserOperation({
-                    callData:
-                        await sepoliaZerodevKernelClient.account.encodeCalls([
+            const clientsWithChainId: ClientWithChainId<
+                Transport,
+                Chain,
+                SmartAccount
+            >[] = [
+                {
+                    ...sepoliaZerodevKernelClient,
+                    chainId: sepolia.id
+                },
+                {
+                    ...optimismSepoliaZerodevKernelClient,
+                    chainId: optimismSepolia.id
+                }
+            ]
+
+            const userOps = await Promise.all(
+                clientsWithChainId.map(async (client) => {
+                    return {
+                        callData: await client.account.encodeCalls([
                             {
                                 to: zeroAddress,
                                 value: BigInt(0),
                                 data: "0x"
                             }
                         ])
+                    }
                 })
-
-            const optimismSepoliaUserOp =
-                await optimismSepoliaZerodevKernelClient.prepareUserOperation({
-                    callData:
-                        await optimismSepoliaZerodevKernelClient.account.encodeCalls(
-                            [
-                                {
-                                    to: zeroAddress,
-                                    value: BigInt(0),
-                                    data: "0x"
-                                }
-                            ]
-                        )
-                })
-
-            const signedUserOps = await signUserOperations(
-                sepoliaZerodevKernelClient,
-                {
-                    userOperations: [
-                        { ...sepoliaUserOp, chainId: sepolia.id },
-                        {
-                            ...optimismSepoliaUserOp,
-                            chainId: optimismSepolia.id
-                        }
-                    ]
-                }
             )
 
-            const sepoliaUserOpHash =
-                await sepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedUserOps[0]
-                })
+            const userOpParams: SendUserOperationsParameters[] = [
+                {
+                    ...userOps[0],
+                    chainId: sepolia.id
+                },
+                {
+                    ...userOps[1],
+                    chainId: optimismSepolia.id
+                }
+            ]
+
+            const userOpHashes = await sendUserOperations(
+                clientsWithChainId,
+                userOpParams
+            )
+
+            console.log("userOpHashes", userOpHashes)
+            const sepoliaUserOpHash = userOpHashes[0]
+            const optimismSepoliaUserOpHash = userOpHashes[1]
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
-
-            const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedUserOps[1]
-                })
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
@@ -963,55 +967,61 @@ describe("MultiChainECDSAValidator", () => {
                     paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
-            const sepoliaUserOp =
-                await sepoliaZerodevKernelClient.prepareUserOperation({
-                    callData: await sepoliaKernelAccount.encodeCalls([
-                        {
-                            to: zeroAddress,
-                            value: BigInt(0),
-                            data: "0x"
-                        }
-                    ])
-                })
+            const clientsWithChainId: ClientWithChainId<
+                Transport,
+                Chain,
+                SmartAccount
+            >[] = [
+                {
+                    ...sepoliaZerodevKernelClient,
+                    chainId: sepolia.id
+                },
+                {
+                    ...optimismSepoliaZerodevKernelClient,
+                    chainId: optimismSepolia.id
+                }
+            ]
 
-            const optimismSepoliaUserOp =
-                await optimismSepoliaZerodevKernelClient.prepareUserOperation({
-                    callData: await optimismSepoliaKernelAccount.encodeCalls([
-                        {
-                            to: zeroAddress,
-                            value: BigInt(0),
-                            data: "0x"
-                        }
-                    ])
-                })
-
-            const signedEnableUserOps = await ecdsaSignUserOpsWithEnable({
-                multiChainUserOpConfigsForEnable: [
-                    {
-                        account: sepoliaKernelAccount,
-                        userOp: sepoliaUserOp
-                    },
-                    {
-                        account: optimismSepoliaKernelAccount,
-                        userOp: optimismSepoliaUserOp
+            const userOps = await Promise.all(
+                clientsWithChainId.map(async (client) => {
+                    return {
+                        callData: await client.account.encodeCalls([
+                            {
+                                to: zeroAddress,
+                                value: BigInt(0),
+                                data: "0x"
+                            }
+                        ])
                     }
-                ]
-            })
-
-            const sepoliaUserOpHash =
-                await sepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedEnableUserOps[0]
                 })
+            )
+
+            const userOpParams: SendUserOperationsParameters[] = [
+                {
+                    ...userOps[0],
+                    chainId: sepolia.id
+                },
+                {
+                    ...userOps[1],
+                    chainId: optimismSepolia.id
+                }
+            ]
+
+            const userOpHashes = await sendUserOperations(
+                clientsWithChainId,
+                userOpParams
+            )
+
+            console.log("userOpHashes", userOpHashes)
+
+            const sepoliaUserOpHash = userOpHashes[0]
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
 
-            const optimismSepoliaUserOpHash =
-                await optimismSepoliaZerodevKernelClient.sendUserOperation({
-                    ...signedEnableUserOps[1]
-                })
+            const optimismSepoliaUserOpHash = userOpHashes[1]
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
