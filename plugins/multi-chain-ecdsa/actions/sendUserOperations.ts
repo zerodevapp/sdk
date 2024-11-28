@@ -201,7 +201,7 @@ export async function sendUserOperations<
                 })
             )
 
-            for (const userOperation of _userOperations) {
+            for (const [index, userOperation] of _userOperations.entries()) {
                 userOperation.signature = encodedDummySignatures[index]
             }
 
