@@ -1,6 +1,6 @@
 # ZeroDev SDK
 
-[![CI](https://github.com/zerodevapp/sdkv5/actions/workflows/verify.yml/badge.svg)](https://github.com/zerodevapp/sdkv5/actions/workflows/verify.yml)
+[![CI](https://github.com/zerodevapp/sdk/actions/workflows/verify.yml/badge.svg)](https://github.com/zerodevapp/sdk/actions/workflows/verify.yml)
 
 [See here for detailed documentation.](https://docs.zerodev.app)
 
