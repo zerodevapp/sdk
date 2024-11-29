@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.3
+
+### Minor Changes
+
+- Change `sendUserOpeations` to `prepareAndSignUserOperations`
+
 ## 5.4.2
 
 ### Minor Changes
