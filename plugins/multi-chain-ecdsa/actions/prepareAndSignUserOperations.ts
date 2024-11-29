@@ -10,7 +10,6 @@ import { MerkleTree } from "merkletreejs"
 import {
     type Chain,
     type Client,
-    type Hash,
     type Hex,
     type Transport,
     concatHex,
@@ -23,17 +22,17 @@ import {
 } from "viem"
 import {
     type PrepareUserOperationParameters,
+    type PrepareUserOperationReturnType,
     type SendUserOperationParameters,
     type SmartAccount,
     type UserOperation,
     getUserOperationHash,
-    prepareUserOperation,
-    sendUserOperation
+    prepareUserOperation
 } from "viem/account-abstraction"
 import { parseAccount } from "viem/accounts"
 import { getAction } from "viem/utils"
 
-export type SendUserOperationsParameters<
+export type PrepareAndSignUserOperationsParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,
     accountOverride extends SmartAccount | undefined = SmartAccount | undefined,
     calls extends readonly unknown[] = readonly unknown[]
@@ -41,15 +40,21 @@ export type SendUserOperationsParameters<
     chainId: number
 }
 
-export async function sendUserOperations<
+export type SignUserOperationsReturnType = PrepareUserOperationReturnType[]
+
+export async function prepareAndSignUserOperations<
     account extends SmartAccount | undefined,
     chain extends Chain | undefined,
     accountOverride extends SmartAccount | undefined = undefined,
     calls extends readonly unknown[] = readonly unknown[]
 >(
     clients: Client<Transport, chain, account>[],
-    args_: SendUserOperationsParameters<account, accountOverride, calls>[]
-): Promise<Hash[]> {
+    args_: PrepareAndSignUserOperationsParameters<
+        account,
+        accountOverride,
+        calls
+    >[]
+): Promise<SignUserOperationsReturnType> {
     if (clients.length < 2 && args_.length < 2) {
         throw new Error("Should send more than 1 user operation")
     }
@@ -71,7 +76,7 @@ export async function sendUserOperations<
         }
     }
 
-    const args = args_ as SendUserOperationsParameters[]
+    const args = args_ as PrepareAndSignUserOperationsParameters[]
     const accounts_ = args.map(
         (arg, index) => arg.account ?? clients[index].account
     )
@@ -235,15 +240,7 @@ export async function sendUserOperations<
                 userOperation.signature = encodedSignatures[index]
             })
 
-            return await Promise.all(
-                userOperations.map(async (userOperation, index) => {
-                    return await getAction(
-                        clients[index],
-                        sendUserOperation,
-                        "sendUserOperation"
-                    )(userOperation)
-                })
-            )
+            return userOperations as SignUserOperationsReturnType
         }
         // if regular validators are enabled, use signUserOperationWithActiveValidator directly
         if (allEnabled) {
@@ -271,15 +268,7 @@ export async function sendUserOperations<
                 userOperation.signature = signatures[index]
             })
 
-            return await Promise.all(
-                userOperations.map(async (userOperation, index) => {
-                    return await getAction(
-                        clients[index],
-                        sendUserOperation,
-                        "sendUserOperation"
-                    )(userOperation)
-                })
-            )
+            return userOperations as SignUserOperationsReturnType
         }
     }
     // If regular validators do not exist, sign with multi-chain-ecdsa-validator
@@ -332,13 +321,5 @@ export async function sendUserOperations<
         }
     })
 
-    return await Promise.all(
-        signedMultiUserOps.map(async (userOp, index) => {
-            return await getAction(
-                clients[index],
-                sendUserOperation,
-                "sendUserOperation"
-            )({ ...userOp })
-        })
-    )
+    return signedMultiUserOps as SignUserOperationsReturnType
 }

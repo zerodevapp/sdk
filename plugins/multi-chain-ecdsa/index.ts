@@ -7,9 +7,9 @@ export {
 } from "./actions/index.js"
 
 export {
-    sendUserOperations,
-    type SendUserOperationsParameters
-} from "./actions/sendUserOperations.js"
+    prepareAndSignUserOperations,
+    type PrepareAndSignUserOperationsParameters
+} from "./actions/prepareAndSignUserOperations.js"
 
 export { ecdsaGetMultiUserOpDummySignature } from "./utils/ecdsaGetMultiUserOpDummySignature.js"
 export {

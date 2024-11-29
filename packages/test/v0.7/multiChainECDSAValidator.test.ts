@@ -7,9 +7,9 @@ import {
 } from "@zerodev/multi-chain-ecdsa-validator"
 import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator"
 import {
-    type SendUserOperationsParameters,
-    sendUserOperations
-} from "@zerodev/multi-chain-ecdsa-validator/actions/sendUserOperations.js"
+    type PrepareAndSignUserOperationsParameters,
+    prepareAndSignUserOperations
+} from "@zerodev/multi-chain-ecdsa-validator/actions/prepareAndSignUserOperations.js"
 import {
     EIP1271Abi,
     type KernelAccountClient,
@@ -839,7 +839,7 @@ describe("MultiChainECDSAValidator", () => {
                 })
             )
 
-            const userOpParams: SendUserOperationsParameters[] = [
+            const userOpParams: PrepareAndSignUserOperationsParameters[] = [
                 {
                     ...userOps[0],
                     chainId: sepolia.id
@@ -850,16 +850,28 @@ describe("MultiChainECDSAValidator", () => {
                 }
             ]
 
-            const userOpHashes = await sendUserOperations(clients, userOpParams)
+            const signedUserOps = await prepareAndSignUserOperations(
+                clients,
+                userOpParams
+            )
 
-            console.log("userOpHashes", userOpHashes)
-            const sepoliaUserOpHash = userOpHashes[0]
-            const optimismSepoliaUserOpHash = userOpHashes[1]
+            const sepoliaUserOp = signedUserOps[0]
+            const optimismSepoliaUserOp = signedUserOps[1]
+
+            const sepoliaUserOpHash =
+                await sepoliaZerodevKernelClient.sendUserOperation(
+                    sepoliaUserOp
+                )
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
+
+            const optimismSepoliaUserOpHash =
+                await optimismSepoliaZerodevKernelClient.sendUserOperation(
+                    optimismSepoliaUserOp
+                )
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
@@ -981,7 +993,7 @@ describe("MultiChainECDSAValidator", () => {
                 })
             )
 
-            const userOpParams: SendUserOperationsParameters[] = [
+            const userOpParams: PrepareAndSignUserOperationsParameters[] = [
                 {
                     ...userOps[0],
                     chainId: sepolia.id
@@ -992,18 +1004,28 @@ describe("MultiChainECDSAValidator", () => {
                 }
             ]
 
-            const userOpHashes = await sendUserOperations(clients, userOpParams)
+            const signedUserOps = await prepareAndSignUserOperations(
+                clients,
+                userOpParams
+            )
 
-            console.log("userOpHashes", userOpHashes)
+            const sepoliaUserOp = signedUserOps[0]
+            const optimismSepoliaUserOp = signedUserOps[1]
 
-            const sepoliaUserOpHash = userOpHashes[0]
+            const sepoliaUserOpHash =
+                await sepoliaZerodevKernelClient.sendUserOperation(
+                    sepoliaUserOp
+                )
 
             console.log("sepoliaUserOpHash", sepoliaUserOpHash)
             await sepoliaZerodevKernelClient.waitForUserOperationReceipt({
                 hash: sepoliaUserOpHash
             })
 
-            const optimismSepoliaUserOpHash = userOpHashes[1]
+            const optimismSepoliaUserOpHash =
+                await optimismSepoliaZerodevKernelClient.sendUserOperation(
+                    optimismSepoliaUserOp
+                )
 
             console.log("optimismSepoliaUserOpHash", optimismSepoliaUserOpHash)
             await optimismSepoliaZerodevKernelClient.waitForUserOperationReceipt(
