@@ -28,6 +28,7 @@ import {
     http,
     type Address,
     type Chain,
+    type Client,
     type GetContractReturnType,
     type Hex,
     type PrivateKeyAccount,
@@ -41,8 +42,7 @@ import {
     hashMessage,
     hashTypedData,
     parseEther,
-    zeroAddress,
-    Client
+    zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
