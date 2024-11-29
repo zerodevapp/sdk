@@ -7,7 +7,6 @@ import {
 } from "@zerodev/multi-chain-ecdsa-validator"
 import { toMultiChainECDSAValidator } from "@zerodev/multi-chain-ecdsa-validator"
 import {
-    type ClientWithChainId,
     type SendUserOperationsParameters,
     sendUserOperations
 } from "@zerodev/multi-chain-ecdsa-validator/actions/sendUserOperations.js"
@@ -42,7 +41,8 @@ import {
     hashMessage,
     hashTypedData,
     parseEther,
-    zeroAddress
+    zeroAddress,
+    Client
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
@@ -816,23 +816,17 @@ describe("MultiChainECDSAValidator", () => {
                     paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
-            const clientsWithChainId: ClientWithChainId<
-                Transport,
-                Chain,
-                SmartAccount
-            >[] = [
+            const clients: Client<Transport, Chain, SmartAccount>[] = [
                 {
-                    ...sepoliaZerodevKernelClient,
-                    chainId: sepolia.id
+                    ...sepoliaZerodevKernelClient
                 },
                 {
-                    ...optimismSepoliaZerodevKernelClient,
-                    chainId: optimismSepolia.id
+                    ...optimismSepoliaZerodevKernelClient
                 }
             ]
 
             const userOps = await Promise.all(
-                clientsWithChainId.map(async (client) => {
+                clients.map(async (client) => {
                     return {
                         callData: await client.account.encodeCalls([
                             {
@@ -856,10 +850,7 @@ describe("MultiChainECDSAValidator", () => {
                 }
             ]
 
-            const userOpHashes = await sendUserOperations(
-                clientsWithChainId,
-                userOpParams
-            )
+            const userOpHashes = await sendUserOperations(clients, userOpParams)
 
             console.log("userOpHashes", userOpHashes)
             const sepoliaUserOpHash = userOpHashes[0]
@@ -967,23 +958,17 @@ describe("MultiChainECDSAValidator", () => {
                     paymaster: opSepoliaZeroDevPaymasterClient
                 })
 
-            const clientsWithChainId: ClientWithChainId<
-                Transport,
-                Chain,
-                SmartAccount
-            >[] = [
+            const clients: Client<Transport, Chain, SmartAccount>[] = [
                 {
-                    ...sepoliaZerodevKernelClient,
-                    chainId: sepolia.id
+                    ...sepoliaZerodevKernelClient
                 },
                 {
-                    ...optimismSepoliaZerodevKernelClient,
-                    chainId: optimismSepolia.id
+                    ...optimismSepoliaZerodevKernelClient
                 }
             ]
 
             const userOps = await Promise.all(
-                clientsWithChainId.map(async (client) => {
+                clients.map(async (client) => {
                     return {
                         callData: await client.account.encodeCalls([
                             {
@@ -1007,10 +992,7 @@ describe("MultiChainECDSAValidator", () => {
                 }
             ]
 
-            const userOpHashes = await sendUserOperations(
-                clientsWithChainId,
-                userOpParams
-            )
+            const userOpHashes = await sendUserOperations(clients, userOpParams)
 
             console.log("userOpHashes", userOpHashes)
 

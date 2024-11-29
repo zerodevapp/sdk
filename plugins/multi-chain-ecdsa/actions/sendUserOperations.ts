@@ -33,14 +33,6 @@ import {
 import { parseAccount } from "viem/accounts"
 import { getAction } from "viem/utils"
 
-export type ClientWithChainId<
-    TTransport extends Transport,
-    TChain extends Chain | undefined,
-    TAccount extends SmartAccount | undefined = undefined
-> = Client<TTransport, TChain, TAccount> & {
-    chainId: number
-}
-
 export type SendUserOperationsParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,
     accountOverride extends SmartAccount | undefined = SmartAccount | undefined,
@@ -55,7 +47,7 @@ export async function sendUserOperations<
     accountOverride extends SmartAccount | undefined = undefined,
     calls extends readonly unknown[] = readonly unknown[]
 >(
-    clients: ClientWithChainId<Transport, chain, account>[],
+    clients: Client<Transport, chain, account>[],
     args_: SendUserOperationsParameters<account, accountOverride, calls>[]
 ): Promise<Hash[]> {
     if (clients.length < 2 && args_.length < 2) {
@@ -65,9 +57,16 @@ export async function sendUserOperations<
         throw new Error("Number of clients and user operations do not match")
     }
     for (let i = 0; i < clients.length; i++) {
-        if (clients[i].chainId !== args_[i].chainId) {
+        const client = clients[i]
+        const arg = args_[i]
+
+        if (client.chain === undefined) {
+            throw new Error("client.chain is undefined, please provide a chain")
+        }
+
+        if (client.chain.id !== arg.chainId) {
             throw new Error(
-                `Chain ID mismatch at index ${i}: client.chainId (${clients[i].chainId}) !== args_.chainId (${args_[i].chainId})`
+                `Chain ID mismatch at index ${i}: client.chainId (${client.chain.id}) !== args_.chainId (${arg.chainId})`
             )
         }
     }

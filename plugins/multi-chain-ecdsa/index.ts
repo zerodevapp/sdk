@@ -6,6 +6,11 @@ export {
     signUserOperations
 } from "./actions/index.js"
 
+export {
+    sendUserOperations,
+    type SendUserOperationsParameters
+} from "./actions/sendUserOperations.js"
+
 export { ecdsaGetMultiUserOpDummySignature } from "./utils/ecdsaGetMultiUserOpDummySignature.js"
 export {
     type MultiChainUserOpConfigForEnable,
