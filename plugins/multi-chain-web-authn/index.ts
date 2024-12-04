@@ -1,5 +1,9 @@
 export { toMultiChainWebAuthnValidator } from "./toMultiChainWebAuthnValidator.js"
 export {
+    type PrepareAndSignUserOperationsParameters,
+    prepareAndSignUserOperations
+} from "./actions/prepareAndSignUserOperations.js"
+export {
     type SignUserOperationsParameters,
     type SignUserOperationsRequest,
     type SignUserOperationsReturnType,

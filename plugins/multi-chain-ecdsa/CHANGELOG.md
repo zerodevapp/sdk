@@ -1,5 +1,17 @@
 # @zerodev/multi-chain-ecdsa
 
+## 5.4.2
+
+### Minor Changes
+
+- Change `sendUserOpeations` to `prepareAndSignUserOperations`
+
+## 5.4.1
+
+### Minor Changes
+
+- - Add `sendUserOpeations` method
+
 ## 5.4.0
 
 ### Minor Changes
