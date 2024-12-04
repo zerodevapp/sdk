@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.2
+
+### Patch Changes
+
+- feat: use publicClient instead of bundlerClient in getUserOperationGasPrice action for publicActions if available
+
 ## 5.4.1
 
 ### Patch Changes

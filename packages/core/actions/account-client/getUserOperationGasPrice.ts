@@ -29,11 +29,13 @@ export const getUserOperationGasPrice = async <
                 params: []
                 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             }) as any,
-            getBlock(client, { blockTag: "latest" })
+            // @ts-ignore
+            getBlock(client?.client as typeof client ?? client, { blockTag: "latest" })
         ])
         const chainId = client.chain
             ? client.chain.id
-            : await getChainId(client)
+            // @ts-ignore
+            : await getChainId(client?.client as typeof client ?? client)
         const baseFeeMultiplier = chainId === arbitrum.id ? 1.05 : 1.5
         const priorityFeeMultiplier = chainId === arbitrum.id ? 1.0 : 1.25
         const denominator = 100
