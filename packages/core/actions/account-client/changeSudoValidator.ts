@@ -55,7 +55,9 @@ export async function changeSudoValidator<
         ChangeSudoValidatorParameters<account, accountOverride, calls>
     >
 ): Promise<Hash> {
-    const { account: account_ = client.account, sudoValidator, hook } = args
+    const { sudoValidator, hook, ...restArgs } = args
+
+    const account_ = restArgs.account ?? client.account
     if (!account_)
         throw new AccountNotFoundError({
             docsPath: "/docs/actions/wallet/sendTransaction"
@@ -63,7 +65,7 @@ export async function changeSudoValidator<
 
     const account = parseAccount(
         account_
-    ) as SmartAccount<KernelSmartAccountImplementation>
+    ) as unknown as SmartAccount<KernelSmartAccountImplementation>
 
     let rootValidatorId: Hex
     if (
@@ -99,7 +101,7 @@ export async function changeSudoValidator<
             sendUserOperation,
             "sendUserOperation"
         )({
-            ...args,
+            ...restArgs,
             callData: await account.encodeCalls(
                 [
                     {
@@ -131,7 +133,7 @@ export async function changeSudoValidator<
         sendUserOperation,
         "sendUserOperation"
     )({
-        ...args,
+        ...restArgs,
         callData: await account.encodeCalls([
             {
                 to: account.address,

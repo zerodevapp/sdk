@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.3
+
+### Patch Changes
+
+- fix: do not pass sudoValidator and hook to sendUserOperation in changeSudoValidator action
+
 ## 5.4.2
 
 ### Patch Changes
