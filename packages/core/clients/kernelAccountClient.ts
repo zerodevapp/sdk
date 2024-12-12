@@ -19,11 +19,11 @@ import {
     bundlerActions,
     type prepareUserOperation as viemPrepareUserOperation
 } from "viem/account-abstraction"
+import { getUserOperationGasPrice } from "../actions/index.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
-import { getUserOperationGasPrice } from "../actions/index.js"
 
 export type KernelAccountClient<
     transport extends Transport = Transport,
