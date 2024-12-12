@@ -14,6 +14,9 @@ import type {
 export const DUMMY_ECDSA_SIG =
     "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
 
+export const MAGIC_VALUE_SIG_REPLAYABLE =
+    "0x0555ad2729e8da1777a4e5020806f8bf7601c3db6bfe402f410a34958363a95a"
+
 // export const KernelImplToVersionMap: { [key: Address]: string } = {
 //     "0x8dD4DBB54d8A8Cf0DE6F9CCC4609470A30EfF18C": "0.2.2",
 //     "0x0DA6a956B9488eD4dd761E59f52FDc6c8068E6B5": "0.2.2",
@@ -74,6 +77,14 @@ export const KernelVersionToAddressesMap: {
         metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
         initCodeHash:
             "0x85d96aa1c9a65886d094915d76ccae85f14027a02c1647dde659f869460f03e6"
+    },
+    "0.3.2": {
+        accountImplementationAddress:
+            "0xD830D15D3dc0C269F3dBAa0F3e8626d33CFdaBe1",
+        factoryAddress: "0x7a1dBAB750f12a90EB1B60D2Ae3aD17D4D81EfFe",
+        metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
+        initCodeHash:
+            "0xc7c48c9dd12de68b8a4689b6f8c8c07b61d4d6fa4ddecdd86a6980d045fa67eb"
     }
 }
 
@@ -83,6 +94,7 @@ export const KERNEL_V2_3: KERNEL_V2_VERSION_TYPE = "0.2.3"
 export const KERNEL_V2_4: KERNEL_V2_VERSION_TYPE = "0.2.4"
 export const KERNEL_V3_0: KERNEL_V3_VERSION_TYPE = "0.3.0"
 export const KERNEL_V3_1: KERNEL_V3_VERSION_TYPE = "0.3.1"
+export const KERNEL_V3_2: KERNEL_V3_VERSION_TYPE = "0.3.2"
 
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
