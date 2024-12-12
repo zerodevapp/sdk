@@ -105,11 +105,11 @@ export const getKernelAccountClient = async ({
         account: resolvedAccount,
         chain,
         bundlerTransport: http(getBundlerRpc(), { timeout: 100_000 }),
-        paymaster,
-        userOperation: {
-            estimateFeesPerGas: async () => {
-                return getUserOperationGasPrice(bundlerClient)
-            }
-        }
+        paymaster
+        // userOperation: {
+        //     estimateFeesPerGas: async () => {
+        //         return getUserOperationGasPrice(bundlerClient)
+        //     }
+        // }
     })
 }

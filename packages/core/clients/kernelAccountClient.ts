@@ -23,6 +23,7 @@ import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
+import { getUserOperationGasPrice } from "../actions/index.js"
 
 export type KernelAccountClient<
     transport extends Transport = Transport,
@@ -169,6 +170,15 @@ export function createKernelAccountClient(
                 }
             }))
             .extend(kernelAccountClientActions()) as KernelAccountClient
+    }
+
+    if (!client.userOperation?.estimateFeesPerGas) {
+        client.userOperation = {
+            ...client.userOperation,
+            estimateFeesPerGas: async ({ bundlerClient }) => {
+                return await getUserOperationGasPrice(bundlerClient)
+            }
+        }
     }
 
     return client

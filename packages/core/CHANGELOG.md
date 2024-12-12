@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.4
+
+### Patch Changes
+
+- Use getUserOperationGasPrice middleware by default in kernelAccountClient
+
 ## 5.4.3
 
 ### Patch Changes
