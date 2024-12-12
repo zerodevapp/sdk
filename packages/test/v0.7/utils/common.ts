@@ -25,7 +25,7 @@ import { config } from "../../config"
 
 export const Test_ERC20Address = "0x3870419Ba2BBf0127060bCB37f69A1b1C090992B"
 const testingChain = allChains.sepolia.id
-export const kernelVersion = "0.3.1"
+export const kernelVersion = "0.3.2"
 export const index = 11111111111111111n // 432334375434333332434365532464445487823332432423423n
 const DEFAULT_PROVIDER = "PIMLICO"
 const projectId = config["0.7"][testingChain].projectId
