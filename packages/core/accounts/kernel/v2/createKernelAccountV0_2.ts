@@ -232,6 +232,7 @@ export async function createKernelAccountV0_2(
         client: client,
         entryPoint: _entryPoint,
         kernelPluginManager,
+        factoryAddress,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
             return await kernelPluginManager.encodeModuleInstallCallData(

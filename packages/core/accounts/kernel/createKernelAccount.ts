@@ -76,6 +76,7 @@ export type KernelSmartAccountImplementation<
         ) => Promise<Hex>
         kernelVersion: GetKernelVersion<entryPointVersion>
         kernelPluginManager: KernelPluginManager<entryPointVersion>
+        factoryAddress: Address
         generateInitCode: () => Promise<Hex>
         encodeModuleInstallCallData: () => Promise<Hex>
         encodeDeployCallData: ({
@@ -446,6 +447,7 @@ export async function createKernelAccount<
     return toSmartAccount<KernelSmartAccountImplementation<entryPointVersion>>({
         kernelVersion,
         kernelPluginManager,
+        factoryAddress: (await getFactoryArgs()).factory,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
             return await kernelPluginManager.encodeModuleInstallCallData(
