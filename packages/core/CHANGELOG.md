@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.5
+
+### Patch Changes
+
+- Fix bug related to factoryAddress being metaFactory when useMetaFactory is false
+
 ## 5.4.4
 
 ### Patch Changes

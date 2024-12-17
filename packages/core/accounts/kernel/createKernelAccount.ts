@@ -409,7 +409,7 @@ export async function createKernelAccount<
     const getFactoryArgs = async () => {
         return {
             factory:
-                entryPoint.version === "0.6"
+                entryPoint.version === "0.6" || useMetaFactory === false
                     ? factoryAddress
                     : metaFactoryAddress,
             factoryData: await generateInitCode()
