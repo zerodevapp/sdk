@@ -24,24 +24,21 @@ import {
 
 export const getEcdsaKernelAccountWithRandomSigner = async (
     initConfig?: Hex[],
-    chain?: number,
-    useReplayableSignature = false
+    chain?: number
 ) => {
     return getEcdsaKernelAccountWithPrivateKey(
         "0xdfbb0d855aafff58aa0ae92aa9d03e88562bad9befe209f5693db89b65cc4a9a" ??
             "0x3688628d97b817ee5e25dfce254ba4d87b5fd894449fce6c2acc60fdf98906de" ??
             generatePrivateKey(),
         initConfig,
-        chain,
-        useReplayableSignature
+        chain
     )
 }
 
 const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
     initConfig?: Hex[],
-    chain?: number,
-    useReplayableSignature = false
+    chain?: number
 ): Promise<SmartAccount<KernelSmartAccountImplementation<"0.7">>> => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
@@ -62,8 +59,7 @@ const getEcdsaKernelAccountWithPrivateKey = async (
         },
         index,
         kernelVersion,
-        initConfig,
-        useReplayableSignature,
+        initConfig
     })
 }
 

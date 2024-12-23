@@ -4,6 +4,7 @@ import {
     type Client,
     type EncodeDeployDataParameters,
     type Hex,
+    type SignableMessage,
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
@@ -61,6 +62,11 @@ import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 
+type SignMessageParameters = {
+    message: SignableMessage
+    useReplayableSignature?: boolean
+}
+
 export type KernelSmartAccountImplementation<
     entryPointVersion extends EntryPointVersion = "0.7"
 > = Assign<
@@ -84,6 +90,7 @@ export type KernelSmartAccountImplementation<
             args,
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
+        signMessage: (parameters: SignMessageParameters) => Promise<Hex>
     }
 >
 
@@ -110,7 +117,6 @@ export type CreateKernelAccountParameters<
     kernelVersion: GetKernelVersion<entryPointVersion>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
-    useReplayableSignature?: boolean
 }
 
 /**
@@ -349,8 +355,7 @@ export async function createKernelAccount<
         address,
         kernelVersion,
         initConfig,
-        useMetaFactory = true,
-        useReplayableSignature = false
+        useMetaFactory = true
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
     const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
@@ -501,7 +506,7 @@ export async function createKernelAccount<
         async sign({ hash }) {
             return this.signMessage({ message: hash })
         },
-        async signMessage({ message }) {
+        async signMessage({ message, useReplayableSignature }) {
             const messageHash = hashMessage(message)
             const {
                 name,
@@ -580,17 +585,13 @@ export async function createKernelAccount<
                 kernelVersion,
                 chainId
             )
-            const wrappedMessageHash = await eip712WrapHash(
-                typedHash,
-                {
-                    name,
-                    chainId: Number(metadataChainId),
-                    version,
-                    verifyingContract: accountAddress
-                },
-                useReplayableSignature
-            )
-            let signature = await kernelPluginManager.signMessage({
+            const wrappedMessageHash = await eip712WrapHash(typedHash, {
+                name,
+                chainId: Number(metadataChainId),
+                version,
+                verifyingContract: accountAddress
+            })
+            const signature = await kernelPluginManager.signMessage({
                 message: { raw: wrappedMessageHash }
             })
             if (
@@ -600,12 +601,6 @@ export async function createKernelAccount<
                 )
             ) {
                 return signature
-            }
-            if (
-                useReplayableSignature &&
-                hasKernelFeature(KERNEL_FEATURES.ERC1271_REPLAYABLE, version)
-            ) {
-                signature = concatHex([MAGIC_VALUE_SIG_REPLAYABLE, signature])
             }
             return concatHex([kernelPluginManager.getIdentifier(), signature])
         },

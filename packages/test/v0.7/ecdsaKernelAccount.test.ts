@@ -308,18 +308,16 @@ describe("ECDSA kernel Account", () => {
     )
 
     test(
-        "Client signMessage should return a valid replayable signature",
+        "Client signMessage should return a valid replayable signature from signMessage",
         async () => {
             const sepoliaAccount = await getEcdsaKernelAccountWithRandomSigner(
                 [],
                 sepolia.id,
-                true
             )
             const baseSepoliaAccount =
                 await getEcdsaKernelAccountWithRandomSigner(
                     [],
                     baseSepolia.id,
-                    true
                 )
             const sepoliaPublicClient = await getPublicClient(sepolia.id)
             const baseSepoliaPublicClient = await getPublicClient(
@@ -327,9 +325,13 @@ describe("ECDSA kernel Account", () => {
             )
 
             const message = "0x51ec26f01af586507f7a8198bc8fba82754567b5cca1bff07f9765ebfe69ed66"
-            const replayableSignature = await sepoliaAccount.signMessage({
-                message
-            })
+            const replayableSignature = await sepoliaAccount.signMessage(
+                {
+                    message,
+                    useReplayableSignature: true
+                }
+            )
+            console.log("replayableSignature", replayableSignature)
 
             const sepoliaAmbireResult = await verifyMessage({
                 signer: sepoliaAccount.address,
