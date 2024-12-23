@@ -19,6 +19,7 @@ import {
     bundlerActions,
     type prepareUserOperation as viemPrepareUserOperation
 } from "viem/account-abstraction"
+import { getUserOperationGasPrice } from "../actions/index.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
@@ -169,6 +170,15 @@ export function createKernelAccountClient(
                 }
             }))
             .extend(kernelAccountClientActions()) as KernelAccountClient
+    }
+
+    if (!client.userOperation?.estimateFeesPerGas) {
+        client.userOperation = {
+            ...client.userOperation,
+            estimateFeesPerGas: async ({ bundlerClient }) => {
+                return await getUserOperationGasPrice(bundlerClient)
+            }
+        }
     }
 
     return client
