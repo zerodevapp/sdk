@@ -144,7 +144,7 @@ describe("ECDSA kernel Account", () => {
             index: index,
             initCodeHash:
                 constants.KernelVersionToAddressesMap[kernelVersion]
-                    .initCodeHash ?? "0x",
+                    .initCodeHash ?? "0x"
         })
         console.log(
             "Generate accountAddress using getKernelAddressFromECDSA: ",
@@ -312,25 +312,21 @@ describe("ECDSA kernel Account", () => {
         async () => {
             const sepoliaAccount = await getEcdsaKernelAccountWithRandomSigner(
                 [],
-                sepolia.id,
+                sepolia.id
             )
             const baseSepoliaAccount =
-                await getEcdsaKernelAccountWithRandomSigner(
-                    [],
-                    baseSepolia.id,
-                )
+                await getEcdsaKernelAccountWithRandomSigner([], baseSepolia.id)
             const sepoliaPublicClient = await getPublicClient(sepolia.id)
             const baseSepoliaPublicClient = await getPublicClient(
                 baseSepolia.id
             )
 
-            const message = "0x51ec26f01af586507f7a8198bc8fba82754567b5cca1bff07f9765ebfe69ed66"
-            const replayableSignature = await sepoliaAccount.signMessage(
-                {
-                    message,
-                    useReplayableSignature: true
-                }
-            )
+            const message =
+                "0x51ec26f01af586507f7a8198bc8fba82754567b5cca1bff07f9765ebfe69ed66"
+            const replayableSignature = await sepoliaAccount.signMessage({
+                message,
+                useReplayableSignature: true
+            })
             console.log("replayableSignature", replayableSignature)
 
             const sepoliaAmbireResult = await verifyMessage({

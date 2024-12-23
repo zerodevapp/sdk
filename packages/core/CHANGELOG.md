@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.6
+
+### Patch Changes
+
+- Integrated KernelV3.2 support
+
 ## 5.4.5
 
 ### Patch Changes
