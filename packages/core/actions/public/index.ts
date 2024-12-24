@@ -8,3 +8,4 @@ export {
     getSenderAddress
 } from "./getSenderAddress.js"
 export { isSmartAccountDeployed } from "./isSmartAccountDeployed.js"
+export { getKernelImplementationAddress } from "./getKernelImplementationAddress.js"

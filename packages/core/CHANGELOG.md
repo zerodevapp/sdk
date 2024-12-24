@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.7
+
+### Patch Changes
+
+- Added upgradeKernel (account) and getKernelImplementation (public) actions
+
 ## 5.4.6
 
 ### Patch Changes

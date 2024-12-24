@@ -23,6 +23,10 @@ import {
 import { sendTransaction } from "../../actions/account-client/sendTransaction.js"
 import { signMessage } from "../../actions/account-client/signMessage.js"
 import { signTypedData } from "../../actions/account-client/signTypedData.js"
+import {
+    type UpgradeKernelParameters,
+    upgradeKernel
+} from "../../actions/account-client/upgradeKernel.js"
 import { writeContract } from "../../actions/account-client/writeContract.js"
 import type {
     ChangeSudoValidatorParameters,
@@ -157,6 +161,20 @@ export type KernelAccountClientActions<
      * @returns nonce
      */
     getKernelV3ModuleCurrentNonce: () => Promise<number>
+    /**
+     * Creates, signs, and sends a transaction to upgrade the kernel to the network.
+     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     *
+     * @param args - {@link UpgradeKernelParameters}
+     * @returns The [Transaction](https://viem.sh/docs/glossary/terms.html#transaction) hash. {@link SendTransactionReturnType}
+     */
+    upgradeKernel: <
+        accountOverride extends SmartAccount | undefined = undefined,
+        calls extends readonly unknown[] = readonly unknown[]
+    >(
+        args: UpgradeKernelParameters<TSmartAccount, accountOverride, calls>
+    ) => Promise<Hash>
+
     /**
      * Creates, signs, and sends a new transaction to the network.
      * This function also allows you to sponsor this transaction if sender is a smartAccount
@@ -464,6 +482,7 @@ export function kernelAccountClientActions() {
         invalidateNonce: async (args) => invalidateNonce(client, args),
         getKernelV3ModuleCurrentNonce: async () =>
             getKernelV3ModuleCurrentNonce(client),
+        upgradeKernel: async (args) => upgradeKernel(client, args),
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         sendTransaction: (args) => sendTransaction(client, args as any),
         signMessage: (args) => signMessage(client, args),

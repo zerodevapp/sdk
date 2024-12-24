@@ -3,9 +3,9 @@ import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
     createKernelAccount,
-    createKernelAccountClient,
-    getUserOperationGasPrice
+    createKernelAccountClient
 } from "@zerodev/sdk"
+import type { GetKernelVersion } from "@zerodev/sdk/types"
 import { http, type Chain, type Hex, type Transport } from "viem"
 import {
     type PaymasterActions,
@@ -24,32 +24,34 @@ import {
 
 export const getEcdsaKernelAccountWithRandomSigner = async (
     initConfig?: Hex[],
-    chain?: number
+    chain?: number,
+    _kernelVersion?: GetKernelVersion<"0.7">
 ) => {
     return getEcdsaKernelAccountWithPrivateKey(
-        "0xdfbb0d855aafff58aa0ae92aa9d03e88562bad9befe209f5693db89b65cc4a9a" ??
-            "0x3688628d97b817ee5e25dfce254ba4d87b5fd894449fce6c2acc60fdf98906de" ??
-            generatePrivateKey(),
+        generatePrivateKey(),
         initConfig,
-        chain
+        chain,
+        _kernelVersion
     )
 }
 
-const getEcdsaKernelAccountWithPrivateKey = async (
+export const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
     initConfig?: Hex[],
-    chain?: number
+    chain?: number,
+    _kernelVersion?: GetKernelVersion<"0.7">
 ): Promise<SmartAccount<KernelSmartAccountImplementation<"0.7">>> => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
+    const kernelVersion_ = _kernelVersion ?? kernelVersion
 
     const publicClient = await getPublicClient(chain)
     const signer = privateKeyToAccount(privateKey)
     const ecdsaValidatorPlugin = await signerToEcdsaValidator(publicClient, {
         entryPoint: getEntryPoint(),
         signer: { ...signer, source: "local" as "local" | "external" },
-        kernelVersion
+        kernelVersion: kernelVersion_
     })
 
     return createKernelAccount(publicClient, {
@@ -58,7 +60,7 @@ const getEcdsaKernelAccountWithPrivateKey = async (
             sudo: ecdsaValidatorPlugin
         },
         index,
-        kernelVersion,
+        kernelVersion: kernelVersion_,
         initConfig
     })
 }

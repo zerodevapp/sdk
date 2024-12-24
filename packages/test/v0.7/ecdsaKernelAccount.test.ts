@@ -8,12 +8,14 @@ import {
 import {
     constants,
     EIP1271Abi,
+    KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
     createKernelAccount,
     getCustomNonceKeyFromString,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
+import { getKernelImplementationAddress } from "@zerodev/sdk/actions"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import {
@@ -30,15 +32,21 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
+    isAddressEqual,
     zeroAddress
 } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { baseSepolia, sepolia } from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 
+import {
+    KERNEL_V3_0,
+    KERNEL_V3_2,
+    KernelVersionToAddressesMap
+} from "@zerodev/sdk/constants"
 import {
     type SmartAccount,
     entryPoint07Address
@@ -56,6 +64,7 @@ import {
     waitForNonceUpdate
 } from "./utils/common.js"
 import {
+    getEcdsaKernelAccountWithPrivateKey,
     getEcdsaKernelAccountWithRandomSigner,
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
@@ -310,12 +319,20 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client signMessage should return a valid replayable signature from signMessage",
         async () => {
-            const sepoliaAccount = await getEcdsaKernelAccountWithRandomSigner(
+            const privateKey = generatePrivateKey()
+            const sepoliaAccount = await getEcdsaKernelAccountWithPrivateKey(
+                privateKey,
                 [],
-                sepolia.id
+                sepolia.id,
+                KERNEL_V3_2
             )
             const baseSepoliaAccount =
-                await getEcdsaKernelAccountWithRandomSigner([], baseSepolia.id)
+                await getEcdsaKernelAccountWithPrivateKey(
+                    privateKey,
+                    [],
+                    baseSepolia.id,
+                    KERNEL_V3_2
+                )
             const sepoliaPublicClient = await getPublicClient(sepolia.id)
             const baseSepoliaPublicClient = await getPublicClient(
                 baseSepolia.id
@@ -744,6 +761,79 @@ describe("ECDSA kernel Account", () => {
             }
 
             expect(eventFound).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client upgrade kernel",
+        async () => {
+            const originalKernelVersion = KERNEL_V3_0
+            const newKernelVersion = KERNEL_V3_2
+            const kernelAccountV030 =
+                await getEcdsaKernelAccountWithRandomSigner(
+                    undefined,
+                    undefined,
+                    originalKernelVersion
+                )
+            console.log("kernelAccountV030", kernelAccountV030.address)
+            const zeroDevPaymaster = getZeroDevPaymasterClient()
+            const kernelClient = await getKernelAccountClient({
+                account: kernelAccountV030,
+                paymaster: zeroDevPaymaster
+            })
+            const deployKernelHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log(
+                "deployKernelReceipt",
+                `https://sepolia.etherscan.io/tx/${deployKernelHash}`
+            )
+            const kernelImplementation = await getKernelImplementationAddress(
+                publicClient,
+                {
+                    address: kernelAccountV030.address
+                }
+            )
+            console.log("kernelImplementation", kernelImplementation)
+
+            const upgradeKernelHash = await kernelClient.upgradeKernel({
+                kernelVersion: newKernelVersion
+            })
+            console.log("upgradeKernelHash", upgradeKernelHash)
+            const upgradeKernelReceipt =
+                await kernelClient.waitForUserOperationReceipt({
+                    hash: upgradeKernelHash
+                })
+            console.log(
+                "upgradeKernelReceipt",
+                `https://sepolia.etherscan.io/tx/${upgradeKernelReceipt.receipt.transactionHash}`
+            )
+            const kernelImplementationAfterUpgrade =
+                await getKernelImplementationAddress(publicClient, {
+                    address: kernelAccountV030.address
+                })
+            console.log(
+                "kernelImplementationAfterUpgrade",
+                kernelImplementationAfterUpgrade
+            )
+            expect(
+                isAddressEqual(
+                    kernelImplementation,
+                    KernelVersionToAddressesMap[originalKernelVersion]
+                        .accountImplementationAddress
+                )
+            ).toBeTrue()
+            expect(
+                isAddressEqual(
+                    kernelImplementationAfterUpgrade,
+                    KernelVersionToAddressesMap[newKernelVersion]
+                        .accountImplementationAddress
+                )
+            ).toBeTrue()
+            expect(upgradeKernelReceipt.receipt.status).toBe("success")
         },
         TEST_TIMEOUT
     )

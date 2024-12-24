@@ -131,6 +131,9 @@ export const KernelFactoryToInitCodeHashMap: { [key: Address]: Hex } = {
         "0x6fe6e6ea30eddce942b9618033ab8429f9ddac594053bec8a6744fffc71976e2"
 }
 
+export const KERNEL_IMPLEMENTATION_SLOT =
+    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
 export const getEntryPoint = <TEntryPointVersion extends EntryPointVersion>(
     entryPointVersion: TEntryPointVersion
 ): EntryPointType<TEntryPointVersion> => {
