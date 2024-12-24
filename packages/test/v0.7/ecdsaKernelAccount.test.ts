@@ -33,14 +33,13 @@ import {
     zeroAddress
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { sepolia } from "viem/chains"
+import { baseSepolia, sepolia } from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 
 import {
-    type BundlerClient,
     type SmartAccount,
     entryPoint07Address
 } from "viem/account-abstraction"
@@ -49,7 +48,6 @@ import {
     findUserOperationEvent,
     getEntryPoint,
     getPublicClient,
-    getUserOperationEvent,
     getZeroDevPaymasterClient,
     index,
     kernelVersion,
@@ -305,6 +303,72 @@ describe("ECDSA kernel Account", () => {
             expect(response).toBeString()
             expect(response).toHaveLength(SIGNATURE_LENGTH)
             expect(response).toMatch(SIGNATURE_REGEX)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client signMessage should return a valid replayable signature from signMessage",
+        async () => {
+            const sepoliaAccount = await getEcdsaKernelAccountWithRandomSigner(
+                [],
+                sepolia.id
+            )
+            const baseSepoliaAccount =
+                await getEcdsaKernelAccountWithRandomSigner([], baseSepolia.id)
+            const sepoliaPublicClient = await getPublicClient(sepolia.id)
+            const baseSepoliaPublicClient = await getPublicClient(
+                baseSepolia.id
+            )
+
+            const message =
+                "0x51ec26f01af586507f7a8198bc8fba82754567b5cca1bff07f9765ebfe69ed66"
+            const replayableSignature = await sepoliaAccount.signMessage({
+                message,
+                useReplayableSignature: true
+            })
+            console.log("replayableSignature", replayableSignature)
+
+            const sepoliaAmbireResult = await verifyMessage({
+                signer: sepoliaAccount.address,
+                // message,
+                finalDigest: hashMessage(message),
+                signature: replayableSignature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["0.7"][sepolia.id].rpcUrl
+                )
+            })
+            expect(sepoliaAmbireResult).toBeTrue()
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: sepoliaAccount.address,
+                    hash: hashMessage(message),
+                    signature: replayableSignature,
+                    client: sepoliaPublicClient
+                })
+            ).toBeTrue()
+
+            const baseSepoliaAmbireResult = await verifyMessage({
+                signer: baseSepoliaAccount.address,
+                message,
+                signature: replayableSignature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["0.7"][baseSepolia.id].rpcUrl
+                )
+            })
+            expect(baseSepoliaAmbireResult).toBeTrue()
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: baseSepoliaAccount.address,
+                    hash: hashMessage(message),
+                    signature: replayableSignature,
+                    client: baseSepoliaPublicClient
+                })
+            ).toBeTrue()
+
+            expect(replayableSignature).toBeString()
         },
         TEST_TIMEOUT
     )

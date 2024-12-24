@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.1
+
+### Patch Changes
+
+- Integrated KernelV3.2 support
+
 ## 5.4.0
 
 ### Minor Changes

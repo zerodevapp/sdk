@@ -14,7 +14,8 @@ export const eip712WrapHash = async (
     domain: WithRequired<
         TypedDataDomain,
         "name" | "chainId" | "verifyingContract" | "version"
-    >
+    >,
+    useReplayableSignature?: boolean
 ): Promise<Hex> => {
     const { name, version, chainId, verifyingContract } = domain
 
@@ -22,11 +23,17 @@ export const eip712WrapHash = async (
         return messageHash
     }
 
+    const _chainId =
+        hasKernelFeature(KERNEL_FEATURES.ERC1271_REPLAYABLE, version) &&
+        useReplayableSignature
+            ? 0
+            : chainId
+
     const _domainSeparator = domainSeparator({
         domain: {
             name,
             version,
-            chainId,
+            chainId: _chainId,
             verifyingContract
         }
     })
