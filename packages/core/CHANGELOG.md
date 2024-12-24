@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.9
+
+### Patch Changes
+
+- Change return type of getUpgradeKernelCall to UserOperationCall
+
 ## 5.4.8
 
 ### Patch Changes
