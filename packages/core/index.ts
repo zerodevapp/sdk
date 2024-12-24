@@ -68,3 +68,4 @@ export { getUserOperationGasPrice } from "./actions/account-client/getUserOperat
 export { isPluginInitialized } from "./accounts/kernel/utils/plugins/ep0_7/isPluginInitialized.js"
 export * from "./errors/index.js"
 export * from "./utils/index.js"
+export { getUpgradeKernelCall } from "./accounts/kernel/utils/common/getUpgradeKernelCall.js"

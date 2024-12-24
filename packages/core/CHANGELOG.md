@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.8
+
+### Patch Changes
+
+- Added getUpgradeKernelCall util
+
 ## 5.4.7
 
 ### Patch Changes

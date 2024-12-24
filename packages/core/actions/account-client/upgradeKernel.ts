@@ -4,12 +4,10 @@ import {
     type SmartAccount,
     sendUserOperation
 } from "viem/account-abstraction"
-import { encodeFunctionData, getAction, parseAccount } from "viem/utils"
-import { KernelV3AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
-import { KernelVersionToAddressesMap } from "../../constants.js"
+import { getAction, parseAccount } from "viem/utils"
+import { getUpgradeKernelCall } from "../../accounts/kernel/utils/common/getUpgradeKernelCall.js"
 import { AccountNotFoundError } from "../../errors/index.js"
 import type { KERNEL_VERSION_TYPE } from "../../types/kernel.js"
-import { validateKernelVersionWithEntryPoint } from "../../utils.js"
 
 export type UpgradeKernelParameters<
     account extends SmartAccount | undefined,
@@ -37,12 +35,7 @@ export async function upgradeKernel<
         })
 
     const account = parseAccount(account_) as SmartAccount
-    validateKernelVersionWithEntryPoint(
-        account.entryPoint.version,
-        kernelVersion
-    )
-    const implementation =
-        KernelVersionToAddressesMap[kernelVersion].accountImplementationAddress
+    const call = getUpgradeKernelCall(account, kernelVersion)
 
     return await getAction(
         client,
@@ -50,17 +43,7 @@ export async function upgradeKernel<
         "sendUserOperation"
     )({
         ...args,
-        calls: [
-            {
-                to: account.address,
-                data: encodeFunctionData({
-                    abi: KernelV3AccountAbi,
-                    functionName: "upgradeTo",
-                    args: [implementation]
-                }),
-                value: 0n
-            }
-        ],
+        calls: [call],
         account
     } as SendUserOperationParameters)
 }
