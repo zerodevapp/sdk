@@ -147,3 +147,6 @@ export const getEntryPoint = <TEntryPointVersion extends EntryPointVersion>(
         version: entryPointVersion
     }
 }
+
+export const KERNEL_7702_DELEGATION_ADDRESS =
+    "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27"
