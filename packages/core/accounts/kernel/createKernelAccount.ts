@@ -1,4 +1,5 @@
 import {
+    http,
     type Address,
     type Assign,
     type Client,
@@ -6,8 +7,10 @@ import {
     type Hex,
     type SignableMessage,
     type TypedDataDefinition,
+    concat,
     concatHex,
     createNonceManager,
+    createWalletClient,
     encodeFunctionData,
     getTypesForEIP712Domain,
     hashMessage,
@@ -26,7 +29,12 @@ import {
     entryPoint07Address,
     toSmartAccount
 } from "viem/account-abstraction"
-import { getChainId } from "viem/actions"
+import {
+    type SignAuthorizationReturnType,
+    privateKeyToAccount
+} from "viem/accounts"
+import { getChainId, getCode, writeContract } from "viem/actions"
+import { odysseyTestnet } from "viem/chains"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
@@ -53,7 +61,10 @@ import {
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
 import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
-import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import {
+    KernelV3AccountAbi,
+    KernelV3InitAbi
+} from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
@@ -94,6 +105,7 @@ export type KernelSmartAccountImplementation<
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
+        eip7702Auth?: SignAuthorizationReturnType
     }
 >
 
@@ -120,6 +132,7 @@ export type CreateKernelAccountParameters<
     kernelVersion: GetKernelVersion<entryPointVersion>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
+    eip7702Auth?: SignAuthorizationReturnType
     pluginMigrations?: PluginMigrationData[]
 }
 
@@ -365,6 +378,7 @@ export async function createKernelAccount<
         kernelVersion,
         initConfig,
         useMetaFactory = true,
+        eip7702Auth,
         pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
@@ -459,6 +473,48 @@ export async function createKernelAccount<
         version: entryPoint?.version ?? "0.7"
     } as const
 
+    if (eip7702Auth && client.chain && client.chain.id === odysseyTestnet.id) {
+        let code = await getCode(client, { address: accountAddress })
+        const isEip7702Authorized =
+            code?.length && code.length > 0 && code.startsWith("0xef")
+        console.log("Code before:", code)
+        console.log("Is Eip7702 Authorized:", isEip7702Authorized)
+        if (!isEip7702Authorized) {
+            const sponsorWalletClient = createWalletClient({
+                account: privateKeyToAccount(
+                    // NOTE: Don't worry about this private key, it's just for testing
+                    "0x688b84097239bc2bca41079d02fae599964a5844bc9e64f524206ad53a927bb9"
+                ),
+                chain: client.chain,
+                transport: http()
+            })
+            console.log("Authorizing eip7702 account...")
+            const txHash = await writeContract(sponsorWalletClient, {
+                address: accountAddress,
+                abi: KernelV3AccountAbi,
+                functionName: "initialize",
+                args: [
+                    concat([
+                        "0x01",
+                        "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57"
+                    ]),
+                    zeroAddress,
+                    accountAddress,
+                    "0x"
+                ],
+                authorizationList: [eip7702Auth]
+            })
+            console.log(
+                `Authorized eip7702 account: https://explorer-odyssey.t.conduit.xyz/tx/${txHash}`
+            )
+            code = await getCode(client, { address: accountAddress })
+            while (code?.length === undefined || code.length === 0) {
+                code = await getCode(client, { address: accountAddress })
+            }
+            console.log("Code after:", code)
+        }
+    }
+
     // Cache for plugin installation status
     const pluginCache: PluginInstallationCache = {
         pendingPlugins: pluginMigrations || [],
@@ -492,6 +548,7 @@ export async function createKernelAccount<
     await checkPluginInstallationStatus()
 
     return toSmartAccount<KernelSmartAccountImplementation<entryPointVersion>>({
+        eip7702Auth,
         kernelVersion,
         kernelPluginManager,
         factoryAddress: (await getFactoryArgs()).factory,
