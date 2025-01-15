@@ -120,6 +120,15 @@ export enum EXEC_TYPE {
     TRY_EXEC = "0x01"
 }
 
+export const PLUGIN_TYPE = {
+    VALIDATOR: 1,
+    EXECUTOR: 2,
+    FALLBACK: 3,
+    HOOK: 4,
+    POLICY: 5,
+    SIGNER: 6
+}
+
 // Safe's library for create and create2: https://github.com/safe-global/safe-contracts/blob/0acdd35a203299585438f53885df630f9d486a86/contracts/libraries/CreateCall.sol
 // Address was found here: https://github.com/safe-global/safe-deployments/blob/926ec6bbe2ebcac3aa2c2c6c0aff74aa590cbc6a/src/assets/v1.4.1/create_call.json
 export const safeCreateCallAddress =

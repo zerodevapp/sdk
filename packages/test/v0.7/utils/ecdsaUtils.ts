@@ -5,7 +5,7 @@ import {
     createKernelAccount,
     createKernelAccountClient
 } from "@zerodev/sdk"
-import type { GetKernelVersion } from "@zerodev/sdk/types"
+import type { GetKernelVersion, PluginMigrationData } from "@zerodev/sdk/types"
 import { http, type Chain, type Hex, type Transport } from "viem"
 import {
     type PaymasterActions,
@@ -25,13 +25,15 @@ import {
 export const getEcdsaKernelAccountWithRandomSigner = async (
     initConfig?: Hex[],
     chain?: number,
-    _kernelVersion?: GetKernelVersion<"0.7">
+    _kernelVersion?: GetKernelVersion<"0.7">,
+    pluginMigrations?: PluginMigrationData[]
 ) => {
     return getEcdsaKernelAccountWithPrivateKey(
         generatePrivateKey(),
         initConfig,
         chain,
-        _kernelVersion
+        _kernelVersion,
+        pluginMigrations
     )
 }
 
@@ -39,7 +41,8 @@ export const getEcdsaKernelAccountWithPrivateKey = async (
     privateKey: Hex,
     initConfig?: Hex[],
     chain?: number,
-    _kernelVersion?: GetKernelVersion<"0.7">
+    _kernelVersion?: GetKernelVersion<"0.7">,
+    pluginMigrations?: PluginMigrationData[]
 ): Promise<SmartAccount<KernelSmartAccountImplementation<"0.7">>> => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
@@ -61,7 +64,8 @@ export const getEcdsaKernelAccountWithPrivateKey = async (
         },
         index,
         kernelVersion: kernelVersion_,
-        initConfig
+        initConfig,
+        pluginMigrations
     })
 }
 

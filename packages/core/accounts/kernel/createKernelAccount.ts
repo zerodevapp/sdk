@@ -33,7 +33,8 @@ import { getChainId, getCode, writeContract } from "viem/actions"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
-    getSenderAddress
+    getSenderAddress,
+    isPluginInstalled
 } from "../../actions/public/index.js"
 import {
     KernelVersionToAddressesMap,
@@ -45,7 +46,8 @@ import type {
     GetEntryPointAbi,
     GetKernelVersion,
     KernelPluginManager,
-    KernelPluginManagerParams
+    KernelPluginManagerParams,
+    PluginMigrationData
 } from "../../types/kernel.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
 import { validateKernelVersionWithEntryPoint } from "../../utils.js"
@@ -72,6 +74,7 @@ import {
     type SignAuthorizationReturnType
 } from "viem/accounts"
 import { odysseyTestnet } from "viem/chains"
+import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 
 type SignMessageParameters = {
     message: SignableMessage
@@ -130,6 +133,7 @@ export type CreateKernelAccountParameters<
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
     eip7702Auth?: SignAuthorizationReturnType
+    pluginMigrations?: PluginMigrationData[]
 }
 
 /**
@@ -342,6 +346,11 @@ const getDefaultAddresses = <entryPointVersion extends EntryPointVersion>(
     }
 }
 
+type PluginInstallationCache = {
+    pendingPlugins: PluginMigrationData[]
+    allInstalled: boolean
+}
+
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -369,7 +378,8 @@ export async function createKernelAccount<
         kernelVersion,
         initConfig,
         useMetaFactory = true,
-        eip7702Auth
+        eip7702Auth,
+        pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
     const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
@@ -505,6 +515,38 @@ export async function createKernelAccount<
         }
     }
 
+    // Cache for plugin installation status
+    const pluginCache: PluginInstallationCache = {
+        pendingPlugins: pluginMigrations || [],
+        allInstalled: false
+    }
+
+    const checkPluginInstallationStatus = async () => {
+        // Skip if no plugins or all are installed
+        if (!pluginCache.pendingPlugins.length || pluginCache.allInstalled) {
+            pluginCache.allInstalled = true
+            return
+        }
+
+        // Check all pending plugins in parallel
+        const installationResults = await Promise.all(
+            pluginCache.pendingPlugins.map((plugin) =>
+                isPluginInstalled(client, {
+                    address: accountAddress,
+                    plugin
+                })
+            )
+        )
+
+        // Filter out installed plugins
+        pluginCache.pendingPlugins = pluginCache.pendingPlugins.filter(
+            (_, index) => !installationResults[index]
+        )
+        pluginCache.allInstalled = pluginCache.pendingPlugins.length === 0
+    }
+
+    await checkPluginInstallationStatus()
+
     return toSmartAccount<KernelSmartAccountImplementation<entryPointVersion>>({
         eip7702Auth,
         kernelVersion,
@@ -544,6 +586,25 @@ export async function createKernelAccount<
             return encodeDeployCallDataV07(_tx)
         },
         async encodeCalls(calls, callType) {
+            // Check plugin status only if we have pending plugins
+            await checkPluginInstallationStatus()
+
+            // Add plugin installation calls if needed
+            if (
+                pluginCache.pendingPlugins.length > 0 &&
+                entryPoint.version === "0.7" &&
+                kernelPluginManager.activeValidatorMode === "sudo"
+            ) {
+                const pluginInstallCalls = pluginCache.pendingPlugins.map(
+                    (plugin) => getPluginInstallCallData(accountAddress, plugin)
+                )
+                return encodeCallDataEpV07(
+                    [...calls, ...pluginInstallCalls],
+                    callType,
+                    plugins.hook ? true : undefined
+                )
+            }
+
             if (
                 calls.length === 1 &&
                 (!callType || callType === "call") &&
