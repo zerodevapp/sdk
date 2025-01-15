@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.11
+
+### Patch Changes
+
+- Added 7702 alpha support
+
 ## 5.4.10
 
 ### Patch Changes
