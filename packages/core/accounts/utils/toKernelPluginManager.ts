@@ -110,8 +110,9 @@ export async function toKernelPluginManager<
                     return ValidatorMode.plugin
                 }
 
-                const enableSignature =
-                    await getPluginEnableSignature(accountAddress)
+                const enableSignature = await getPluginEnableSignature(
+                    accountAddress
+                )
                 if (!enableSignature) {
                     throw new Error("Enable signature not set")
                 }
@@ -138,8 +139,9 @@ export async function toKernelPluginManager<
             if (await isPluginEnabled(accountAddress, action.selector)) {
                 return userOpSignature
             }
-            const enableSignature =
-                await getPluginEnableSignature(accountAddress)
+            const enableSignature = await getPluginEnableSignature(
+                accountAddress
+            )
             return getEncodedPluginsDataV2({
                 enableSignature,
                 userOpSignature,
@@ -264,6 +266,7 @@ export async function toKernelPluginManager<
     return {
         sudoValidator: sudo,
         regularValidator: regular,
+        activeValidatorMode: sudo && !regular ? "sudo" : "regular",
         ...activeValidator,
         hook,
         getIdentifier,
@@ -286,8 +289,9 @@ export async function toKernelPluginManager<
             throw new Error("EntryPoint v0.7 not supported yet")
         },
         signUserOperation: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.signUserOperation(userOperation)
+            const userOpSig = await activeValidator.signUserOperation(
+                userOperation
+            )
             if (entryPoint.version === "0.6") {
                 return concatHex([
                     await getSignatureData(
@@ -314,8 +318,9 @@ export async function toKernelPluginManager<
             validUntil
         }),
         getStubSignature: async (userOperation) => {
-            const userOpSig =
-                await activeValidator.getStubSignature(userOperation)
+            const userOpSig = await activeValidator.getStubSignature(
+                userOperation
+            )
             if (entryPoint.version === "0.6") {
                 return concatHex([
                     await getSignatureData(
