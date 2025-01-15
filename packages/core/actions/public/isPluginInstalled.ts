@@ -1,8 +1,8 @@
 import type { Address, Client, Hex } from "viem"
 import { readContract } from "viem/actions"
 import { getAction } from "viem/utils"
-import { PLUGIN_TYPE } from "../../constants.js"
 import { KernelModuleIsModuleInstalledAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/KernelModuleAbi.js"
+import type { PLUGIN_TYPE } from "../../constants.js"
 
 export type IsPluginInstalledParams = {
     address: Address

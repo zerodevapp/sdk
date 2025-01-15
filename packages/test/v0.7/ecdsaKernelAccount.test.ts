@@ -54,6 +54,7 @@ import {
     KernelVersionToAddressesMap,
     PLUGIN_TYPE
 } from "@zerodev/sdk/constants"
+import type { PluginMigrationData } from "@zerodev/sdk/types"
 import {
     type SmartAccount,
     entryPoint07Address
@@ -76,7 +77,6 @@ import {
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
 } from "./utils/ecdsaUtils.js"
-import { PluginMigrationData } from "@zerodev/sdk/types"
 
 dotenv.config()
 
@@ -883,9 +883,7 @@ describe("ECDSA kernel Account", () => {
             console.log("pluginInstalledBefore", pluginInstalledBefore)
 
             const userOpHash = await kernelClient.sendUserOperation({
-                calls: [
-                    { to: zeroAddress, value: 0n, data: "0x" }
-                ],
+                calls: [{ to: zeroAddress, value: 0n, data: "0x" }]
                 // callData: await kernelClient.account.encodeCalls([
                 //     { to: zeroAddress, value: 0n, data: "0x" }
                 // ])

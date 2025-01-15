@@ -460,7 +460,7 @@ export async function createKernelAccount<
     } as const
 
     // Cache for plugin installation status
-    let pluginCache: PluginInstallationCache = {
+    const pluginCache: PluginInstallationCache = {
         pendingPlugins: pluginMigrations || [],
         allInstalled: false
     }
@@ -474,7 +474,7 @@ export async function createKernelAccount<
 
         // Check all pending plugins in parallel
         const installationResults = await Promise.all(
-            pluginCache.pendingPlugins.map(plugin =>
+            pluginCache.pendingPlugins.map((plugin) =>
                 isPluginInstalled(client, {
                     address: accountAddress,
                     plugin
@@ -529,17 +529,6 @@ export async function createKernelAccount<
             return encodeDeployCallDataV07(_tx)
         },
         async encodeCalls(calls, callType) {
-            if (
-                calls.length === 1 &&
-                (!callType || callType === "call") &&
-                calls[0].to.toLowerCase() === accountAddress.toLowerCase()
-            ) {
-                return calls[0].data ?? "0x"
-            }
-            if (entryPoint.version === "0.6") {
-                return encodeCallDataEpV06(calls, callType)
-            }
-
             // Check plugin status only if we have pending plugins
             await checkPluginInstallationStatus()
 
@@ -550,13 +539,24 @@ export async function createKernelAccount<
                 kernelPluginManager.activeValidatorMode === "sudo"
             ) {
                 const pluginInstallCalls = pluginCache.pendingPlugins.map(
-                    plugin => getPluginInstallCallData(accountAddress, plugin)
+                    (plugin) => getPluginInstallCallData(accountAddress, plugin)
                 )
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
                     callType,
                     plugins.hook ? true : undefined
                 )
+            }
+
+            if (
+                calls.length === 1 &&
+                (!callType || callType === "call") &&
+                calls[0].to.toLowerCase() === accountAddress.toLowerCase()
+            ) {
+                return calls[0].data ?? "0x"
+            }
+            if (entryPoint.version === "0.6") {
+                return encodeCallDataEpV06(calls, callType)
             }
 
             if (plugins.hook) {
