@@ -1,4 +1,5 @@
 import {
+    http,
     type Address,
     type Assign,
     type Client,
@@ -14,7 +15,6 @@ import {
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
-    http,
     toHex,
     validateTypedData,
     zeroAddress
@@ -29,7 +29,12 @@ import {
     entryPoint07Address,
     toSmartAccount
 } from "viem/account-abstraction"
+import {
+    type SignAuthorizationReturnType,
+    privateKeyToAccount
+} from "viem/accounts"
 import { getChainId, getCode, writeContract } from "viem/actions"
+import { odysseyTestnet } from "viem/chains"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
@@ -69,11 +74,6 @@ import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/enc
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
-import {
-    privateKeyToAccount,
-    type SignAuthorizationReturnType
-} from "viem/accounts"
-import { odysseyTestnet } from "viem/chains"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 
 type SignMessageParameters = {
