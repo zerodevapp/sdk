@@ -29,18 +29,18 @@ export const KernelModuleInstallAbi = [
 
 export const KernelModuleIsModuleInstalledAbi = [
     {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "moduleType",
-            "type": "uint256"
-          },
-          { "internalType": "address", "name": "module", "type": "address" },
-          {
-            "internalType": "bytes",
-            "name": "additionalContext",
-            "type": "bytes"
-          }
+        inputs: [
+            {
+                internalType: "uint256",
+                name: "moduleType",
+                type: "uint256"
+            },
+            { internalType: "address", name: "module", type: "address" },
+            {
+                internalType: "bytes",
+                name: "additionalContext",
+                type: "bytes"
+            }
         ],
         stateMutability: "view",
         type: "function",

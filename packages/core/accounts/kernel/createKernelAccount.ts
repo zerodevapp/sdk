@@ -460,7 +460,7 @@ export async function createKernelAccount<
     } as const
 
     // Cache for plugin installation status
-    let pluginCache: PluginInstallationCache = {
+    const pluginCache: PluginInstallationCache = {
         pendingPlugins: pluginMigrations || [],
         allInstalled: false
     }
@@ -474,7 +474,7 @@ export async function createKernelAccount<
 
         // Check all pending plugins in parallel
         const installationResults = await Promise.all(
-            pluginCache.pendingPlugins.map(plugin =>
+            pluginCache.pendingPlugins.map((plugin) =>
                 isPluginInstalled(client, {
                     address: accountAddress,
                     plugin
@@ -550,7 +550,7 @@ export async function createKernelAccount<
                 kernelPluginManager.activeValidatorMode === "sudo"
             ) {
                 const pluginInstallCalls = pluginCache.pendingPlugins.map(
-                    plugin => getPluginInstallCallData(accountAddress, plugin)
+                    (plugin) => getPluginInstallCallData(accountAddress, plugin)
                 )
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
