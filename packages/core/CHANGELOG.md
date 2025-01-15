@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.10
+
+### Patch Changes
+
+- feat: add pluginMigrations feature
+
 ## 5.4.9
 
 ### Patch Changes

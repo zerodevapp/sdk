@@ -5,7 +5,7 @@ import type {
     entryPoint06Abi,
     entryPoint07Abi
 } from "viem/account-abstraction"
-import type { VALIDATOR_TYPE } from "../constants.js"
+import type { PLUGIN_TYPE, VALIDATOR_TYPE } from "../constants.js"
 export type ZeroDevPaymasterRpcSchema<
     entryPointVersion extends EntryPointVersion
 > = [
@@ -154,10 +154,13 @@ export type ValidatorInitData = {
     initConfig?: Hex[]
 }
 
+export type ActiveValidatorMode = "sudo" | "regular"
+
 export type KernelPluginManager<entryPointVersion extends EntryPointVersion> =
     KernelValidator & {
         sudoValidator?: KernelValidator
         regularValidator?: KernelValidator
+        activeValidatorMode: ActiveValidatorMode
         hook?: KernelValidatorHook
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
@@ -219,6 +222,12 @@ export enum ValidatorMode {
     sudo = "0x00000000",
     plugin = "0x00000001",
     enable = "0x00000002"
+}
+
+export type PluginMigrationData = {
+    type: (typeof PLUGIN_TYPE)[keyof typeof PLUGIN_TYPE]
+    address: Address
+    data: Hex
 }
 
 export type CallType = "call" | "delegatecall"

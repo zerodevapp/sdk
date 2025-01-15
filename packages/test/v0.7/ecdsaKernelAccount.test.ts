@@ -15,7 +15,10 @@ import {
     getCustomNonceKeyFromString,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
-import { getKernelImplementationAddress } from "@zerodev/sdk/actions"
+import {
+    getKernelImplementationAddress,
+    isPluginInstalled
+} from "@zerodev/sdk/actions"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import {
@@ -26,13 +29,16 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
+    concatHex,
     decodeEventLog,
+    encodeAbiParameters,
     encodeFunctionData,
     erc20Abi,
     getContract,
     hashMessage,
     hashTypedData,
     isAddressEqual,
+    parseAbiParameters,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
@@ -45,8 +51,10 @@ import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 import {
     KERNEL_V3_0,
     KERNEL_V3_2,
-    KernelVersionToAddressesMap
+    KernelVersionToAddressesMap,
+    PLUGIN_TYPE
 } from "@zerodev/sdk/constants"
+import type { PluginMigrationData } from "@zerodev/sdk/types"
 import {
     type SmartAccount,
     entryPoint07Address
@@ -834,6 +842,73 @@ describe("ECDSA kernel Account", () => {
                 )
             ).toBeTrue()
             expect(upgradeKernelReceipt.receipt.status).toBe("success")
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client install Kernel plugins automatically",
+        async () => {
+            const pluginToInstall: PluginMigrationData = {
+                type: PLUGIN_TYPE.EXECUTOR,
+                address: "0xAd8da92Dd670871bD3f90475d6763d520728881a",
+                data: concatHex([
+                    zeroAddress,
+                    encodeAbiParameters(
+                        parseAbiParameters(["bytes", "bytes"]),
+                        ["0x", "0x"]
+                    )
+                ])
+            }
+            const kernelAccount = await getEcdsaKernelAccountWithRandomSigner(
+                undefined,
+                undefined,
+                "0.3.0",
+                [pluginToInstall]
+            )
+            console.log("kernelAccount", kernelAccount.address)
+            const zeroDevPaymaster = getZeroDevPaymasterClient()
+            const kernelClient = await getKernelAccountClient({
+                account: kernelAccount,
+                paymaster: zeroDevPaymaster
+            })
+
+            const pluginInstalledBefore = await isPluginInstalled(
+                publicClient,
+                {
+                    address: kernelAccount.address,
+                    plugin: pluginToInstall
+                }
+            )
+            console.log("pluginInstalledBefore", pluginInstalledBefore)
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                calls: [{ to: zeroAddress, value: 0n, data: "0x" }]
+                // callData: await kernelClient.account.encodeCalls([
+                //     { to: zeroAddress, value: 0n, data: "0x" }
+                // ])
+            })
+            console.log("userOpHash", userOpHash)
+            const userOpReceipt =
+                await kernelClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
+            console.log("userOpReceipt", userOpReceipt.receipt.transactionHash)
+
+            const pluginInstalledAfter = await isPluginInstalled(publicClient, {
+                address: kernelAccount.address,
+                plugin: pluginToInstall
+            })
+            console.log("pluginInstalledAfter", pluginInstalledAfter)
+
+            expect(pluginInstalledBefore).toBeFalse()
+            expect(pluginInstalledAfter).toBeTrue()
+            const transactionHash2 = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log("transactionHash2", transactionHash2)
         },
         TEST_TIMEOUT
     )

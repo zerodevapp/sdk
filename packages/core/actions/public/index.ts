@@ -9,3 +9,4 @@ export {
 } from "./getSenderAddress.js"
 export { isSmartAccountDeployed } from "./isSmartAccountDeployed.js"
 export { getKernelImplementationAddress } from "./getKernelImplementationAddress.js"
+export { isPluginInstalled } from "./isPluginInstalled.js"

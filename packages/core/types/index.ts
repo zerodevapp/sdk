@@ -14,7 +14,8 @@ export type {
     KERNEL_VERSION_TYPE,
     GetKernelVersion,
     GetEntryPointAbi,
-    EntryPointType
+    EntryPointType,
+    PluginMigrationData
 } from "./kernel.js"
 
 export { ValidatorMode } from "./kernel.js"

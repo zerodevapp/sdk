@@ -264,6 +264,7 @@ export async function toKernelPluginManager<
     return {
         sudoValidator: sudo,
         regularValidator: regular,
+        activeValidatorMode: sudo && !regular ? "sudo" : "regular",
         ...activeValidator,
         hook,
         getIdentifier,
