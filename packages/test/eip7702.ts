@@ -1,29 +1,29 @@
 import "dotenv/config"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { createKernelAccountClient } from "@zerodev/sdk"
+import { createZeroDevPaymasterClient } from "@zerodev/sdk"
+import { createKernelAccount } from "@zerodev/sdk/accounts"
+import { getUserOperationGasPrice } from "@zerodev/sdk/actions"
 import {
+    KERNEL_7702_DELEGATION_ADDRESS,
+    KERNEL_V3_1,
+    getEntryPoint
+} from "@zerodev/sdk/constants"
+import {
+    http,
+    type Hex,
     createPublicClient,
     createWalletClient,
-    type Hex,
-    http,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+import { getCode } from "viem/actions"
 import { odysseyTestnet } from "viem/chains"
 import { eip7702Actions } from "viem/experimental"
-import {
-    getEntryPoint,
-    KERNEL_7702_DELEGATION_ADDRESS,
-    KERNEL_V3_1
-} from "@zerodev/sdk/constants"
-import { createKernelAccountClient } from "@zerodev/sdk"
-import { getUserOperationGasPrice } from "@zerodev/sdk/actions"
-import { createKernelAccount } from "@zerodev/sdk/accounts"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
-import { createZeroDevPaymasterClient } from "@zerodev/sdk"
-import { getCode } from "viem/actions"
 
-const projectId = process.env.PROJECT_ID;
-const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}`;
-const paymasterRpc = `https://rpc.zerodev.app/api/v2/paymaster/${projectId}`;
+const projectId = process.env.PROJECT_ID
+const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
+const paymasterRpc = `https://rpc.zerodev.app/api/v2/paymaster/${projectId}`
 const entryPoint = getEntryPoint("0.7")
 const kernelVersion = KERNEL_V3_1
 const publicClient = createPublicClient({
@@ -109,7 +109,10 @@ const main = async () => {
     const { receipt } = await kernelClient.waitForUserOperationReceipt({
         hash: userOpHash
     })
-    console.log("UserOp completed", `https://explorer-odyssey.t.conduit.xyz/tx/${receipt.transactionHash}`)
+    console.log(
+        "UserOp completed",
+        `https://explorer-odyssey.t.conduit.xyz/tx/${receipt.transactionHash}`
+    )
 }
 
 main().finally(() => {
