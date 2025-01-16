@@ -1,12 +1,11 @@
 {
     "name": "@zerodev/modular-permission",
-    "version": "5.4.0",
+    "version": "5.4.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
     "typings": "./_types/index.d.ts",
-    "type": "module",
     "sideEffects": false,
     "license": "MIT",
     "files": [
@@ -58,5 +57,6 @@
     "peerDependencies": {
         "viem": "^2.21.40",
         "@zerodev/sdk": "^5.4.0"
-    }
+    },
+    "type": "module"
 }

@@ -1,5 +1,11 @@
 # @zerodev/hooks
 
+## 5.3.2
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.3.1
 
 ### Patch Changes

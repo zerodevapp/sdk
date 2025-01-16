@@ -1,12 +1,11 @@
 {
     "name": "@zerodev/sdk",
-    "version": "5.4.11",
+    "version": "5.4.12",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
     "typings": "./_types/index.d.ts",
-    "type": "module",
     "sideEffects": false,
     "description": "A utility library for working with ERC-4337",
     "keywords": ["ethereum", "erc-4337", "eip-4337", "paymaster", "bundler"],
@@ -105,5 +104,6 @@
     },
     "dependencies": {
         "semver": "^7.6.0"
-    }
+    },
+    "type": "module"
 }

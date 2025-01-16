@@ -1,5 +1,11 @@
 # @zerodev/remote-signer
 
+## 5.3.1
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.3.0
 
 ### Minor Changes

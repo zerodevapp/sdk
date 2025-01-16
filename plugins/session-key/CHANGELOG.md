@@ -1,5 +1,11 @@
 # @zerodev/session-key
 
+## 5.5.1
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.5.0
 
 ### Minor Changes

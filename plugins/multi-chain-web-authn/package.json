@@ -1,12 +1,11 @@
 {
     "name": "@zerodev/multi-chain-web-authn-validator",
-    "version": "5.4.3",
+    "version": "5.4.4",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
     "typings": "./_types/index.d.ts",
-    "type": "module",
     "sideEffects": false,
     "license": "MIT",
     "files": [
@@ -43,5 +42,6 @@
         "@simplewebauthn/browser": "^9.0.1",
         "@simplewebauthn/typescript-types": "^8.3.4",
         "merkletreejs": "^0.3.11"
-    }
+    },
+    "type": "module"
 }

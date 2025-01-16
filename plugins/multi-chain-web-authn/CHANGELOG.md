@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.4
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.4.3
 
 ### Minor Changes

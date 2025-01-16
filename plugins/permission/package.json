@@ -1,12 +1,11 @@
 {
     "name": "@zerodev/permissions",
-    "version": "5.5.0",
+    "version": "5.5.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
     "typings": "./_types/index.d.ts",
-    "type": "module",
     "sideEffects": false,
     "license": "MIT",
     "files": [
@@ -59,5 +58,6 @@
         "viem": "^2.21.40",
         "@zerodev/sdk": "^5.4.0",
         "@zerodev/webauthn-key": "^5.4.0"
-    }
+    },
+    "type": "module"
 }

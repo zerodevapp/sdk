@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.4.2
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.4.1
 
 ### Patch Changes

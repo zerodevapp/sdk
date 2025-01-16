@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-ecdsa
 
+## 5.4.3
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.4.2
 
 ### Minor Changes

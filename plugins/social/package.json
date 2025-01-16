@@ -1,12 +1,11 @@
 {
     "name": "@zerodev/social-validator",
-    "version": "5.2.0",
+    "version": "5.2.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
     "typings": "./_types/index.d.ts",
-    "type": "module",
     "sideEffects": false,
     "license": "MIT",
     "files": [
@@ -42,5 +41,6 @@
     "dependencies": {
         "@magic-ext/oauth": "^22.0.3",
         "magic-sdk": "^28.0.3"
-    }
+    },
+    "type": "module"
 }

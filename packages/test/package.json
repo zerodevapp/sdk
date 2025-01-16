@@ -1,7 +1,6 @@
 {
     "name": "@zerodev/sdk-test",
     "private": true,
-    "type": "module",
     "devDependencies": {
         "bun-types": "^1.0.7"
     },
@@ -17,5 +16,6 @@
         "@zerodev/ecdsa-validator": "workspace:*",
         "@zerodev/session-key": "workspace:*",
         "@zerodev/modular-permission": "workspace:*"
-    }
+    },
+    "type": "module"
 }

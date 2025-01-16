@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.2.1
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.2.0
 
 ### Minor Changes

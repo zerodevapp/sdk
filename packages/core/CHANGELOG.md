@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.12
+
+### Patch Changes
+
+- feat: remove "type" field
+
 ## 5.4.11
 
 ### Patch Changes
