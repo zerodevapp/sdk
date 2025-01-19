@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.3
+
+### Patch Changes
+
+- Added createEcdsaKernelMigrationAccount
+
 ## 5.4.2
 
 ### Patch Changes

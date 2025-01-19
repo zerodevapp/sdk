@@ -42,12 +42,14 @@ export const getEcdsaKernelAccountWithPrivateKey = async (
     initConfig?: Hex[],
     chain?: number,
     _kernelVersion?: GetKernelVersion<"0.7">,
-    pluginMigrations?: PluginMigrationData[]
+    pluginMigrations?: PluginMigrationData[],
+    _index?: bigint
 ): Promise<SmartAccount<KernelSmartAccountImplementation<"0.7">>> => {
     if (!privateKey) {
         throw new Error("privateKey cannot be empty")
     }
     const kernelVersion_ = _kernelVersion ?? kernelVersion
+    const index_ = _index ?? index
 
     const publicClient = await getPublicClient(chain)
     const signer = privateKeyToAccount(privateKey)
@@ -62,7 +64,7 @@ export const getEcdsaKernelAccountWithPrivateKey = async (
         plugins: {
             sudo: ecdsaValidatorPlugin
         },
-        index,
+        index: index_,
         kernelVersion: kernelVersion_,
         initConfig,
         pluginMigrations
