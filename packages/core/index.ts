@@ -69,3 +69,8 @@ export { isPluginInitialized } from "./accounts/kernel/utils/plugins/ep0_7/isPlu
 export * from "./errors/index.js"
 export * from "./utils/index.js"
 export { getUpgradeKernelCall } from "./accounts/kernel/utils/common/getUpgradeKernelCall.js"
+export { eip712WrapHash } from "./accounts/kernel/utils/common/eip712WrapHash.js"
+export { encodeCallData as encodeCallDataEpV06 } from "./accounts/kernel/utils/account/ep0_6/encodeCallData.js"
+export { encodeCallData as encodeCallDataEpV07 } from "./accounts/kernel/utils/account/ep0_7/encodeCallData.js"
+export { encodeDeployCallData as encodeDeployCallDataV06 } from "./accounts/kernel/utils/account/ep0_6/encodeDeployCallData.js"
+export { encodeDeployCallData as encodeDeployCallDataV07 } from "./accounts/kernel/utils/account/ep0_7/encodeDeployCallData.js"

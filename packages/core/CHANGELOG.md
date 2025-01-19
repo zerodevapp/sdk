@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.13
+
+### Patch Changes
+
+- Exported some utils for createEcdsaKernelMigrationAccount
+
 ## 5.4.12
 
 ### Patch Changes

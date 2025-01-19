@@ -16,3 +16,8 @@ export {
     type GetKernelAddressFromECDSAParams
 }
 export * from "./constants.js"
+export {
+    createEcdsaKernelMigrationAccount,
+    type CreateEcdsaKernelMigrationAccountParameters,
+    type CreateEcdsaKernelMigrationAccountReturnType
+} from "./account/createEcdsaKernelMigrationAccount.js"
