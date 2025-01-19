@@ -17,6 +17,7 @@ import {
 } from "@zerodev/sdk"
 import {
     getKernelImplementationAddress,
+    getKernelVersion,
     isPluginInstalled
 } from "@zerodev/sdk/actions"
 import dotenv from "dotenv"
@@ -171,6 +172,10 @@ describe("ECDSA kernel Account", () => {
                 }
             )
             console.log("kernelImplementation", kernelImplementation)
+            const kernelVersion = await getKernelVersion(publicClient, {
+                address: kernelAccount.address
+            })
+            console.log("kernelVersion", kernelVersion)
 
             const migrationAccount = await createEcdsaKernelMigrationAccount(
                 publicClient,
@@ -265,6 +270,10 @@ describe("ECDSA kernel Account", () => {
                 }
             )
             console.log("kernelImplementation", kernelImplementation)
+            const kernelVersion = await getKernelVersion(publicClient, {
+                address: kernelAccount.address
+            })
+            console.log("kernelVersion", kernelVersion)
 
             const migrationAccount = await createEcdsaKernelMigrationAccount(
                 publicClient,
@@ -302,6 +311,13 @@ describe("ECDSA kernel Account", () => {
                 "migrationKernelImplementation",
                 migrationKernelImplementation
             )
+            const migrationKernelVersion = await getKernelVersion(
+                publicClient,
+                {
+                    address: migrationAccount.address
+                }
+            )
+            console.log("migrationKernelVersion", migrationKernelVersion)
             const testHash = await migrationKernelClient.sendTransaction({
                 to: zeroAddress,
                 value: 0n,

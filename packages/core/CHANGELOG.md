@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.14
+
+### Patch Changes
+
+- Added getKernelVersion action
+
 ## 5.4.13
 
 ### Patch Changes
