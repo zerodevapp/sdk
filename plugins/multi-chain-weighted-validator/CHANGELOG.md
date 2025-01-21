@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.4.3
+
+### Patch Changes
+
+- feat: add custom signing method support
+
 ## 5.4.2
 
 ### Patch Changes
