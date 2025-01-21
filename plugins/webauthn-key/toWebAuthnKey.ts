@@ -1,4 +1,12 @@
-import { type Hex, concatHex, keccak256, pad, toHex } from "viem"
+import {
+    type Hex,
+    type SignableMessage,
+    concatHex,
+    keccak256,
+    pad,
+    toHex
+} from "viem"
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/types"
 import { b64ToBytes, uint8ArrayToHexString } from "./utils.js"
 
 export enum WebAuthnMode {
@@ -11,17 +19,37 @@ export type WebAuthnKey = {
     pubY: bigint
     authenticatorId: string
     authenticatorIdHash: Hex
+    rpID: string
+    signMessageCallback?: (
+        message: SignableMessage,
+        rpId: string,
+        chainId: number,
+        allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
+    ) => Promise<Hex>
 }
 
-export type WebAuthnAccountParams = {
-    passkeyName: string
-    passkeyServerUrl: string
-    rpID?: string
-    webAuthnKey?: WebAuthnKey
+interface BaseParams {
     mode?: WebAuthnMode
     credentials?: RequestCredentials
-    passkeyServerHeaders: Record<string, string>
+    passkeyServerHeaders?: Record<string, string>
+    useRN?: boolean
 }
+
+export interface ParamsWithKey extends BaseParams {
+    webAuthnKey: WebAuthnKey
+    rpID: string
+    passkeyName?: string
+    passkeyServerUrl?: string
+}
+
+export interface ParamsWithoutKey extends BaseParams {
+    webAuthnKey?: undefined
+    rpID?: string
+    passkeyName: string
+    passkeyServerUrl: string
+}
+
+export type WebAuthnAccountParams = ParamsWithKey | ParamsWithoutKey
 
 export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
     return concatHex([
@@ -32,10 +60,10 @@ export const encodeWebAuthnPubKey = (pubKey: WebAuthnKey) => {
 }
 
 export const toWebAuthnKey = async ({
+    webAuthnKey,
+    rpID,
     passkeyName,
     passkeyServerUrl,
-    rpID,
-    webAuthnKey,
     mode = WebAuthnMode.Register,
     credentials = "include",
     passkeyServerHeaders = {}
@@ -174,6 +202,7 @@ export const toWebAuthnKey = async ({
         pubX: BigInt(`0x${pubKeyX}`),
         pubY: BigInt(`0x${pubKeyY}`),
         authenticatorId,
-        authenticatorIdHash
+        authenticatorIdHash,
+        rpID: "" // unused because we don't need it for the signMessageCallback
     }
 }
