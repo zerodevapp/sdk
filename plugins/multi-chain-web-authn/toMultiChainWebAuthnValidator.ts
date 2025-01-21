@@ -156,9 +156,16 @@ export async function toMultiChainWebAuthnValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            return signMessageUsingWebAuthn(message, chainId, rpId, [
-                { id: webAuthnKey.authenticatorId, type: "public-key" }
-            ])
+            return webAuthnKey.signMessageCallback
+                ? webAuthnKey.signMessageCallback(
+                      message,
+                      webAuthnKey.rpID,
+                      chainId,
+                      [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
+                  )
+                : signMessageUsingWebAuthn(message, chainId, rpId, [
+                      { id: webAuthnKey.authenticatorId, type: "public-key" }
+                  ])
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccountError()
