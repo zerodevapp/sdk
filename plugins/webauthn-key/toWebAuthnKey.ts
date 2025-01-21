@@ -1,3 +1,4 @@
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/types"
 import {
     type Hex,
     type SignableMessage,
@@ -6,7 +7,6 @@ import {
     pad,
     toHex
 } from "viem"
-import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/types"
 import { b64ToBytes, uint8ArrayToHexString } from "./utils.js"
 
 export enum WebAuthnMode {
