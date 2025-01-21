@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/weighted-validator",
-    "version": "5.4.2",
+    "version": "5.4.3",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -40,7 +40,7 @@
     "peerDependencies": {
         "viem": "^2.21.40",
         "@zerodev/sdk": "^5.4.0",
-        "@zerodev/webauthn-key": "^5.4.0"
+        "@zerodev/webauthn-key": "^5.4.2"
     },
     "type": "module"
 }
