@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.15
+
+### Patch Changes
+
+- Reduced pollingInterval to 1500ms for kernelClient
+
 ## 5.4.14
 
 ### Patch Changes

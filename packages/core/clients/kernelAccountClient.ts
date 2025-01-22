@@ -143,7 +143,8 @@ export function createKernelAccountClient(
             transport: bundlerTransport,
             key,
             name,
-            type: "kernelAccountClient"
+            type: "kernelAccountClient",
+            pollingInterval: parameters.pollingInterval ?? 1500
         }),
         { client: client_, paymaster, paymasterContext, userOperation }
     )
