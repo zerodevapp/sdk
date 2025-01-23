@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.16
+
+### Patch Changes
+
+- Decreased the `pollingInterval` to 1000ms
+
 ## 5.4.15
 
 ### Patch Changes

@@ -144,7 +144,7 @@ export function createKernelAccountClient(
             key,
             name,
             type: "kernelAccountClient",
-            pollingInterval: parameters.pollingInterval ?? 1500
+            pollingInterval: parameters.pollingInterval ?? 1000
         }),
         { client: client_, paymaster, paymasterContext, userOperation }
     )
