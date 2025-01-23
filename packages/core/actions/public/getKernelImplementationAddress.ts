@@ -1,7 +1,7 @@
 import type { Address, Client } from "viem"
 import { getStorageAt } from "viem/actions"
 import { getAction, getAddress, isHex, slice, toHex } from "viem/utils"
-import { KERNEL_IMPLEMENTATION_SLOT } from "../../constants"
+import { KERNEL_IMPLEMENTATION_SLOT } from "../../constants.js"
 
 export type GetKernelImplementationAddressParams = {
     address: Address

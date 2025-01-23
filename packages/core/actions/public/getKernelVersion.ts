@@ -11,8 +11,8 @@ import {
 import {
     KERNEL_IMPLEMENTATION_SLOT,
     KernelVersionToAddressesMap
-} from "../../constants"
-import type { KERNEL_VERSION_TYPE } from "../../types"
+} from "../../constants.js"
+import type { KERNEL_VERSION_TYPE } from "../../types/index.js"
 
 export type GetKernelVersionParams = {
     address: Address

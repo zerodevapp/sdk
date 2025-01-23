@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.17
+
+### Patch Changes
+
+- Fix: add .js imports in core pkg
+
 ## 5.4.16
 
 ### Patch Changes
