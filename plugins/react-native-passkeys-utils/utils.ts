@@ -1,5 +1,8 @@
 import { p256 } from "@noble/curves/p256"
-import type { RegistrationResponseJSON } from "@simplewebauthn/types"
+import type {
+    AuthenticationResponseJSON,
+    RegistrationResponseJSON
+} from "@simplewebauthn/types"
 import type { WebAuthnKey } from "@zerodev/webauthn-key"
 import { BitString, fromBER } from "asn1js"
 import { type Hex, bytesToBigInt, hexToBytes, keccak256 } from "viem"
@@ -234,10 +237,10 @@ export function parseP256SpkiBase64(pubKeyB64: string) {
     return { xHex, yHex }
 }
 
-export const parsePasskeyCred = async (
+export const parsePasskeyCred = (
     cred: RegistrationResponseJSON,
     rpID: string
-): Promise<WebAuthnKey> => {
+): WebAuthnKey => {
     const authenticatorId = cred.id
     const authenticatorIdHash = keccak256(
         uint8ArrayToHexString(b64ToBytes(authenticatorId))
@@ -249,6 +252,26 @@ export const parsePasskeyCred = async (
     }
 
     const { xHex, yHex } = parseP256SpkiBase64(pubKey)
+
+    return {
+        pubX: BigInt(`0x${xHex}`),
+        pubY: BigInt(`0x${yHex}`),
+        authenticatorId,
+        authenticatorIdHash,
+        rpID
+    }
+}
+
+export const parseLoginCred = (
+    cred: AuthenticationResponseJSON,
+    xHex: string,
+    yHex: string,
+    rpID: string
+): WebAuthnKey => {
+    const authenticatorId = cred.id
+    const authenticatorIdHash = keccak256(
+        uint8ArrayToHexString(b64ToBytes(authenticatorId))
+    )
 
     return {
         pubX: BigInt(`0x${xHex}`),

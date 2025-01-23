@@ -1,2 +1,2 @@
 export { signMessageWithReactNativePasskeys } from "./signMessageWithReactNativePasskeys.js"
-export { parsePasskeyCred } from "./utils.js"
+export { parsePasskeyCred, parseLoginCred } from "./utils.js"
