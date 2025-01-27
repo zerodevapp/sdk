@@ -11,7 +11,7 @@ export const getKernelV3Nonce = async (
         const nonce = await getAction(
             client,
             readContract,
-            "sendTransaction"
+            "readContract"
         )({
             abi: KernelV3AccountAbi,
             address: accountAddress,

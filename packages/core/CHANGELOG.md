@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.18
+
+### Patch Changes
+
+- feat: added validator plugin type support to pluginMigrations
+
 ## 5.4.17
 
 ### Patch Changes

@@ -912,6 +912,107 @@ describe("ECDSA kernel Account", () => {
         TEST_TIMEOUT
     )
 
+    test(
+        "Client install Kernel validator plugins automatically",
+        async () => {
+            const pluginToInstall: PluginMigrationData = {
+                type: PLUGIN_TYPE.VALIDATOR,
+                address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
+                data: "0xb33f"
+            }
+            const privateKey = generatePrivateKey()
+            const kernelAccountWithoutPlugins =
+                await getEcdsaKernelAccountWithPrivateKey(
+                    privateKey,
+                    undefined,
+                    undefined,
+                    "0.3.0",
+                    undefined,
+                    BigInt(0)
+                )
+            console.log(
+                "kernelAccountWithoutPlugins",
+                kernelAccountWithoutPlugins.address
+            )
+            const kernelAccountWithPlugins =
+                await getEcdsaKernelAccountWithPrivateKey(
+                    privateKey,
+                    undefined,
+                    undefined,
+                    "0.3.0",
+                    [pluginToInstall],
+                    BigInt(0)
+                )
+            console.log(
+                "kernelAccountWithPlugins",
+                kernelAccountWithPlugins.address
+            )
+            expect(
+                isAddressEqual(
+                    kernelAccountWithoutPlugins.address,
+                    kernelAccountWithPlugins.address
+                )
+            ).toBeTrue()
+            const zeroDevPaymaster = getZeroDevPaymasterClient()
+            let kernelClient = await getKernelAccountClient({
+                account: kernelAccountWithoutPlugins,
+                paymaster: zeroDevPaymaster
+            })
+            const deployKernelHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log(
+                "deployKernelReceipt",
+                `https://sepolia.etherscan.io/tx/${deployKernelHash}`
+            )
+
+            kernelClient = await getKernelAccountClient({
+                account: kernelAccountWithPlugins,
+                paymaster: zeroDevPaymaster
+            })
+
+            const pluginInstalledBefore = await isPluginInstalled(
+                publicClient,
+                {
+                    address: kernelAccountWithPlugins.address,
+                    plugin: pluginToInstall
+                }
+            )
+            console.log("pluginInstalledBefore", pluginInstalledBefore)
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                calls: [{ to: zeroAddress, value: 0n, data: "0x" }]
+                // callData: await kernelClient.account.encodeCalls([
+                //     { to: zeroAddress, value: 0n, data: "0x" }
+                // ])
+            })
+            console.log("userOpHash", userOpHash)
+            const userOpReceipt =
+                await kernelClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
+            console.log("userOpReceipt", userOpReceipt.receipt.transactionHash)
+
+            const pluginInstalledAfter = await isPluginInstalled(publicClient, {
+                address: kernelAccountWithPlugins.address,
+                plugin: pluginToInstall
+            })
+            console.log("pluginInstalledAfter", pluginInstalledAfter)
+
+            expect(pluginInstalledBefore).toBeFalse()
+            expect(pluginInstalledAfter).toBeTrue()
+            const transactionHash2 = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log("transactionHash2", transactionHash2)
+        },
+        TEST_TIMEOUT
+    )
+
     // [TODO] - erc20 paymaster integration with EP v0.7
     // test(
     //     "Client send transaction with ERC20 paymaster",

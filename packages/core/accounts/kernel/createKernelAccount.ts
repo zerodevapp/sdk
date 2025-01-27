@@ -43,7 +43,8 @@ import {
 } from "../../actions/public/index.js"
 import {
     KernelVersionToAddressesMap,
-    MAGIC_VALUE_SIG_REPLAYABLE
+    MAGIC_VALUE_SIG_REPLAYABLE,
+    PLUGIN_TYPE
 } from "../../constants.js"
 import type {
     CallType,
@@ -75,6 +76,9 @@ import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
+import type { CallArgs } from "./utils/types.js"
+import { getValidatorPluginInstallCallData } from "./utils/plugins/ep0_7/getValidatorPluginInstallCallData.js"
+import { getKernelV3Nonce } from "./utils/account/ep0_7/getKernelV3Nonce.js"
 
 type SignMessageParameters = {
     message: SignableMessage
@@ -595,9 +599,27 @@ export async function createKernelAccount<
                 entryPoint.version === "0.7" &&
                 kernelPluginManager.activeValidatorMode === "sudo"
             ) {
-                const pluginInstallCalls = pluginCache.pendingPlugins.map(
-                    (plugin) => getPluginInstallCallData(accountAddress, plugin)
-                )
+                // convert map into for loop
+                const pluginInstallCalls: CallArgs[] = []
+                for (const plugin of pluginCache.pendingPlugins) {
+                    if (plugin.type === PLUGIN_TYPE.VALIDATOR) {
+                        const nonce = await getKernelV3Nonce(
+                            client,
+                            accountAddress
+                        )
+                        pluginInstallCalls.push(
+                            getValidatorPluginInstallCallData(
+                                accountAddress,
+                                plugin,
+                                nonce
+                            )
+                        )
+                    } else {
+                        pluginInstallCalls.push(
+                            getPluginInstallCallData(accountAddress, plugin)
+                        )
+                    }
+                }
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
                     callType,
