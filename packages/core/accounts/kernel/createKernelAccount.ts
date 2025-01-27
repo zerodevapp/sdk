@@ -73,12 +73,12 @@ import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/enc
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
+import { getKernelV3Nonce } from "./utils/account/ep0_7/getKernelV3Nonce.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
-import type { CallArgs } from "./utils/types.js"
 import { getValidatorPluginInstallCallData } from "./utils/plugins/ep0_7/getValidatorPluginInstallCallData.js"
-import { getKernelV3Nonce } from "./utils/account/ep0_7/getKernelV3Nonce.js"
+import type { CallArgs } from "./utils/types.js"
 
 type SignMessageParameters = {
     message: SignableMessage

@@ -1,14 +1,14 @@
 import {
     type Address,
+    type Hex,
     concatHex,
     encodeFunctionData,
-    type Hex,
     zeroAddress
 } from "viem"
-import type { PluginMigrationData } from "../../../../../types/kernel.js"
-import type { CallArgs } from "../../types.js"
-import { KernelV3_1AccountAbi } from "../../../abi/kernel_v_3_1/KernelAccountAbi.js"
 import { VALIDATOR_TYPE } from "../../../../../constants.js"
+import type { PluginMigrationData } from "../../../../../types/kernel.js"
+import { KernelV3_1AccountAbi } from "../../../abi/kernel_v_3_1/KernelAccountAbi.js"
+import type { CallArgs } from "../../types.js"
 
 export const getValidatorPluginInstallCallData = (
     accountAddress: Address,
