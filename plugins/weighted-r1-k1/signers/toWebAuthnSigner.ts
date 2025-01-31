@@ -134,9 +134,16 @@ export const toWebAuthnSigner = async <
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
             const chainId = await getChainId(client)
-            return signMessageUsingWebAuthn(message, chainId, [
-                { id: webAuthnKey.authenticatorId, type: "public-key" }
-            ])
+            return webAuthnKey.signMessageCallback
+                ? webAuthnKey.signMessageCallback(
+                      message,
+                      webAuthnKey.rpID,
+                      chainId,
+                      [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
+                  )
+                : signMessageUsingWebAuthn(message, chainId, [
+                      { id: webAuthnKey.authenticatorId, type: "public-key" }
+                  ])
         },
         async signTransaction(_, __) {
             throw new Error(

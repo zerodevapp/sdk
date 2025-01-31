@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.5
+
+### Patch Changes
+
+- feat: add custom signing method support
+
 ## 5.4.4
 
 ### Patch Changes

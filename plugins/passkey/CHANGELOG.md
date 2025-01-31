@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.5.2
+
+### Patch Changes
+
+- feat: add custom signing method support
+
 ## 5.5.1
 
 ### Patch Changes
