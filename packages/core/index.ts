@@ -74,3 +74,4 @@ export { encodeCallData as encodeCallDataEpV06 } from "./accounts/kernel/utils/a
 export { encodeCallData as encodeCallDataEpV07 } from "./accounts/kernel/utils/account/ep0_7/encodeCallData.js"
 export { encodeDeployCallData as encodeDeployCallDataV06 } from "./accounts/kernel/utils/account/ep0_6/encodeDeployCallData.js"
 export { encodeDeployCallData as encodeDeployCallDataV07 } from "./accounts/kernel/utils/account/ep0_7/encodeDeployCallData.js"
+export { getValidatorPluginInstallModuleData } from "./accounts/kernel/utils/plugins/ep0_7/getValidatorPluginInstallModuleData.js"

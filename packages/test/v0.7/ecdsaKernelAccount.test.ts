@@ -10,6 +10,7 @@ import {
     KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
+    getValidatorPluginInstallModuleData,
     createKernelAccount,
     getCustomNonceKeyFromString,
     verifyEIP6492Signature
@@ -28,6 +29,7 @@ import {
     type PrivateKeyAccount,
     type PublicClient,
     type Transport,
+    concat,
     concatHex,
     decodeEventLog,
     encodeAbiParameters,
@@ -915,18 +917,22 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client install Kernel validator plugins automatically",
         async () => {
-            const pluginToInstall: PluginMigrationData = {
-                type: PLUGIN_TYPE.VALIDATOR,
-                address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
-                data: "0xb33f"
-            }
+            const pluginToInstall =
+                await getValidatorPluginInstallModuleData({
+                    plugin: {
+                        address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
+                        getEnableData: async () => "0xb33f"
+                    },
+                    entryPoint: getEntryPoint(),
+                    kernelVersion: "0.3.1"
+                })
             const privateKey = generatePrivateKey()
             const kernelAccountWithoutPlugins =
                 await getEcdsaKernelAccountWithPrivateKey(
                     privateKey,
                     undefined,
                     undefined,
-                    "0.3.0",
+                    "0.3.1",
                     undefined,
                     BigInt(0)
                 )
@@ -939,7 +945,7 @@ describe("ECDSA kernel Account", () => {
                     privateKey,
                     undefined,
                     undefined,
-                    "0.3.0",
+                    "0.3.1",
                     [pluginToInstall],
                     BigInt(0)
                 )

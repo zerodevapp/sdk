@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.19
+
+### Patch Changes
+
+- feat: added getValidatorPluginInstallModuleData util
+
 ## 5.4.18
 
 ### Patch Changes

@@ -43,8 +43,7 @@ import {
 } from "../../actions/public/index.js"
 import {
     KernelVersionToAddressesMap,
-    MAGIC_VALUE_SIG_REPLAYABLE,
-    PLUGIN_TYPE
+    MAGIC_VALUE_SIG_REPLAYABLE
 } from "../../constants.js"
 import type {
     CallType,
@@ -73,11 +72,9 @@ import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/enc
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
-import { getKernelV3Nonce } from "./utils/account/ep0_7/getKernelV3Nonce.js"
 import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
-import { getValidatorPluginInstallCallData } from "./utils/plugins/ep0_7/getValidatorPluginInstallCallData.js"
 import type { CallArgs } from "./utils/types.js"
 
 type SignMessageParameters = {
@@ -602,23 +599,9 @@ export async function createKernelAccount<
                 // convert map into for loop
                 const pluginInstallCalls: CallArgs[] = []
                 for (const plugin of pluginCache.pendingPlugins) {
-                    if (plugin.type === PLUGIN_TYPE.VALIDATOR) {
-                        const nonce = await getKernelV3Nonce(
-                            client,
-                            accountAddress
-                        )
-                        pluginInstallCalls.push(
-                            getValidatorPluginInstallCallData(
-                                accountAddress,
-                                plugin,
-                                nonce
-                            )
-                        )
-                    } else {
-                        pluginInstallCalls.push(
-                            getPluginInstallCallData(accountAddress, plugin)
-                        )
-                    }
+                    pluginInstallCalls.push(
+                        getPluginInstallCallData(accountAddress, plugin)
+                    )
                 }
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
