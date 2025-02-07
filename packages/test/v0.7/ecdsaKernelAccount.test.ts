@@ -10,9 +10,9 @@ import {
     KERNEL_ADDRESSES,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
-    getValidatorPluginInstallModuleData,
     createKernelAccount,
     getCustomNonceKeyFromString,
+    getValidatorPluginInstallModuleData,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import {
