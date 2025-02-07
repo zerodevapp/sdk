@@ -1,6 +1,13 @@
 import { constants } from "@zerodev/sdk"
-import type { Action } from "@zerodev/sdk/types"
-import { toFunctionSelector } from "viem"
+import { CALL_TYPE, PLUGIN_TYPE } from "@zerodev/sdk/constants"
+import type { Action, PluginMigrationData } from "@zerodev/sdk/types"
+import {
+    concatHex,
+    encodeAbiParameters,
+    parseAbiParameters,
+    toFunctionSelector,
+    zeroAddress
+} from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 
 const RECOVERY_ACTION_ADDRESS_V06 = "0x2f65dB8039fe5CAEE0a8680D2879deB800F31Ae1"
@@ -24,6 +31,24 @@ export const getRecoveryAction = (
         hook: {
             address: constants.ONLY_ENTRYPOINT_HOOK_ADDRESS
         }
+    }
+}
+
+export const getRecoveryFallbackActionInstallModuleData = (
+    entryPointVersion: EntryPointVersion
+): PluginMigrationData => {
+    const recoveryAction = getRecoveryAction(entryPointVersion)
+    return {
+        address: recoveryAction.address,
+        type: PLUGIN_TYPE.FALLBACK,
+        data: concatHex([
+            recoveryAction.selector,
+            zeroAddress,
+            encodeAbiParameters(
+                parseAbiParameters("bytes selectorData, bytes hookData"),
+                [CALL_TYPE.DELEGATE_CALL, "0x"]
+            )
+        ])
     }
 }
 

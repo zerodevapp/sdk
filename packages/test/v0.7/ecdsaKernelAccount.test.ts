@@ -917,15 +917,14 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client install Kernel validator plugins automatically",
         async () => {
-            const pluginToInstall =
-                await getValidatorPluginInstallModuleData({
-                    plugin: {
-                        address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
-                        getEnableData: async () => "0xb33f"
-                    },
-                    entryPoint: getEntryPoint(),
-                    kernelVersion: "0.3.1"
-                })
+            const pluginToInstall = await getValidatorPluginInstallModuleData({
+                plugin: {
+                    address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
+                    getEnableData: async () => "0xb33f"
+                },
+                entryPoint: getEntryPoint(),
+                kernelVersion: "0.3.1"
+            })
             const privateKey = generatePrivateKey()
             const kernelAccountWithoutPlugins =
                 await getEcdsaKernelAccountWithPrivateKey(

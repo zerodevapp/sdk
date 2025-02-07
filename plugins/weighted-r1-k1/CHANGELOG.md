@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.4.4
+
+### Patch Changes
+
+- Added getRecoveryFallbackActionInstallModuleData util
+
 ## 5.4.3
 
 ### Patch Changes
