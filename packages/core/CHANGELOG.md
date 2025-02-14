@@ -1,5 +1,17 @@
 # @zerodev/sdk
 
+## 5.4.21
+
+### Patch Changes
+
+- fix: initialize data for eip7702
+
+## 5.4.20
+
+### Patch Changes
+
+- feat: add Kernelv3.3 beta with proper eip7702 support
+
 ## 5.4.19
 
 ### Patch Changes

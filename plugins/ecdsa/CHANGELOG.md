@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.4
+
+### Patch Changes
+
+- chore: change the semantic versioning to use the latest validator for Kernel v3.1 and above
+
 ## 5.4.3
 
 ### Patch Changes

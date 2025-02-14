@@ -49,7 +49,13 @@ export const accountMetadata = async (
     } catch (error) {}
     return {
         name: KERNEL_NAME,
-        version: kernelVersion === "0.3.0" ? "0.3.0-beta" : kernelVersion,
+        version:
+            kernelVersion === "0.3.0"
+                ? "0.3.0-beta"
+                : // TODO: remove this once 0.3.3 is released
+                  kernelVersion === "0.3.3"
+                  ? "0.3.2"
+                  : kernelVersion,
         chainId: BigInt(
             chainId ??
                 (client.chain

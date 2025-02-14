@@ -7,7 +7,6 @@ import {
     type Hex,
     type SignableMessage,
     type TypedDataDefinition,
-    concat,
     concatHex,
     createNonceManager,
     createWalletClient,
@@ -33,8 +32,7 @@ import {
     type SignAuthorizationReturnType,
     privateKeyToAccount
 } from "viem/accounts"
-import { getChainId, getCode, writeContract } from "viem/actions"
-import { odysseyTestnet } from "viem/chains"
+import { getChainId, getCode, sendTransaction } from "viem/actions"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
@@ -54,17 +52,16 @@ import type {
     KernelPluginManagerParams,
     PluginMigrationData
 } from "../../types/kernel.js"
+import type { Signer } from "../../types/utils.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
 import { validateKernelVersionWithEntryPoint } from "../../utils.js"
+import { toSigner } from "../../utils/toSigner.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
 import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
-import {
-    KernelV3AccountAbi,
-    KernelV3InitAbi
-} from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
@@ -134,6 +131,7 @@ export type CreateKernelAccountParameters<
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
     eip7702Auth?: SignAuthorizationReturnType
+    eip7702SponsorAccount?: Signer
     pluginMigrations?: PluginMigrationData[]
 }
 
@@ -380,6 +378,7 @@ export async function createKernelAccount<
         initConfig,
         useMetaFactory = true,
         eip7702Auth,
+        eip7702SponsorAccount,
         pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
@@ -474,39 +473,39 @@ export async function createKernelAccount<
         version: entryPoint?.version ?? "0.7"
     } as const
 
-    if (eip7702Auth && client.chain && client.chain.id === odysseyTestnet.id) {
+    if (eip7702Auth) {
         let code = await getCode(client, { address: accountAddress })
         const isEip7702Authorized =
             code?.length && code.length > 0 && code.startsWith("0xef")
         console.log("Code before:", code)
         console.log("Is Eip7702 Authorized:", isEip7702Authorized)
         if (!isEip7702Authorized) {
+            const sponsorAccount = eip7702SponsorAccount
+                ? await toSigner({ signer: eip7702SponsorAccount })
+                : privateKeyToAccount(
+                      // NOTE: Don't worry about this private key, it's just for testing
+                      "0x688b84097239bc2bca41079d02fae599964a5844bc9e64f524206ad53a927bb9"
+                  )
             const sponsorWalletClient = createWalletClient({
-                account: privateKeyToAccount(
-                    // NOTE: Don't worry about this private key, it's just for testing
-                    "0x688b84097239bc2bca41079d02fae599964a5844bc9e64f524206ad53a927bb9"
-                ),
+                account: sponsorAccount,
                 chain: client.chain,
                 transport: http()
             })
             console.log("Authorizing eip7702 account...")
-            const txHash = await writeContract(sponsorWalletClient, {
-                address: accountAddress,
-                abi: KernelV3AccountAbi,
-                functionName: "initialize",
-                args: [
-                    concat([
-                        "0x01",
-                        "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57"
-                    ]),
-                    zeroAddress,
-                    accountAddress,
-                    "0x"
-                ],
-                authorizationList: [eip7702Auth]
+            const txHash = await sendTransaction(sponsorWalletClient, {
+                to: accountAddress,
+                data: await getKernelInitData({
+                    entryPointVersion: entryPoint.version,
+                    kernelPluginManager,
+                    initHook,
+                    kernelVersion,
+                    initConfig
+                }),
+                authorizationList: [eip7702Auth],
+                chain: client.chain
             })
             console.log(
-                `Authorized eip7702 account: https://explorer-odyssey.t.conduit.xyz/tx/${txHash}`
+                `Authorized eip7702 account: ${client.chain?.blockExplorers?.default.url}/tx/${txHash}`
             )
             code = await getCode(client, { address: accountAddress })
             while (code?.length === undefined || code.length === 0) {

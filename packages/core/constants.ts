@@ -85,6 +85,14 @@ export const KernelVersionToAddressesMap: {
         metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
         initCodeHash:
             "0xc7c48c9dd12de68b8a4689b6f8c8c07b61d4d6fa4ddecdd86a6980d045fa67eb"
+    },
+    "0.3.3": {
+        accountImplementationAddress:
+            "0x8768fA84bd76610ACc6AF35b578fE847e1CFf0cA",
+        factoryAddress: "0x7A149486b8ECba0916Ef80Bc23705e46dbE4D6c8",
+        metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
+        initCodeHash:
+            "0x5b0ddcca3cfa3c53fcd6717f58593e40f4e5a15810c8f23f69f3fc4ae8ca96e5"
     }
 }
 
@@ -95,6 +103,7 @@ export const KERNEL_V2_4: KERNEL_V2_VERSION_TYPE = "0.2.4"
 export const KERNEL_V3_0: KERNEL_V3_VERSION_TYPE = "0.3.0"
 export const KERNEL_V3_1: KERNEL_V3_VERSION_TYPE = "0.3.1"
 export const KERNEL_V3_2: KERNEL_V3_VERSION_TYPE = "0.3.2"
+export const KERNEL_V3_3_BETA: KERNEL_V3_VERSION_TYPE = "0.3.3"
 
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
