@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.22
+
+### Patch Changes
+
+- feat: automatic useMetaFactory detection
+
 ## 5.4.21
 
 ### Patch Changes

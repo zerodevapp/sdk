@@ -31,6 +31,7 @@ import {
     type Transport,
     concat,
     concatHex,
+    createPublicClient,
     decodeEventLog,
     encodeAbiParameters,
     encodeFunctionData,
@@ -38,12 +39,14 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
+    http,
     isAddressEqual,
+    parseAbi,
     parseAbiParameters,
     zeroAddress
 } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
-import { baseSepolia, sepolia } from "viem/chains"
+import { baseSepolia, sepolia, snaxTestnet } from "viem/chains"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
@@ -51,6 +54,7 @@ import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 
 import {
     KERNEL_V3_0,
+    KERNEL_V3_1,
     KERNEL_V3_2,
     KernelVersionToAddressesMap,
     PLUGIN_TYPE
@@ -144,6 +148,45 @@ describe("ECDSA kernel Account", () => {
             address: process.env.GREETER_ADDRESS as Address,
             client: kernelClient
         })
+    })
+
+    test("Account without meta factory", async () => {
+        const publicClient = createPublicClient({
+            transport: http(),
+            chain: snaxTestnet
+        })
+        const signer = privateKeyToAccount(process.env.TEST_PRIVATE_KEY as Hex)
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+            publicClient,
+            {
+                entryPoint: getEntryPoint(),
+                signer: { ...signer, source: "local" as "local" | "external" },
+                kernelVersion: KERNEL_V3_1
+            }
+        )
+
+        const metaFactoryContract = getContract({
+            abi: parseAbi(["function approved(address) view returns (bool)"]),
+            address:
+                KernelVersionToAddressesMap[KERNEL_V3_1].metaFactoryAddress ??
+                zeroAddress,
+            client: publicClient
+        })
+        const isApproved = await metaFactoryContract.read.approved([
+            KernelVersionToAddressesMap[KERNEL_V3_1].factoryAddress
+        ])
+        console.log("isApproved", isApproved)
+
+        const account = await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+                sudo: ecdsaValidatorPlugin
+            },
+            kernelVersion: KERNEL_V3_1
+        })
+        console.log("account", account.address)
+        expect(isApproved).toBeFalse()
+        expect(account.address).not.toEqual(zeroAddress)
     })
 
     test("Account address should be a valid Ethereum address", async () => {

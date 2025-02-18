@@ -16,7 +16,8 @@ import {
     hashTypedData,
     toHex,
     validateTypedData,
-    zeroAddress
+    zeroAddress,
+    isAddressEqual
 } from "viem"
 import {
     type EntryPointVersion,
@@ -376,12 +377,13 @@ export async function createKernelAccount<
         address,
         kernelVersion,
         initConfig,
-        useMetaFactory = true,
+        useMetaFactory: _useMetaFactory = true,
         eip7702Auth,
         eip7702SponsorAccount,
         pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
+    let useMetaFactory = _useMetaFactory
     const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
         getDefaultAddresses(entryPoint.version, kernelVersion, {
             accountImplementationAddress: _accountImplementationAddress,
@@ -464,6 +466,19 @@ export async function createKernelAccount<
                 entryPointAddress: entryPoint.address
             })
         })())
+
+    // If account is zeroAddress try without meta factory
+    if (isAddressEqual(accountAddress, zeroAddress) && useMetaFactory) {
+        useMetaFactory = false
+        accountAddress = await getSenderAddress(client, {
+            factory: factoryAddress,
+            factoryData: await generateInitCode(),
+            entryPointAddress: entryPoint.address
+        })
+        if (isAddressEqual(accountAddress, zeroAddress)) {
+            useMetaFactory = true
+        }
+    }
 
     const _entryPoint = {
         address: entryPoint?.address ?? entryPoint07Address,
