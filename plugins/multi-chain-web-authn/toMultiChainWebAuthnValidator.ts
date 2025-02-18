@@ -298,7 +298,7 @@ export async function toMultiChainWebAuthnValidator<
             return 0n
         },
         async signMessage({ message }) {
-             let messageContent: string
+            let messageContent: string
             if (typeof message === "string") {
                 messageContent = message
             } else if ("raw" in message && typeof message.raw === "string") {
