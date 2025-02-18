@@ -16,7 +16,7 @@ import {
     uint8ArrayToHexString
 } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
-import MerkleTree from "merkletreejs"
+import {MerkleTree} from "merkletreejs"
 import {
     type Address,
     type Client,
@@ -211,17 +211,27 @@ export async function toMultiChainWebAuthnValidator<
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
-        async signMessage({ message }) {
-            return webAuthnKey.signMessageCallback
-                ? webAuthnKey.signMessageCallback(
-                      message,
-                      webAuthnKey.rpID,
-                      chainId,
-                      [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
-                  )
-                : signMessageUsingWebAuthn(message, chainId, rpId, [
-                      { id: webAuthnKey.authenticatorId, type: "public-key" }
-                  ])
+        async signMessage({ message }, options?:{raw?:boolean}) {
+            console.log("215")
+            let messageContent: string
+            if (typeof message === "string") {
+                // message is a string
+                messageContent = message
+            } else if ("raw" in message && typeof message.raw === "string") {
+                // message.raw is a Hex string
+                messageContent = message.raw
+            } else if ("raw" in message && message.raw instanceof Uint8Array) {
+                // message.raw is a ByteArray
+                messageContent = message.raw.toString()
+            } else {
+                throw new Error("Unsupported message format")
+            }
+        
+            const hash = messageContent as Hex
+            console.log("hash", hash)
+            return (await signWebauthnHashes([hash], chainId, webAuthnKey, rpId, [
+                { id: webAuthnKey.authenticatorId, type: "public-key" }
+            ]))[0]
         },
         async signTransaction(_, __) {
             throw new SignTransactionNotSupportedBySmartAccountError()
@@ -243,6 +253,7 @@ export async function toMultiChainWebAuthnValidator<
             validateTypedData({ domain, message, primaryType, types })
 
             const hash = hashTypedData(typedData)
+            console.log("SignTypedData", hash)
             const signature = await signWebauthnHashes(
                 [hash],
                 chainId,
@@ -250,6 +261,7 @@ export async function toMultiChainWebAuthnValidator<
                 rpId,
                 [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
             )
+            console.log("SignTypedData.signature", signature)
             return signature[0]
         }
     })
@@ -427,6 +439,7 @@ export async function deserializeMultiChainWebAuthnValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
+            console.log("432")
             return signMessageUsingWebAuthn(message, chainId, rpId, [
                 { id: authenticatorId, type: "public-key" }
             ])
