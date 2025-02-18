@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.6
+
+### Patch Changes
+
+- fix: signTypedData with multichain webAuthnValidator
+
 ## 5.4.5
 
 ### Patch Changes
