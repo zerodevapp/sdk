@@ -94,7 +94,7 @@ export async function signUserOperations<
     const merkleRoot = merkleTree.getHexRoot() as Hex
     const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
 
-    const passkeySig = await account.signMessage({
+    const passkeySig = await account.kernelPluginManager.signMessage({
         message: {
             raw: toEthSignedMessageHash
         }
