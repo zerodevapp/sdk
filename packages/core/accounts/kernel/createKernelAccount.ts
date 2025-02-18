@@ -14,10 +14,10 @@ import {
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
+    isAddressEqual,
     toHex,
     validateTypedData,
-    zeroAddress,
-    isAddressEqual
+    zeroAddress
 } from "viem"
 import {
     type EntryPointVersion,

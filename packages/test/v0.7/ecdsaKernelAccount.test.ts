@@ -22,6 +22,7 @@ import {
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import {
+    http,
     type Address,
     type Chain,
     type GetContractReturnType,
@@ -39,7 +40,6 @@ import {
     getContract,
     hashMessage,
     hashTypedData,
-    http,
     isAddressEqual,
     parseAbi,
     parseAbiParameters,
