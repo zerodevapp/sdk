@@ -16,6 +16,7 @@ import {
     uint8ArrayToHexString
 } from "@zerodev/webauthn-key"
 import type { TypedData } from "abitype"
+import MerkleTree from "merkletreejs"
 import {
     type Address,
     type Client,
@@ -36,8 +37,63 @@ import {
 } from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
+import { concatHex, hashMessage, keccak256 } from "viem/utils"
 import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "./constants.js"
 import { webauthnGetMultiUserOpDummySignature } from "./utils/webauthnGetMultiUserOpDummySignature.js"
+
+const signWebauthnHashes = async (
+    hashes: Hex[],
+    chainId: number,
+    webAuthnKey?: WebAuthnKey,
+    rpId?: string,
+    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
+) => {
+    const merkleTree = new MerkleTree(hashes, keccak256, {
+        sortPairs: true
+    })
+
+    const merkleRoot = merkleTree.getHexRoot() as Hex
+    const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
+
+    const passkeySig = webAuthnKey?.signMessageCallback
+        ? await webAuthnKey.signMessageCallback(
+              { raw: toEthSignedMessageHash },
+              webAuthnKey.rpID,
+              chainId,
+              [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
+          )
+        : await signMessageUsingWebAuthn(
+              { raw: toEthSignedMessageHash },
+              chainId,
+              rpId,
+              allowCredentials
+          )
+
+    const encodeMerkleDataWithSig = (userOpHash: Hex) => {
+        const merkleProof = merkleTree.getHexProof(userOpHash) as Hex[]
+
+        const encodedMerkleProof = encodeAbiParameters(
+            [{ name: "proof", type: "bytes32[]" }],
+            [merkleProof]
+        )
+        const merkleData = concatHex([merkleRoot, encodedMerkleProof])
+        return encodeAbiParameters(
+            [
+                {
+                    name: "merkleData",
+                    type: "bytes"
+                },
+                {
+                    name: "signature",
+                    type: "bytes"
+                }
+            ],
+            [merkleData, passkeySig]
+        )
+    }
+
+    return hashes.map((hash) => encodeMerkleDataWithSig(hash))
+}
 
 const signMessageUsingWebAuthn = async (
     message: SignableMessage,
@@ -187,11 +243,14 @@ export async function toMultiChainWebAuthnValidator<
             validateTypedData({ domain, message, primaryType, types })
 
             const hash = hashTypedData(typedData)
-            const signature = await signMessage(client, {
-                account,
-                message: hash
-            })
-            return signature
+            const signature = await signWebauthnHashes(
+                [hash],
+                chainId,
+                webAuthnKey,
+                rpId,
+                [{ id: webAuthnKey.authenticatorId, type: "public-key" }]
+            )
+            return signature[0]
         }
     })
 
@@ -392,11 +451,14 @@ export async function deserializeMultiChainWebAuthnValidator<
             validateTypedData({ domain, message, primaryType, types })
 
             const hash = hashTypedData(typedData)
-            const signature = await signMessage(client, {
-                account,
-                message: hash
-            })
-            return signature
+            const signature = await signWebauthnHashes(
+                [hash],
+                chainId,
+                undefined,
+                rpId,
+                [{ id: authenticatorId, type: "public-key" }]
+            )
+            return signature[0]
         }
     })
 
