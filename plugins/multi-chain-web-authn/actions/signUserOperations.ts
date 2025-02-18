@@ -97,7 +97,7 @@ export async function signUserOperations<
     const passkeySig = await account.signMessage({
         message: {
             raw: toEthSignedMessageHash
-        },
+        }
     })
 
     const encodeMerkleDataWithSig = (userOpHash: Hex) => {
