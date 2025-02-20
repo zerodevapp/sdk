@@ -397,9 +397,12 @@ export async function deserializeMultiChainWebAuthnValidator<
         // note that this address will be overwritten by actual address
         address: "0x0000000000000000000000000000000000000000",
         async signMessage({ message }) {
-            const signature = await signMessageUsingWebAuthn(message, chainId, rpId, [
-                { id: authenticatorId, type: "public-key" }
-            ])
+            const signature = await signMessageUsingWebAuthn(
+                message,
+                chainId,
+                rpId,
+                [{ id: authenticatorId, type: "public-key" }]
+            )
             const encodedSignature = encodeAbiParameters(
                 [
                     {
