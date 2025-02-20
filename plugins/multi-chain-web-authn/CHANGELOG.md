@@ -1,5 +1,17 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.8
+
+### Patch Changes
+
+- fix: signUserOperation in multi chain web authn validator
+
+## 5.4.7
+
+### Patch Changes
+
+- fix: signatures in multiChain WebAuthn validator
+
 ## 5.4.6
 
 ### Patch Changes
