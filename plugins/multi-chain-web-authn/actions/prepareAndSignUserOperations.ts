@@ -32,7 +32,7 @@ import {
 } from "viem/account-abstraction"
 import { parseAccount } from "viem/accounts"
 import { getAction } from "viem/utils"
-import { decodeSignature } from "../utils/decodeSignature.js";
+import { decodeSignature } from "../utils/decodeSignature.js"
 
 export type PrepareAndSignUserOperationsParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,

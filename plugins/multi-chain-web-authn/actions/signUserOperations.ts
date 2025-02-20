@@ -23,7 +23,7 @@ import {
     keccak256,
     parseAccount
 } from "viem/utils"
-import { decodeSignature } from "../utils/decodeSignature.js";
+import { decodeSignature } from "../utils/decodeSignature.js"
 
 export type SignUserOperationsRequest<
     account extends SmartAccount | undefined = SmartAccount | undefined,
