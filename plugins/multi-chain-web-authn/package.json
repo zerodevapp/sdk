@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/multi-chain-web-authn-validator",
-    "version": "5.4.7",
+    "version": "5.4.8",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",

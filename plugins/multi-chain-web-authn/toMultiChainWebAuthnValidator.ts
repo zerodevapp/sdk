@@ -277,26 +277,10 @@ export async function toMultiChainWebAuthnValidator<
                 entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
-            const signature = await signMessage(client, {
+            return signMessage(client, {
                 account,
                 message: { raw: hash }
             })
-
-            const encodedSignature = encodeAbiParameters(
-                [
-                    {
-                        name: "merkleData",
-                        type: "bytes"
-                    },
-                    {
-                        name: "signature",
-                        type: "bytes"
-                    }
-                ],
-                ["0x", signature]
-            )
-
-            return encodedSignature
         },
         async getStubSignature(userOperation) {
             if (!multiChainIds) {
@@ -511,26 +495,10 @@ export async function deserializeMultiChainWebAuthnValidator<
                 entryPointVersion: entryPoint.version,
                 chainId: chainId
             })
-            const signature = await signMessage(client, {
+            return signMessage(client, {
                 account,
                 message: { raw: hash }
             })
-
-            const encodedSignature = encodeAbiParameters(
-                [
-                    {
-                        name: "merkleData",
-                        type: "bytes"
-                    },
-                    {
-                        name: "signature",
-                        type: "bytes"
-                    }
-                ],
-                ["0x", signature]
-            )
-
-            return encodedSignature
         },
         async getStubSignature(userOperation) {
             if (!multiChainIds) {
