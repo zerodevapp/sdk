@@ -32,6 +32,7 @@ import {
 } from "viem/account-abstraction"
 import { parseAccount } from "viem/accounts"
 import { getAction } from "viem/utils"
+import { decodeSignature } from "../utils/decodeSignature.js";
 
 export type PrepareAndSignUserOperationsParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,
@@ -169,12 +170,16 @@ export async function prepareAndSignUserOperations<
             const merkleRoot = merkleTree.getHexRoot() as Hex
             const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
 
-            const passkeySig =
+            const encodedSignature =
                 await account.kernelPluginManager.sudoValidator?.signMessage({
                     message: {
                         raw: toEthSignedMessageHash
                     }
                 })
+            if (!encodedSignature) {
+                throw new Error("No encoded signature")
+            }
+            const passkeySig = decodeSignature(encodedSignature)
 
             if (!passkeySig) {
                 throw new Error(
@@ -316,11 +321,13 @@ export async function prepareAndSignUserOperations<
     const merkleRoot = merkleTree.getHexRoot() as Hex
     const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
 
-    const passkeySig = await account.kernelPluginManager.signMessage({
+    const encodedSignature = await account.kernelPluginManager.signMessage({
         message: {
             raw: toEthSignedMessageHash
         }
     })
+
+    const passkeySig = decodeSignature(encodedSignature)
 
     const encodeMerkleDataWithSig = (userOpHash: Hex) => {
         const merkleProof = merkleTree.getHexProof(userOpHash) as Hex[]

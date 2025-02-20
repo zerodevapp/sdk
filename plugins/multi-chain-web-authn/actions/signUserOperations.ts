@@ -23,6 +23,7 @@ import {
     keccak256,
     parseAccount
 } from "viem/utils"
+import { decodeSignature } from "../utils/decodeSignature.js";
 
 export type SignUserOperationsRequest<
     account extends SmartAccount | undefined = SmartAccount | undefined,
@@ -94,11 +95,13 @@ export async function signUserOperations<
     const merkleRoot = merkleTree.getHexRoot() as Hex
     const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
 
-    const passkeySig = await account.kernelPluginManager.signMessage({
+    const encodedSignature = await account.kernelPluginManager.signMessage({
         message: {
             raw: toEthSignedMessageHash
         }
     })
+
+    const passkeySig = decodeSignature(encodedSignature)
 
     const encodeMerkleDataWithSig = (userOpHash: Hex) => {
         const merkleProof = merkleTree.getHexProof(userOpHash) as Hex[]
