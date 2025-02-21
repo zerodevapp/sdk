@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.2
+
+### Patch Changes
+
+- fix: multiChainWebAuthnValidator enable sig issue
+
 ## 5.5.1
 
 ### Patch Changes

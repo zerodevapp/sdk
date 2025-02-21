@@ -3,6 +3,7 @@ import { MerkleTree } from "merkletreejs"
 import {
     type Hex,
     concatHex,
+    decodeAbiParameters,
     encodeAbiParameters,
     hashMessage,
     hashTypedData,
@@ -81,7 +82,7 @@ export const serializeMultiChainPermissionAccounts = async (
         params[0].account.kernelPluginManager.sudoValidator?.source ===
         "MultiChainWebAuthnValidator"
     ) {
-        signature =
+        const encodedSignature =
             await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
                 {
                     message: {
@@ -89,6 +90,7 @@ export const serializeMultiChainPermissionAccounts = async (
                     }
                 }
             )
+        signature = decodeSignature(encodedSignature)
     }
 
     // get enable signatures for multi-chain validator
@@ -154,4 +156,21 @@ export const serializeMultiChainPermissionAccounts = async (
     })
 
     return paramsToBeSerialized
+}
+
+export function decodeSignature(signature: Hex) {
+    const [_, passkeySig] = decodeAbiParameters(
+        [
+            {
+                name: "merkleData",
+                type: "bytes"
+            },
+            {
+                name: "signature",
+                type: "bytes"
+            }
+        ],
+        signature
+    )
+    return passkeySig
 }
