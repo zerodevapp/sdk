@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.23
+
+### Patch Changes
+
+- fix: remove `initialize` data from 7702 delegation tx call
+
 ## 5.4.22
 
 ### Patch Changes

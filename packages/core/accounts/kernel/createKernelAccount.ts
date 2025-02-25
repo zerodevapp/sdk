@@ -509,13 +509,7 @@ export async function createKernelAccount<
             console.log("Authorizing eip7702 account...")
             const txHash = await sendTransaction(sponsorWalletClient, {
                 to: accountAddress,
-                data: await getKernelInitData({
-                    entryPointVersion: entryPoint.version,
-                    kernelPluginManager,
-                    initHook,
-                    kernelVersion,
-                    initConfig
-                }),
+                data: "0x",
                 authorizationList: [eip7702Auth],
                 chain: client.chain
             })
