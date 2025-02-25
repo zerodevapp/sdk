@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.24
+
+### Patch Changes
+
+- fix: update kernelv3.3beta contracts with eip191 support
+
 ## 5.4.23
 
 ### Patch Changes
