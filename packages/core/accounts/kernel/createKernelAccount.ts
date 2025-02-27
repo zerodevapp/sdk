@@ -504,7 +504,7 @@ export async function createKernelAccount<
             const sponsorWalletClient = createWalletClient({
                 account: sponsorAccount,
                 chain: client.chain,
-                transport: http()
+                transport: http(client.transport.url)
             })
             console.log("Authorizing eip7702 account...")
             const txHash = await sendTransaction(sponsorWalletClient, {

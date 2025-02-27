@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.25
+
+### Patch Changes
+
+- feat: use publicClient transport url in sponsorWalletClient for 7702
+
 ## 5.4.24
 
 ### Patch Changes
