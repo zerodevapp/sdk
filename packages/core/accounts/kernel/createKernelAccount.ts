@@ -492,8 +492,6 @@ export async function createKernelAccount<
         let code = await getCode(client, { address: accountAddress })
         const isEip7702Authorized =
             code?.length && code.length > 0 && code.startsWith("0xef")
-        console.log("Code before:", code)
-        console.log("Is Eip7702 Authorized:", isEip7702Authorized)
         if (!isEip7702Authorized) {
             const sponsorAccount = eip7702SponsorAccount
                 ? await toSigner({ signer: eip7702SponsorAccount })
@@ -506,21 +504,16 @@ export async function createKernelAccount<
                 chain: client.chain,
                 transport: http(client.transport.url)
             })
-            console.log("Authorizing eip7702 account...")
-            const txHash = await sendTransaction(sponsorWalletClient, {
+            await sendTransaction(sponsorWalletClient, {
                 to: accountAddress,
                 data: "0x",
                 authorizationList: [eip7702Auth],
                 chain: client.chain
             })
-            console.log(
-                `Authorized eip7702 account: ${client.chain?.blockExplorers?.default.url}/tx/${txHash}`
-            )
             code = await getCode(client, { address: accountAddress })
             while (code?.length === undefined || code.length === 0) {
                 code = await getCode(client, { address: accountAddress })
             }
-            console.log("Code after:", code)
         }
     }
 

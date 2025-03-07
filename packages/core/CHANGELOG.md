@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.26
+
+### Patch Changes
+
+- fix: remove logs from 7702 flow
+
 ## 5.4.25
 
 ### Patch Changes
