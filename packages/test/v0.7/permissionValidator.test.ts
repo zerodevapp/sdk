@@ -33,10 +33,10 @@ import {
     ECDSA_SIGNER_CONTRACT,
     GAS_POLICY_CONTRACT,
     type Policy,
+    RATE_LIMIT_POLICY_WITH_RESET_CONTRACT,
     SUDO_POLICY_CONTRACT,
     deserializePermissionAccount,
-    serializePermissionAccount,
-    RATE_LIMIT_POLICY_WITH_RESET_CONTRACT
+    serializePermissionAccount
 } from "../../../plugins/permission"
 import {
     CallPolicyVersion,
