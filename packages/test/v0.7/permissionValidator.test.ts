@@ -33,6 +33,7 @@ import {
     ECDSA_SIGNER_CONTRACT,
     GAS_POLICY_CONTRACT,
     type Policy,
+    RATE_LIMIT_POLICY_WITH_RESET_CONTRACT,
     SUDO_POLICY_CONTRACT,
     deserializePermissionAccount,
     serializePermissionAccount
@@ -689,6 +690,54 @@ describe("Permission kernel Account", () => {
                 interval: 5,
                 count: 2,
                 startAt
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([
+                    rateLimitPolicy
+                ]),
+                paymaster: zeroDevPaymaster
+            })
+
+            await sleep(2 * 5000)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                }
+            )
+
+            expect(response).toBeString()
+            expect(response).toHaveLength(TX_HASH_LENGTH)
+            expect(response).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response)
+
+            const response2 =
+                await permissionSmartAccountClient.sendTransaction({
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                })
+
+            expect(response2).toBeString()
+            expect(response2).toHaveLength(TX_HASH_LENGTH)
+            expect(response2).toMatch(TX_HASH_REGEX)
+            console.log("Transaction hash:", response2)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with RateLimitPolicy with reset",
+        async () => {
+            const startAt = Math.floor(Date.now() / 1000)
+
+            const rateLimitPolicy = await toRateLimitPolicy({
+                policyAddress: RATE_LIMIT_POLICY_WITH_RESET_CONTRACT,
+                interval: 100,
+                count: 2
             })
 
             const permissionSmartAccountClient = await getKernelAccountClient({

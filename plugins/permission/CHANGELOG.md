@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.3
+
+### Patch Changes
+
+- add optional rate limit policy for non-4337 opcode rule compliant way
+
 ## 5.5.2
 
 ### Patch Changes
