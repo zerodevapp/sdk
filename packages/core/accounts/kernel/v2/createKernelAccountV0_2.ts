@@ -26,6 +26,7 @@ import {
     getAccountNonce,
     getSenderAddress
 } from "../../../actions/public/index.js"
+import { KernelVersionToAddressesMap } from "../../../constants.js"
 import type {
     GetKernelVersion,
     KernelPluginManager,
@@ -233,6 +234,8 @@ export async function createKernelAccountV0_2(
         entryPoint: _entryPoint,
         kernelPluginManager,
         factoryAddress,
+        accountImplementationAddress:
+            KernelVersionToAddressesMap["0.0.2"].accountImplementationAddress,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
             return await kernelPluginManager.encodeModuleInstallCallData(
