@@ -96,6 +96,7 @@ export type KernelSmartAccountImplementation<
         kernelVersion: GetKernelVersion<entryPointVersion>
         kernelPluginManager: KernelPluginManager<entryPointVersion>
         factoryAddress: Address
+        accountImplementationAddress: Address
         generateInitCode: () => Promise<Hex>
         encodeModuleInstallCallData: () => Promise<Hex>
         encodeDeployCallData: ({
@@ -553,6 +554,7 @@ export async function createKernelAccount<
         eip7702Auth,
         kernelVersion,
         kernelPluginManager,
+        accountImplementationAddress,
         factoryAddress: (await getFactoryArgs()).factory,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
