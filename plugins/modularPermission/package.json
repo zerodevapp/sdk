@@ -55,7 +55,7 @@
         "@simplewebauthn/browser": "^9.0.1"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/sdk": "^5.4.0"
     },
     "type": "module"

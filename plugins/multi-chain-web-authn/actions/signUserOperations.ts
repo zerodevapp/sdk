@@ -3,7 +3,7 @@ import {
     type KernelSmartAccountImplementation
 } from "@zerodev/sdk"
 import MerkleTree from "merkletreejs"
-import type { Assign, Chain, Client, Hex, Narrow, OneOf, Transport } from "viem"
+import type { Assign, Chain, Client, Hex, Transport } from "viem"
 import {
     type DeriveEntryPointVersion,
     type DeriveSmartAccount,
@@ -12,7 +12,6 @@ import {
     type PrepareUserOperationReturnType,
     type SmartAccount,
     type UserOperation,
-    type UserOperationCalls,
     type UserOperationRequest,
     getUserOperationHash
 } from "viem/account-abstraction"
@@ -28,7 +27,7 @@ import { decodeSignature } from "../utils/decodeSignature.js"
 export type SignUserOperationsRequest<
     account extends SmartAccount | undefined = SmartAccount | undefined,
     accountOverride extends SmartAccount | undefined = SmartAccount | undefined,
-    calls extends readonly unknown[] = readonly unknown[],
+    _calls extends readonly unknown[] = readonly unknown[],
     //
     _derivedAccount extends SmartAccount | undefined = DeriveSmartAccount<
         account,
@@ -38,7 +37,7 @@ export type SignUserOperationsRequest<
         EntryPointVersion = DeriveEntryPointVersion<_derivedAccount>
 > = Assign<
     UserOperationRequest<_derivedVersion>,
-    OneOf<{ calls: UserOperationCalls<Narrow<calls>> } | { callData: Hex }> & {
+    {
         chainId: number
     }
 >

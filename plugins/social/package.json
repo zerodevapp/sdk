@@ -36,7 +36,7 @@
     "peerDependencies": {
         "@zerodev/ecdsa-validator": "^5.4.0",
         "@zerodev/sdk": "^5.4.0",
-        "viem": "^2.21.40"
+        "viem": "^2.23.15"
     },
     "dependencies": {
         "@magic-ext/oauth": "^22.0.3",

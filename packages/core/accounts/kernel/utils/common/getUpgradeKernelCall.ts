@@ -1,14 +1,15 @@
 import { encodeFunctionData } from "viem"
-import type { SmartAccount, UserOperationCall } from "viem/account-abstraction"
+import type { SmartAccount } from "viem/account-abstraction"
 import { KernelVersionToAddressesMap } from "../../../../constants.js"
 import type { KERNEL_VERSION_TYPE } from "../../../../types/kernel.js"
 import { validateKernelVersionWithEntryPoint } from "../../../../utils.js"
 import { KernelV3AccountAbi } from "../../abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import type { CallArgs } from "../types.js"
 
 export function getUpgradeKernelCall(
     account: SmartAccount,
     kernelVersion: KERNEL_VERSION_TYPE
-): UserOperationCall {
+): CallArgs {
     validateKernelVersionWithEntryPoint(
         account.entryPoint.version,
         kernelVersion
