@@ -1,5 +1,11 @@
 # @zerodev/session-key
 
+## 5.5.2
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.5.1
 
 ### Patch Changes

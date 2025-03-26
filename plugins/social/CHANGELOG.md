@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.2.2
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.2.1
 
 ### Patch Changes

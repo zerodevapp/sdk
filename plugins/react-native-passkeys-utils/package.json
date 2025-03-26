@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/react-native-passkeys-utils",
-    "version": "5.4.2",
+    "version": "5.4.3",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -40,7 +40,7 @@
         "react-native-passkeys": "^0.3.1"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/webauthn-key": "^5.4.2"
     },
     "type": "module"

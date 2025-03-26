@@ -4,11 +4,10 @@ import {
     KernelV3AccountAbi,
     isPluginInitialized
 } from "@zerodev/sdk"
-import type { Chain, Client, Hex, Transport } from "viem"
+import type { Call, Chain, Client, Hex, Transport } from "viem"
 import type {
     PrepareUserOperationParameters,
-    SmartAccount,
-    UserOperationCall
+    SmartAccount
 } from "viem/account-abstraction"
 import {
     encodeAbiParameters,
@@ -85,9 +84,7 @@ export async function approveUserOperation<
         encodeAbiParameters(parseAbiParameters("address, bytes, uint256"), [
             userOperation.sender || account.address,
             userOperation.calls
-                ? await account.encodeCalls(
-                      userOperation.calls as UserOperationCall[]
-                  )
+                ? await account.encodeCalls(userOperation.calls as Call[])
                 : userOperation.callData,
             userOperation.nonce || (await account.getNonce())
         ])

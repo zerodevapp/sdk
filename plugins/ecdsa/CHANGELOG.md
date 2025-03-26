@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.5
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.4.4
 
 ### Patch Changes

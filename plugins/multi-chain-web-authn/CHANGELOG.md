@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.9
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.4.8
 
 ### Patch Changes

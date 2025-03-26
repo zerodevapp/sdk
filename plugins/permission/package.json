@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/permissions",
-    "version": "5.5.3",
+    "version": "5.5.4",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -55,7 +55,7 @@
         "@simplewebauthn/browser": "^9.0.1"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/sdk": "^5.4.0",
         "@zerodev/webauthn-key": "^5.4.0"
     },

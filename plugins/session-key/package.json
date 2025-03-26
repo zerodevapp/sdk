@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/session-key",
-    "version": "5.5.1",
+    "version": "5.5.2",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -37,7 +37,7 @@
         "merkletreejs": "^0.3.11"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/sdk": "^5.4.0"
     },
     "type": "module"

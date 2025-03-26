@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/ecdsa-validator",
-    "version": "5.4.4",
+    "version": "5.4.5",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
@@ -34,7 +34,7 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/sdk": "^5.4.13"
     },
     "type": "module"
