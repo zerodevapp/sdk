@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.5.3
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.5.2
 
 ### Patch Changes

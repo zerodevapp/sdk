@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.4
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.5.3
 
 ### Patch Changes

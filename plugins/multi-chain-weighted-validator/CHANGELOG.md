@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-weighted-validator
 
+## 5.4.4
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.4.3
 
 ### Patch Changes

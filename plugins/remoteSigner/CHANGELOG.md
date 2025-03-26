@@ -1,5 +1,11 @@
 # @zerodev/remote-signer
 
+## 5.3.2
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.3.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.28
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.4.27
 
 ### Patch Changes

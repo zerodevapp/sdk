@@ -1,5 +1,11 @@
 # @zerodev/modular-permission
 
+## 5.4.2
+
+### Patch Changes
+
+- chore: update viem version
+
 ## 5.4.1
 
 ### Patch Changes
