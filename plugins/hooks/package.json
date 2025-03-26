@@ -34,7 +34,7 @@
         "lint:fix": "bun run lint --apply"
     },
     "peerDependencies": {
-        "viem": "^2.21.40",
+        "viem": "^2.23.15",
         "@zerodev/sdk": "^5.4.0"
     },
     "type": "module"
