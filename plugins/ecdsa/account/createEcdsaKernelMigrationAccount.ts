@@ -11,13 +11,16 @@ import {
     validateKernelVersionWithEntryPoint
 } from "@zerodev/sdk"
 import {
+    type CallArgs,
     type KernelSmartAccountImplementation,
+    getPluginInstallCallData,
     toKernelPluginManager
 } from "@zerodev/sdk/accounts"
 import {
     getAccountNonce,
     getKernelImplementationAddress,
-    getSenderAddress
+    getSenderAddress,
+    isPluginInstalled
 } from "@zerodev/sdk/actions"
 import {
     DUMMY_ECDSA_SIG,
@@ -31,6 +34,7 @@ import type {
     GetEntryPointAbi,
     GetKernelVersion,
     KERNEL_V3_VERSION_TYPE,
+    PluginMigrationData,
     Signer
 } from "@zerodev/sdk/types"
 import {
@@ -83,6 +87,7 @@ export type CreateEcdsaKernelMigrationAccountParameters<
         from: GetKernelVersion<entryPointVersion>
         to: GetKernelVersion<entryPointVersion>
     }
+    pluginMigrations?: PluginMigrationData[]
 }
 
 const getKernelInitData = <entryPointVersion extends EntryPointVersion>({
@@ -164,6 +169,11 @@ const isKernelUpgraded = async (
     )
 }
 
+type PluginInstallationCache = {
+    pendingPlugins: PluginMigrationData[]
+    allInstalled: boolean
+}
+
 /**
  * Build a kernel smart account from a private key, that use the ECDSA signer behind the scene
  * @param client
@@ -184,7 +194,8 @@ export async function createEcdsaKernelMigrationAccount<
         signer,
         index = 0n,
         address,
-        migrationVersion
+        migrationVersion,
+        pluginMigrations
     }: CreateEcdsaKernelMigrationAccountParameters<entryPointVersion>
 ): Promise<CreateEcdsaKernelMigrationAccountReturnType<entryPointVersion>> {
     if (entryPoint.version === "0.6") {
@@ -263,6 +274,38 @@ export async function createEcdsaKernelMigrationAccount<
         migrationVersion.to
     )
 
+    // Cache for plugin installation status
+    const pluginCache: PluginInstallationCache = {
+        pendingPlugins: pluginMigrations || [],
+        allInstalled: false
+    }
+
+    const checkPluginInstallationStatus = async () => {
+        // Skip if no plugins or all are installed
+        if (!pluginCache.pendingPlugins.length || pluginCache.allInstalled) {
+            pluginCache.allInstalled = true
+            return
+        }
+
+        // Check all pending plugins in parallel
+        const installationResults = await Promise.all(
+            pluginCache.pendingPlugins.map((plugin) =>
+                isPluginInstalled(client, {
+                    address: accountAddress,
+                    plugin
+                })
+            )
+        )
+
+        // Filter out installed plugins
+        pluginCache.pendingPlugins = pluginCache.pendingPlugins.filter(
+            (_, index) => !installationResults[index]
+        )
+        pluginCache.allInstalled = pluginCache.pendingPlugins.length === 0
+    }
+
+    await checkPluginInstallationStatus()
+
     const _entryPoint = {
         address: entryPoint?.address ?? entryPoint07Address,
         abi: ((entryPoint?.version ?? "0.7") === "0.6"
@@ -289,6 +332,9 @@ export async function createEcdsaKernelMigrationAccount<
         ),
         factoryAddress: (await getFactoryArgs()).factory,
         generateInitCode,
+        accountImplementationAddress:
+            KernelVersionToAddressesMap[migrationVersion.to]
+                .accountImplementationAddress,
         encodeModuleInstallCallData: async () => {
             throw new Error("Not implemented")
         },
@@ -317,6 +363,23 @@ export async function createEcdsaKernelMigrationAccount<
             throw new Error("Not implemented")
         },
         async encodeCalls(calls, callType) {
+            // Check plugin status only if we have pending plugins
+            await checkPluginInstallationStatus()
+            const pluginInstallCalls: CallArgs[] = []
+
+            // Add plugin installation calls if needed
+            if (
+                pluginCache.pendingPlugins.length > 0 &&
+                entryPoint.version === "0.7"
+            ) {
+                // convert map into for loop
+                for (const plugin of pluginCache.pendingPlugins) {
+                    pluginInstallCalls.push(
+                        getPluginInstallCallData(accountAddress, plugin)
+                    )
+                }
+            }
+
             kernelUpgraded =
                 kernelUpgraded ||
                 (await isKernelUpgraded(
@@ -361,9 +424,16 @@ export async function createEcdsaKernelMigrationAccount<
                         }),
                         value: 0n
                     }
-                    _calls = [upgradeCall, updateValidatorCall, ...calls]
+                    _calls = [
+                        upgradeCall,
+                        updateValidatorCall,
+                        ...pluginInstallCalls,
+                        ...calls
+                    ]
                 }
-                _calls = [upgradeCall, ...calls]
+                _calls = [upgradeCall, ...pluginInstallCalls, ...calls]
+            } else {
+                _calls = [...pluginInstallCalls, ...calls]
             }
             return encodeCallDataEpV07(_calls, callType)
         },
