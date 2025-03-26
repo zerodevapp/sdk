@@ -446,6 +446,134 @@ describe("ECDSA kernel Account", () => {
     )
 
     test(
+        "Client upgrade deployed kernel account with migration account from v3.1 to v3.2 with plugin migration",
+        async () => {
+            const privateKey = generatePrivateKey()
+            const owner = privateKeyToAccount(privateKey)
+            const kernelAccount = await getEcdsaKernelAccountWithPrivateKey(
+                privateKey,
+                [],
+                sepolia.id,
+                KERNEL_V3_1,
+                [],
+                migrationIndex
+            )
+            console.log("kernelAccount", kernelAccount.address)
+            const zeroDevPaymaster = getZeroDevPaymasterClient()
+            const kernelClient = await getKernelAccountClient({
+                account: kernelAccount,
+                paymaster: zeroDevPaymaster
+            })
+            const deployKernelHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log(
+                "deployKernelHash",
+                `https://sepolia.etherscan.io/tx/${deployKernelHash}`
+            )
+
+            const kernelImplementation = await getKernelImplementationAddress(
+                publicClient,
+                {
+                    address: kernelAccount.address
+                }
+            )
+            console.log("kernelImplementation", kernelImplementation)
+
+            // 0.0.3 intentExecutorAddress
+            const executorAddress = "0xD0eb92AE315366A60527906B983A17Ae68aFCAE0"
+            console.log("executorAddress", executorAddress)
+            const migrationAccount = await createEcdsaKernelMigrationAccount(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    signer: owner,
+                    migrationVersion: {
+                        from: KERNEL_V3_1,
+                        to: KERNEL_V3_2
+                    },
+                    pluginMigrations: [
+                        {
+                            type: 2,
+                            address: executorAddress,
+                            data: concatHex([
+                                zeroAddress,
+                                encodeAbiParameters(
+                                    parseAbiParameters(["bytes", "bytes"]),
+                                    ["0x", "0x"]
+                                )
+                            ])
+                        }
+                    ],
+                    index: migrationIndex
+                }
+            )
+            console.log("migrationAccount", migrationAccount.address)
+            expect(migrationAccount.address).toEqual(kernelAccount.address)
+            const migrationKernelClient = await getKernelAccountClient({
+                account: migrationAccount,
+                paymaster: zeroDevPaymaster
+            })
+            const migrationDeployKernelHash =
+                await migrationKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: 0n,
+                    data: "0x"
+                })
+            console.log(
+                "migrationDeployKernelHash",
+                `https://sepolia.etherscan.io/tx/${migrationDeployKernelHash}`
+            )
+            const migrationKernelImplementation =
+                await getKernelImplementationAddress(publicClient, {
+                    address: migrationAccount.address
+                })
+
+            const pluginInstalled = await isPluginInstalled(publicClient, {
+                address: migrationAccount.address,
+                plugin: {
+                    type: 2,
+                    address: executorAddress
+                }
+            })
+            console.log("pluginInstalled", pluginInstalled)
+            console.log(
+                "migrationKernelImplementation",
+                migrationKernelImplementation
+            )
+            const testHash = await migrationKernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            console.log(
+                "testHash",
+                `https://sepolia.etherscan.io/tx/${testHash}`
+            )
+            expect(
+                isAddressEqual(
+                    kernelImplementation,
+                    KernelVersionToAddressesMap[KERNEL_V3_1]
+                        .accountImplementationAddress
+                )
+            ).toBeTrue()
+            expect(
+                isAddressEqual(
+                    migrationKernelImplementation,
+                    KernelVersionToAddressesMap[KERNEL_V3_2]
+                        .accountImplementationAddress
+                )
+            ).toBeTrue()
+
+            // Check if the plugin is installed
+            expect(pluginInstalled).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "Should validate message signatures for undeployed accounts (6492)",
         async () => {
             const privateKey = generatePrivateKey()
