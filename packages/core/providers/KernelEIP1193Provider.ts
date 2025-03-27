@@ -5,7 +5,9 @@ import type {
     Hash,
     SendTransactionParameters
 } from "viem"
+import { encodeSafeCreateCall } from "../accounts/kernel/utils/common/encodeSafeCreateCall.js"
 import type { KernelAccountClient } from "../clients/kernelAccountClient.js"
+import { safeCreateCallAddress } from "../constants.js"
 
 export class KernelEIP1193Provider extends EventEmitter {
     private kernelClient: KernelAccountClient
@@ -54,7 +56,15 @@ export class KernelEIP1193Provider extends EventEmitter {
 
     private async handleEthSendTransaction(params: unknown): Promise<Hash> {
         const [tx] = params as [SendTransactionParameters]
-        return this.kernelClient.sendTransaction(tx)
+        if (!("to" in tx) && tx.data) {
+            // contract deployment
+            tx.data = encodeSafeCreateCall([0n, tx.data])
+            tx.to = safeCreateCallAddress
+            return this.kernelClient.sendTransaction(tx)
+        } else {
+            // eth transaction (function call or eth transfer)
+            return this.kernelClient.sendTransaction(tx)
+        }
     }
 
     private async handleEthSign(params: [string, string]): Promise<string> {
