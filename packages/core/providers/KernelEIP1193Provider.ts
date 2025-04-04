@@ -1,8 +1,10 @@
 import { EventEmitter } from "events"
+import { hexToBigInt } from "viem"
 import type {
     EIP1193Parameters,
     EIP1193RequestFn,
     Hash,
+    Hex,
     SendTransactionParameters
 } from "viem"
 import type { KernelAccountClient } from "../clients/kernelAccountClient.js"
@@ -53,8 +55,13 @@ export class KernelEIP1193Provider extends EventEmitter {
     }
 
     private async handleEthSendTransaction(params: unknown): Promise<Hash> {
-        const [tx] = params as [SendTransactionParameters]
-        return this.kernelClient.sendTransaction(tx)
+        const [tx] = params as [
+            Omit<SendTransactionParameters, "value"> & { value?: Hex }
+        ]
+        return this.kernelClient.sendTransaction({
+            ...tx,
+            value: tx.value ? hexToBigInt(tx.value) : undefined
+        } as SendTransactionParameters)
     }
 
     private async handleEthSign(params: [string, string]): Promise<string> {
