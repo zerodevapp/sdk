@@ -37,7 +37,9 @@ export async function toPermissionValidator<
         flag = PolicyFlags.FOR_ALL_VALIDATION
     }: PermissionPluginParams<entryPointVersion>
 ): Promise<PermissionPlugin> {
-    const chainId = await getChainId(client)
+    const chainId = client.chain
+        ? client.chain.id
+        : await getChainId(client)
 
     if (entryPoint.version !== "0.7") {
         throw new Error("Only EntryPoint 0.7 is supported")
