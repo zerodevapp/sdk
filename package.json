@@ -33,6 +33,8 @@
         "changeset:version": "changeset version && bun install --lockfile-only"
     },
     "simple-git-hooks": {
-        "pre-commit": "bun run format && bun run lint:fix"
+    },
+    "dependencies": {
+        "viem": "link:viem"
     }
 }

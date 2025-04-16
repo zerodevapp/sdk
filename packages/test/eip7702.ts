@@ -39,7 +39,7 @@ const main = async () => {
 
     const signer = privateKeyToAccount(privateKey)
     console.log("EOA Address:", signer.address)
-
+    
     const walletClient = createWalletClient({
         // Use any Viem-compatible EOA account
         account: signer,
@@ -49,18 +49,18 @@ const main = async () => {
         chain: odysseyTestnet,
         transport: http()
     }).extend(eip7702Actions())
-
+    console.log("ZZ")
     const authorization = await walletClient.signAuthorization({
         contractAddress: KERNEL_7702_DELEGATION_ADDRESS,
-        delegate: true
+        sponsor: true
     })
-
+    console.log("AA-11")
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
         signer,
         entryPoint,
         kernelVersion
     })
-
+    console.log("BB")
     const account = await createKernelAccount(publicClient, {
         plugins: {
             sudo: ecdsaValidator
@@ -70,14 +70,16 @@ const main = async () => {
         // Set the address of the smart account to the EOA address
         address: signer.address,
         // Set the 7702 authorization
-        eip7702Auth: authorization
+        //eip7702Auth: authorization
     })
+    console.log("AA");
 
     const paymasterClient = createZeroDevPaymasterClient({
         chain: odysseyTestnet,
         transport: http(paymasterRpc)
     })
 
+    console.log("BB");
     const kernelClient = createKernelAccountClient({
         account,
         chain: odysseyTestnet,
@@ -90,7 +92,7 @@ const main = async () => {
             }
         }
     })
-
+    console.log("CC");
     const userOpHash = await kernelClient.sendUserOperation({
         callData: await kernelClient.account.encodeCalls([
             {
@@ -103,9 +105,10 @@ const main = async () => {
                 value: BigInt(0),
                 data: "0x"
             }
-        ])
+        ]),
+        eip7702Auth: authorization
     })
-
+    console.log("DD");
     const { receipt } = await kernelClient.waitForUserOperationReceipt({
         hash: userOpHash
     })
