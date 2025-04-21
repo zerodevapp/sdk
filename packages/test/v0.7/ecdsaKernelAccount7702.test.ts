@@ -30,7 +30,7 @@ import {
     getContract,
     LocalAccount,
 } from "viem"
-import { bsc } from "viem/chains"
+import { bsc, holesky } from "viem/chains"
 import { privateKeyToAccount } from "viem/accounts"
 import { GreeterAbi } from "../abis/Greeter.js"
 
@@ -71,7 +71,7 @@ const requiredEnvVars = [
     "ZERODEV_PAYMASTER_RPC_HOST"
 ]
 
-const chain = bsc;
+const chain = holesky;
 validateEnvironmentVariables(requiredEnvVars)
 
 const ETHEREUM_ADDRESS_LENGTH = 42
@@ -82,8 +82,8 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 const projectId = process.env.PROJECT_ID
-const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}?provider=PIMLICO`
-const paymasterRpc = `https://rpc.zerodev.app/api/v2/paymaster/${projectId}?provider=PIMLICO`
+const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}?provider=ULTRA_RELAY`
+const paymasterRpc = `https://rpc.zerodev.app/api/v2/paymaster/${projectId}?provider=ULTRA_RELAY`
 const publicClient = createPublicClient({
     transport: http(bundlerRpc),
     chain: chain

@@ -487,12 +487,12 @@ export async function create7702KernelAccount<
         async signUserOperation(parameters) {
             const { chainId = await getMemoizedChainId(), ...userOperation } =
                 parameters;
-            let authorization = await this.signAuthorization()
+            //let authorization = await this.signAuthorization()
             return kernelPluginManager.signUserOperation({
                 ...userOperation,
                 sender: userOperation.sender ?? (await this.getAddress()),
                 chainId,
-                authorization
+                //authorization
             })
         }
     }) as Promise<Create7702KernelAccountReturnType<entryPointVersion>>
