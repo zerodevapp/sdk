@@ -28,7 +28,7 @@ import {
     type SignAuthorizationReturnType,
 } from "viem/accounts"
 import { getChainId, getCode, signAuthorization as signAuthorizationAction } from "viem/actions"
-import { getAction } from "viem/utils"
+import { getAction, verifyAuthorization } from "viem/utils"
 import {
     getAccountNonce,
     isPluginInstalled
@@ -228,13 +228,27 @@ export async function create7702KernelAccount<
 
     const signAuthorization: () => Promise<SignAuthorizationReturnType | undefined> = async () => {
         const code = await getCode(client, { address: accountAddress })
+        console.log("code", code)
         // check if account has not activated 7702 with implementation address
-        if ( !code || code.length == 0 || !code.startsWith(`0xef0100` + accountImplementationAddress.slice(2))) {
-            return await signAuthorizationAction(client, {
+        if ( !code || code.length == 0 || !code.toLowerCase().startsWith(`0xef0100` + accountImplementationAddress.slice(2).toLowerCase())) {
+            console.log("DEBUG : ", accountImplementationAddress.slice(2).toLowerCase())
+            console.log("DEBUG : ", `0xef0100` + accountImplementationAddress.slice(2).toLowerCase())
+            if(code){
+                console.log("DEBUG : ", code.toLowerCase().startsWith(`0xef0100` + accountImplementationAddress.slice(2).toLowerCase()))
+            }
+            const auth = await signAuthorizationAction(client, {
                 account: localAccount,
                 address: accountImplementationAddress as `0x${string}`,
                 chainId: await getMemoizedChainId()
-            })      
+            });
+            const verified = await verifyAuthorization({
+                authorization: auth,
+                address: accountAddress
+            })
+            if (!verified) {
+                throw new Error("Authorization verification failed")
+            }
+            return auth
         }
         return undefined
     }

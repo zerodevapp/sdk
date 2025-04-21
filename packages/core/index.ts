@@ -34,6 +34,7 @@ export {
 } from "./clients/paymasterClient.js"
 export {
     createKernelAccountClient,
+    create7702KernelAccountClient,
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"

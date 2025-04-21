@@ -7,7 +7,7 @@ import {
     type Prettify,
     type RpcSchema,
     type Transport,
-    createClient
+    createClient,
 } from "viem"
 import {
     type BundlerActions,
@@ -162,12 +162,8 @@ export function create7702KernelAccountClient(
                     _request
                 >
             > => {
-                const authorization = await (
-                    parameters.account as SmartAccount<
-                        KernelSmartAccount7702Implementation<"0.7">
-                    >
-                ).signAuthorization()
-
+                // generate authorization only when account is not already authorized
+                let authorization = await parameters.account.signAuthorization()
                 const finalArgs = {
                     ...opArgs,
                     authorization
