@@ -1,5 +1,4 @@
 import {
-    http,
     type Address,
     type Assign,
     type Client,
@@ -9,15 +8,11 @@ import {
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
-    createWalletClient,
-    encodeFunctionData,
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
-    isAddressEqual,
-    toHex,
     validateTypedData,
-    zeroAddress
+    zeroAddress,
 } from "viem"
 import {
     type EntryPointVersion,
@@ -31,13 +26,11 @@ import {
 } from "viem/account-abstraction"
 import {
     type SignAuthorizationReturnType,
-    privateKeyToAccount
 } from "viem/accounts"
-import { getChainId, getCode, sendTransaction } from "viem/actions"
+import { getChainId, getCode, signAuthorization as signAuthorizationAction } from "viem/actions"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
-    getSenderAddress,
     isPluginInstalled
 } from "../../actions/public/index.js"
 import {
@@ -53,19 +46,11 @@ import type {
     KernelPluginManagerParams,
     PluginMigrationData
 } from "../../types/kernel.js"
-import type { Signer } from "../../types/utils.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
 import { validateKernelVersionWithEntryPoint } from "../../utils.js"
-import { toSigner } from "../../utils/toSigner.js"
 import {
-    isKernelPluginManager,
     toKernelPluginManager
 } from "../utils/toKernelPluginManager.js"
-import { KernelInitAbi } from "./abi/KernelAccountAbi.js"
-import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
-import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
-import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
-import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
@@ -74,13 +59,16 @@ import { accountMetadata } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 import type { CallArgs } from "./utils/types.js"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator/toECDSAValidatorPlugin.js"
+import { type Signer } from "../../types/utils.js"
+import { toSigner } from "../../utils/toSigner.js"
 
 type SignMessageParameters = {
     message: SignableMessage
     useReplayableSignature?: boolean
 }
 
-export type KernelSmartAccountImplementation<
+export type KernelSmartAccount7702Implementation<
     entryPointVersion extends EntryPointVersion = "0.7"
 > = Assign<
     SmartAccountImplementation<
@@ -95,7 +83,7 @@ export type KernelSmartAccountImplementation<
         ) => Promise<Hex>
         kernelVersion: GetKernelVersion<entryPointVersion>
         kernelPluginManager: KernelPluginManager<entryPointVersion>
-        factoryAddress: Address
+        factoryAddress: Address | undefined
         accountImplementationAddress: Address
         generateInitCode: () => Promise<Hex>
         encodeModuleInstallCallData: () => Promise<Hex>
@@ -105,215 +93,28 @@ export type KernelSmartAccountImplementation<
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
-        eip7702Auth?: SignAuthorizationReturnType
+        signAuthorization: () => Promise<SignAuthorizationReturnType | undefined>
     }
 >
 
-export type CreateKernelAccountReturnType<
+export type Create7702KernelAccountReturnType<
     entryPointVersion extends EntryPointVersion = "0.7"
-> = SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>
+> = SmartAccount<KernelSmartAccount7702Implementation<entryPointVersion>>
 
-export type CreateKernelAccountParameters<
+export type Create7702KernelAccountParameters<
     entryPointVersion extends EntryPointVersion,
-    KernelVerion extends GetKernelVersion<entryPointVersion>
 > = {
-    plugins:
+    signer : Signer
+    plugins?:
         | Omit<
               KernelPluginManagerParams<entryPointVersion>,
               "entryPoint" | "kernelVersion"
           >
         | KernelPluginManager<entryPointVersion>
     entryPoint: EntryPointType<entryPointVersion>
-    index?: bigint
-    factoryAddress?: Address
     accountImplementationAddress?: Address
-    metaFactoryAddress?: Address
-    address?: Address
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
-    useMetaFactory?: boolean
-    eip7702?: boolean
-    eip7702Auth?: SignAuthorizationReturnType
-    eip7702SponsorAccount?: Signer
     pluginMigrations?: PluginMigrationData[]
-}
-
-/**
- * The account creation ABI for a kernel smart account (from the KernelFactory)
- */
-const createAccountAbi = [
-    {
-        inputs: [
-            {
-                internalType: "address",
-                name: "_implementation",
-                type: "address"
-            },
-            {
-                internalType: "bytes",
-                name: "_data",
-                type: "bytes"
-            },
-            {
-                internalType: "uint256",
-                name: "_index",
-                type: "uint256"
-            }
-        ],
-        name: "createAccount",
-        outputs: [
-            {
-                internalType: "address",
-                name: "proxy",
-                type: "address"
-            }
-        ],
-        stateMutability: "payable",
-        type: "function"
-    }
-] as const
-
-/**
- * Default addresses for kernel smart account
- */
-export const KERNEL_ADDRESSES: {
-    ACCOUNT_LOGIC_V0_6: Address
-    ACCOUNT_LOGIC_V0_7: Address
-    FACTORY_ADDRESS_V0_6: Address
-    FACTORY_ADDRESS_V0_7: Address
-    FACTORY_STAKER: Address
-} = {
-    ACCOUNT_LOGIC_V0_6: "0xd3082872F8B06073A021b4602e022d5A070d7cfC",
-    ACCOUNT_LOGIC_V0_7: "0x94F097E1ebEB4ecA3AAE54cabb08905B239A7D27",
-    FACTORY_ADDRESS_V0_6: "0x5de4839a76cf55d0c90e2061ef4386d962E15ae3",
-    FACTORY_ADDRESS_V0_7: "0x6723b44Abeec4E71eBE3232BD5B455805baDD22f",
-    FACTORY_STAKER: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5"
-}
-
-const getKernelInitData = async <entryPointVersion extends EntryPointVersion>({
-    entryPointVersion: _entryPointVersion,
-    kernelPluginManager,
-    initHook,
-    kernelVersion,
-    initConfig
-}: {
-    entryPointVersion: entryPointVersion
-    kernelPluginManager: KernelPluginManager<entryPointVersion>
-    initHook: boolean
-    kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
-        ? Hex[]
-        : never
-}) => {
-    const {
-        enableData,
-        identifier,
-        validatorAddress,
-        initConfig: initConfig_
-    } = await kernelPluginManager.getValidatorInitData()
-
-    if (_entryPointVersion === "0.6") {
-        return encodeFunctionData({
-            abi: KernelInitAbi,
-            functionName: "initialize",
-            args: [validatorAddress, enableData]
-        })
-    }
-
-    if (kernelVersion === "0.3.0") {
-        return encodeFunctionData({
-            abi: KernelV3InitAbi,
-            functionName: "initialize",
-            args: [
-                identifier,
-                initHook && kernelPluginManager.hook
-                    ? kernelPluginManager.hook?.getIdentifier()
-                    : zeroAddress,
-                enableData,
-                initHook && kernelPluginManager.hook
-                    ? await kernelPluginManager.hook?.getEnableData()
-                    : "0x"
-            ]
-        })
-    }
-    return encodeFunctionData({
-        abi: KernelV3_1AccountAbi,
-        functionName: "initialize",
-        args: [
-            identifier,
-            initHook && kernelPluginManager.hook
-                ? kernelPluginManager.hook?.getIdentifier()
-                : zeroAddress,
-            enableData,
-            initHook && kernelPluginManager.hook
-                ? await kernelPluginManager.hook?.getEnableData()
-                : "0x",
-            initConfig ?? initConfig_ ?? []
-        ]
-    })
-}
-
-/**
- * Get the account initialization code for a kernel smart account
- * @param index
- * @param factoryAddress
- * @param accountImplementationAddress
- * @param ecdsaValidatorAddress
- */
-const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
-    index,
-    factoryAddress,
-    accountImplementationAddress,
-    entryPointVersion: _entryPointVersion,
-    kernelPluginManager,
-    initHook,
-    kernelVersion,
-    initConfig,
-    useMetaFactory
-}: {
-    index: bigint
-    factoryAddress: Address
-    accountImplementationAddress: Address
-    entryPointVersion: entryPointVersion
-    kernelPluginManager: KernelPluginManager<entryPointVersion>
-    initHook: boolean
-    kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
-        ? Hex[]
-        : never
-    useMetaFactory: boolean
-}): Promise<Hex> => {
-    // Build the account initialization data
-    const initialisationData = await getKernelInitData<entryPointVersion>({
-        entryPointVersion: _entryPointVersion,
-        kernelPluginManager,
-        initHook,
-        kernelVersion,
-        initConfig
-    })
-
-    // Build the account init code
-    if (_entryPointVersion === "0.6") {
-        return encodeFunctionData({
-            abi: createAccountAbi,
-            functionName: "createAccount",
-            args: [accountImplementationAddress, initialisationData, index]
-        })
-    }
-
-    if (!useMetaFactory) {
-        return encodeFunctionData({
-            abi: KernelV3FactoryAbi,
-            functionName: "createAccount",
-            args: [initialisationData, toHex(index, { size: 32 })]
-        })
-    }
-
-    return encodeFunctionData({
-        abi: KernelFactoryStakerAbi,
-        functionName: "deployWithFactory",
-        args: [factoryAddress, initialisationData, toHex(index, { size: 32 })]
-    })
 }
 
 const getDefaultAddresses = <entryPointVersion extends EntryPointVersion>(
@@ -364,36 +165,35 @@ type PluginInstallationCache = {
  * @param ecdsaValidatorAddress
  * @param address
  */
-export async function createKernelAccount<
+export async function create7702KernelAccount<
     entryPointVersion extends EntryPointVersion,
-    KernelVersion extends GetKernelVersion<entryPointVersion>
 >(
     client: Client,
     {
+        signer,
         plugins,
         entryPoint,
-        index = 0n,
-        factoryAddress: _factoryAddress,
         accountImplementationAddress: _accountImplementationAddress,
-        metaFactoryAddress: _metaFactoryAddress,
-        address,
         kernelVersion,
-        initConfig,
-        useMetaFactory: _useMetaFactory = true,
-        eip7702Auth,
-        eip7702SponsorAccount,
         pluginMigrations
-    }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
-): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
-    let useMetaFactory = _useMetaFactory
-    const { accountImplementationAddress, factoryAddress, metaFactoryAddress } =
+    }: Create7702KernelAccountParameters<entryPointVersion>
+): Promise<Create7702KernelAccountReturnType<entryPointVersion>> {
+    const { accountImplementationAddress } =
         getDefaultAddresses(entryPoint.version, kernelVersion, {
             accountImplementationAddress: _accountImplementationAddress,
-            factoryAddress: _factoryAddress,
-            metaFactoryAddress: _metaFactoryAddress
+            factoryAddress: undefined,
+            metaFactoryAddress: undefined
         })
 
     let chainId: number
+
+    // format to local account
+    let address : Address | undefined
+    if (typeof signer === 'object' && signer !== null && 'account' in signer) {
+        address = signer.account?.address as Address
+    }
+    const localAccount = await toSigner({ signer, address })
+    const accountAddress = localAccount.address
 
     const getMemoizedChainId = async () => {
         if (chainId) return chainId
@@ -403,83 +203,40 @@ export async function createKernelAccount<
         return chainId
     }
 
-    const kernelPluginManager = isKernelPluginManager<entryPointVersion>(
-        plugins
-    )
-        ? plugins
-        : await toKernelPluginManager<entryPointVersion>(client, {
-              sudo: plugins.sudo,
-              regular: plugins.regular,
-              hook: plugins.hook,
-              action: plugins.action,
-              pluginEnableSignature: plugins.pluginEnableSignature,
-              entryPoint,
-              kernelVersion,
-              chainId: await getMemoizedChainId()
-          })
-
-    // initHook flag is activated only if both the hook and sudo validator are given
-    // if the hook is given with regular plugins, then consider it as a hook for regular plugins
-    const initHook = Boolean(
-        isKernelPluginManager<entryPointVersion>(plugins)
-            ? plugins.hook &&
-                  plugins.getIdentifier() ===
-                      plugins.sudoValidator?.getIdentifier()
-            : plugins.hook && !plugins.regular
-    )
+    const kernelPluginManager = await toKernelPluginManager<entryPointVersion>(client, {
+        sudo: await signerToEcdsaValidator(client, {
+            signer: localAccount,
+            entryPoint,
+            kernelVersion,
+        }),
+        entryPoint,
+        kernelVersion,
+        chainId: await getMemoizedChainId()
+    })
 
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
-        if (!accountImplementationAddress || !factoryAddress)
-            throw new Error("Missing account logic address or factory address")
-        return getAccountInitCode<entryPointVersion>({
-            index,
-            factoryAddress,
-            accountImplementationAddress,
-            entryPointVersion: entryPoint.version,
-            kernelPluginManager,
-            initHook,
-            kernelVersion,
-            initConfig,
-            useMetaFactory
-        })
+        return "0x" as `0x${string}`
     }
 
     const getFactoryArgs = async () => {
         return {
-            factory:
-                entryPoint.version === "0.6" || useMetaFactory === false
-                    ? factoryAddress
-                    : metaFactoryAddress,
-            factoryData: await generateInitCode()
+            factory: undefined,
+            factoryData: undefined
         }
     }
 
-    // Fetch account address
-    let accountAddress =
-        address ??
-        (await (async () => {
-            const { factory, factoryData } = await getFactoryArgs()
-
-            // Get the sender address based on the init code
-            return await getSenderAddress(client, {
-                factory,
-                factoryData,
-                entryPointAddress: entryPoint.address
-            })
-        })())
-
-    // If account is zeroAddress try without meta factory
-    if (isAddressEqual(accountAddress, zeroAddress) && useMetaFactory) {
-        useMetaFactory = false
-        accountAddress = await getSenderAddress(client, {
-            factory: factoryAddress,
-            factoryData: await generateInitCode(),
-            entryPointAddress: entryPoint.address
-        })
-        if (isAddressEqual(accountAddress, zeroAddress)) {
-            useMetaFactory = true
+    const signAuthorization: () => Promise<SignAuthorizationReturnType | undefined> = async () => {
+        const code = await getCode(client, { address: accountAddress })
+        // check if account has not activated 7702 with implementation address
+        if ( !code || code.length == 0 || !code.startsWith(`0xef0100` + accountImplementationAddress.slice(2))) {
+            return await signAuthorizationAction(client, {
+                account: localAccount,
+                address: accountImplementationAddress as `0x${string}`,
+                chainId: await getMemoizedChainId()
+            })      
         }
+        return undefined
     }
 
     const _entryPoint = {
@@ -489,35 +246,6 @@ export async function createKernelAccount<
             : entryPoint07Abi) as GetEntryPointAbi<entryPointVersion>,
         version: entryPoint?.version ?? "0.7"
     } as const
-
-    if (eip7702Auth) {
-        let code = await getCode(client, { address: accountAddress })
-        const isEip7702Authorized =
-            code?.length && code.length > 0 && code.startsWith("0xef")
-        if (!isEip7702Authorized) {
-            const sponsorAccount = eip7702SponsorAccount
-                ? await toSigner({ signer: eip7702SponsorAccount })
-                : privateKeyToAccount(
-                      // NOTE: Don't worry about this private key, it's just for testing
-                      "0x688b84097239bc2bca41079d02fae599964a5844bc9e64f524206ad53a927bb9"
-                  )
-            const sponsorWalletClient = createWalletClient({
-                account: sponsorAccount,
-                chain: client.chain,
-                transport: http(client.transport.url)
-            })
-            await sendTransaction(sponsorWalletClient, {
-                to: accountAddress,
-                data: "0x",
-                authorizationList: [eip7702Auth],
-                chain: client.chain
-            })
-            code = await getCode(client, { address: accountAddress })
-            while (code?.length === undefined || code.length === 0) {
-                code = await getCode(client, { address: accountAddress })
-            }
-        }
-    }
 
     // Cache for plugin installation status
     const pluginCache: PluginInstallationCache = {
@@ -551,12 +279,11 @@ export async function createKernelAccount<
 
     await checkPluginInstallationStatus()
 
-    return toSmartAccount<KernelSmartAccountImplementation<entryPointVersion>>({
-        eip7702Auth,
+    return toSmartAccount<KernelSmartAccount7702Implementation<entryPointVersion>>({
         kernelVersion,
         kernelPluginManager,
         accountImplementationAddress,
-        factoryAddress: (await getFactoryArgs()).factory,
+        factoryAddress: undefined,
         generateInitCode,
         encodeModuleInstallCallData: async () => {
             return await kernelPluginManager.encodeModuleInstallCallData(
@@ -570,19 +297,9 @@ export async function createKernelAccount<
         entryPoint: _entryPoint,
         getFactoryArgs,
         async getAddress() {
-            if (accountAddress) return accountAddress
-
-            const { factory, factoryData } = await getFactoryArgs()
-
-            // Get the sender address based on the init code
-            accountAddress = await getSenderAddress(client, {
-                factory,
-                factoryData,
-                entryPointAddress: entryPoint.address
-            })
-
             return accountAddress
         },
+        signAuthorization,
         // Encode the deploy call data
         async encodeDeployCallData(_tx) {
             if (entryPoint.version === "0.6") {
@@ -610,7 +327,7 @@ export async function createKernelAccount<
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
                     callType,
-                    plugins.hook ? true : undefined
+                    plugins?.hook ? true : undefined
                 )
             }
 
@@ -625,7 +342,7 @@ export async function createKernelAccount<
                 return encodeCallDataEpV06(calls, callType)
             }
 
-            if (plugins.hook) {
+            if (plugins?.hook) {
                 return encodeCallDataEpV07(calls, callType, true)
             }
             return encodeCallDataEpV07(calls, callType)
@@ -755,12 +472,14 @@ export async function createKernelAccount<
         // Sign a user operation
         async signUserOperation(parameters) {
             const { chainId = await getMemoizedChainId(), ...userOperation } =
-                parameters
+                parameters;
+            let authorization = await this.signAuthorization()
             return kernelPluginManager.signUserOperation({
                 ...userOperation,
                 sender: userOperation.sender ?? (await this.getAddress()),
-                chainId
+                chainId,
+                authorization
             })
         }
-    }) as Promise<CreateKernelAccountReturnType<entryPointVersion>>
+    }) as Promise<Create7702KernelAccountReturnType<entryPointVersion>>
 }

@@ -17,13 +17,18 @@ import {
     type SmartAccount,
     type UserOperationRequest,
     bundlerActions,
-    type prepareUserOperation as viemPrepareUserOperation
+    prepareUserOperation as viemPrepareUserOperation,
+    type PrepareUserOperationRequest,
+    type PrepareUserOperationReturnType,
+    type DeriveSmartAccount,
+    type DeriveEntryPointVersion
 } from "viem/account-abstraction"
 import { getUserOperationGasPrice } from "../actions/index.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
 } from "./decorators/kernel.js"
+import { type KernelSmartAccount7702Implementation } from "../accounts/kernel/create7702KernelAccount.js"
 
 export type KernelAccountClient<
     transport extends Transport = Transport,
@@ -107,6 +112,78 @@ export type SmartAccountClientConfig<
         | undefined
 }
 
+export type Create7702KernelAccountClientParameters = Omit<
+    SmartAccountClientConfig<
+        Transport,
+        Chain | undefined,
+        SmartAccount<KernelSmartAccount7702Implementation<"0.7">>,
+        Client | undefined,
+        RpcSchema | undefined
+    >,
+    "account"
+> & {
+    account: SmartAccount<KernelSmartAccount7702Implementation<"0.7">>
+}
+
+export function create7702KernelAccountClient(
+    parameters: Create7702KernelAccountClientParameters
+) {
+    return createKernelAccountClient({
+        ...parameters,
+        account: parameters.account as SmartAccount | undefined,
+        userOperation: {
+            ...parameters.userOperation,
+            prepareUserOperation: async <
+                _account extends SmartAccount | undefined,
+                const _calls extends readonly unknown[],
+                _request extends PrepareUserOperationRequest<
+                    _account,
+                    _accountOverride,
+                    _calls,
+                    DeriveSmartAccount<_account, _accountOverride>,
+                    DeriveEntryPointVersion<
+                        DeriveSmartAccount<_account, _accountOverride>
+                    >
+                >,
+                _accountOverride extends SmartAccount | undefined = undefined
+            >(
+                opClient: Client<Transport, Chain | undefined, _account>,
+                opArgs: PrepareUserOperationParameters<
+                    _account,
+                    _accountOverride,
+                    _calls,
+                    _request
+                >
+            ): Promise<
+                PrepareUserOperationReturnType<
+                    _account,
+                    _accountOverride,
+                    _calls,
+                    _request
+                >
+            > => {
+                const authorization = await (
+                    parameters.account as SmartAccount<
+                        KernelSmartAccount7702Implementation<"0.7">
+                    >
+                ).signAuthorization()
+
+                const finalArgs = {
+                    ...opArgs,
+                    authorization
+                }
+
+                return await viemPrepareUserOperation(opClient, finalArgs as PrepareUserOperationParameters<
+                    _account,
+                    _accountOverride,
+                    _calls,
+                    _request
+                >)
+            }
+        }
+    })
+}
+
 export function createKernelAccountClient<
     transport extends Transport,
     chain extends Chain | undefined = undefined,
@@ -155,19 +232,29 @@ export function createKernelAccountClient(
 
         return client
             .extend(bundlerActions)
-            .extend((client) => ({
-                prepareUserOperation: (
-                    args: PrepareUserOperationParameters
-                ) => {
-                    return customPrepareUserOp(client, args)
-                }
-            }))
-            .extend(bundlerActions)
-            .extend((client) => ({
-                prepareUserOperation: (
-                    args: PrepareUserOperationParameters
-                ) => {
-                    return customPrepareUserOp(client, args)
+            .extend((_client) => ({
+                prepareUserOperation: <
+                    _account extends SmartAccount | undefined,
+                    const _calls extends readonly unknown[],
+                    _request extends PrepareUserOperationRequest<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        DeriveSmartAccount<_account, _accountOverride>,
+                        DeriveEntryPointVersion<
+                            DeriveSmartAccount<_account, _accountOverride>
+                        >
+                    >,
+                    _accountOverride extends SmartAccount | undefined = undefined
+                >(
+                    args: PrepareUserOperationParameters<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                ): Promise<PrepareUserOperationReturnType<_account, _accountOverride, _calls, _request>> => {
+                    return customPrepareUserOp(_client as any, args as any) as Promise<PrepareUserOperationReturnType<_account, _accountOverride, _calls, _request>>
                 }
             }))
             .extend(kernelAccountClientActions()) as KernelAccountClient

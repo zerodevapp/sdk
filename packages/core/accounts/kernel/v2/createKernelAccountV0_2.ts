@@ -230,7 +230,7 @@ export async function createKernelAccountV0_2(
 
     return toSmartAccount<KernelSmartAccountImplementation<"0.6">>({
         kernelVersion: "0.0.2" as GetKernelVersion<"0.6">,
-        client: client,
+        client: client as any,
         entryPoint: _entryPoint,
         kernelPluginManager,
         factoryAddress,

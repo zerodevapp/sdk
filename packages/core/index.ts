@@ -1,5 +1,6 @@
 export {
     createKernelAccount,
+    create7702KernelAccount,
     createKernelAccountV0_2,
     createKernelAccountV1,
     type CreateKernelAccountParameters,

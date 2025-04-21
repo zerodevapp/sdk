@@ -222,7 +222,7 @@ export async function createKernelAccountV1(
             return accountAddress
         },
         getFactoryArgs,
-        client: client,
+        client: client as any,
         entryPoint: _entryPoint,
         async getNonce() {
             return getAccountNonce(client, {
