@@ -1,6 +1,9 @@
 import { KernelAccountAbi, createKernelAccount } from "@zerodev/sdk"
 import { KernelFactoryAbi } from "@zerodev/sdk"
-import { type KernelSmartAccountImplementation, toKernelPluginManager } from "@zerodev/sdk/accounts"
+import {
+    type KernelSmartAccountImplementation,
+    toKernelPluginManager
+} from "@zerodev/sdk/accounts"
 import type {
     EntryPointType,
     GetKernelVersion,

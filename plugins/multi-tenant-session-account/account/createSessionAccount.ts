@@ -1,4 +1,8 @@
-import { fixSignedData, type KernelSmartAccountImplementation, toSigner } from "@zerodev/sdk"
+import {
+    type KernelSmartAccountImplementation,
+    fixSignedData,
+    toSigner
+} from "@zerodev/sdk"
 import { getAccountNonce, isSmartAccountDeployed } from "@zerodev/sdk/actions"
 import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
 import type {
