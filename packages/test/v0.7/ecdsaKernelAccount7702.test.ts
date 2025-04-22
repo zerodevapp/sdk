@@ -6,10 +6,12 @@ import {
 import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
-    create7702KernelAccount,
-    createZeroDevPaymasterClient,
-    create7702KernelAccountClient
+     createZeroDevPaymasterClient,
 } from "@zerodev/sdk"
+import {
+    create7702KernelAccountClient,
+    create7702KernelAccount
+} from "@zerodev/ecdsa-validator"
 import {
     getUserOperationGasPrice,
 } from "@zerodev/sdk/actions"

@@ -29,39 +29,38 @@ import {
 } from "viem/accounts"
 import { getChainId, getCode, signAuthorization as signAuthorizationAction } from "viem/actions"
 import { getAction, verifyAuthorization } from "viem/utils"
-import {
-    getAccountNonce,
-    isPluginInstalled
-} from "../../actions/public/index.js"
+import { getAccountNonce, isPluginInstalled } from "@zerodev/sdk/actions"
 import {
     KernelVersionToAddressesMap,
     MAGIC_VALUE_SIG_REPLAYABLE
-} from "../../constants.js"
+} from "@zerodev/sdk/constants"
 import type {
     CallType,
     EntryPointType,
     GetEntryPointAbi,
     GetKernelVersion,
-    KernelPluginManager,
-    KernelPluginManagerParams,
-    PluginMigrationData
-} from "../../types/kernel.js"
-import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
-import { validateKernelVersionWithEntryPoint } from "../../utils.js"
+    PluginMigrationData,
+    Signer
+} from "@zerodev/sdk/types"
 import {
-    toKernelPluginManager
-} from "../utils/toKernelPluginManager.js"
-import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
-import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
-import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
-import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
-import { accountMetadata } from "./utils/common/accountMetadata.js"
-import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
-import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
-import type { CallArgs } from "./utils/types.js"
+    type KernelPluginManager,
+    KERNEL_FEATURES,
+    hasKernelFeature,
+    validateKernelVersionWithEntryPoint,
+    toSigner,
+    accountMetadata,
+    eip712WrapHash,
+    encodeCallDataEpV06,
+    encodeCallDataEpV07,
+    encodeDeployCallDataV06,
+    encodeDeployCallDataV07,
+} from "@zerodev/sdk"
+import {
+    getPluginInstallCallData,
+    toKernelPluginManager,
+    type CallArgs
+} from "@zerodev/sdk/accounts"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator/toECDSAValidatorPlugin.js"
-import { type Signer } from "../../types/utils.js"
-import { toSigner } from "../../utils/toSigner.js"
 
 type SignMessageParameters = {
     message: SignableMessage
@@ -107,7 +106,7 @@ export type Create7702KernelAccountParameters<
     signer : Signer
     plugins?:
         | Omit<
-              KernelPluginManagerParams<entryPointVersion>,
+              KernelPluginManager<entryPointVersion>,
               "entryPoint" | "kernelVersion"
           >
         | KernelPluginManager<entryPointVersion>
@@ -231,11 +230,7 @@ export async function create7702KernelAccount<
         console.log("code", code)
         // check if account has not activated 7702 with implementation address
         if ( !code || code.length == 0 || !code.toLowerCase().startsWith(`0xef0100` + accountImplementationAddress.slice(2).toLowerCase())) {
-            console.log("DEBUG : ", accountImplementationAddress.slice(2).toLowerCase())
-            console.log("DEBUG : ", `0xef0100` + accountImplementationAddress.slice(2).toLowerCase())
-            if(code){
-                console.log("DEBUG : ", code.toLowerCase().startsWith(`0xef0100` + accountImplementationAddress.slice(2).toLowerCase()))
-            }
+
             const auth = await signAuthorizationAction(client, {
                 account: localAccount,
                 address: accountImplementationAddress as `0x${string}`,

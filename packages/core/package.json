@@ -100,7 +100,7 @@
         }
     },
     "peerDependencies": {
-        "viem": "^2.23.15"
+        "viem": "^2.28.0"
     },
     "dependencies": {
         "semver": "^7.6.0"
