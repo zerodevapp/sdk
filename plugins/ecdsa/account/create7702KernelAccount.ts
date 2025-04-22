@@ -1,34 +1,22 @@
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator/toECDSAValidatorPlugin.js"
 import {
-    type Address,
-    type Assign,
-    type Client,
-    type EncodeDeployDataParameters,
-    type Hex,
-    type SignableMessage,
-    type TypedDataDefinition,
-    concatHex,
-    createNonceManager,
-    getTypesForEIP712Domain,
-    hashMessage,
-    hashTypedData,
-    validateTypedData,
-    zeroAddress,
-} from "viem"
+    KERNEL_FEATURES,
+    type KernelPluginManager,
+    accountMetadata,
+    eip712WrapHash,
+    encodeCallDataEpV06,
+    encodeCallDataEpV07,
+    encodeDeployCallDataV06,
+    encodeDeployCallDataV07,
+    hasKernelFeature,
+    toSigner,
+    validateKernelVersionWithEntryPoint
+} from "@zerodev/sdk"
 import {
-    type EntryPointVersion,
-    type SmartAccount,
-    type SmartAccountImplementation,
-    type UserOperation,
-    entryPoint06Abi,
-    entryPoint07Abi,
-    entryPoint07Address,
-    toSmartAccount
-} from "viem/account-abstraction"
-import {
-    type SignAuthorizationReturnType,
-} from "viem/accounts"
-import { getChainId, getCode, signAuthorization as signAuthorizationAction } from "viem/actions"
-import { getAction, verifyAuthorization } from "viem/utils"
+    type CallArgs,
+    getPluginInstallCallData,
+    toKernelPluginManager
+} from "@zerodev/sdk/accounts"
 import { getAccountNonce, isPluginInstalled } from "@zerodev/sdk/actions"
 import {
     KernelVersionToAddressesMap,
@@ -43,24 +31,37 @@ import type {
     Signer
 } from "@zerodev/sdk/types"
 import {
-    type KernelPluginManager,
-    KERNEL_FEATURES,
-    hasKernelFeature,
-    validateKernelVersionWithEntryPoint,
-    toSigner,
-    accountMetadata,
-    eip712WrapHash,
-    encodeCallDataEpV06,
-    encodeCallDataEpV07,
-    encodeDeployCallDataV06,
-    encodeDeployCallDataV07,
-} from "@zerodev/sdk"
+    type Address,
+    type Assign,
+    type EncodeDeployDataParameters,
+    type Hex,
+    type SignableMessage,
+    type TypedDataDefinition,
+    concatHex,
+    createNonceManager,
+    getTypesForEIP712Domain,
+    hashMessage,
+    hashTypedData,
+    validateTypedData,
+    zeroAddress
+} from "viem"
 import {
-    getPluginInstallCallData,
-    toKernelPluginManager,
-    type CallArgs
-} from "@zerodev/sdk/accounts"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator/toECDSAValidatorPlugin.js"
+    type EntryPointVersion,
+    type SmartAccount,
+    type SmartAccountImplementation,
+    type UserOperation,
+    entryPoint06Abi,
+    entryPoint07Abi,
+    entryPoint07Address,
+    toSmartAccount
+} from "viem/account-abstraction"
+import type { SignAuthorizationReturnType } from "viem/accounts"
+import {
+    getChainId,
+    getCode,
+    signAuthorization as signAuthorizationAction
+} from "viem/actions"
+import { getAction, verifyAuthorization } from "viem/utils"
 
 type SignMessageParameters = {
     message: SignableMessage
@@ -92,7 +93,9 @@ export type KernelSmartAccount7702Implementation<
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
-        signAuthorization: () => Promise<SignAuthorizationReturnType | undefined>
+        signAuthorization: () => Promise<
+            SignAuthorizationReturnType | undefined
+        >
     }
 >
 
@@ -101,9 +104,9 @@ export type Create7702KernelAccountReturnType<
 > = SmartAccount<KernelSmartAccount7702Implementation<entryPointVersion>>
 
 export type Create7702KernelAccountParameters<
-    entryPointVersion extends EntryPointVersion,
+    entryPointVersion extends EntryPointVersion
 > = {
-    signer : Signer
+    signer: Signer
     plugins?:
         | Omit<
               KernelPluginManager<entryPointVersion>,
@@ -165,9 +168,9 @@ type PluginInstallationCache = {
  * @param address
  */
 export async function create7702KernelAccount<
-    entryPointVersion extends EntryPointVersion,
+    entryPointVersion extends EntryPointVersion
 >(
-    client: Client,
+    client: KernelSmartAccount7702Implementation["client"],
     {
         signer,
         plugins,
@@ -177,18 +180,21 @@ export async function create7702KernelAccount<
         pluginMigrations
     }: Create7702KernelAccountParameters<entryPointVersion>
 ): Promise<Create7702KernelAccountReturnType<entryPointVersion>> {
-    const { accountImplementationAddress } =
-        getDefaultAddresses(entryPoint.version, kernelVersion, {
+    const { accountImplementationAddress } = getDefaultAddresses(
+        entryPoint.version,
+        kernelVersion,
+        {
             accountImplementationAddress: _accountImplementationAddress,
             factoryAddress: undefined,
             metaFactoryAddress: undefined
-        })
+        }
+    )
 
     let chainId: number
 
     // format to local account
-    let address : Address | undefined
-    if (typeof signer === 'object' && signer !== null && 'account' in signer) {
+    let address: Address | undefined
+    if (typeof signer === "object" && signer !== null && "account" in signer) {
         address = signer.account?.address as Address
     }
     const localAccount = await toSigner({ signer, address })
@@ -202,16 +208,19 @@ export async function create7702KernelAccount<
         return chainId
     }
 
-    const kernelPluginManager = await toKernelPluginManager<entryPointVersion>(client, {
-        sudo: await signerToEcdsaValidator(client, {
-            signer: localAccount,
+    const kernelPluginManager = await toKernelPluginManager<entryPointVersion>(
+        client,
+        {
+            sudo: await signerToEcdsaValidator(client, {
+                signer: localAccount,
+                entryPoint,
+                kernelVersion
+            }),
             entryPoint,
             kernelVersion,
-        }),
-        entryPoint,
-        kernelVersion,
-        chainId: await getMemoizedChainId()
-    })
+            chainId: await getMemoizedChainId()
+        }
+    )
 
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
@@ -225,17 +234,26 @@ export async function create7702KernelAccount<
         }
     }
 
-    const signAuthorization: () => Promise<SignAuthorizationReturnType | undefined> = async () => {
+    const signAuthorization: () => Promise<
+        SignAuthorizationReturnType | undefined
+    > = async () => {
         const code = await getCode(client, { address: accountAddress })
         console.log("code", code)
         // check if account has not activated 7702 with implementation address
-        if ( !code || code.length == 0 || !code.toLowerCase().startsWith(`0xef0100` + accountImplementationAddress.slice(2).toLowerCase())) {
-
+        if (
+            !code ||
+            code.length === 0 ||
+            !code
+                .toLowerCase()
+                .startsWith(
+                    `0xef0100${accountImplementationAddress.slice(2).toLowerCase()}`
+                )
+        ) {
             const auth = await signAuthorizationAction(client, {
                 account: localAccount,
                 address: accountImplementationAddress as `0x${string}`,
                 chainId: await getMemoizedChainId()
-            });
+            })
             const verified = await verifyAuthorization({
                 authorization: auth,
                 address: accountAddress
@@ -288,7 +306,9 @@ export async function create7702KernelAccount<
 
     await checkPluginInstallationStatus()
 
-    return toSmartAccount<KernelSmartAccount7702Implementation<entryPointVersion>>({
+    return toSmartAccount<
+        KernelSmartAccount7702Implementation<entryPointVersion>
+    >({
         kernelVersion,
         kernelPluginManager,
         accountImplementationAddress,
@@ -302,7 +322,7 @@ export async function create7702KernelAccount<
         nonceKeyManager: createNonceManager({
             source: { get: () => 0, set: () => {} }
         }),
-        client: client as any,
+        client,
         entryPoint: _entryPoint,
         getFactoryArgs,
         async getAddress() {
@@ -481,12 +501,12 @@ export async function create7702KernelAccount<
         // Sign a user operation
         async signUserOperation(parameters) {
             const { chainId = await getMemoizedChainId(), ...userOperation } =
-                parameters;
+                parameters
             //let authorization = await this.signAuthorization()
             return kernelPluginManager.signUserOperation({
                 ...userOperation,
                 sender: userOperation.sender ?? (await this.getAddress()),
-                chainId,
+                chainId
                 //authorization
             })
         }

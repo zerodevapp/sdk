@@ -5,7 +5,6 @@ export {
 
 export {
     createKernelAccountClient,
-    create7702KernelAccountClient,
     type KernelAccountClient,
     type SmartAccountClientConfig
 } from "./kernelAccountClient.js"

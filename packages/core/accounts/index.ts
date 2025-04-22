@@ -22,5 +22,3 @@ export { getPluginsEnableTypedData } from "./kernel/utils/plugins/ep0_7/getPlugi
 export { getKernelV3Nonce } from "./kernel/utils/account/ep0_7/getKernelV3Nonce.js"
 export { getPluginInstallCallData } from "./kernel/utils/plugins/ep0_7/getPluginInstallCallData.js"
 export type { CallArgs, DelegateCallArgs } from "./kernel/utils/types.js"
-export { create7702KernelAccount } from "./kernel/create7702KernelAccount.js"
-export type { Create7702KernelAccountParameters, Create7702KernelAccountReturnType } from "./kernel/create7702KernelAccount.js"

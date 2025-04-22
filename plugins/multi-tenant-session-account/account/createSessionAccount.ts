@@ -1,4 +1,4 @@
-import { fixSignedData, toSigner } from "@zerodev/sdk"
+import { fixSignedData, type KernelSmartAccountImplementation, toSigner } from "@zerodev/sdk"
 import { getAccountNonce, isSmartAccountDeployed } from "@zerodev/sdk/actions"
 import { DUMMY_ECDSA_SIG } from "@zerodev/sdk/constants"
 import type {
@@ -10,7 +10,6 @@ import type {
 import {
     type Address,
     type Assign,
-    type Client,
     type Hex,
     type TypedData,
     type TypedDataDefinition,
@@ -93,7 +92,7 @@ export type SessionAccountEncodeCallDataArgs =
 export async function createSessionAccount<
     entryPointVersion extends EntryPointVersion
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     {
         entryPoint,
         delegations,

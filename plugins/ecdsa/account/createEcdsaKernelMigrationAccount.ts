@@ -188,7 +188,7 @@ type PluginInstallationCache = {
 export async function createEcdsaKernelMigrationAccount<
     entryPointVersion extends EntryPointVersion
 >(
-    client: any, //Client
+    client: KernelSmartAccountImplementation["client"],
     {
         entryPoint,
         signer,

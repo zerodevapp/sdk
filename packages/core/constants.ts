@@ -93,7 +93,7 @@ export const KernelVersionToAddressesMap: {
         metaFactoryAddress: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
         initCodeHash:
             "0xc452397f1e7518f8cea0566ac057e243bb1643f6298aba8eec8cdee78ee3b3dd"
-            //"0x1fefe62c5b9c14c4661af2e04e4a2fa10205066cae5f629d304d483f5fa9e5fc"
+        //"0x1fefe62c5b9c14c4661af2e04e4a2fa10205066cae5f629d304d483f5fa9e5fc"
     }
 }
 

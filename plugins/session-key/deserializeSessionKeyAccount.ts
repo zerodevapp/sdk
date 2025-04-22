@@ -10,7 +10,7 @@ import type {
     Signer,
     ValidatorInitData
 } from "@zerodev/sdk/types"
-import type { Address, Client, Hex, LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount } from "viem"
 import { decodeFunctionData } from "viem"
 import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
@@ -21,7 +21,7 @@ import { deserializeSessionKeyAccountParams } from "./utils.js"
 export const deserializeSessionKeyAccount = async <
     entryPointVersion extends EntryPointVersion
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     sessionKeyAccountParams: string,

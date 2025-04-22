@@ -5,14 +5,14 @@ import {
     KernelV3_1AccountAbi,
     createKernelAccount
 } from "@zerodev/sdk"
-import { toKernelPluginManager } from "@zerodev/sdk/accounts"
+import { type KernelSmartAccountImplementation, toKernelPluginManager } from "@zerodev/sdk/accounts"
 import type {
     EntryPointType,
     GetKernelVersion,
     KERNEL_VERSION_TYPE,
     ValidatorInitData
 } from "@zerodev/sdk/types"
-import type { Client, Hex } from "viem"
+import type { Hex } from "viem"
 import { decodeFunctionData } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
@@ -34,7 +34,7 @@ import { deserializePermissionAccountParams } from "./utils.js"
 export const deserializePermissionAccount = async <
     entryPointVersion extends EntryPointVersion
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     entryPoint: EntryPointType<entryPointVersion>,
     kernelVersion: GetKernelVersion<entryPointVersion>,
     modularPermissionAccountParams: string,

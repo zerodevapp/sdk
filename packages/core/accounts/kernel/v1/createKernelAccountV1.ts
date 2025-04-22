@@ -3,7 +3,6 @@ import {
     type Address,
     type Assign,
     type Chain,
-    type Client,
     type EIP1193Provider,
     type Hex,
     type LocalAccount,
@@ -95,7 +94,7 @@ const KERNEL_V1_ADDRESSES: {
 }
 
 export async function createKernelAccountV1(
-    client: Client,
+    client: KernelSmartAccountV1Implementation["client"],
     {
         signer,
         address,
@@ -222,7 +221,7 @@ export async function createKernelAccountV1(
             return accountAddress
         },
         getFactoryArgs,
-        client: client as any,
+        client,
         entryPoint: _entryPoint,
         async getNonce() {
             return getAccountNonce(client, {

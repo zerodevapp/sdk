@@ -1,22 +1,17 @@
-import { type KernelSmartAccount7702Implementation } from "../account/create7702KernelAccount.js"
+import type { Chain, Client, RpcSchema, Transport } from "viem"
 import {
-    type Chain,
-    type Client,
-    type RpcSchema,
-    type Transport,
-} from "viem"
-import {
+    type DeriveEntryPointVersion,
+    type DeriveSmartAccount,
     type PrepareUserOperationParameters,
-    type SmartAccount,
-    prepareUserOperation as viemPrepareUserOperation,
     type PrepareUserOperationRequest,
     type PrepareUserOperationReturnType,
-    type DeriveSmartAccount,
-    type DeriveEntryPointVersion
+    type SmartAccount,
+    prepareUserOperation as viemPrepareUserOperation
 } from "viem/account-abstraction"
+import type { KernelSmartAccount7702Implementation } from "../account/create7702KernelAccount.js"
 
 import { createKernelAccountClient } from "@zerodev/sdk/clients"
-import { type SmartAccountClientConfig} from "@zerodev/sdk/clients"
+import type { SmartAccountClientConfig } from "@zerodev/sdk/clients"
 
 export type Create7702KernelAccountClientParameters = Omit<
     SmartAccountClientConfig<
@@ -69,20 +64,24 @@ export function create7702KernelAccountClient(
                 >
             > => {
                 // generate authorization only when account is not already authorized
-                let authorization = opArgs.authorization || await parameters.account.signAuthorization()
+                const authorization =
+                    opArgs.authorization ||
+                    (await parameters.account.signAuthorization())
                 const finalArgs = {
                     ...opArgs,
                     authorization
                 }
 
-                return await viemPrepareUserOperation(opClient, finalArgs as PrepareUserOperationParameters<
-                    _account,
-                    _accountOverride,
-                    _calls,
-                    _request
-                >)
+                return await viemPrepareUserOperation(
+                    opClient,
+                    finalArgs as PrepareUserOperationParameters<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                )
             }
         }
     })
 }
-

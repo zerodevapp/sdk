@@ -50,7 +50,7 @@ const main = async () => {
     })
 
     const authorization = await walletClient.signAuthorization({
-        contractAddress: KERNEL_7702_DELEGATION_ADDRESS,
+        contractAddress: KERNEL_7702_DELEGATION_ADDRESS
     })
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
@@ -66,7 +66,7 @@ const main = async () => {
         entryPoint,
         kernelVersion,
         // Set the address of the smart account to the EOA address
-        address: signer.address,
+        address: signer.address
         // Set the 7702 authorization
         //eip7702Auth: authorization
     })
@@ -102,7 +102,7 @@ const main = async () => {
                 data: "0x"
             }
         ]),
-        authorization : authorization
+        authorization: authorization
     })
 
     const { receipt } = await kernelClient.waitForUserOperationReceipt({

@@ -23,7 +23,7 @@ export {
 } from "./account/createEcdsaKernelMigrationAccount.js"
 export {
     create7702KernelAccountClient,
-    type Create7702KernelAccountClientParameters,
+    type Create7702KernelAccountClientParameters
 } from "./clients/kernel7702AccountClient.js"
 export {
     create7702KernelAccount,

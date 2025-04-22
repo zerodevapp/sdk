@@ -1,20 +1,16 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
-    signerToEcdsaValidator
+    create7702KernelAccount,
+    create7702KernelAccountClient
 } from "@zerodev/ecdsa-validator"
 import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
-     createZeroDevPaymasterClient,
+    createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import {
-    create7702KernelAccountClient,
-    create7702KernelAccount
-} from "@zerodev/ecdsa-validator"
-import {
-    getUserOperationGasPrice,
-} from "@zerodev/sdk/actions"
+import { getUserOperationGasPrice } from "@zerodev/sdk/actions"
 import dotenv from "dotenv"
 import {
     http,
@@ -22,18 +18,18 @@ import {
     type Chain,
     type GetContractReturnType,
     type Hex,
+    type LocalAccount,
     type PrivateKeyAccount,
     type PublicClient,
-    type WalletClient,
     type Transport,
+    type WalletClient,
     createPublicClient,
     createWalletClient,
     encodeFunctionData,
-    getContract,
-    LocalAccount,
+    getContract
 } from "viem"
-import { bsc, holesky } from "viem/chains"
 import { privateKeyToAccount } from "viem/accounts"
+import { bsc, holesky } from "viem/chains"
 import { GreeterAbi } from "../abis/Greeter.js"
 
 import {
@@ -44,21 +40,13 @@ import {
     type SmartAccount,
     entryPoint07Address
 } from "viem/account-abstraction"
-import {
-    type Authorization,
-    type SignedAuthorization
-} from "viem"
-import {
-    signAuthorization,
-    prepareAuthorization
-} from "viem/actions"
+import { generatePrivateKey } from "viem/accounts"
+import { prepareAuthorization, signAuthorization } from "viem/actions"
 import {
     kernelVersion,
-
     validateEnvironmentVariables,
     waitForNonceUpdate
 } from "./utils/common.js"
-import { generatePrivateKey } from "viem/accounts"
 
 dotenv.config()
 
@@ -73,7 +61,7 @@ const requiredEnvVars = [
     "ZERODEV_PAYMASTER_RPC_HOST"
 ]
 
-const chain = holesky;
+const chain = holesky
 validateEnvironmentVariables(requiredEnvVars)
 
 const ETHEREUM_ADDRESS_LENGTH = 42
@@ -109,11 +97,14 @@ describe("ECDSA kernel Account", () => {
         ownerAccount = privateKeyToAccount(randomKey)
         console.log("ownerAccount", ownerAccount.address)
         //console.log("privateKey", ownerPrivateKey)
-        console.log("KERNEL_7702_DELEGATION_ADDRESS", KERNEL_7702_DELEGATION_ADDRESS)
+        console.log(
+            "KERNEL_7702_DELEGATION_ADDRESS",
+            KERNEL_7702_DELEGATION_ADDRESS
+        )
         const account = await create7702KernelAccount(publicClient, {
-            signer : ownerAccount as LocalAccount,
+            signer: ownerAccount as LocalAccount,
             entryPoint,
-            kernelVersion,
+            kernelVersion
         })
 
         const paymasterClient = createZeroDevPaymasterClient({
@@ -162,13 +153,13 @@ describe("ECDSA kernel Account", () => {
                             args: ["hello world 4"]
                         })
                     }
-                ]),
+                ])
                 //authorization : authorization
             })
             expect(userOp.signature).not.toBe("0x")
 
             const userOpHash = await kernelClient.sendUserOperation({
-                ...userOp,
+                ...userOp
                 //authorization : authorization
             })
             expect(userOpHash).toHaveLength(66)
@@ -186,7 +177,4 @@ describe("ECDSA kernel Account", () => {
         },
         TEST_TIMEOUT
     )
-
-
 })
-  

@@ -1,6 +1,5 @@
 export {
     createKernelAccount,
-    create7702KernelAccount,
     createKernelAccountV0_2,
     createKernelAccountV1,
     type CreateKernelAccountParameters,
@@ -34,7 +33,6 @@ export {
 } from "./clients/paymasterClient.js"
 export {
     createKernelAccountClient,
-    create7702KernelAccountClient,
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"

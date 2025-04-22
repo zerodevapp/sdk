@@ -7,21 +7,21 @@ import {
     type Prettify,
     type RpcSchema,
     type Transport,
-    createClient,
+    createClient
 } from "viem"
 import {
     type BundlerActions,
     type BundlerClientConfig,
+    type DeriveEntryPointVersion,
+    type DeriveSmartAccount,
     type PaymasterActions,
     type PrepareUserOperationParameters,
+    type PrepareUserOperationRequest,
+    type PrepareUserOperationReturnType,
     type SmartAccount,
     type UserOperationRequest,
     bundlerActions,
-    prepareUserOperation as viemPrepareUserOperation,
-    type PrepareUserOperationRequest,
-    type PrepareUserOperationReturnType,
-    type DeriveSmartAccount,
-    type DeriveEntryPointVersion
+    type prepareUserOperation as viemPrepareUserOperation
 } from "viem/account-abstraction"
 import { getUserOperationGasPrice } from "../actions/index.js"
 import {
@@ -172,7 +172,9 @@ export function createKernelAccountClient(
                             DeriveSmartAccount<_account, _accountOverride>
                         >
                     >,
-                    _accountOverride extends SmartAccount | undefined = undefined
+                    _accountOverride extends
+                        | SmartAccount
+                        | undefined = undefined
                 >(
                     args: PrepareUserOperationParameters<
                         _account,
@@ -180,8 +182,22 @@ export function createKernelAccountClient(
                         _calls,
                         _request
                     >
-                ): Promise<PrepareUserOperationReturnType<_account, _accountOverride, _calls, _request>> => {
-                    return customPrepareUserOp(_client as any, args as any) as Promise<PrepareUserOperationReturnType<_account, _accountOverride, _calls, _request>>
+                ): Promise<
+                    PrepareUserOperationReturnType<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                > => {
+                    return customPrepareUserOp(_client, args) as Promise<
+                        PrepareUserOperationReturnType<
+                            _account,
+                            _accountOverride,
+                            _calls,
+                            _request
+                        >
+                    >
                 }
             }))
             .extend(kernelAccountClientActions()) as KernelAccountClient

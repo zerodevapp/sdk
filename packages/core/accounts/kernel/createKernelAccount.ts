@@ -2,7 +2,6 @@ import {
     http,
     type Address,
     type Assign,
-    type Client,
     type EncodeDeployDataParameters,
     type Hex,
     type SignableMessage,
@@ -368,7 +367,7 @@ export async function createKernelAccount<
     entryPointVersion extends EntryPointVersion,
     KernelVersion extends GetKernelVersion<entryPointVersion>
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     {
         plugins,
         entryPoint,
@@ -566,7 +565,7 @@ export async function createKernelAccount<
         nonceKeyManager: createNonceManager({
             source: { get: () => 0, set: () => {} }
         }),
-        client: client as any,
+        client,
         entryPoint: _entryPoint,
         getFactoryArgs,
         async getAddress() {
