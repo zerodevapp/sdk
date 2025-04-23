@@ -1,5 +1,11 @@
 # @zerodev/multi-chain-web-auth
 
+## 5.4.10
+
+### Patch Changes
+
+- updated to use latest viem 2.28.0 and support for 7702
+
 ## 5.4.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @zerodev/social-validator
 
+## 5.2.3
+
+### Patch Changes
+
+- updated to use latest viem 2.28.0 and support for 7702
+
 ## 5.2.2
 
 ### Patch Changes

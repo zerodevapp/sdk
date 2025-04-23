@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/react-native-passkeys-utils",
-    "version": "5.4.3",
+    "version": "5.4.4",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
