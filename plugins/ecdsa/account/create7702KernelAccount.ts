@@ -1,4 +1,3 @@
-import { signerToEcdsaValidator } from "../toECDSAValidatorPlugin.js"
 import {
     KERNEL_FEATURES,
     type KernelPluginManager,
@@ -62,6 +61,7 @@ import {
     signAuthorization as signAuthorizationAction
 } from "viem/actions"
 import { getAction, verifyAuthorization } from "viem/utils"
+import { signerToEcdsaValidator } from "../toECDSAValidatorPlugin.js"
 
 type SignMessageParameters = {
     message: SignableMessage
