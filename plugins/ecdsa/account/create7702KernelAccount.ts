@@ -1,4 +1,4 @@
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator/toECDSAValidatorPlugin.js"
+import { signerToEcdsaValidator } from "../toECDSAValidatorPlugin.js"
 import {
     KERNEL_FEATURES,
     type KernelPluginManager,

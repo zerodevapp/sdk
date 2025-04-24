@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.7
+
+### Patch Changes
+
+- fixed import issue
+
 ## 5.4.6
 
 ### Patch Changes
