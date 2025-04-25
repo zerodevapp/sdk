@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.30
+
+### Patch Changes
+
+- client action extends issue fixed
+
 ## 5.4.29
 
 ### Patch Changes

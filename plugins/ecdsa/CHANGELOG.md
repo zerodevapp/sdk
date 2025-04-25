@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.8
+
+### Patch Changes
+
+- client action extends issue fixed
+
 ## 5.4.7
 
 ### Patch Changes
