@@ -238,7 +238,6 @@ export async function create7702KernelAccount<
         SignAuthorizationReturnType | undefined
     > = async () => {
         const code = await getCode(client, { address: accountAddress })
-        console.log("code", code)
         // check if account has not activated 7702 with implementation address
         if (
             !code ||

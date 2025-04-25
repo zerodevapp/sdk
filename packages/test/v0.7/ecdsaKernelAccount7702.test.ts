@@ -133,7 +133,7 @@ describe("ECDSA kernel Account", () => {
     test(
         "Client signs and then sends UserOp with paymaster",
         async () => {
-            const userOp = await kernelClient.signUserOperation({
+            const userOpHash = await kernelClient.sendUserOperation({
                 callData: await kernelClient.account.encodeCalls([
                     {
                         to: process.env.GREETER_ADDRESS as Address,
@@ -154,12 +154,6 @@ describe("ECDSA kernel Account", () => {
                         })
                     }
                 ])
-                //authorization : authorization
-            })
-            expect(userOp.signature).not.toBe("0x")
-
-            const userOpHash = await kernelClient.sendUserOperation({
-                ...userOp
                 //authorization : authorization
             })
             expect(userOpHash).toHaveLength(66)

@@ -200,6 +200,48 @@ export function createKernelAccountClient(
                     >
                 }
             }))
+            .extend(bundlerActions)
+            .extend((_client) => ({
+                prepareUserOperation: <
+                    _account extends SmartAccount | undefined,
+                    const _calls extends readonly unknown[],
+                    _request extends PrepareUserOperationRequest<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        DeriveSmartAccount<_account, _accountOverride>,
+                        DeriveEntryPointVersion<
+                            DeriveSmartAccount<_account, _accountOverride>
+                        >
+                    >,
+                    _accountOverride extends
+                        | SmartAccount
+                        | undefined = undefined
+                >(
+                    args: PrepareUserOperationParameters<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                ): Promise<
+                    PrepareUserOperationReturnType<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                > => {
+                    return customPrepareUserOp(_client, args) as Promise<
+                        PrepareUserOperationReturnType<
+                            _account,
+                            _accountOverride,
+                            _calls,
+                            _request
+                        >
+                    >
+                }
+            }))
             .extend(kernelAccountClientActions()) as KernelAccountClient
     }
 
