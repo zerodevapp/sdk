@@ -1,5 +1,11 @@
 # @zerodev/modular-permission
 
+## 5.4.3
+
+### Patch Changes
+
+- updated to use latest viem 2.28.0 and support for 7702
+
 ## 5.4.2
 
 ### Patch Changes

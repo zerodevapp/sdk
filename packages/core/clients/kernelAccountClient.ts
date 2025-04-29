@@ -12,8 +12,12 @@ import {
 import {
     type BundlerActions,
     type BundlerClientConfig,
+    type DeriveEntryPointVersion,
+    type DeriveSmartAccount,
     type PaymasterActions,
     type PrepareUserOperationParameters,
+    type PrepareUserOperationRequest,
+    type PrepareUserOperationReturnType,
     type SmartAccount,
     type UserOperationRequest,
     bundlerActions,
@@ -155,19 +159,87 @@ export function createKernelAccountClient(
 
         return client
             .extend(bundlerActions)
-            .extend((client) => ({
-                prepareUserOperation: (
-                    args: PrepareUserOperationParameters
-                ) => {
-                    return customPrepareUserOp(client, args)
+            .extend((_client) => ({
+                prepareUserOperation: <
+                    _account extends SmartAccount | undefined,
+                    const _calls extends readonly unknown[],
+                    _request extends PrepareUserOperationRequest<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        DeriveSmartAccount<_account, _accountOverride>,
+                        DeriveEntryPointVersion<
+                            DeriveSmartAccount<_account, _accountOverride>
+                        >
+                    >,
+                    _accountOverride extends
+                        | SmartAccount
+                        | undefined = undefined
+                >(
+                    args: PrepareUserOperationParameters<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                ): Promise<
+                    PrepareUserOperationReturnType<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                > => {
+                    return customPrepareUserOp(_client, args) as Promise<
+                        PrepareUserOperationReturnType<
+                            _account,
+                            _accountOverride,
+                            _calls,
+                            _request
+                        >
+                    >
                 }
             }))
             .extend(bundlerActions)
-            .extend((client) => ({
-                prepareUserOperation: (
-                    args: PrepareUserOperationParameters
-                ) => {
-                    return customPrepareUserOp(client, args)
+            .extend((_client) => ({
+                prepareUserOperation: <
+                    _account extends SmartAccount | undefined,
+                    const _calls extends readonly unknown[],
+                    _request extends PrepareUserOperationRequest<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        DeriveSmartAccount<_account, _accountOverride>,
+                        DeriveEntryPointVersion<
+                            DeriveSmartAccount<_account, _accountOverride>
+                        >
+                    >,
+                    _accountOverride extends
+                        | SmartAccount
+                        | undefined = undefined
+                >(
+                    args: PrepareUserOperationParameters<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                ): Promise<
+                    PrepareUserOperationReturnType<
+                        _account,
+                        _accountOverride,
+                        _calls,
+                        _request
+                    >
+                > => {
+                    return customPrepareUserOp(_client, args) as Promise<
+                        PrepareUserOperationReturnType<
+                            _account,
+                            _accountOverride,
+                            _calls,
+                            _request
+                        >
+                    >
                 }
             }))
             .extend(kernelAccountClientActions()) as KernelAccountClient

@@ -1,5 +1,23 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.8
+
+### Patch Changes
+
+- client action extends issue fixed
+
+## 5.4.7
+
+### Patch Changes
+
+- fixed import issue
+
+## 5.4.6
+
+### Patch Changes
+
+- updated to use latest viem 2.28.0 and support for 7702
+
 ## 5.4.5
 
 ### Patch Changes

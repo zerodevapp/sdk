@@ -20,7 +20,7 @@ import {
 } from "./decorators/kernel.js"
 
 export type ZeroDevPaymasterClient<
-    entryPointVersion extends "0.6" | "0.7" = "0.7",
+    entryPointVersion extends "0.6" | "0.7" | "0.8" = "0.7",
     transport extends Transport = Transport,
     chain extends Chain | undefined = Chain | undefined,
     account extends SmartAccount | undefined = SmartAccount | undefined,

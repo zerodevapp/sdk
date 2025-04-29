@@ -1,5 +1,8 @@
 import { toSigner } from "@zerodev/sdk"
-import { toKernelPluginManager } from "@zerodev/sdk/accounts"
+import {
+    type KernelSmartAccountImplementation,
+    toKernelPluginManager
+} from "@zerodev/sdk/accounts"
 import {
     KernelFactoryV2Abi,
     createKernelAccountV0_2
@@ -10,7 +13,7 @@ import type {
     ValidatorInitData
 } from "@zerodev/sdk/types"
 import type { GetKernelVersion } from "@zerodev/sdk/types"
-import type { Address, Client, Hex, LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount } from "viem"
 import { decodeFunctionData } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
@@ -21,7 +24,7 @@ import { deserializeSessionKeyAccountParams } from "./utils.js"
 export const deserializeSessionKeyAccountV0_2 = async <
     entryPointVersion extends EntryPointVersion
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     entryPoint: EntryPointType<entryPointVersion>,
     sessionKeyAccountParams: string,
     sessionKeySigner?: Signer,

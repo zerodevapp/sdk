@@ -1,6 +1,5 @@
 import {
     type Address,
-    type Client,
     type EncodeDeployDataParameters,
     type Hex,
     type TypedDataDefinition,
@@ -107,7 +106,7 @@ const getAccountInitCode = async ({
  * @param deployedAccountAddress
  */
 export async function createKernelAccountV0_2(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     {
         plugins,
         entryPoint,
@@ -230,7 +229,7 @@ export async function createKernelAccountV0_2(
 
     return toSmartAccount<KernelSmartAccountImplementation<"0.6">>({
         kernelVersion: "0.0.2" as GetKernelVersion<"0.6">,
-        client: client,
+        client,
         entryPoint: _entryPoint,
         kernelPluginManager,
         factoryAddress,

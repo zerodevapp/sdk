@@ -2,7 +2,6 @@ import {
     http,
     type Address,
     type Assign,
-    type Client,
     type EncodeDeployDataParameters,
     type Hex,
     type SignableMessage,
@@ -132,6 +131,7 @@ export type CreateKernelAccountParameters<
     kernelVersion: GetKernelVersion<entryPointVersion>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
+    eip7702?: boolean
     eip7702Auth?: SignAuthorizationReturnType
     eip7702SponsorAccount?: Signer
     pluginMigrations?: PluginMigrationData[]
@@ -367,7 +367,7 @@ export async function createKernelAccount<
     entryPointVersion extends EntryPointVersion,
     KernelVersion extends GetKernelVersion<entryPointVersion>
 >(
-    client: Client,
+    client: KernelSmartAccountImplementation["client"],
     {
         plugins,
         entryPoint,

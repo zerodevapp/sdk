@@ -19,7 +19,6 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { getCode } from "viem/actions"
 import { odysseyTestnet } from "viem/chains"
-import { eip7702Actions } from "viem/experimental"
 
 const projectId = process.env.PROJECT_ID
 const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}`
@@ -48,11 +47,10 @@ const main = async () => {
         // supports EIP-7702.
         chain: odysseyTestnet,
         transport: http()
-    }).extend(eip7702Actions())
+    })
 
     const authorization = await walletClient.signAuthorization({
-        contractAddress: KERNEL_7702_DELEGATION_ADDRESS,
-        delegate: true
+        contractAddress: KERNEL_7702_DELEGATION_ADDRESS
     })
 
     const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
@@ -68,9 +66,9 @@ const main = async () => {
         entryPoint,
         kernelVersion,
         // Set the address of the smart account to the EOA address
-        address: signer.address,
+        address: signer.address
         // Set the 7702 authorization
-        eip7702Auth: authorization
+        //eip7702Auth: authorization
     })
 
     const paymasterClient = createZeroDevPaymasterClient({
@@ -103,7 +101,8 @@ const main = async () => {
                 value: BigInt(0),
                 data: "0x"
             }
-        ])
+        ]),
+        authorization: authorization
     })
 
     const { receipt } = await kernelClient.waitForUserOperationReceipt({
