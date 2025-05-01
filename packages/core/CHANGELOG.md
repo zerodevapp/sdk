@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.31
+
+### Patch Changes
+
+- fix: return kernel nonce to 1 if it is 0 in getKernelV3Nonce util
+
 ## 5.4.30
 
 ### Patch Changes
