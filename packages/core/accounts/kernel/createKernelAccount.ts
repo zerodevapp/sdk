@@ -367,7 +367,7 @@ export async function createKernelAccount<
         kernelVersion,
         initConfig,
         useMetaFactory: _useMetaFactory = true,
-       pluginMigrations
+        pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
     let useMetaFactory = _useMetaFactory
