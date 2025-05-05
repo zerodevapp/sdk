@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.32
+
+### Patch Changes
+
+- feat: added signAuthorization extension for walletClient in toSigner
+
 ## 5.4.31
 
 ### Patch Changes

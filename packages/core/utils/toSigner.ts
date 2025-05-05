@@ -16,7 +16,7 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 
-import { signMessage, signTypedData } from "viem/actions"
+import { signAuthorization, signMessage, signTypedData } from "viem/actions"
 import type { Signer } from "../types/index.js"
 
 export async function toSigner({
@@ -100,6 +100,16 @@ export async function toSigner({
         async signTransaction(_) {
             throw new Error(
                 "Smart account signer doesn't need to sign transactions"
+            )
+        },
+        async signAuthorization(authorization) {
+            return signAuthorization(
+                walletClient as WalletClient<
+                    Transport,
+                    Chain | undefined,
+                    Account
+                >,
+                authorization
             )
         }
     }) as LocalAccount
