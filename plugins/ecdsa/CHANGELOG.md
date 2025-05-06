@@ -1,5 +1,11 @@
 # @zerodev/ecdsa-validator
 
+## 5.4.9
+
+### Patch Changes
+
+- feat: add eip7702Auth param in `create7702KernelAccount`
+
 ## 5.4.8
 
 ### Patch Changes

@@ -41,6 +41,7 @@ import {
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
+    isAddressEqual,
     validateTypedData,
     zeroAddress
 } from "viem"
@@ -117,6 +118,7 @@ export type Create7702KernelAccountParameters<
     accountImplementationAddress?: Address
     kernelVersion: GetKernelVersion<entryPointVersion>
     pluginMigrations?: PluginMigrationData[]
+    eip7702Auth?: SignAuthorizationReturnType
 }
 
 const getDefaultAddresses = <entryPointVersion extends EntryPointVersion>(
@@ -177,7 +179,8 @@ export async function create7702KernelAccount<
         entryPoint,
         accountImplementationAddress: _accountImplementationAddress,
         kernelVersion,
-        pluginMigrations
+        pluginMigrations,
+        eip7702Auth
     }: Create7702KernelAccountParameters<entryPointVersion>
 ): Promise<Create7702KernelAccountReturnType<entryPointVersion>> {
     const { accountImplementationAddress } = getDefaultAddresses(
@@ -248,11 +251,24 @@ export async function create7702KernelAccount<
                     `0xef0100${accountImplementationAddress.slice(2).toLowerCase()}`
                 )
         ) {
-            const auth = await signAuthorizationAction(client, {
-                account: localAccount,
-                address: accountImplementationAddress as `0x${string}`,
-                chainId: await getMemoizedChainId()
-            })
+            if (
+                eip7702Auth &&
+                !isAddressEqual(
+                    eip7702Auth.address,
+                    accountImplementationAddress
+                )
+            ) {
+                throw new Error(
+                    "EIP-7702 authorization delegate address does not match account implementation address"
+                )
+            }
+            const auth =
+                eip7702Auth ??
+                (await signAuthorizationAction(client, {
+                    account: localAccount,
+                    address: accountImplementationAddress as `0x${string}`,
+                    chainId: await getMemoizedChainId()
+                }))
             const verified = await verifyAuthorization({
                 authorization: auth,
                 address: accountAddress
