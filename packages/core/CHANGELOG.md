@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.34
+
+### Patch Changes
+
+- fix: toSigner skips walletClient creation when signer.account is present
+
 ## 5.4.33
 
 ### Patch Changes

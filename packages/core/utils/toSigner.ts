@@ -34,7 +34,7 @@ export async function toSigner({
         | WalletClient<Transport, Chain | undefined, Account>
         | undefined = undefined
 
-    if ("request" in signer) {
+    if ("request" in signer && !signer?.account) {
         if (!address) {
             address = (
                 await Promise.any([
