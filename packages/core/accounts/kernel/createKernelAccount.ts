@@ -69,7 +69,10 @@ import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/enc
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV07 } from "./utils/account/ep0_7/encodeDeployCallData.js"
-import { accountMetadata } from "./utils/common/accountMetadata.js"
+import {
+    type AccountMetadata,
+    accountMetadata
+} from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 import type { CallArgs } from "./utils/types.js"
@@ -393,6 +396,7 @@ export async function createKernelAccount<
         })
 
     let chainId: number
+    let cachedAccountMetadata: AccountMetadata | undefined
 
     const getMemoizedChainId = async () => {
         if (chainId) return chainId
@@ -400,6 +404,17 @@ export async function createKernelAccount<
             ? client.chain.id
             : await getAction(client, getChainId, "getChainId")({})
         return chainId
+    }
+
+    const getMemoizedAccountMetadata = async () => {
+        if (cachedAccountMetadata) return cachedAccountMetadata
+        cachedAccountMetadata = await accountMetadata(
+            client,
+            accountAddress,
+            kernelVersion,
+            await getMemoizedChainId()
+        )
+        return cachedAccountMetadata
     }
 
     const kernelPluginManager = isKernelPluginManager<entryPointVersion>(
@@ -638,12 +653,7 @@ export async function createKernelAccount<
                 name,
                 chainId: metadataChainId,
                 version
-            } = await accountMetadata(
-                client,
-                accountAddress,
-                kernelVersion,
-                chainId
-            )
+            } = await getMemoizedAccountMetadata()
             const wrappedMessageHash = await eip712WrapHash(
                 messageHash,
                 {
@@ -705,12 +715,7 @@ export async function createKernelAccount<
                 name,
                 chainId: metadataChainId,
                 version
-            } = await accountMetadata(
-                client,
-                accountAddress,
-                kernelVersion,
-                chainId
-            )
+            } = await getMemoizedAccountMetadata()
             const wrappedMessageHash = await eip712WrapHash(typedHash, {
                 name,
                 chainId: Number(metadataChainId),

@@ -36,19 +36,16 @@ export async function toSigner({
 
     if ("request" in signer) {
         if (!address) {
-            try {
-                ;[address] = await (
-                    signer.request as EIP1193RequestFn<EIP1474Methods>
-                )({
-                    method: "eth_requestAccounts"
-                })
-            } catch {
-                ;[address] = await (
-                    signer.request as EIP1193RequestFn<EIP1474Methods>
-                )({
-                    method: "eth_accounts"
-                })
-            }
+            address = (
+                await Promise.any([
+                    (signer.request as EIP1193RequestFn<EIP1474Methods>)({
+                        method: "eth_requestAccounts"
+                    }),
+                    (signer.request as EIP1193RequestFn<EIP1474Methods>)({
+                        method: "eth_accounts"
+                    })
+                ])
+            )[0]
         }
         if (!address) {
             // For TS to be happy

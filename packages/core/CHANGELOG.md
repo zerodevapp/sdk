@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.33
+
+### Patch Changes
+
+- feat: optimised toSigner rpc call for address and memoized account metadata
+
 ## 5.4.32
 
 ### Patch Changes
