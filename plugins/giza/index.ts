@@ -4,10 +4,5 @@ import {
     signerToGizaValidator
 } from "./toGizaValidatorPlugin.js"
 
-export {
-    getValidatorAddress,
-    signerToGizaValidator,
-    type KernelValidator,
-}
+export { getValidatorAddress, signerToGizaValidator, type KernelValidator }
 export * from "./constants.js"
-
