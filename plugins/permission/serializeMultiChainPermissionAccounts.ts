@@ -9,20 +9,24 @@ import {
     hashTypedData,
     keccak256
 } from "viem"
-import type { SmartAccount } from "viem/account-abstraction"
+import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
 import type { PermissionPlugin } from "./types.js"
 import {
     isPermissionValidatorPlugin,
     serializePermissionAccountParams
 } from "./utils.js"
 
-export type MultiChainPermissionAccountsParams = {
-    account: SmartAccount<KernelSmartAccountImplementation>
+export type MultiChainPermissionAccountsParams<
+    entryPointVersion extends EntryPointVersion
+> = {
+    account: SmartAccount<KernelSmartAccountImplementation<entryPointVersion>>
     privateKey?: Hex
 }
 
-export const serializeMultiChainPermissionAccounts = async (
-    params: MultiChainPermissionAccountsParams[]
+export const serializeMultiChainPermissionAccounts = async <
+    entryPointVersion extends EntryPointVersion
+>(
+    params: MultiChainPermissionAccountsParams<entryPointVersion>[]
 ): Promise<string[]> => {
     if (params.length === 0) return []
 
