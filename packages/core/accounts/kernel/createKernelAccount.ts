@@ -1,5 +1,4 @@
 import {
-    http,
     type Address,
     type Assign,
     type EncodeDeployDataParameters,
@@ -8,7 +7,6 @@ import {
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
-    createWalletClient,
     encodeFunctionData,
     getTypesForEIP712Domain,
     hashMessage,
@@ -28,11 +26,7 @@ import {
     entryPoint07Address,
     toSmartAccount
 } from "viem/account-abstraction"
-import {
-    type SignAuthorizationReturnType,
-    privateKeyToAccount
-} from "viem/accounts"
-import { getChainId, getCode, sendTransaction } from "viem/actions"
+import { getChainId } from "viem/actions"
 import { getAction } from "viem/utils"
 import {
     getAccountNonce,
@@ -52,10 +46,8 @@ import type {
     KernelPluginManagerParams,
     PluginMigrationData
 } from "../../types/kernel.js"
-import type { Signer } from "../../types/utils.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
 import { validateKernelVersionWithEntryPoint } from "../../utils.js"
-import { toSigner } from "../../utils/toSigner.js"
 import {
     isKernelPluginManager,
     toKernelPluginManager
@@ -107,7 +99,6 @@ export type KernelSmartAccountImplementation<
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
-        eip7702Auth?: SignAuthorizationReturnType
     }
 >
 
@@ -134,9 +125,6 @@ export type CreateKernelAccountParameters<
     kernelVersion: GetKernelVersion<entryPointVersion>
     initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
     useMetaFactory?: boolean
-    eip7702?: boolean
-    eip7702Auth?: SignAuthorizationReturnType
-    eip7702SponsorAccount?: Signer
     pluginMigrations?: PluginMigrationData[]
 }
 
@@ -382,8 +370,6 @@ export async function createKernelAccount<
         kernelVersion,
         initConfig,
         useMetaFactory: _useMetaFactory = true,
-        eip7702Auth,
-        eip7702SponsorAccount,
         pluginMigrations
     }: CreateKernelAccountParameters<entryPointVersion, KernelVersion>
 ): Promise<CreateKernelAccountReturnType<entryPointVersion>> {
@@ -504,35 +490,6 @@ export async function createKernelAccount<
         version: entryPoint?.version ?? "0.7"
     } as const
 
-    if (eip7702Auth) {
-        let code = await getCode(client, { address: accountAddress })
-        const isEip7702Authorized =
-            code?.length && code.length > 0 && code.startsWith("0xef")
-        if (!isEip7702Authorized) {
-            const sponsorAccount = eip7702SponsorAccount
-                ? await toSigner({ signer: eip7702SponsorAccount })
-                : privateKeyToAccount(
-                      // NOTE: Don't worry about this private key, it's just for testing
-                      "0x688b84097239bc2bca41079d02fae599964a5844bc9e64f524206ad53a927bb9"
-                  )
-            const sponsorWalletClient = createWalletClient({
-                account: sponsorAccount,
-                chain: client.chain,
-                transport: http(client.transport.url)
-            })
-            await sendTransaction(sponsorWalletClient, {
-                to: accountAddress,
-                data: "0x",
-                authorizationList: [eip7702Auth],
-                chain: client.chain
-            })
-            code = await getCode(client, { address: accountAddress })
-            while (code?.length === undefined || code.length === 0) {
-                code = await getCode(client, { address: accountAddress })
-            }
-        }
-    }
-
     // Cache for plugin installation status
     const pluginCache: PluginInstallationCache = {
         pendingPlugins: pluginMigrations || [],
@@ -566,7 +523,6 @@ export async function createKernelAccount<
     await checkPluginInstallationStatus()
 
     return toSmartAccount<KernelSmartAccountImplementation<entryPointVersion>>({
-        eip7702Auth,
         kernelVersion,
         kernelPluginManager,
         accountImplementationAddress,
