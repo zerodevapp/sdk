@@ -37,7 +37,12 @@ export async function uninstallPlugin<
     client: Client<Transport, chain, account>,
     args: UninstallPluginParameters<account, accountOverride, calls>
 ): Promise<Hash> {
-    const { account: account_ = client.account, plugin, hook } = args
+    const {
+        account: account_ = client.account,
+        plugin,
+        hook,
+        ...restArgs
+    } = args
     if (!account_)
         throw new AccountNotFoundError({
             docsPath: "/docs/actions/wallet/sendTransaction"
@@ -70,7 +75,7 @@ export async function uninstallPlugin<
         sendUserOperation,
         "sendUserOperation"
     )({
-        ...args,
+        ...restArgs,
         calls: [
             {
                 to: account.address,
