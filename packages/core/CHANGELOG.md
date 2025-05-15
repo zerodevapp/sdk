@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.35
+
+### Patch Changes
+
+- fix: args in uninstall userOp
+
 ## 5.4.34
 
 ### Patch Changes
