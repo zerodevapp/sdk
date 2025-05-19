@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.6
+
+### Patch Changes
+
+- fix: encode initConfig with ^0.3.2 kernel version
+
 ## 5.5.5
 
 ### Patch Changes
