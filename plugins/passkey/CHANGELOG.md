@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.5.5
+
+### Patch Changes
+
+- chore: passkey support kernel ^0.3.2
+
 ## 5.5.4
 
 ### Patch Changes
