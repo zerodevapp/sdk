@@ -33,6 +33,7 @@ import { toPermissionValidator } from "./toPermissionValidator.js"
 import type { Policy } from "./types.js"
 import type { ModularSigner } from "./types.js"
 import { deserializePermissionAccountParams } from "./utils.js"
+import { isKernelVersionAfter } from "./utils.js"
 
 export const deserializePermissionAccount = async <
     entryPointVersion extends EntryPointVersion
@@ -156,7 +157,7 @@ export const decodeParamsFromInitCode = (
                 identifier: initializeFunctionData.args[0],
                 enableData: initializeFunctionData.args[2],
                 initConfig:
-                    kernelVersion === "0.3.1" &&
+                    isKernelVersionAfter(kernelVersion, "0.3.1") &&
                     Array.isArray(initializeFunctionData.args[4])
                         ? [...initializeFunctionData.args[4]]
                         : undefined
@@ -185,7 +186,7 @@ export const decodeParamsFromInitCode = (
                 identifier: initializeFunctionData.args[0],
                 enableData: initializeFunctionData.args[2],
                 initConfig:
-                    kernelVersion === "0.3.1" &&
+                    isKernelVersionAfter(kernelVersion, "0.3.1") &&
                     Array.isArray(initializeFunctionData.args[4])
                         ? [...initializeFunctionData.args[4]]
                         : undefined
