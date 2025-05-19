@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.7
+
+### Patch Changes
+
+- fix: semver in permissions
+
 ## 5.5.6
 
 ### Patch Changes
