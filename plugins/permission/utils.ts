@@ -1,3 +1,4 @@
+import { coerce, gt } from "semver"
 import type { PermissionAccountParams, PermissionPlugin } from "./types.js"
 
 export function base64ToBytes(base64: string) {
@@ -44,8 +45,7 @@ export const isKernelVersionAfter = (
     kernelVersion: string,
     version: string
 ): boolean => {
-    // semver.gt returns true if kernelVersion > 0.3.1
-    // coerce to handle versions like 0.3.2, 0.3.10, etc.
-    const semver = require("semver")
-    return semver.gt(semver.coerce(kernelVersion), version)
+    const coercedKernelVersion = coerce(kernelVersion)
+    if (!coercedKernelVersion) return false
+    return gt(coercedKernelVersion, version)
 }
