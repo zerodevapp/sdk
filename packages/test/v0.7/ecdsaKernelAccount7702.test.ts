@@ -104,15 +104,8 @@ describe("ECDSA kernel Account", () => {
             "KERNEL_7702_DELEGATION_ADDRESS",
             KERNEL_7702_DELEGATION_ADDRESS
         )
-        const eip7702Auth = await signAuthorization(publicClient, {
-            account: ownerAccount,
-            address:
-                KernelVersionToAddressesMap["0.3.3"]
-                    .accountImplementationAddress
-        })
         const account = await createKernelAccount(publicClient, {
             eip7702Account: ownerAccount,
-            eip7702Auth,
             entryPoint,
             kernelVersion
         })
