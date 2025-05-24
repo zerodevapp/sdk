@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.8
+
+### Patch Changes
+
+- feat: added eip7702 flow support in serialization and deserialization utils
+
 ## 5.5.7
 
 ### Patch Changes

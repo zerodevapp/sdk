@@ -7,6 +7,7 @@ import type {
 } from "@zerodev/sdk/types"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
+import type { SignAuthorizationReturnType } from "viem/accounts"
 import type { PolicyFlags } from "./constants.js"
 import type {
     CallPolicyParams,
@@ -77,4 +78,5 @@ export type PermissionAccountParams = {
     accountParams: ExportPermissionAccountParams
     enableSignature?: Hex
     privateKey?: Hex
+    eip7702Auth?: SignAuthorizationReturnType
 }

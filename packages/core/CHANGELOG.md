@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.36
+
+### Patch Changes
+
+- feat: integrated 7702 features in core kernel account and client
+
 ## 5.4.35
 
 ### Patch Changes

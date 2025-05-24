@@ -39,7 +39,7 @@ export function isKernelPluginManager<
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     plugin: any
 ): plugin is KernelPluginManager<entryPointVersion> {
-    return plugin.getPluginEnableSignature !== undefined
+    return plugin?.getPluginEnableSignature !== undefined
 }
 
 export async function toKernelPluginManager<
