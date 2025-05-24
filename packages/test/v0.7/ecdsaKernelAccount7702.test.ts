@@ -8,6 +8,8 @@ import {
 import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
+    createKernelAccount,
+    createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import { getUserOperationGasPrice } from "@zerodev/sdk/actions"
@@ -29,11 +31,12 @@ import {
     getContract
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { bsc, holesky } from "viem/chains"
+import { bsc, holesky, sepolia } from "viem/chains"
 import { GreeterAbi } from "../abis/Greeter.js"
 
 import {
     KERNEL_7702_DELEGATION_ADDRESS,
+    KernelVersionToAddressesMap,
     getEntryPoint
 } from "@zerodev/sdk/constants"
 import {
@@ -61,7 +64,7 @@ const requiredEnvVars = [
     "ZERODEV_PAYMASTER_RPC_HOST"
 ]
 
-const chain = holesky
+const chain = sepolia
 validateEnvironmentVariables(requiredEnvVars)
 
 const ETHEREUM_ADDRESS_LENGTH = 42
@@ -72,8 +75,8 @@ const TX_HASH_LENGTH = 66
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/
 const TEST_TIMEOUT = 1000000
 const projectId = process.env.PROJECT_ID
-const bundlerRpc = `https://rpc.zerodev.app/api/v2/bundler/${projectId}?provider=ULTRA_RELAY`
-const paymasterRpc = `https://rpc.zerodev.app/api/v2/paymaster/${projectId}?provider=ULTRA_RELAY`
+const bundlerRpc = `https://rpc.zerodev.app/api/v3/${projectId}/chain/${chain.id}`
+const paymasterRpc = `https://rpc.zerodev.app/api/v3/${projectId}/chain/${chain.id}`
 const publicClient = createPublicClient({
     transport: http(bundlerRpc),
     chain: chain
@@ -101,8 +104,15 @@ describe("ECDSA kernel Account", () => {
             "KERNEL_7702_DELEGATION_ADDRESS",
             KERNEL_7702_DELEGATION_ADDRESS
         )
-        const account = await create7702KernelAccount(publicClient, {
-            signer: ownerAccount as LocalAccount,
+        const eip7702Auth = await signAuthorization(publicClient, {
+            account: ownerAccount,
+            address:
+                KernelVersionToAddressesMap["0.3.3"]
+                    .accountImplementationAddress
+        })
+        const account = await createKernelAccount(publicClient, {
+            eip7702Account: ownerAccount,
+            eip7702Auth,
             entryPoint,
             kernelVersion
         })
@@ -111,11 +121,17 @@ describe("ECDSA kernel Account", () => {
             chain: chain,
             transport: http(paymasterRpc)
         })
-        kernelClient = create7702KernelAccountClient({
+        kernelClient = createKernelAccountClient({
             account,
             chain: chain,
             bundlerTransport: http(bundlerRpc),
-            paymaster: paymasterClient,
+            paymaster: {
+                getPaymasterData: async (userOperation) => {
+                    return await paymasterClient.sponsorUserOperation({
+                        userOperation
+                    })
+                }
+            },
             client: publicClient,
             userOperation: {
                 estimateFeesPerGas: async ({ bundlerClient }) => {
@@ -154,7 +170,6 @@ describe("ECDSA kernel Account", () => {
                         })
                     }
                 ])
-                //authorization : authorization
             })
             expect(userOpHash).toHaveLength(66)
             const receipt = await kernelClient.waitForUserOperationReceipt({

@@ -21,8 +21,10 @@ import {
     type SmartAccount,
     type UserOperationRequest,
     bundlerActions,
+    prepareUserOperation,
     type prepareUserOperation as viemPrepareUserOperation
 } from "viem/account-abstraction"
+import type { KernelSmartAccountImplementation } from "../accounts/index.js"
 import { getUserOperationGasPrice } from "../actions/index.js"
 import {
     type KernelAccountClientActions,
@@ -256,5 +258,44 @@ export function createKernelAccountClient(
 
     return client
         .extend(bundlerActions)
+        .extend((_client) => ({
+            prepareUserOperation: async (
+                args: PrepareUserOperationParameters
+            ) => {
+                let _args = args
+                if (_client.account?.authorization) {
+                    const authorization =
+                        args.authorization ||
+                        (await (
+                            _client.account as SmartAccount<KernelSmartAccountImplementation>
+                        )?.eip7702Authorization?.())
+                    _args = {
+                        ...args,
+                        authorization
+                    }
+                }
+                return await prepareUserOperation(_client, _args)
+            }
+        }))
+        .extend(bundlerActions)
+        .extend((_client) => ({
+            prepareUserOperation: async (
+                args: PrepareUserOperationParameters
+            ) => {
+                let _args = args
+                if (_client.account?.authorization) {
+                    const authorization =
+                        args.authorization ||
+                        (await (
+                            _client.account as SmartAccount<KernelSmartAccountImplementation>
+                        )?.eip7702Authorization?.())
+                    _args = {
+                        ...args,
+                        authorization
+                    }
+                }
+                return await prepareUserOperation(_client, _args)
+            }
+        }))
         .extend(kernelAccountClientActions()) as KernelAccountClient
 }

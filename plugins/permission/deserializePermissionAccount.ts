@@ -88,7 +88,8 @@ export const deserializePermissionAccount = async <
         plugins: kernelPluginManager,
         index,
         address: params.accountParams.accountAddress,
-        useMetaFactory
+        useMetaFactory,
+        eip7702Auth: params.eip7702Auth
     })
 }
 
@@ -121,6 +122,13 @@ export const decodeParamsFromInitCode = (
         | DecodeFunctionDataReturnType<typeof KernelFactoryStakerAbi>
         | DecodeFunctionDataReturnType<typeof KernelV3FactoryAbi>
     let useMetaFactory = true
+    if (initCode === "0x") {
+        return {
+            index: undefined,
+            validatorInitData: undefined,
+            useMetaFactory: true
+        }
+    }
     try {
         deployWithFactoryFunctionData = decodeFunctionData({
             abi: KernelFactoryStakerAbi,
