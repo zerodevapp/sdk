@@ -14,6 +14,10 @@ export const getActionSelector = (
         return toFunctionSelector(
             getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })
         )
+    } else if (entryPointVersion === "0.8") {
+        return toFunctionSelector(
+            getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })
+        )
     } else {
         throw new Error("Unsupported entry point version")
     }

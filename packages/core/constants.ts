@@ -2,12 +2,14 @@ import { type Address, type Hex, zeroAddress } from "viem"
 import {
     type EntryPointVersion,
     entryPoint06Address,
-    entryPoint07Address
+    entryPoint07Address,
+    entryPoint08Address
 } from "viem/account-abstraction"
 import type {
     EntryPointType,
     KERNEL_V2_VERSION_TYPE,
     KERNEL_V3_VERSION_TYPE,
+    KERNEL_V4_VERSION_TYPE,
     KERNEL_VERSION_TYPE
 } from "./types/kernel.js"
 
@@ -94,6 +96,11 @@ export const KernelVersionToAddressesMap: {
         initCodeHash:
             "0xc452397f1e7518f8cea0566ac057e243bb1643f6298aba8eec8cdee78ee3b3dd"
         //"0x1fefe62c5b9c14c4661af2e04e4a2fa10205066cae5f629d304d483f5fa9e5fc"
+    },
+    "0.4.0": {
+        accountImplementationAddress:
+            "0x45a397011fe856105f17c6ded14fd96c1f1b9a5a",
+        factoryAddress: "0x516CFC3d07da679079aD2d6C90e0C1819BD4e5E7"
     }
 }
 
@@ -106,6 +113,7 @@ export const KERNEL_V3_1: KERNEL_V3_VERSION_TYPE = "0.3.1"
 export const KERNEL_V3_2: KERNEL_V3_VERSION_TYPE = "0.3.2"
 export const KERNEL_V3_3_BETA: KERNEL_V3_VERSION_TYPE = "0.3.3"
 export const KERNEL_V3_3: KERNEL_V3_VERSION_TYPE = "0.3.3"
+export const KERNEL_V4_0: KERNEL_V4_VERSION_TYPE = "0.4.0"
 
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
@@ -160,6 +168,11 @@ export const getEntryPoint = <TEntryPointVersion extends EntryPointVersion>(
     if (entryPointVersion === "0.6")
         return {
             address: entryPoint06Address,
+            version: entryPointVersion
+        }
+    if (entryPointVersion === "0.8")
+        return {
+            address: entryPoint08Address,
             version: entryPointVersion
         }
     return {

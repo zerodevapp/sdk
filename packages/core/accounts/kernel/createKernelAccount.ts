@@ -72,6 +72,7 @@ import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
+import { KernelV4FactoryAbi } from "./abi/kernel_v_4_0_0/KernelFactoryAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
@@ -322,6 +323,27 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
             abi: createAccountAbi,
             functionName: "createAccount",
             args: [accountImplementationAddress, initialisationData, index]
+        })
+    }
+
+    const { validatorAddress, enableData } =
+        await kernelPluginManager.getValidatorInitData()
+
+    if (kernelVersion === "0.4.0") {
+        return encodeFunctionData({
+            abi: KernelV4FactoryAbi,
+            functionName: "deploy",
+            args: [
+                [
+                    {
+                        moduleType: 1n,
+                        module: validatorAddress,
+                        moduleData: enableData,
+                        internalData: "0x"
+                    }
+                ],
+                index
+            ]
         })
     }
 

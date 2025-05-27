@@ -3,10 +3,11 @@ import type { Address, Client, Hex, TypedDataDefinition } from "viem"
 import {
     type EntryPointVersion,
     type UserOperation,
-    getUserOperationHash
+    getUserOperationHash,
+    getUserOperationTypedData
 } from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
-import { getChainId, signMessage } from "viem/actions"
+import { getChainId, signMessage, signTypedData } from "viem/actions"
 import type {
     EntryPointType,
     GetKernelVersion,
@@ -76,6 +77,17 @@ export async function signerTo7702Validator<
         },
         // Sign a user operation
         async signUserOperation(userOperation) {
+            if (entryPoint.version === "0.8") {
+                const signature = await signTypedData(client, {
+                    account: viemSigner,
+                    ...getUserOperationTypedData({
+                        userOperation,
+                        chainId,
+                        entryPointAddress: entryPoint.address
+                    })
+                })
+                return signature
+            }
             const hash = getUserOperationHash({
                 userOperation: {
                     ...userOperation,

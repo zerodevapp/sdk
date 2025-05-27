@@ -13,13 +13,15 @@ import type {
 import type {
     Action,
     EntryPointType,
-    KERNEL_V3_VERSION_TYPE,
+    GetKernelVersion,
     KernelValidatorHook
 } from "../../../../../types/kernel.js"
 import { satisfiesRange } from "../../../../../utils.js"
 import { getActionSelector } from "../../common/getActionSelector.js"
 
-export const getValidatorPluginInstallModuleData = async ({
+export const getValidatorPluginInstallModuleData = async <
+    TEntryPointVersion extends "0.7" | "0.8"
+>({
     plugin,
     entryPoint,
     kernelVersion,
@@ -27,8 +29,8 @@ export const getValidatorPluginInstallModuleData = async ({
     action
 }: {
     plugin: RequiredBy<Partial<KernelValidator>, "address" | "getEnableData">
-    entryPoint: EntryPointType<"0.7">
-    kernelVersion: KERNEL_V3_VERSION_TYPE
+    entryPoint: EntryPointType<TEntryPointVersion>
+    kernelVersion: GetKernelVersion<TEntryPointVersion>
     hook?: KernelValidatorHook
     action?: Pick<Action, "selector">
 }): Promise<PluginMigrationData> => {

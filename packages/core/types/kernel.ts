@@ -254,14 +254,19 @@ export type KERNEL_V2_VERSION_TYPE = "0.0.2" | "0.2.2" | "0.2.3" | "0.2.4"
 
 export type KERNEL_V3_VERSION_TYPE = "0.3.0" | "0.3.1" | "0.3.2" | "0.3.3"
 
+export type KERNEL_V4_VERSION_TYPE = "0.4.0"
+
 export type KERNEL_VERSION_TYPE =
     | KERNEL_V2_VERSION_TYPE
     | KERNEL_V3_VERSION_TYPE
+    | KERNEL_V4_VERSION_TYPE
 
 export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
     entryPointVersion extends "0.6"
         ? KERNEL_V2_VERSION_TYPE
-        : KERNEL_V3_VERSION_TYPE
+        : entryPointVersion extends "0.7"
+          ? KERNEL_V3_VERSION_TYPE
+          : KERNEL_V4_VERSION_TYPE
 
 export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
     address: Address
