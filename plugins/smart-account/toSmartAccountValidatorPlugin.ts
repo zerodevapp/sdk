@@ -11,10 +11,10 @@ import {
     type Address,
     type Client,
     type Hex,
-    stringToHex,
     type TypedDataDefinition,
-    zeroAddress,
-    bytesToHex
+    bytesToHex,
+    stringToHex,
+    zeroAddress
 } from "viem"
 import {
     type EntryPointVersion,
