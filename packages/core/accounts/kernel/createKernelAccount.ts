@@ -9,11 +9,14 @@ import {
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
+    decodeAbiParameters,
+    decodeFunctionData,
     encodeFunctionData,
     getTypesForEIP712Domain,
     hashMessage,
     hashTypedData,
     isAddressEqual,
+    slice,
     toHex,
     validateTypedData,
     zeroAddress
@@ -56,6 +59,10 @@ import type {
     KernelPluginManagerParams,
     KernelValidator,
     PluginMigrationData
+} from "../../types/kernel.js"
+import type {
+    KERNEL_V3_VERSION_TYPE,
+    KERNEL_V4_VERSION_TYPE
 } from "../../types/kernel.js"
 import type { Signer } from "../../types/utils.js"
 import { KERNEL_FEATURES, hasKernelFeature } from "../../utils.js"
@@ -127,7 +134,7 @@ export type CreateKernelAccountReturnType<
 
 export type CreateKernelAccountParameters<
     entryPointVersion extends EntryPointVersion,
-    KernelVerion extends GetKernelVersion<entryPointVersion>
+    KernelVersion extends GetKernelVersion<entryPointVersion>
 > = {
     entryPoint: EntryPointType<entryPointVersion>
     index?: bigint
@@ -135,8 +142,12 @@ export type CreateKernelAccountParameters<
     accountImplementationAddress?: Address
     metaFactoryAddress?: Address
     address?: Address
-    kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
+    kernelVersion: KernelVersion
+    initConfig?: KernelVersion extends
+        | KERNEL_V3_VERSION_TYPE
+        | KERNEL_V4_VERSION_TYPE
+        ? Hex[]
+        : never
     useMetaFactory?: boolean
     pluginMigrations?: PluginMigrationData[]
 } & (
@@ -226,7 +237,9 @@ const getKernelInitData = async <entryPointVersion extends EntryPointVersion>({
     kernelPluginManager: KernelPluginManager<entryPointVersion>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
+    initConfig?: GetKernelVersion<entryPointVersion> extends
+        | KERNEL_V3_VERSION_TYPE
+        | KERNEL_V4_VERSION_TYPE
         ? Hex[]
         : never
 }) => {
@@ -303,7 +316,9 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
     kernelPluginManager: KernelPluginManager<entryPointVersion>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
+    initConfig?: GetKernelVersion<entryPointVersion> extends
+        | KERNEL_V3_VERSION_TYPE
+        | KERNEL_V4_VERSION_TYPE
         ? Hex[]
         : never
     useMetaFactory: boolean
@@ -330,17 +345,45 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
         await kernelPluginManager.getValidatorInitData()
 
     if (kernelVersion === "0.4.0") {
+        const decodedModuleData = initConfig
+            ? initConfig.map((config, index) => {
+                  const { functionName, args } = decodeFunctionData({
+                      abi: KernelV3_1AccountAbi,
+                      data: config
+                  })
+                  if (functionName !== "installModule" || args[2].length < 20) {
+                      throw new Error(
+                          `Invalid initConfig at index ${index} should be encoded 'installModule' call`
+                      )
+                  }
+                  const [moduleData, internalData] = decodeAbiParameters(
+                      [
+                          { name: "installData", type: "bytes" },
+                          { name: "internalData", type: "bytes" }
+                      ],
+                      slice(args[2], 20)
+                  )
+                  return {
+                      moduleType: args[0],
+                      module: args[1],
+                      moduleData,
+                      internalData
+                  }
+              })
+            : []
         return encodeFunctionData({
             abi: KernelV4FactoryAbi,
             functionName: "deploy",
             args: [
                 [
+                    // root module
                     {
                         moduleType: 1n,
                         module: validatorAddress,
                         moduleData: enableData,
                         internalData: "0x"
-                    }
+                    },
+                    ...decodedModuleData
                 ],
                 index
             ]
