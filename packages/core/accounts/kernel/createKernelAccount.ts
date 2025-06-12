@@ -79,6 +79,7 @@ import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
+import { KernelV4_0AccountAbi } from "./abi/kernel_v_4_0_0/KernelAccountAbi.js"
 import { KernelV4FactoryAbi } from "./abi/kernel_v_4_0_0/KernelFactoryAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
@@ -291,120 +292,6 @@ const getKernelInitData = async <entryPointVersion extends EntryPointVersion>({
     })
 }
 
-/**
- * Get the account initialization code for a kernel smart account
- * @param index
- * @param factoryAddress
- * @param accountImplementationAddress
- * @param ecdsaValidatorAddress
- */
-const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
-    index,
-    factoryAddress,
-    accountImplementationAddress,
-    entryPointVersion: _entryPointVersion,
-    kernelPluginManager,
-    initHook,
-    kernelVersion,
-    initConfig,
-    useMetaFactory
-}: {
-    index: bigint
-    factoryAddress: Address
-    accountImplementationAddress: Address
-    entryPointVersion: entryPointVersion
-    kernelPluginManager: KernelPluginManager<entryPointVersion>
-    initHook: boolean
-    kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends
-        | KERNEL_V3_VERSION_TYPE
-        | KERNEL_V4_VERSION_TYPE
-        ? Hex[]
-        : never
-    useMetaFactory: boolean
-}): Promise<Hex> => {
-    // Build the account initialization data
-    const initialisationData = await getKernelInitData<entryPointVersion>({
-        entryPointVersion: _entryPointVersion,
-        kernelPluginManager,
-        initHook,
-        kernelVersion,
-        initConfig
-    })
-
-    // Build the account init code
-    if (_entryPointVersion === "0.6") {
-        return encodeFunctionData({
-            abi: createAccountAbi,
-            functionName: "createAccount",
-            args: [accountImplementationAddress, initialisationData, index]
-        })
-    }
-
-    const { validatorAddress, enableData } =
-        await kernelPluginManager.getValidatorInitData()
-
-    if (kernelVersion === "0.4.0") {
-        const decodedModuleData = initConfig
-            ? initConfig.map((config, index) => {
-                  const { functionName, args } = decodeFunctionData({
-                      abi: KernelV3_1AccountAbi,
-                      data: config
-                  })
-                  if (functionName !== "installModule" || args[2].length < 20) {
-                      throw new Error(
-                          `Invalid initConfig at index ${index} should be encoded 'installModule' call`
-                      )
-                  }
-                  const [moduleData, internalData] = decodeAbiParameters(
-                      [
-                          { name: "installData", type: "bytes" },
-                          { name: "internalData", type: "bytes" }
-                      ],
-                      slice(args[2], 20)
-                  )
-                  return {
-                      moduleType: args[0],
-                      module: args[1],
-                      moduleData,
-                      internalData
-                  }
-              })
-            : []
-        return encodeFunctionData({
-            abi: KernelV4FactoryAbi,
-            functionName: "deploy",
-            args: [
-                [
-                    // root module
-                    {
-                        moduleType: 1n,
-                        module: validatorAddress,
-                        moduleData: enableData,
-                        internalData: "0x"
-                    },
-                    ...decodedModuleData
-                ],
-                index
-            ]
-        })
-    }
-
-    if (!useMetaFactory) {
-        return encodeFunctionData({
-            abi: KernelV3FactoryAbi,
-            functionName: "createAccount",
-            args: [initialisationData, toHex(index, { size: 32 })]
-        })
-    }
-
-    return encodeFunctionData({
-        abi: KernelFactoryStakerAbi,
-        functionName: "deployWithFactory",
-        args: [factoryAddress, initialisationData, toHex(index, { size: 32 })]
-    })
-}
-
 const getDefaultAddresses = <entryPointVersion extends EntryPointVersion>(
     entryPointVersion: entryPointVersion,
     kernelVersion: GetKernelVersion<entryPointVersion>,
@@ -545,11 +432,165 @@ export async function createKernelAccount<
             : plugins?.hook && !plugins?.regular
     )
 
+    /**
+     * Get the account initialization code for a kernel smart account
+     * @param index
+     * @param factoryAddress
+     * @param accountImplementationAddress
+     * @param ecdsaValidatorAddress
+     */
+    const getAccountInitCode = async <
+        entryPointVersion extends EntryPointVersion
+    >({
+        index,
+        factoryAddress,
+        accountImplementationAddress,
+        entryPointVersion: _entryPointVersion,
+        kernelPluginManager,
+        initHook,
+        kernelVersion,
+        initConfig,
+        isEip7702,
+        useMetaFactory
+    }: {
+        index: bigint
+        factoryAddress: Address
+        accountImplementationAddress: Address
+        entryPointVersion: entryPointVersion
+        kernelPluginManager: KernelPluginManager<entryPointVersion>
+        initHook: boolean
+        kernelVersion: GetKernelVersion<entryPointVersion>
+        initConfig?: GetKernelVersion<entryPointVersion> extends
+            | KERNEL_V3_VERSION_TYPE
+            | KERNEL_V4_VERSION_TYPE
+            ? Hex[]
+            : never
+        isEip7702: boolean
+        useMetaFactory: boolean
+    }): Promise<Hex> => {
+        // Build the account initialization data
+        const initialisationData = await getKernelInitData<entryPointVersion>({
+            entryPointVersion: _entryPointVersion,
+            kernelPluginManager,
+            initHook,
+            kernelVersion,
+            initConfig
+        })
+
+        // Build the account init code
+        if (_entryPointVersion === "0.6") {
+            return encodeFunctionData({
+                abi: createAccountAbi,
+                functionName: "createAccount",
+                args: [accountImplementationAddress, initialisationData, index]
+            })
+        }
+
+        const { validatorAddress, enableData } =
+            await kernelPluginManager.getValidatorInitData()
+
+        if (satisfies(kernelVersion, ">=0.4.0")) {
+            const decodedModuleData = initConfig
+                ? initConfig.map((config, index) => {
+                      const { functionName, args } = decodeFunctionData({
+                          abi: KernelV3_1AccountAbi,
+                          data: config
+                      })
+                      if (
+                          functionName !== "installModule" ||
+                          args[2].length < 20
+                      ) {
+                          throw new Error(
+                              `Invalid initConfig at index ${index} should be encoded 'installModule' call`
+                          )
+                      }
+                      const [moduleData, internalData] = decodeAbiParameters(
+                          [
+                              { name: "installData", type: "bytes" },
+                              { name: "internalData", type: "bytes" }
+                          ],
+                          slice(args[2], 20)
+                      )
+
+                      return {
+                          moduleType: args[0],
+                          module: args[1],
+                          moduleData,
+                          internalData
+                      }
+                  })
+                : []
+            if (isEip7702) {
+                const nonce = 0n
+                const signature = await signTypedData({
+                    types: {
+                        InstallPackages: [
+                            { name: "nonce", type: "uint256" },
+                            { name: "packages", type: "Install[]" }
+                        ],
+                        Install: [
+                            { name: "moduleType", type: "uint256" },
+                            { name: "module", type: "address" },
+                            { name: "moduleData", type: "bytes" },
+                            { name: "internalData", type: "bytes" }
+                        ]
+                    },
+                    primaryType: "InstallPackages",
+                    message: {
+                        nonce,
+                        packages: decodedModuleData
+                    }
+                })
+                return encodeFunctionData({
+                    abi: KernelV4_0AccountAbi,
+                    functionName: "installModule",
+                    args: [false, nonce, decodedModuleData, signature]
+                })
+            }
+
+            return encodeFunctionData({
+                abi: KernelV4FactoryAbi,
+                functionName: "deploy",
+                args: [
+                    [
+                        // root module
+                        {
+                            moduleType: 1n,
+                            module: validatorAddress,
+                            moduleData: enableData,
+                            internalData: "0x"
+                        },
+                        ...decodedModuleData
+                    ],
+                    index
+                ]
+            })
+        }
+
+        if (!useMetaFactory) {
+            return encodeFunctionData({
+                abi: KernelV3FactoryAbi,
+                functionName: "createAccount",
+                args: [initialisationData, toHex(index, { size: 32 })]
+            })
+        }
+
+        return encodeFunctionData({
+            abi: KernelFactoryStakerAbi,
+            functionName: "deployWithFactory",
+            args: [
+                factoryAddress,
+                initialisationData,
+                toHex(index, { size: 32 })
+            ]
+        })
+    }
+
     // Helper to generate the init code for the smart account
     const generateInitCode = async () => {
-        if (isEip7702) {
-            return "0x" as `0x${string}`
-        }
+        // if (isEip7702) {
+        //     return "0x" as `0x${string}`
+        // }
         if (!accountImplementationAddress || !factoryAddress)
             throw new Error("Missing account logic address or factory address")
         return getAccountInitCode<entryPointVersion>({
@@ -561,12 +602,19 @@ export async function createKernelAccount<
             initHook,
             kernelVersion,
             initConfig,
+            isEip7702,
             useMetaFactory
         })
     }
 
     const getFactoryArgs = async () => {
         if (isEip7702) {
+            if (satisfies(kernelVersion, ">=0.4.0")) {
+                return {
+                    factory: "0x7702" as Hex,
+                    factoryData: await generateInitCode()
+                }
+            }
             return {
                 factory: undefined,
                 factoryData: undefined
@@ -692,6 +740,69 @@ export async function createKernelAccount<
             return auth
         }
         return undefined
+    }
+
+    const signTypedData = async (typedData) => {
+        const {
+            message,
+            primaryType,
+            types: _types,
+            domain
+        } = typedData as TypedDataDefinition
+        const types = {
+            EIP712Domain: getTypesForEIP712Domain({
+                domain: domain
+            }),
+            ..._types
+        }
+
+        // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
+        // as we can't statically check this with TypeScript.
+        validateTypedData({
+            domain: domain,
+            message: message,
+            primaryType: primaryType,
+            types: types
+        })
+        const {
+            name,
+            chainId: metadataChainId,
+            version
+        } = await getMemoizedAccountMetadata()
+        if (isEip7702) {
+            const signature = await kernelPluginManager.signTypedData({
+                ...typedData,
+                domain: {
+                    name,
+                    chainId: Number(metadataChainId),
+                    version,
+                    verifyingContract: accountAddress
+                }
+            })
+            return signature
+        }
+
+        const typedHash = hashTypedData(typedData)
+        const wrappedMessageHash = await eip712WrapHash(typedHash, {
+            name,
+            chainId: Number(metadataChainId),
+            version,
+            verifyingContract: accountAddress
+        })
+
+        const signature = await kernelPluginManager.signMessage({
+            message: { raw: wrappedMessageHash }
+        })
+        if (
+            !hasKernelFeature(
+                KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
+                version
+            ) ||
+            isEip7702
+        ) {
+            return signature
+        }
+        return concatHex([kernelPluginManager.getIdentifier(), signature])
     }
 
     await checkPluginInstallationStatus()
@@ -828,55 +939,7 @@ export async function createKernelAccount<
 
             return concatHex([kernelPluginManager.getIdentifier(), signature])
         },
-        async signTypedData(typedData) {
-            const {
-                message,
-                primaryType,
-                types: _types,
-                domain
-            } = typedData as TypedDataDefinition
-            const types = {
-                EIP712Domain: getTypesForEIP712Domain({
-                    domain: domain
-                }),
-                ..._types
-            }
-
-            // Need to do a runtime validation check on addresses, byte ranges, integer ranges, etc
-            // as we can't statically check this with TypeScript.
-            validateTypedData({
-                domain: domain,
-                message: message,
-                primaryType: primaryType,
-                types: types
-            })
-
-            const typedHash = hashTypedData(typedData)
-
-            const {
-                name,
-                chainId: metadataChainId,
-                version
-            } = await getMemoizedAccountMetadata()
-            const wrappedMessageHash = await eip712WrapHash(typedHash, {
-                name,
-                chainId: Number(metadataChainId),
-                version,
-                verifyingContract: accountAddress
-            })
-            const signature = await kernelPluginManager.signMessage({
-                message: { raw: wrappedMessageHash }
-            })
-            if (
-                !hasKernelFeature(
-                    KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
-                    version
-                )
-            ) {
-                return signature
-            }
-            return concatHex([kernelPluginManager.getIdentifier(), signature])
-        },
+        signTypedData,
         // Get the nonce of the smart account
         async getNonce(_args) {
             const key = await kernelPluginManager.getNonceKey(
