@@ -38,6 +38,7 @@ import type {
 import {
     getChainId,
     getCode,
+    readContract,
     signAuthorization as signAuthorizationAction
 } from "viem/actions"
 import { getAction, verifyAuthorization } from "viem/utils"
@@ -521,7 +522,17 @@ export async function createKernelAccount<
                   })
                 : []
             if (isEip7702) {
-                const nonce = 0n
+                let kernelNonce: bigint
+                try {
+                    kernelNonce = await readContract(client, {
+                        address: accountAddress,
+                        abi: KernelV4_0AccountAbi,
+                        functionName: "nonce",
+                        args: [0n]
+                    })
+                } catch {
+                    kernelNonce = 0n
+                }
                 const signature = await signTypedData({
                     types: {
                         InstallPackages: [
@@ -537,14 +548,14 @@ export async function createKernelAccount<
                     },
                     primaryType: "InstallPackages",
                     message: {
-                        nonce,
+                        nonce: kernelNonce,
                         packages: decodedModuleData
                     }
                 })
                 return encodeFunctionData({
                     abi: KernelV4_0AccountAbi,
                     functionName: "installModule",
-                    args: [false, nonce, decodedModuleData, signature]
+                    args: [false, kernelNonce, decodedModuleData, signature]
                 })
             }
 
