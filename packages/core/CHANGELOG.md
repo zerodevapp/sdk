@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.37
+
+### Patch Changes
+
+- fix: hexlify number explicitly in deepHexlify util
+
 ## 5.4.36
 
 ### Patch Changes

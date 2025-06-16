@@ -137,7 +137,7 @@ export function deepHexlify(obj: any): any {
         return obj
     }
 
-    if (typeof obj === "bigint") {
+    if (typeof obj === "bigint" || typeof obj === "number") {
         return toHex(obj)
     }
 
