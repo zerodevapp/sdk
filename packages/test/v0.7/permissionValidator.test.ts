@@ -1,6 +1,8 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
+import { toECDSASigner } from "@zerodev/permissions/signers"
 import {
     EIP1271Abi,
     type KernelAccountClient,
@@ -50,6 +52,7 @@ import {
     toTimestampPolicy
 } from "../../../plugins/permission/policies"
 import { ParamCondition } from "../../../plugins/permission/policies/types"
+import { toInitConfig } from "../../../plugins/permission/toInitConfig"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi"
 import { TOKEN_ACTION_ADDRESS, config } from "../config"
@@ -69,9 +72,6 @@ import {
     kernelVersion,
     sleep
 } from "./utils"
-import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
-import { toECDSASigner } from "@zerodev/permissions/signers";
-import { toInitConfig } from "../../../plugins/permission/toInitConfig";
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -174,84 +174,83 @@ describe("Permission kernel Account", () => {
     })
 
     test(
-      "Should install PermissionValidator as initConfig",
-      async () => {
-        const publicClient = await getPublicClient();
-        const kernelVersion = "0.3.3";
-        const signer = privateKeyToAccount(generatePrivateKey());
-        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
-          publicClient,
-          {
-            entryPoint: getEntryPoint(),
-            signer,
-            kernelVersion,
-          }
-        );
+        "Should install PermissionValidator as initConfig",
+        async () => {
+            const publicClient = await getPublicClient()
+            const kernelVersion = "0.3.3"
+            const signer = privateKeyToAccount(generatePrivateKey())
+            const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    signer,
+                    kernelVersion
+                }
+            )
 
-        const sessionKeySigner = privateKeyToAccount(generatePrivateKey());
-        const ecdsaModularSigner = await toECDSASigner({
-          signer: sessionKeySigner,
-        });
+            const sessionKeySigner = privateKeyToAccount(generatePrivateKey())
+            const ecdsaModularSigner = await toECDSASigner({
+                signer: sessionKeySigner
+            })
 
-        const permissionPlugin = await toPermissionValidator(publicClient, {
-          entryPoint: getEntryPoint(),
-          signer: ecdsaModularSigner,
-          kernelVersion,
-          policies: [toSudoPolicy({})],
-        });
+            const permissionPlugin = await toPermissionValidator(publicClient, {
+                entryPoint: getEntryPoint(),
+                signer: ecdsaModularSigner,
+                kernelVersion,
+                policies: [toSudoPolicy({})]
+            })
 
-        const account = await createKernelAccount(publicClient, {
-          entryPoint: getEntryPoint(),
-          plugins: {
-            sudo: ecdsaValidatorPlugin,
-          },
-          kernelVersion,
-          initConfig: await toInitConfig(permissionPlugin),
-        });
+            const account = await createKernelAccount(publicClient, {
+                entryPoint: getEntryPoint(),
+                plugins: {
+                    sudo: ecdsaValidatorPlugin
+                },
+                kernelVersion,
+                initConfig: await toInitConfig(permissionPlugin)
+            })
 
-        const zeroDevPaymaster = getZeroDevPaymasterClient();
-        const kernelClient = await getKernelAccountClient({
-          account,
-          paymaster: zeroDevPaymaster,
-        });
+            const zeroDevPaymaster = getZeroDevPaymasterClient()
+            const kernelClient = await getKernelAccountClient({
+                account,
+                paymaster: zeroDevPaymaster
+            })
 
-        const tx = await kernelClient.sendTransaction({
-          to: zeroAddress,
-          value: 0n,
-          data: "0x",
-        });
+            const tx = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
 
-        console.log(
-          `${getTestingChain().blockExplorers?.default.url}/tx/${tx}`
-        );
+            console.log(
+                `${getTestingChain().blockExplorers?.default.url}/tx/${tx}`
+            )
 
-        const permissionAccount = await createKernelAccount(publicClient, {
-            entryPoint: getEntryPoint(),
-            plugins: {
-              regular: permissionPlugin,
-            },
-            kernelVersion,
-            address: account.address,
-          });
+            const permissionAccount = await createKernelAccount(publicClient, {
+                entryPoint: getEntryPoint(),
+                plugins: {
+                    regular: permissionPlugin
+                },
+                kernelVersion,
+                address: account.address
+            })
 
-          const permissionKernelClient = await getKernelAccountClient({
-            account: permissionAccount,
-            paymaster: zeroDevPaymaster,
-          });
+            const permissionKernelClient = await getKernelAccountClient({
+                account: permissionAccount,
+                paymaster: zeroDevPaymaster
+            })
 
-          const tx2 = await permissionKernelClient.sendTransaction({
-            to: zeroAddress,
-            value: 0n,
-            data: "0x",
-          });
+            const tx2 = await permissionKernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
 
-          console.log(
-            `${getTestingChain().blockExplorers?.default.url}/tx/${tx2}`
-        )
-    },
-    TEST_TIMEOUT
+            console.log(
+                `${getTestingChain().blockExplorers?.default.url}/tx/${tx2}`
+            )
+        },
+        TEST_TIMEOUT
     )
-
 
     test(
         "Should validate message signatures for undeployed accounts (6492)",
