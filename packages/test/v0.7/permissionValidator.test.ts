@@ -7,6 +7,7 @@ import {
     type KernelSmartAccountImplementation,
     KernelV3AccountAbi,
     type ZeroDevPaymasterClient,
+    createKernelAccount,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
 import { ethers } from "ethers"
@@ -36,7 +37,8 @@ import {
     RATE_LIMIT_POLICY_WITH_RESET_CONTRACT,
     SUDO_POLICY_CONTRACT,
     deserializePermissionAccount,
-    serializePermissionAccount
+    serializePermissionAccount,
+    toPermissionValidator
 } from "../../../plugins/permission"
 import {
     CallPolicyVersion,
@@ -62,10 +64,14 @@ import {
     getSignerToPermissionKernelAccountAndPlugin,
     getSignerToRootPermissionKernelAccount,
     getSignerToRootPermissionWithSecondaryValidatorKernelAccount,
+    getTestingChain,
     getZeroDevPaymasterClient,
     kernelVersion,
     sleep
 } from "./utils"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
+import { toECDSASigner } from "@zerodev/permissions/signers";
+import { toInitConfig } from "../../../plugins/permission/toInitConfig";
 
 const ETHEREUM_ADDRESS_LENGTH = 42
 const ETHEREUM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/
@@ -166,6 +172,86 @@ describe("Permission kernel Account", () => {
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
         expect(account.address).not.toEqual(zeroAddress)
     })
+
+    test(
+      "Should install PermissionValidator as initConfig",
+      async () => {
+        const publicClient = await getPublicClient();
+        const kernelVersion = "0.3.3";
+        const signer = privateKeyToAccount(generatePrivateKey());
+        const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+          publicClient,
+          {
+            entryPoint: getEntryPoint(),
+            signer,
+            kernelVersion,
+          }
+        );
+
+        const sessionKeySigner = privateKeyToAccount(generatePrivateKey());
+        const ecdsaModularSigner = await toECDSASigner({
+          signer: sessionKeySigner,
+        });
+
+        const permissionPlugin = await toPermissionValidator(publicClient, {
+          entryPoint: getEntryPoint(),
+          signer: ecdsaModularSigner,
+          kernelVersion,
+          policies: [toSudoPolicy({})],
+        });
+
+        const account = await createKernelAccount(publicClient, {
+          entryPoint: getEntryPoint(),
+          plugins: {
+            sudo: ecdsaValidatorPlugin,
+          },
+          kernelVersion,
+          initConfig: await toInitConfig(permissionPlugin),
+        });
+
+        const zeroDevPaymaster = getZeroDevPaymasterClient();
+        const kernelClient = await getKernelAccountClient({
+          account,
+          paymaster: zeroDevPaymaster,
+        });
+
+        const tx = await kernelClient.sendTransaction({
+          to: zeroAddress,
+          value: 0n,
+          data: "0x",
+        });
+
+        console.log(
+          `${getTestingChain().blockExplorers?.default.url}/tx/${tx}`
+        );
+
+        const permissionAccount = await createKernelAccount(publicClient, {
+            entryPoint: getEntryPoint(),
+            plugins: {
+              regular: permissionPlugin,
+            },
+            kernelVersion,
+            address: account.address,
+          });
+
+          const permissionKernelClient = await getKernelAccountClient({
+            account: permissionAccount,
+            paymaster: zeroDevPaymaster,
+          });
+
+          const tx2 = await permissionKernelClient.sendTransaction({
+            to: zeroAddress,
+            value: 0n,
+            data: "0x",
+          });
+
+          console.log(
+            `${getTestingChain().blockExplorers?.default.url}/tx/${tx2}`
+        )
+    },
+    TEST_TIMEOUT
+    )
+
 
     test(
         "Should validate message signatures for undeployed accounts (6492)",
