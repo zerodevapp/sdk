@@ -177,7 +177,6 @@ describe("Permission kernel Account", () => {
         "Should install PermissionValidator as initConfig",
         async () => {
             const publicClient = await getPublicClient()
-            const kernelVersion = "0.3.3"
             const signer = privateKeyToAccount(generatePrivateKey())
             const ecdsaValidatorPlugin = await signerToEcdsaValidator(
                 publicClient,

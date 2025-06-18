@@ -1,5 +1,8 @@
-import { KernelV3_3AccountAbi } from "@zerodev/sdk"
-import { VALIDATOR_TYPE } from "@zerodev/sdk/constants"
+import { KernelV3_3AccountAbi, encodeCallDataEpV07 } from "@zerodev/sdk"
+import {
+    KernelVersionToAddressesMap,
+    VALIDATOR_TYPE
+} from "@zerodev/sdk/constants"
 import {
     type Hex,
     concat,
@@ -49,5 +52,15 @@ export async function toInitConfig(
             true
         ]
     })
-    return [permissionInstallFunctionData, grantAccessFunctionData]
+    const delegateCall = await encodeCallDataEpV07(
+        [
+            {
+                to: KernelVersionToAddressesMap["0.3.3"]
+                    .accountImplementationAddress,
+                data: grantAccessFunctionData
+            }
+        ],
+        "delegatecall"
+    )
+    return [permissionInstallFunctionData, delegateCall]
 }
