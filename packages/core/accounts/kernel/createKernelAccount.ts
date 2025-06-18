@@ -99,6 +99,10 @@ type SignMessageParameters = {
     useReplayableSignature?: boolean
 }
 
+type Eip7702AuthorizationParameters = {
+    useReplayableSignature?: boolean
+}
+
 export type KernelSmartAccountImplementation<
     entryPointVersion extends EntryPointVersion = "0.7"
 > = Assign<
@@ -125,7 +129,9 @@ export type KernelSmartAccountImplementation<
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
         eip7702Authorization?:
-            | (() => Promise<SignAuthorizationReturnType | undefined>)
+            | ((
+                  parameters?: Eip7702AuthorizationParameters
+              ) => Promise<SignAuthorizationReturnType | undefined>)
             | undefined
     }
 >
@@ -710,7 +716,10 @@ export async function createKernelAccount<
         pluginCache.allInstalled = pluginCache.pendingPlugins.length === 0
     }
 
-    const signAuthorization = async () => {
+    const signAuthorization = async (
+        params?: Eip7702AuthorizationParameters
+    ) => {
+        const { useReplayableSignature } = params ?? {}
         const code = await getCode(client, { address: accountAddress })
         // check if account has not activated 7702 with implementation address
         if (
@@ -739,7 +748,9 @@ export async function createKernelAccount<
                 (await signAuthorizationAction(client, {
                     account: localAccount as LocalAccount,
                     address: accountImplementationAddress as `0x${string}`,
-                    chainId: await getMemoizedChainId()
+                    chainId: useReplayableSignature
+                        ? 0
+                        : await getMemoizedChainId()
                 }))
             const verified = await verifyAuthorization({
                 authorization: auth,
