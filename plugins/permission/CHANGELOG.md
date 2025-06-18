@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.9
+
+### Patch Changes
+
+- feat: added toInitConfig util in permissions plugin
+
 ## 5.5.8
 
 ### Patch Changes
