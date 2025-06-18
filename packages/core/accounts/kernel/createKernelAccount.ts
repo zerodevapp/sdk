@@ -912,6 +912,11 @@ export async function createKernelAccount<
             return this.signMessage({ message: hash })
         },
         async signMessage({ message, useReplayableSignature }) {
+            if (isEip7702) {
+                return kernelPluginManager.signMessage({
+                    message
+                })
+            }
             const messageHash = hashMessage(message)
             const {
                 name,
