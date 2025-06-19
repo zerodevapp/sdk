@@ -1,7 +1,9 @@
 import { satisfies } from "semver"
 import {
+    http,
     type Address,
     type Assign,
+    type Chain,
     type EncodeDeployDataParameters,
     type Hex,
     type LocalAccount,
@@ -9,6 +11,7 @@ import {
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
+    createPublicClient,
     decodeAbiParameters,
     decodeFunctionData,
     encodeFunctionData,
@@ -100,6 +103,7 @@ type SignMessageParameters = {
 }
 
 type Eip7702AuthorizationParameters = {
+    chain?: Chain
     useReplayableSignature?: boolean
 }
 
@@ -719,8 +723,16 @@ export async function createKernelAccount<
     const signAuthorization = async (
         params?: Eip7702AuthorizationParameters
     ) => {
-        const { useReplayableSignature } = params ?? {}
-        const code = await getCode(client, { address: accountAddress })
+        const { useReplayableSignature, chain } = params ?? {}
+        const currentChainId = await getMemoizedChainId()
+        const client7702 =
+            !chain || chain.id === currentChainId
+                ? client
+                : createPublicClient({
+                      transport: http(),
+                      chain
+                  })
+        const code = await getCode(client7702, { address: accountAddress })
         // check if account has not activated 7702 with implementation address
         if (
             !code ||
@@ -731,26 +743,34 @@ export async function createKernelAccount<
                     `0xef0100${accountImplementationAddress.slice(2).toLowerCase()}`
                 )
         ) {
-            if (
-                eip7702Auth &&
-                !isAddressEqual(
-                    eip7702Auth.address,
-                    accountImplementationAddress
-                )
-            ) {
-                throw new Error(
-                    "EIP-7702 authorization delegate address does not match account implementation address"
-                )
+            if (eip7702Auth) {
+                // check if the given authorization is for the current chain and account implementation address
+                if (
+                    !isAddressEqual(
+                        eip7702Auth.address,
+                        accountImplementationAddress
+                    )
+                ) {
+                    throw new Error(
+                        "EIP-7702 authorization delegate address does not match account implementation address"
+                    )
+                }
+                if (
+                    eip7702Auth.chainId !== currentChainId &&
+                    eip7702Auth.chainId !== 0
+                ) {
+                    throw new Error(
+                        "EIP-7702 authorization chain id does not match current chain id"
+                    )
+                }
             }
 
             const auth =
                 eip7702Auth ??
-                (await signAuthorizationAction(client, {
+                (await signAuthorizationAction(client7702, {
                     account: localAccount as LocalAccount,
                     address: accountImplementationAddress as `0x${string}`,
-                    chainId: useReplayableSignature
-                        ? 0
-                        : await getMemoizedChainId()
+                    chainId: useReplayableSignature ? 0 : currentChainId
                 }))
             const verified = await verifyAuthorization({
                 authorization: auth,
