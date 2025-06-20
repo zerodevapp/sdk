@@ -543,7 +543,8 @@ export async function createKernelAccount<
                 } catch {
                     kernelNonce = 0n
                 }
-                const signature = await signTypedData({
+                const { name, version } = await getMemoizedAccountMetadata()
+                const typedData = {
                     types: {
                         InstallPackages: [
                             { name: "nonce", type: "uint256" },
@@ -561,11 +562,22 @@ export async function createKernelAccount<
                         nonce: kernelNonce,
                         packages: decodedModuleData
                     }
+                } as const
+
+                const signature = await kernelPluginManager.signTypedData({
+                    ...typedData,
+                    domain: {
+                        name,
+                        // chainId: Number(metadataChainId),
+                        version,
+                        verifyingContract: accountAddress
+                    }
                 })
+
                 return encodeFunctionData({
                     abi: KernelV4_0AccountAbi,
                     functionName: "installModule",
-                    args: [false, kernelNonce, decodedModuleData, signature]
+                    args: [true, kernelNonce, decodedModuleData, signature]
                 })
             }
 
