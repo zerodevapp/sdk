@@ -69,9 +69,11 @@ export async function changeSudoValidator<
 
     let rootValidatorId: Hex
     if (
-        [VALIDATOR_TYPE.PERMISSION, VALIDATOR_TYPE.SECONDARY].includes(
-            VALIDATOR_TYPE[sudoValidator.validatorType]
-        )
+        [
+            VALIDATOR_TYPE.PERMISSION,
+            VALIDATOR_TYPE.SECONDARY,
+            VALIDATOR_TYPE.EIP7702
+        ].includes(VALIDATOR_TYPE[sudoValidator.validatorType])
     ) {
         rootValidatorId = concatHex([
             VALIDATOR_TYPE[sudoValidator.validatorType],

@@ -115,7 +115,8 @@ export const KERNEL_NAME = "Kernel"
 export const VALIDATOR_TYPE = {
     SUDO: "0x00",
     SECONDARY: "0x01",
-    PERMISSION: "0x02"
+    PERMISSION: "0x02",
+    EIP7702: "0x00"
 } as const
 export enum VALIDATOR_MODE {
     DEFAULT = "0x00",

@@ -52,9 +52,11 @@ export async function uninstallPlugin<
 
     let validatorId: Hex
     if (
-        [VALIDATOR_TYPE.PERMISSION, VALIDATOR_TYPE.SECONDARY].includes(
-            VALIDATOR_TYPE[plugin.validatorType]
-        )
+        [
+            VALIDATOR_TYPE.PERMISSION,
+            VALIDATOR_TYPE.SECONDARY,
+            VALIDATOR_TYPE.EIP7702
+        ].includes(VALIDATOR_TYPE[plugin.validatorType])
     ) {
         validatorId = concatHex([
             VALIDATOR_TYPE[plugin.validatorType],

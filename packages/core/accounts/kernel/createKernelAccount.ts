@@ -731,19 +731,39 @@ export async function createKernelAccount<
                 chainId: metadataChainId,
                 version
             } = await getMemoizedAccountMetadata()
-            const wrappedMessageHash = await eip712WrapHash(
-                messageHash,
-                {
-                    name,
-                    chainId: Number(metadataChainId),
-                    version,
-                    verifyingContract: accountAddress
-                },
-                useReplayableSignature
-            )
-            let signature = await kernelPluginManager.signMessage({
-                message: { raw: wrappedMessageHash }
-            })
+
+            let signature: Hex
+            if (isEip7702) {
+                signature = await kernelPluginManager.signTypedData({
+                    message: { hash: messageHash },
+                    primaryType: "Kernel",
+                    types: {
+                        Kernel: [{ name: "hash", type: "bytes32" }]
+                    },
+                    domain: {
+                        name,
+                        version,
+                        chainId: useReplayableSignature
+                            ? 0
+                            : Number(metadataChainId),
+                        verifyingContract: accountAddress
+                    }
+                })
+            } else {
+                const wrappedMessageHash = await eip712WrapHash(
+                    messageHash,
+                    {
+                        name,
+                        chainId: Number(metadataChainId),
+                        version,
+                        verifyingContract: accountAddress
+                    },
+                    useReplayableSignature
+                )
+                signature = await kernelPluginManager.signMessage({
+                    message: { raw: wrappedMessageHash }
+                })
+            }
 
             if (
                 !hasKernelFeature(
@@ -793,15 +813,33 @@ export async function createKernelAccount<
                 chainId: metadataChainId,
                 version
             } = await getMemoizedAccountMetadata()
-            const wrappedMessageHash = await eip712WrapHash(typedHash, {
-                name,
-                chainId: Number(metadataChainId),
-                version,
-                verifyingContract: accountAddress
-            })
-            const signature = await kernelPluginManager.signMessage({
-                message: { raw: wrappedMessageHash }
-            })
+
+            let signature: Hex
+            if (isEip7702) {
+                signature = await kernelPluginManager.signTypedData({
+                    message: { hash: typedHash },
+                    primaryType: "Kernel",
+                    types: {
+                        Kernel: [{ name: "hash", type: "bytes32" }]
+                    },
+                    domain: {
+                        name,
+                        version,
+                        chainId: Number(metadataChainId),
+                        verifyingContract: accountAddress
+                    }
+                })
+            } else {
+                const wrappedMessageHash = await eip712WrapHash(typedHash, {
+                    name,
+                    chainId: Number(metadataChainId),
+                    version,
+                    verifyingContract: accountAddress
+                })
+                signature = await kernelPluginManager.signMessage({
+                    message: { raw: wrappedMessageHash }
+                })
+            }
             if (
                 !hasKernelFeature(
                     KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,

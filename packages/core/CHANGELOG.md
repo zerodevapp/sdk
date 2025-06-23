@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.39
+
+### Patch Changes
+
+- fix: fixed 7702 signMessage and signTypedData signature wrapper
+
 ## 5.4.38
 
 ### Patch Changes

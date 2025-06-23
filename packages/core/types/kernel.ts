@@ -116,7 +116,7 @@ export type ZeroDevAccountClientRpcSchema = [
 
 export type ValidatorType = Extract<
     keyof typeof VALIDATOR_TYPE,
-    "PERMISSION" | "SECONDARY"
+    "PERMISSION" | "SECONDARY" | "EIP7702"
 >
 
 export type KernelValidator<Name extends string = string> =

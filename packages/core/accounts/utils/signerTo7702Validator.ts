@@ -58,7 +58,7 @@ export async function signerTo7702Validator<
     return {
         ...account,
         supportedKernelVersions: kernelVersion,
-        validatorType: "SECONDARY",
+        validatorType: "EIP7702",
         address: viemSigner.address,
         source: "EIP7702Validator",
         getIdentifier() {
