@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.5.10
+
+### Patch Changes
+
+- feat: export toInitConfig from permissions
+
 ## 5.5.9
 
 ### Patch Changes

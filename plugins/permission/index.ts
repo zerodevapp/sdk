@@ -10,3 +10,4 @@ export {
     decodeParamsFromInitCode
 } from "./deserializePermissionAccount.js"
 export * from "./constants.js"
+export { toInitConfig } from "./toInitConfig.js"
