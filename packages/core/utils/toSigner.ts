@@ -16,9 +16,9 @@ import {
 } from "viem"
 import { toAccount } from "viem/accounts"
 
+import type { SmartAccount } from "viem/account-abstraction"
 import { signAuthorization, signMessage, signTypedData } from "viem/actions"
 import type { Signer } from "../types/index.js"
-import type { SmartAccount } from "viem/account-abstraction"
 
 export async function toSigner({
     signer,

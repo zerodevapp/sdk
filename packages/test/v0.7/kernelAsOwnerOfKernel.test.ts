@@ -64,6 +64,7 @@ import {
     type SmartAccount,
     entryPoint07Address
 } from "viem/account-abstraction"
+import { signerToSmartAccountValidator } from "../../../plugins/smart-account/toSmartAccountValidatorPlugin.js"
 import {
     Test_ERC20Address,
     findUserOperationEvent,
@@ -82,7 +83,6 @@ import {
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
 } from "./utils/ecdsaUtils.js"
-import { signerToSmartAccountValidator } from "../../../plugins/smart-account/toSmartAccountValidatorPlugin.js"
 
 dotenv.config()
 
