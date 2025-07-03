@@ -18,6 +18,7 @@ import { toAccount } from "viem/accounts"
 
 import { signAuthorization, signMessage, signTypedData } from "viem/actions"
 import type { Signer } from "../types/index.js"
+import type { SmartAccount } from "viem/account-abstraction"
 
 export async function toSigner({
     signer,
@@ -25,9 +26,12 @@ export async function toSigner({
 }: {
     signer: Signer
     address?: Address
-}): Promise<LocalAccount> {
-    if ("type" in signer && signer.type === "local") {
-        return signer as LocalAccount
+}): Promise<LocalAccount | SmartAccount> {
+    if (
+        "type" in signer &&
+        (signer.type === "local" || signer.type === "smart")
+    ) {
+        return signer as LocalAccount | SmartAccount
     }
 
     let walletClient:

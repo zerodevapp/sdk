@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.4.40
+
+### Patch Changes
+
+- feat: support passing SmartAccount to toSigner util
+
 ## 5.4.39
 
 ### Patch Changes
