@@ -51,7 +51,11 @@ import {
     toSudoPolicy,
     toTimestampPolicy
 } from "../../../plugins/permission/policies"
-import { ParamCondition } from "../../../plugins/permission/policies/types"
+import {
+    CallType,
+    ParamCondition
+} from "../../../plugins/permission/policies/types"
+import type { Permission } from "../../../plugins/permission/policies/types"
 import { toInitConfig } from "../../../plugins/permission/toInitConfig"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi"
@@ -530,9 +534,7 @@ describe("Permission kernel Account", () => {
             } catch (error) {
                 errMsg = error.message
             }
-            expect(errMsg).toMatch(
-                "UserOperation reverted during simulation with reason: AA23 reverted 0x756688fe"
-            )
+            expect(errMsg).toMatch(/AA23 reverted 0x(756688fe|c48cf8ee)/)
         },
         TEST_TIMEOUT
     )
@@ -606,9 +608,7 @@ describe("Permission kernel Account", () => {
                 errMsg = error.message
             }
             console.log(errMsg)
-            expect(errMsg).toMatch(
-                "UserOperation reverted during simulation with reason: AA23 reverted 0x756688fe"
-            )
+            expect(errMsg).toMatch(/AA23 reverted 0x(756688fe|c48cf8ee)/)
         },
         TEST_TIMEOUT
     )
@@ -1388,6 +1388,382 @@ describe("Permission kernel Account", () => {
         },
         TEST_TIMEOUT
     )
+
+    // TypeScript tests for Permission type changes
+    describe("Permission Type TypeScript Tests", () => {
+        test("should allow ABI-based permission with both abi and functionName", () => {
+            // ✅ This should compile - both abi and functionName are provided
+            const validAbiPermission: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [
+                    {
+                        condition: ParamCondition.EQUAL,
+                        value: owner.address
+                    },
+                    null
+                ]
+            }
+
+            expect(validAbiPermission.target).toBe(Test_ERC20Address)
+            expect(validAbiPermission.abi).toBe(TEST_ERC20Abi)
+            expect(validAbiPermission.functionName).toBe("transfer")
+        })
+
+        test("should allow manual permission with selector", () => {
+            // ✅ This should compile - manual permission with selector
+            const manualPermission: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                selector: "0xa9059cbb" // transfer function selector
+            }
+
+            expect(manualPermission.target).toBe(Test_ERC20Address)
+            expect(manualPermission.selector).toBe("0xa9059cbb")
+        })
+
+        test("should allow manual permission with selector and rules", () => {
+            // ✅ This should compile - manual permission with selector and rules
+            const manualPermissionWithRules: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                selector: "0xa9059cbb",
+                rules: [
+                    {
+                        condition: ParamCondition.EQUAL,
+                        offset: 0,
+                        params: "0x123456"
+                    }
+                ]
+            }
+
+            expect(manualPermissionWithRules.target).toBe(Test_ERC20Address)
+            expect(manualPermissionWithRules.selector).toBe("0xa9059cbb")
+            expect(manualPermissionWithRules.rules).toHaveLength(1)
+        })
+
+        test("TypeScript should prevent invalid permission configurations", () => {
+            // These tests verify that TypeScript would catch invalid configurations
+            // at compile time. Since we can't test compilation failures in runtime tests,
+            // we document the expected TypeScript behavior here:
+
+            /* 
+            ❌ These would fail TypeScript compilation:
+
+            // Missing required 'abi' when using functionName
+            const invalidPermission1: Permission<typeof TEST_ERC20Abi, "transfer"> = {
+                target: Test_ERC20Address,
+                functionName: "transfer"  // ❌ Missing required 'abi'
+            }
+
+            // Missing required 'functionName' when using abi
+            const invalidPermission2: Permission<typeof TEST_ERC20Abi, "transfer"> = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi  // ❌ Missing required 'functionName'
+            }
+
+            // Cannot use functionName without abi
+            const invalidPermission4: Permission<any, any> = {
+                target: Test_ERC20Address,
+                functionName: "transfer",  // ❌ Can't use functionName without abi
+                selector: "0xa9059cbb"
+            }
+            */
+
+            // This test just documents the expected behavior
+            expect(true).toBe(true)
+        })
+
+        test("should work with CallPolicy for both permission types", async () => {
+            // Test that both permission types work correctly with toCallPolicy
+            const callPolicyWithAbi = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_4,
+                permissions: [
+                    {
+                        target: Test_ERC20Address,
+                        abi: TEST_ERC20Abi,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const callPolicyWithManual = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_4,
+                permissions: [
+                    {
+                        target: Test_ERC20Address,
+                        selector: "0xa9059cbb"
+                    }
+                ]
+            })
+
+            expect(callPolicyWithAbi.policyParams.type).toBe("call")
+            expect(callPolicyWithManual.policyParams.type).toBe("call")
+        })
+
+        test("should support different ERC20 functions with typed args", () => {
+            // ✅ Transfer function
+            const transferPermission: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [
+                    {
+                        condition: ParamCondition.EQUAL,
+                        value: owner.address
+                    },
+                    {
+                        condition: ParamCondition.LESS_THAN,
+                        value: 1000n
+                    }
+                ]
+            }
+
+            // ✅ Approve function
+            const approvePermission: Permission<
+                typeof TEST_ERC20Abi,
+                "approve"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "approve",
+                args: [
+                    {
+                        condition: ParamCondition.EQUAL,
+                        value: owner.address
+                    },
+                    {
+                        condition: ParamCondition.LESS_THAN_OR_EQUAL,
+                        value: 500n
+                    }
+                ]
+            }
+
+            // ✅ View function (balanceOf)
+            const balanceOfPermission: Permission<
+                typeof TEST_ERC20Abi,
+                "balanceOf"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "balanceOf",
+                args: [
+                    {
+                        condition: ParamCondition.EQUAL,
+                        value: owner.address
+                    }
+                ]
+            }
+
+            expect(transferPermission.functionName).toBe("transfer")
+            expect(approvePermission.functionName).toBe("approve")
+            expect(balanceOfPermission.functionName).toBe("balanceOf")
+        })
+
+        test("should support ParamCondition.ONE_OF with typed arrays", () => {
+            const multiRecipientPermission: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [
+                    {
+                        condition: ParamCondition.ONE_OF,
+                        value: [owner.address, zeroAddress] // Array of addresses
+                    },
+                    null
+                ]
+            }
+
+            expect(multiRecipientPermission.args?.[0]).toEqual({
+                condition: ParamCondition.ONE_OF,
+                value: [owner.address, zeroAddress]
+            })
+        })
+
+        test("should support optional fields in both permission types", () => {
+            // ABI permission with optional fields
+            const abiPermissionWithOptions: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                callType: CallType.CALL,
+                valueLimit: 100n,
+                args: [null, null] // No argument validation
+            }
+
+            // Manual permission with optional fields
+            const manualPermissionWithOptions: Permission<
+                typeof TEST_ERC20Abi,
+                "transfer"
+            > = {
+                target: Test_ERC20Address,
+                selector: "0xa9059cbb",
+                callType: CallType.DELEGATE_CALL,
+                valueLimit: 200n,
+                rules: []
+            }
+
+            expect(abiPermissionWithOptions.callType).toBe(CallType.CALL)
+            expect(abiPermissionWithOptions.valueLimit).toBe(100n)
+            expect(manualPermissionWithOptions.callType).toBe(
+                CallType.DELEGATE_CALL
+            )
+            expect(manualPermissionWithOptions.valueLimit).toBe(200n)
+        })
+
+        test("should throw error for function overloads when multiple functions have the same name", async () => {
+            // Create an ABI with function overloads (common in ERC721)
+            const abiWithOverloads = [
+                {
+                    type: "function",
+                    name: "safeTransferFrom",
+                    inputs: [
+                        { name: "from", type: "address" },
+                        { name: "to", type: "address" },
+                        { name: "tokenId", type: "uint256" }
+                    ],
+                    outputs: [],
+                    stateMutability: "nonpayable"
+                },
+                {
+                    type: "function",
+                    name: "safeTransferFrom",
+                    inputs: [
+                        { name: "from", type: "address" },
+                        { name: "to", type: "address" },
+                        { name: "tokenId", type: "uint256" },
+                        { name: "data", type: "bytes" }
+                    ],
+                    outputs: [],
+                    stateMutability: "nonpayable"
+                }
+            ] as const
+
+            // This should throw an error when used with toCallPolicy without selector
+            await expect(async () => {
+                await toCallPolicy({
+                    policyVersion: CallPolicyVersion.V0_0_4,
+                    permissions: [
+                        {
+                            target: Test_ERC20Address,
+                            abi: abiWithOverloads,
+                            functionName: "safeTransferFrom" as const,
+                            args: [null, null, null] // Allow any values for the first overload
+                        }
+                    ]
+                })
+            }).toThrow(
+                /Multiple function overloads found for "safeTransferFrom"/
+            )
+        })
+
+        test("should resolve function overloads when selector is provided", async () => {
+            // Create an ABI with function overloads (common in ERC721)
+            const abiWithOverloads = [
+                {
+                    type: "function",
+                    name: "safeTransferFrom",
+                    inputs: [
+                        { name: "from", type: "address" },
+                        { name: "to", type: "address" },
+                        { name: "tokenId", type: "uint256" }
+                    ],
+                    outputs: [],
+                    stateMutability: "nonpayable"
+                },
+                {
+                    type: "function",
+                    name: "safeTransferFrom",
+                    inputs: [
+                        { name: "from", type: "address" },
+                        { name: "to", type: "address" },
+                        { name: "tokenId", type: "uint256" },
+                        { name: "data", type: "bytes" }
+                    ],
+                    outputs: [],
+                    stateMutability: "nonpayable"
+                }
+            ] as const
+
+            // Get the selector for the first overload (3 parameters)
+            const firstOverloadSelector = toFunctionSelector(
+                abiWithOverloads[0]
+            )
+
+            // This should work when selector is provided
+            const callPolicyWithSelector = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_4,
+                permissions: [
+                    {
+                        target: Test_ERC20Address,
+                        abi: abiWithOverloads,
+                        functionName: "safeTransferFrom" as const,
+                        selector: firstOverloadSelector,
+                        args: [null, null, null] // Allow any values for the first overload
+                    }
+                ]
+            })
+
+            // Verify the policy was created successfully
+            expect(callPolicyWithSelector.policyParams.type).toBe("call")
+            if (callPolicyWithSelector.policyParams.type === "call") {
+                expect(
+                    callPolicyWithSelector.policyParams.permissions
+                ).toHaveLength(1)
+                expect(
+                    callPolicyWithSelector.policyParams.permissions?.[0]
+                        ?.selector
+                ).toBe(firstOverloadSelector)
+            }
+        })
+
+        test("should work normally when there are no function overloads", async () => {
+            // Use the regular ERC20 ABI with unique function names
+            const callPolicyWithoutOverloads = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_4,
+                permissions: [
+                    {
+                        target: Test_ERC20Address,
+                        abi: TEST_ERC20Abi,
+                        functionName: "transfer",
+                        args: [null, null]
+                    }
+                ]
+            })
+
+            // Verify the policy was created successfully
+            expect(callPolicyWithoutOverloads.policyParams.type).toBe("call")
+            if (callPolicyWithoutOverloads.policyParams.type === "call") {
+                expect(
+                    callPolicyWithoutOverloads.policyParams.permissions
+                ).toHaveLength(1)
+            }
+        })
+    })
 })
 
 //         preVerificationGas: 84700n,

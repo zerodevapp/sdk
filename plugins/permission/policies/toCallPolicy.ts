@@ -1,4 +1,4 @@
-import type { Abi, Address } from "viem"
+import type { Abi, Address, Hex } from "viem"
 import { concatHex, pad } from "viem"
 import {
     CALL_POLICY_CONTRACT_V0_0_1,
@@ -57,21 +57,34 @@ export function toCallPolicy<
 }: CallPolicyParams<TAbi, TFunctionName>): Policy {
     const callPolicyAddress = getCallPolicyAddress(policyVersion, policyAddress)
 
-    const generatedPermissionParams = permissions?.map((perm) =>
-        getPermissionFromABI({
-            abi: perm.abi as Abi,
-            functionName: perm.functionName as string,
-            args: perm.args as [],
-            policyAddress: callPolicyAddress
-        })
-    )
+    const generatedPermissionParams = permissions?.map((perm) => {
+        // Natural discrimination: if abi and functionName are present, do ABI-based validation
+        if (perm.abi && perm.functionName) {
+            return getPermissionFromABI({
+                abi: perm.abi as Abi,
+                functionName: perm.functionName as string,
+                args: perm.args as [],
+                policyAddress: callPolicyAddress,
+                selector: perm.selector
+            })
+        }
+
+        // Otherwise, this is a manual permission - return empty to use manual selector/rules
+        return {
+            selector: undefined,
+            rules: undefined
+        }
+    })
 
     permissions =
         permissions?.map((perm, index) => ({
             ...perm,
             callType: perm.callType ?? CallType.CALL,
             selector:
-                perm.selector ??
+                // Normalize selector to lowercase if it exists (hex values should be lowercase)
+                (perm.selector
+                    ? (perm.selector.toLowerCase() as Hex)
+                    : perm.selector) ??
                 generatedPermissionParams?.[index]?.selector ??
                 pad("0x", { size: 4 }),
             valueLimit: perm.valueLimit ?? 0n,

@@ -77,22 +77,33 @@ export type GetFunctionArgs<
             args?: TArgs
         }
 
-export type Permission<
+export type PermissionWithABI<
     TAbi extends Abi | readonly unknown[],
     TFunctionName extends string | undefined = string,
     _FunctionName = TAbi extends Abi
         ? InferFunctionName<TAbi, TFunctionName>
         : never
 > = PermissionCore & {
-    functionName?: _FunctionName
+    abi: TAbi extends Abi ? Narrow<TAbi> : [Narrow<TAbi[number]>]
+    functionName: _FunctionName
+    selector?: Hex
+    rules?: never
 } & (TFunctionName extends string
-        ? { abi?: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
+        ? GetFunctionArgs<TAbi, TFunctionName>
         : _FunctionName extends string
-          ? { abi?: [Narrow<TAbi[number]>] } & GetFunctionArgs<
-                TAbi,
-                _FunctionName
-            >
+          ? GetFunctionArgs<TAbi, _FunctionName>
           : never)
+
+export type PermissionManual = PermissionCore & {
+    abi?: never
+    functionName?: never
+    args?: never
+}
+
+export type Permission<
+    TAbi extends Abi | readonly unknown[],
+    TFunctionName extends string | undefined = string
+> = PermissionWithABI<TAbi, TFunctionName> | PermissionManual
 
 type ConditionValue<
     TAbiParameter extends AbiParameter,
@@ -132,6 +143,7 @@ export type GeneratePermissionFromArgsParameters<
         : never
 > = {
     functionName?: _FunctionName
+    selector?: Hex
 } & (TFunctionName extends string
     ? { abi: Narrow<TAbi> } & GetFunctionArgs<TAbi, TFunctionName>
     : _FunctionName extends string

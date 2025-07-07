@@ -2,10 +2,8 @@ import {
     type Abi,
     type AbiFunction,
     type Address,
-    type GetAbiItemParameters,
     type Hex,
     encodeAbiParameters,
-    getAbiItem,
     isHex,
     pad,
     toFunctionSelector,
@@ -27,7 +25,8 @@ export function getPermissionFromABI<
     abi,
     args,
     functionName,
-    policyAddress
+    policyAddress,
+    selector
 }: GeneratePermissionWithPolicyAddressParameters<TAbi, TFunctionName>): Pick<
     PermissionCore,
     "selector" | "rules"
@@ -38,15 +37,67 @@ export function getPermissionFromABI<
             rules: undefined
         }
     }
-    const abiItem = getAbiItem({
-        abi,
-        args,
-        name: functionName
-    } as GetAbiItemParameters)
-    if (abiItem?.type !== "function") {
-        throw Error(`${functionName} not found in abi`)
+
+    // Check for function overloads
+    const matchingFunctions = (abi as Abi).filter(
+        (item) => item.type === "function" && item.name === functionName
+    ) as AbiFunction[]
+
+    let targetFunction: AbiFunction
+
+    if (matchingFunctions.length > 1) {
+        if (selector) {
+            // Normalize selector to lowercase for comparison (selectors are hex values)
+            const normalizedSelector = selector.toLowerCase()
+
+            // If selector is provided, find the specific function overload
+            const foundFunction = matchingFunctions.find((fn) => {
+                const functionSelector = toFunctionSelector(fn)
+                return functionSelector === normalizedSelector
+            })
+
+            if (!foundFunction) {
+                throw new Error(
+                    `No function found with selector "${selector}" for function "${functionName}".`
+                )
+            }
+
+            targetFunction = foundFunction
+        } else {
+            // No selector provided for overloaded functions
+            const functionSignatures = matchingFunctions
+                .map((fn, index) => {
+                    const inputs =
+                        fn.inputs
+                            ?.map((input) =>
+                                input.name
+                                    ? `${input.type} ${input.name}`
+                                    : input.type
+                            )
+                            .join(", ") || ""
+                    return `  ${index + 1}. ${functionName}(${inputs})`
+                })
+                .join("\n")
+
+            throw new Error(
+                `Multiple function overloads found for "${functionName}". Found ${matchingFunctions.length} functions with the same name but different signatures. To avoid ambiguity and potential security issues, please provide a "selector" field to specify which overload you want to use, or filter your ABI to include only the specific function overload you intend to use.
+
+                Matching functions:
+                ${functionSignatures}
+
+                Solution: Either add a "selector" field with the specific function selector, or filter your ABI to include only the specific function signature you want to use.`
+            )
+        }
+    } else if (matchingFunctions.length === 1) {
+        // Single function found, use it directly
+        targetFunction = matchingFunctions[0]
+    } else {
+        // No functions found with the given name
+        throw new Error(`Function "${functionName}" not found in ABI`)
     }
-    const functionSelector = toFunctionSelector(abiItem)
+
+    // Generate permission from the target function
+    const functionSelector = toFunctionSelector(targetFunction)
     let paramRules: ParamRule[] = []
     if (args && Array.isArray(args)) {
         paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)

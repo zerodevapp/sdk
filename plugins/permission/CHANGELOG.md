@@ -1,5 +1,15 @@
 # @zerodev/permissions
 
+## 5.5.11
+
+### Patch Changes
+
+- fix(permission): critical security fixes for call policy validation
+  - Pass selector to getPermissionFromABI for correct overload resolution
+  - Fix crash when function not found in ABI
+  - Normalize selectors to lowercase for consistent comparisons
+  - Clean up types.ts documentation
+
 ## 5.5.10
 
 ### Patch Changes
