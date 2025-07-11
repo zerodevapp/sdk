@@ -79,4 +79,5 @@ export type PermissionAccountParams = {
     enableSignature?: Hex
     privateKey?: Hex
     eip7702Auth?: SignAuthorizationReturnType
+    isPreInstalled?: boolean
 }

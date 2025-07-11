@@ -74,11 +74,14 @@ export const deserializePermissionAccount = async <
 
     const kernelPluginManager = await toKernelPluginManager(client, {
         regular: modularPermissionPlugin,
-        pluginEnableSignature: params.enableSignature,
+        pluginEnableSignature: params.isPreInstalled
+            ? undefined
+            : params.enableSignature,
         validatorInitData,
         action: params.action,
         entryPoint,
         kernelVersion,
+        isPreInstalled: params.isPreInstalled,
         ...params.validityData
     })
 
