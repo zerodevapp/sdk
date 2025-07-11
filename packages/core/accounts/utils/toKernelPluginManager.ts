@@ -57,7 +57,8 @@ export async function toKernelPluginManager<
         validUntil = 0,
         entryPoint,
         kernelVersion,
-        chainId
+        chainId,
+        isPreInstalled = false
     }: KernelPluginManagerParams<entryPointVersion>
 ): Promise<KernelPluginManager<entryPointVersion>> {
     if (
@@ -68,7 +69,7 @@ export async function toKernelPluginManager<
             "Either sudo or/and regular validator version mismatch. Update to latest plugin package and use the proper plugin version"
         )
     }
-    let pluginEnabled: boolean
+    let pluginEnabled = isPreInstalled
     const activeValidator = regular || sudo
     if (!activeValidator) {
         throw new Error("One of `sudo` or `regular` validator must be set")
@@ -155,6 +156,7 @@ export async function toKernelPluginManager<
     }
 
     const isPluginEnabled = async (accountAddress: Address, selector: Hex) => {
+        if (isPreInstalled) return true
         if (!action) {
             throw new Error("Action data must be set")
         }
