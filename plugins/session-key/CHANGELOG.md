@@ -1,5 +1,11 @@
 # @zerodev/session-key
 
+## 5.5.4
+
+### Patch Changes
+
+- fix: typecast `toSigner` return value to LocalAccount
+
 ## 5.5.3
 
 ### Patch Changes

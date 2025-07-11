@@ -86,7 +86,7 @@ export async function createWeightedECDSAValidator<
 
     const signers_: LocalAccount[] = []
     for (const signer of _signers) {
-        signers_.push(await toSigner({ signer }))
+        signers_.push((await toSigner({ signer })) as LocalAccount)
     }
 
     // sort signers by address in descending order

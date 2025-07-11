@@ -1,5 +1,11 @@
 # @zerodev/weighted-ecdsa-validator
 
+## 5.4.4
+
+### Patch Changes
+
+- fix: typecast `toSigner` return value to LocalAccount
+
 ## 5.4.3
 
 ### Patch Changes
