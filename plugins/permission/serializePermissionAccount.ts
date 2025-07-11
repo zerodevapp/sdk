@@ -2,6 +2,7 @@ import type { KernelSmartAccountImplementation } from "@zerodev/sdk"
 import type { Hex } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import type { SignAuthorizationReturnType } from "viem/accounts"
+import type { PermissionData, PermissionPlugin } from "./types.js"
 import {
     isPermissionValidatorPlugin,
     serializePermissionAccountParams
@@ -11,19 +12,32 @@ export const serializePermissionAccount = async (
     account: SmartAccount<KernelSmartAccountImplementation>,
     privateKey?: Hex,
     enableSignature?: Hex,
-    eip7702Auth?: SignAuthorizationReturnType
+    eip7702Auth?: SignAuthorizationReturnType,
+    permissionPlugin?: PermissionPlugin
 ): Promise<string> => {
-    if (!isPermissionValidatorPlugin(account.kernelPluginManager))
-        throw new Error("Account plugin is not a permission validator")
-    const permissionParams =
-        account.kernelPluginManager.getPluginSerializationParams()
+    let permissionParams: PermissionData
+    let isPreInstalled = false
     const action = account.kernelPluginManager.getAction()
     const validityData = account.kernelPluginManager.getValidityData()
-    const _enableSignature =
-        enableSignature ??
-        (await account.kernelPluginManager.getPluginEnableSignature(
-            account.address
-        ))
+
+    // Check if permission plugin is in kernelPluginManager
+    if (isPermissionValidatorPlugin(account.kernelPluginManager)) {
+        permissionParams =
+            account.kernelPluginManager.getPluginSerializationParams()
+    } else if (permissionPlugin) {
+        // Permission plugin provided externally (initConfig case)
+        permissionParams = permissionPlugin.getPluginSerializationParams()
+        isPreInstalled = true
+    } else {
+        throw new Error("No permission validator found in account or provided")
+    }
+
+    const _enableSignature = isPreInstalled
+        ? undefined
+        : (enableSignature ??
+          (await account.kernelPluginManager.getPluginEnableSignature(
+              account.address
+          )))
     const _eip7702Auth = account.authorization
         ? (eip7702Auth ?? (await account?.eip7702Authorization?.()))
         : undefined
@@ -39,7 +53,8 @@ export const serializePermissionAccount = async (
         accountParams,
         enableSignature: _enableSignature,
         privateKey,
-        eip7702Auth: _eip7702Auth
+        eip7702Auth: _eip7702Auth,
+        isPreInstalled
     }
 
     return serializePermissionAccountParams(paramsToBeSerialized)

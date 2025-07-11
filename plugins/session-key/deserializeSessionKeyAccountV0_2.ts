@@ -34,7 +34,7 @@ export const deserializeSessionKeyAccountV0_2 = async <
     let signer: LocalAccount
     if (params.privateKey) signer = privateKeyToAccount(params.privateKey)
     else if (sessionKeySigner)
-        signer = await toSigner({ signer: sessionKeySigner })
+        signer = (await toSigner({ signer: sessionKeySigner })) as LocalAccount
     else throw new Error("No signer or serialized sessionKey provided")
 
     const sessionKeyPlugin = await signerToSessionKeyValidator(client, {

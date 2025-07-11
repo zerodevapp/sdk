@@ -201,6 +201,7 @@ export type KernelPluginManagerParams<
     entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: KERNEL_VERSION_TYPE
     chainId?: number
+    isPreInstalled?: boolean
 } & Partial<PluginValidityData>
 
 export type Hook = {

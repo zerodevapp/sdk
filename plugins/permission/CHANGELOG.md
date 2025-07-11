@@ -1,5 +1,13 @@
 # @zerodev/permissions
 
+## 5.5.12
+
+### Patch Changes
+
+- Add support for serializing accounts with permission plugins installed via initConfig
+- Fix serialization failure when permission plugin not in kernelPluginManager
+- Add optional `permissionPlugin` parameter to serializePermissionAccount
+
 ## 5.5.11
 
 ### Patch Changes

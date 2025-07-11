@@ -1,5 +1,12 @@
 # @zerodev/sdk
 
+## 5.4.41
+
+### Patch Changes
+
+- Add support for pre-installed permission plugins via `isPreInstalled` parameter
+- Fix nonce mode calculation for permission plugins installed via initConfig
+
 ## 5.4.40
 
 ### Patch Changes
