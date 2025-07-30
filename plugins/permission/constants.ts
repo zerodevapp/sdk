@@ -9,6 +9,13 @@ export const WEBAUTHN_SIGNER_CONTRACT_V0_0_1 =
 export const WEBAUTHN_SIGNER_CONTRACT_V0_0_2 =
     "0x58625164e306242c7613223bDeb68fbe11300606"
 
+/**
+ * @dev WEBAUTHN_SIGNER_CONTRACT_V0_0_3 updates
+ * - Fixed limitation of single WebAuthn signer with same account issue (check storage by account-id instead of just account)
+ */
+export const WEBAUTHN_SIGNER_CONTRACT_V0_0_3 =
+    "0x615d8641B6Ce9406DE7c3C01f57c552Ab3A96f83"
+
 export const CALL_POLICY_CONTRACT_V0_0_1 =
     "0xe4Fec84B7B002273ecC86baa65a831ddB92d30a8"
 /**

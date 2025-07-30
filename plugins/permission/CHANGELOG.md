@@ -1,5 +1,17 @@
 # @zerodev/permissions
 
+## 5.5.14
+
+### Patch Changes
+
+- fix: export WEBAUTHN_SIGNER_CONTRACT_V0_0_3 config
+
+## 5.5.13
+
+### Patch Changes
+
+- fix: Release v0.0.3 of WebAuthnSigner contract to fix limitation of single WebAuthn signer with same account issue (check storage by account-id instead of just account)
+
 ## 5.5.12
 
 ### Patch Changes

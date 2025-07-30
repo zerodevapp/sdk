@@ -27,13 +27,15 @@ import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
 import {
     WEBAUTHN_SIGNER_CONTRACT_V0_0_1,
-    WEBAUTHN_SIGNER_CONTRACT_V0_0_2
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_2,
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_3
 } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
 
 export enum WebAuthnSignerVersion {
     V0_0_1 = "0.0.1",
-    V0_0_2 = "0.0.2"
+    V0_0_2 = "0.0.2",
+    V0_0_3 = "0.0.3"
 }
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
@@ -130,6 +132,8 @@ export const getWebAuthnSignerAddress = (
             return WEBAUTHN_SIGNER_CONTRACT_V0_0_1
         case WebAuthnSignerVersion.V0_0_2:
             return WEBAUTHN_SIGNER_CONTRACT_V0_0_2
+        case WebAuthnSignerVersion.V0_0_3:
+            return WEBAUTHN_SIGNER_CONTRACT_V0_0_3
     }
 }
 

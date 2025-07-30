@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/permissions",
-    "version": "5.5.12",
+    "version": "5.5.14",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
