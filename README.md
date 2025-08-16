@@ -1,6 +1,6 @@
 # ZeroDev SDK
 
-[![CI](https://github.com/zerodevapp/sdk/actions/workflows/verify.yml/badge.svg)](https://github.com/zerodevapp/sdk/actions/workflows/verify.yml)
+[![Main](https://github.com/zerodevapp/sdk/actions/workflows/on-push-to-main.yml/badge.svg)](https://github.com/zerodevapp/sdk/actions/workflows/on-push-to-main.yml)
 
 [See here for detailed documentation.](https://docs.zerodev.app)
 
