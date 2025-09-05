@@ -24,7 +24,8 @@ export enum ParamCondition {
     GREATER_THAN_OR_EQUAL = 3,
     LESS_THAN_OR_EQUAL = 4,
     NOT_EQUAL = 5,
-    ONE_OF = 6
+    ONE_OF = 6,
+    SLICE_EQUAL = 7
 }
 
 export interface ParamRule {
@@ -112,6 +113,12 @@ type ConditionValue<
     | {
           condition: ParamCondition.ONE_OF
           value: AbiParameterToPrimitiveType<TAbiParameter, TAbiParameterKind>[]
+      }
+    | {
+          condition: ParamCondition.SLICE_EQUAL
+          value: AbiParameterToPrimitiveType<TAbiParameter, TAbiParameterKind>
+          start: number
+          length: number
       }
     | {
           condition: Exclude<ParamCondition, ParamCondition.ONE_OF>

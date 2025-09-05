@@ -5,6 +5,7 @@ import {
     type Hex,
     encodeAbiParameters,
     isHex,
+    keccak256,
     pad,
     toFunctionSelector,
     toHex
@@ -132,6 +133,22 @@ export function getPermissionFromABI<
                             { size: 32 }
                         )
                     )
+                } else if (arg.condition === ParamCondition.SLICE_EQUAL) {
+                    if (!("start" in arg) || !("length" in arg)) {
+                        throw new Error(
+                            "start and length are required for SLICE_EQUAL condition"
+                        )
+                    }
+                    const { start, length, value } = arg
+                    params = [
+                        toHex(start, { size: 32 }),
+                        toHex(length, { size: 32 }),
+                        keccak256(
+                            isHex(value)
+                                ? value
+                                : toHex(value as Parameters<typeof toHex>[0])
+                        )
+                    ]
                 } else {
                     params = [
                         pad(
