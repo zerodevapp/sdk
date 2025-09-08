@@ -7,6 +7,8 @@ import {
     isHex,
     keccak256,
     pad,
+    size,
+    slice,
     toFunctionSelector,
     toHex
 } from "viem"
@@ -100,6 +102,7 @@ export function getPermissionFromABI<
     // Generate permission from the target function
     const functionSelector = toFunctionSelector(targetFunction)
     let paramRules: ParamRule[] = []
+
     if (args && Array.isArray(args)) {
         paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)
             .map((arg, i) => {
@@ -140,14 +143,20 @@ export function getPermissionFromABI<
                         )
                     }
                     const { start, length, value } = arg
+                    const hexValue = isHex(value)
+                        ? value
+                        : toHex(value as Parameters<typeof toHex>[0])
+
+                    if (size(hexValue) < start + length) {
+                        throw new Error(
+                            "Value is too short for the given start and length"
+                        )
+                    }
+
                     params = [
                         toHex(start, { size: 32 }),
                         toHex(length, { size: 32 }),
-                        keccak256(
-                            isHex(value)
-                                ? value
-                                : toHex(value as Parameters<typeof toHex>[0])
-                        )
+                        keccak256(slice(hexValue, start, start + length))
                     ]
                 } else {
                     params = [
@@ -161,6 +170,7 @@ export function getPermissionFromABI<
                         )
                     ]
                 }
+
                 return {
                     params,
                     offset: i * 32,

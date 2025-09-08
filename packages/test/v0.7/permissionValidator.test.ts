@@ -25,6 +25,8 @@ import {
     getAbiItem,
     hashMessage,
     hashTypedData,
+    pad,
+    parseAbi,
     parseEther,
     toFunctionSelector,
     zeroAddress
@@ -1225,6 +1227,226 @@ describe("Permission kernel Account", () => {
             expect(balanceOfReceipientAfter).toBe(
                 balanceOfReceipientBefore + amountToTransfer
             )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with CallPolicy V0.0.5",
+        async () => {
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_5,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                paymaster: zeroDevPaymaster
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with SLICE_EQUAL condition",
+        async () => {
+            const testAbi = parseAbi(["function test(bytes data) public"])
+
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_5,
+                permissions: [
+                    {
+                        abi: testAbi,
+                        target: zeroAddress,
+                        functionName: "test",
+                        args: [
+                            {
+                                condition: ParamCondition.SLICE_EQUAL,
+                                value: "0xffff",
+                                start: 1,
+                                length: 1
+                            }
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                paymaster: zeroDevPaymaster
+            })
+
+            const callData = encodeFunctionData({
+                abi: testAbi,
+                functionName: "test",
+                args: ["0x00ff"]
+            })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    data: callData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should fail with Smart account client send transaction with SLICE_EQUAL condition",
+        async () => {
+            const testAbi = parseAbi(["function test(bytes data) public"])
+
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_5,
+                permissions: [
+                    {
+                        abi: testAbi,
+                        target: zeroAddress,
+                        functionName: "test",
+                        args: [
+                            {
+                                condition: ParamCondition.SLICE_EQUAL,
+                                value: "0xffff",
+                                start: 1,
+                                length: 1
+                            }
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                paymaster: zeroDevPaymaster
+            })
+
+            const invalidCallData = encodeFunctionData({
+                abi: testAbi,
+                functionName: "test",
+                args: ["0x00ee"]
+            })
+
+            await expect(
+                permissionSmartAccountClient.sendTransaction({
+                    to: zeroAddress,
+                    data: invalidCallData
+                })
+            ).rejects.toThrow()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should fail with SLICE_EQUAL condition, start and length not provided",
+        async () => {
+            const testAbi = parseAbi(["function test(bytes data) public"])
+
+            expect(() =>
+                toCallPolicy({
+                    policyVersion: CallPolicyVersion.V0_0_5,
+                    permissions: [
+                        {
+                            abi: testAbi,
+                            target: zeroAddress,
+                            functionName: "test",
+                            args: [
+                                {
+                                    condition: ParamCondition.SLICE_EQUAL,
+                                    value: "0xffff"
+                                }
+                            ]
+                        }
+                    ]
+                })
+            ).toThrow("start and length are required for SLICE_EQUAL condition")
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should fail with SLICE_EQUAL condition, value is too short",
+        async () => {
+            const testAbi = parseAbi(["function test(bytes data) public"])
+
+            expect(() =>
+                toCallPolicy({
+                    policyVersion: CallPolicyVersion.V0_0_5,
+                    permissions: [
+                        {
+                            abi: testAbi,
+                            target: zeroAddress,
+                            functionName: "test",
+                            args: [
+                                {
+                                    condition: ParamCondition.SLICE_EQUAL,
+                                    value: "0xffff",
+                                    start: 1,
+                                    length: 2
+                                }
+                            ]
+                        }
+                    ]
+                })
+            ).toThrow("Value is too short for the given start and length")
         },
         TEST_TIMEOUT
     )
