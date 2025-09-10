@@ -25,6 +25,7 @@ import {
     getAbiItem,
     hashMessage,
     hashTypedData,
+    hexToBytes,
     pad,
     parseAbi,
     parseEther,
@@ -1304,7 +1305,7 @@ describe("Permission kernel Account", () => {
     )
 
     test(
-        "Smart account client send transaction with SLICE_EQUAL condition",
+        "Smart account client send transaction with SLICE_EQUAL condition with bytes",
         async () => {
             const testAbi = parseAbi(["function test(bytes data) public"])
 
@@ -1318,7 +1319,7 @@ describe("Permission kernel Account", () => {
                         args: [
                             {
                                 condition: ParamCondition.SLICE_EQUAL,
-                                value: "0xffff",
+                                value: "0xff",
                                 start: 1,
                                 length: 1
                             }
@@ -1351,6 +1352,104 @@ describe("Permission kernel Account", () => {
     )
 
     test(
+        "Smart account client send transaction with SLICE_EQUAL condition with string",
+        async () => {
+            const testAbi = parseAbi([
+                "function test(string calldata data) public"
+            ])
+
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_5,
+                permissions: [
+                    {
+                        abi: testAbi,
+                        target: zeroAddress,
+                        functionName: "test",
+                        args: [
+                            {
+                                condition: ParamCondition.SLICE_EQUAL,
+                                value: "kernel",
+                                start: 2,
+                                length: 6
+                            }
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                paymaster: zeroDevPaymaster
+            })
+
+            const callData = encodeFunctionData({
+                abi: testAbi,
+                functionName: "test",
+                args: ["0xkernel"]
+            })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    data: callData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with SLICE_EQUAL condition with hex string",
+        async () => {
+            const testAbi = parseAbi([
+                "function test(string calldata data) public"
+            ])
+
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_5,
+                permissions: [
+                    {
+                        abi: testAbi,
+                        target: zeroAddress,
+                        functionName: "test",
+                        args: [
+                            {
+                                condition: ParamCondition.SLICE_EQUAL,
+                                value: "0xffff",
+                                start: 0,
+                                length: 6
+                            }
+                        ]
+                    }
+                ]
+            })
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: await getSignerToPermissionKernelAccount([callPolicy]),
+                paymaster: zeroDevPaymaster
+            })
+
+            const callData = encodeFunctionData({
+                abi: testAbi,
+                functionName: "test",
+                args: ["0xffff00"]
+            })
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: zeroAddress,
+                    data: callData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
         "should fail with Smart account client send transaction with SLICE_EQUAL condition",
         async () => {
             const testAbi = parseAbi(["function test(bytes data) public"])
@@ -1365,7 +1464,7 @@ describe("Permission kernel Account", () => {
                         args: [
                             {
                                 condition: ParamCondition.SLICE_EQUAL,
-                                value: "0xffff",
+                                value: "0xff",
                                 start: 1,
                                 length: 1
                             }
@@ -1411,13 +1510,42 @@ describe("Permission kernel Account", () => {
                             args: [
                                 {
                                     condition: ParamCondition.SLICE_EQUAL,
-                                    value: "0xffff"
+                                    value: "0xff"
                                 }
                             ]
                         }
                     ]
                 })
             ).toThrow("start and length are required for SLICE_EQUAL condition")
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should fail with SLICE_EQUAL condition, value is not equal to the given length",
+        async () => {
+            const testAbi = parseAbi(["function test(bytes data) public"])
+
+            expect(() =>
+                toCallPolicy({
+                    policyVersion: CallPolicyVersion.V0_0_5,
+                    permissions: [
+                        {
+                            abi: testAbi,
+                            target: zeroAddress,
+                            functionName: "test",
+                            args: [
+                                {
+                                    condition: ParamCondition.SLICE_EQUAL,
+                                    value: "0x00ff",
+                                    start: 1,
+                                    length: 1
+                                }
+                            ]
+                        }
+                    ]
+                })
+            ).toThrow("Value length is not equal to the given length")
         },
         TEST_TIMEOUT
     )

@@ -8,7 +8,6 @@ import {
     keccak256,
     pad,
     size,
-    slice,
     toFunctionSelector,
     toHex
 } from "viem"
@@ -142,21 +141,34 @@ export function getPermissionFromABI<
                             "start and length are required for SLICE_EQUAL condition"
                         )
                     }
+                    const functionArgsType = targetFunction.inputs[i].type
                     const { start, length, value } = arg
-                    const hexValue = isHex(value)
-                        ? value
-                        : toHex(value as Parameters<typeof toHex>[0])
 
-                    if (size(hexValue) < start + length) {
+                    let hexValue: Hex
+
+                    // functionArgsType can be "string" or "bytes"
+                    if (functionArgsType === "string") {
+                        hexValue = toHex(value as Parameters<typeof toHex>[0])
+                    } else if (functionArgsType === "bytes") {
+                        hexValue = isHex(value, { strict: true })
+                            ? value
+                            : toHex(value as Parameters<typeof toHex>[0])
+                    } else {
                         throw new Error(
-                            "Value is too short for the given start and length"
+                            `Unsupported function argument type: ${functionArgsType} could be "string" or "bytes"`
+                        )
+                    }
+
+                    if (size(hexValue) !== length) {
+                        throw new Error(
+                            "Value length is not equal to the given length"
                         )
                     }
 
                     params = [
                         toHex(start, { size: 32 }),
                         toHex(length, { size: 32 }),
-                        keccak256(slice(hexValue, start, start + length))
+                        keccak256(hexValue)
                     ]
                 } else {
                     params = [
