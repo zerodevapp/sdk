@@ -36,7 +36,11 @@ import {
 } from "viem/account-abstraction"
 import { toAccount } from "viem/accounts"
 import { getChainId, signMessage } from "viem/actions"
-import { MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS } from "./constants.js"
+import {
+    MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS,
+    MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS_V_0_0_2,
+    MultiChainWebAuthnValidatorContractVersion
+} from "./constants.js"
 import { webauthnGetMultiUserOpDummySignature } from "./utils/webauthnGetMultiUserOpDummySignature.js"
 
 const signMessageUsingWebAuthn = async (
@@ -122,6 +126,19 @@ const signMessageUsingWebAuthn = async (
     return encodedSignature
 }
 
+export const getValidatorAddress = (
+    validatorVersion: MultiChainWebAuthnValidatorContractVersion,
+    validatorAddress?: Address
+): Address => {
+    if (validatorAddress) return validatorAddress
+    switch (validatorVersion) {
+        case MultiChainWebAuthnValidatorContractVersion.V0_0_1_UNPATCHED:
+            return MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
+        case MultiChainWebAuthnValidatorContractVersion.V0_0_2_PATCHED:
+            return MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS_V_0_0_2
+    }
+}
+
 export async function toMultiChainWebAuthnValidator<
     entryPointVersion extends EntryPointVersion
 >(
@@ -130,6 +147,7 @@ export async function toMultiChainWebAuthnValidator<
         webAuthnKey,
         entryPoint,
         kernelVersion: _,
+        validatorContractVersion,
         rpId,
         validatorAddress,
         multiChainIds
@@ -137,6 +155,7 @@ export async function toMultiChainWebAuthnValidator<
         webAuthnKey: WebAuthnKey
         entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
+        validatorContractVersion: MultiChainWebAuthnValidatorContractVersion
         rpId?: string
         validatorAddress?: Address
         multiChainIds?: number[]
@@ -146,8 +165,10 @@ export async function toMultiChainWebAuthnValidator<
         getSerializedData: () => string
     }
 > {
-    const currentValidatorAddress =
-        validatorAddress ?? MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
+    const currentValidatorAddress = getValidatorAddress(
+        validatorContractVersion,
+        validatorAddress
+    )
 
     // Fetch chain id
     const chainId = await getChainId(client)
@@ -231,10 +252,7 @@ export async function toMultiChainWebAuthnValidator<
         address: currentValidatorAddress,
         source: "MultiChainWebAuthnValidator",
         getIdentifier() {
-            return (
-                currentValidatorAddress ??
-                MULTI_CHAIN_WEBAUTHN_VALIDATOR_ADDRESS
-            )
+            return currentValidatorAddress
         },
         async getEnableData() {
             return encodeAbiParameters(

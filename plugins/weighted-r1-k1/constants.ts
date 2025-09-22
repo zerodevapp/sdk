@@ -55,6 +55,9 @@ export const getRecoveryFallbackActionInstallModuleData = (
 export const WEIGHTED_VALIDATOR_ADDRESS_V07 =
     "0x2E29537bBaf8AB5dC8037Fa4Bc3DEB2c289498A3"
 
+export const WEIGHTED_VALIDATOR_ADDRESS_V07_V_0_0_2 =
+    "0x144F02c15a8CB2E01D35bf2af8e9eFD96401e44b"
+
 export enum SIGNER_TYPE {
     ECDSA = "0x01",
     PASSKEY = "0x02"

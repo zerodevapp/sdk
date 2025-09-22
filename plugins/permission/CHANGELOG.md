@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.6.0
+
+### Minor Changes
+
+- feat: security patch
+
 ## 5.5.14
 
 ### Patch Changes

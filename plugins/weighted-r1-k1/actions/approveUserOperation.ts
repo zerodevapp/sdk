@@ -17,13 +17,18 @@ import {
     parseAccount,
     toFunctionSelector
 } from "viem/utils"
-import { getValidatorAddress } from "../toWeightedValidatorPlugin.js"
+import {
+    type WeightedValidatorContractVersion,
+    getValidatorAddress
+} from "../toWeightedValidatorPlugin.js"
 
 export type ApproveUserOperationParameters<
     account extends SmartAccount | undefined = SmartAccount | undefined,
     accountOverride extends SmartAccount | undefined = SmartAccount | undefined,
     calls extends readonly unknown[] = readonly unknown[]
-> = PrepareUserOperationParameters<account, accountOverride, calls>
+> = PrepareUserOperationParameters<account, accountOverride, calls> & {
+    validatorContractVersion: WeightedValidatorContractVersion
+}
 
 export async function approveUserOperation<
     account extends SmartAccount | undefined = SmartAccount | undefined,
@@ -41,7 +46,13 @@ export async function approveUserOperation<
     const account = parseAccount(
         account_
     ) as SmartAccount<KernelSmartAccountImplementation>
-    const validatorAddress = getValidatorAddress(account.entryPoint.version)
+    const validatorAddress = getValidatorAddress(
+        account.entryPoint.version,
+        args.validatorContractVersion
+    )
+    if (!validatorAddress) {
+        throw new Error("Validator address not found")
+    }
 
     const actionSelector = toFunctionSelector(
         getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })

@@ -26,6 +26,7 @@ import { WeightedValidatorAbi } from "./abi.js"
 import {
     SIGNER_TYPE,
     WEIGHTED_VALIDATOR_ADDRESS_V07,
+    WEIGHTED_VALIDATOR_ADDRESS_V07_V_0_0_2,
     decodeSignatures,
     encodeSignatures,
     sortByPublicKey
@@ -39,6 +40,27 @@ export type WeightedSigner = {
     type: SIGNER_TYPE
 }
 
+export enum WeightedValidatorContractVersion {
+    V0_0_1_UNPATCHED = "0.0.1",
+    V0_0_2_PATCHED = "0.0.2"
+}
+
+export const getValidatorAddress = (
+    entryPointVersion: EntryPointVersion,
+    validatorVersion: WeightedValidatorContractVersion,
+    validatorAddress?: Address
+): Address => {
+    if (entryPointVersion === "0.6")
+        throw new Error("EntryPoint v0.6 not supported")
+    if (validatorAddress) return validatorAddress
+    switch (validatorVersion) {
+        case WeightedValidatorContractVersion.V0_0_1_UNPATCHED:
+            return WEIGHTED_VALIDATOR_ADDRESS_V07
+        case WeightedValidatorContractVersion.V0_0_2_PATCHED:
+            return WEIGHTED_VALIDATOR_ADDRESS_V07_V_0_0_2
+    }
+}
+
 export interface WeightedValidatorConfig {
     threshold: number
     signers: Array<{
@@ -46,14 +68,6 @@ export interface WeightedValidatorConfig {
         weight: number
     }>
     delay?: number // in seconds
-}
-
-export const getValidatorAddress = (
-    entryPointVersion: EntryPointVersion
-): Address => {
-    if (entryPointVersion === "0.6")
-        throw new Error("EntryPoint v0.6 not supported")
-    return WEIGHTED_VALIDATOR_ADDRESS_V07
 }
 
 export async function createWeightedValidator<
@@ -64,6 +78,7 @@ export async function createWeightedValidator<
         config,
         entryPoint,
         kernelVersion: _,
+        validatorContractVersion,
         signer,
         validatorAddress: validatorAddress_
     }: {
@@ -71,11 +86,15 @@ export async function createWeightedValidator<
         signer: WeightedSigner
         entryPoint: EntryPointType<entryPointVersion>
         kernelVersion: GetKernelVersion<entryPointVersion>
+        validatorContractVersion: WeightedValidatorContractVersion
         validatorAddress?: Address
     }
 ): Promise<KernelValidator<"WeightedValidator">> {
-    const validatorAddress =
-        validatorAddress_ ?? getValidatorAddress(entryPoint.version)
+    const validatorAddress = getValidatorAddress(
+        entryPoint.version,
+        validatorContractVersion,
+        validatorAddress_
+    )
     if (!validatorAddress) {
         throw new Error("Validator address not provided")
     }

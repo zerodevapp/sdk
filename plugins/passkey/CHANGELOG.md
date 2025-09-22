@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.6.0
+
+### Minor Changes
+
+- feat: security patch
+
 ## 5.5.5
 
 ### Patch Changes

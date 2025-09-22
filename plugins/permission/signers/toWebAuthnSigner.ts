@@ -28,14 +28,16 @@ import { getChainId, signMessage } from "viem/actions"
 import {
     WEBAUTHN_SIGNER_CONTRACT_V0_0_1,
     WEBAUTHN_SIGNER_CONTRACT_V0_0_2,
-    WEBAUTHN_SIGNER_CONTRACT_V0_0_3
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_3,
+    WEBAUTHN_SIGNER_CONTRACT_V0_0_4
 } from "../constants.js"
 import type { ModularSigner, ModularSignerParams } from "../types.js"
 
 export enum WebAuthnSignerVersion {
-    V0_0_1 = "0.0.1",
-    V0_0_2 = "0.0.2",
-    V0_0_3 = "0.0.3"
+    V0_0_1_UNPATCHED = "0.0.1",
+    V0_0_2_UNPATCHED = "0.0.2",
+    V0_0_3_UNPATCHED = "0.0.3",
+    V0_0_4_PATCHED = "0.0.4"
 }
 
 export type WebAuthnModularSignerParams = ModularSignerParams & {
@@ -128,12 +130,14 @@ export const getWebAuthnSignerAddress = (
 ): Address => {
     if (webAuthnSignerAddress) return webAuthnSignerAddress
     switch (webAuthnSignerVersion) {
-        case WebAuthnSignerVersion.V0_0_1:
+        case WebAuthnSignerVersion.V0_0_1_UNPATCHED:
             return WEBAUTHN_SIGNER_CONTRACT_V0_0_1
-        case WebAuthnSignerVersion.V0_0_2:
+        case WebAuthnSignerVersion.V0_0_2_UNPATCHED:
             return WEBAUTHN_SIGNER_CONTRACT_V0_0_2
-        case WebAuthnSignerVersion.V0_0_3:
+        case WebAuthnSignerVersion.V0_0_3_UNPATCHED:
             return WEBAUTHN_SIGNER_CONTRACT_V0_0_3
+        case WebAuthnSignerVersion.V0_0_4_PATCHED:
+            return WEBAUTHN_SIGNER_CONTRACT_V0_0_4
     }
 }
 

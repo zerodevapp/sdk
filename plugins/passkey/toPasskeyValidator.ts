@@ -121,8 +121,9 @@ const signMessageUsingWebAuthn = async (
 }
 
 export enum PasskeyValidatorContractVersion {
-    V0_0_1 = "0.0.1",
-    V0_0_2 = "0.0.2" // this version is only supported by kernel versions "0.3.0 || 0.3.1"
+    V0_0_1_UNPATCHED = "0.0.1",
+    V0_0_2_UNPATCHED = "0.0.2", // this version is only supported by kernel versions "0.3.0 || 0.3.1"
+    V0_0_3_PATCHED = "0.0.3"
 }
 
 export async function toPasskeyValidator<
