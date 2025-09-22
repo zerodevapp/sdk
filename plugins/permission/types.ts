@@ -60,10 +60,12 @@ export type PermissionPluginParams<
     entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: GetKernelVersion<entryPointVersion>
     flag?: PolicyFlags
+    permissionId?: Hex
 }
 
 export interface PermissionData {
     policies?: Policy[]
+    permissionId?: Hex
 }
 
 export type ExportPermissionAccountParams = {

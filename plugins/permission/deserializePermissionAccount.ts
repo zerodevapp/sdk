@@ -66,7 +66,8 @@ export const deserializePermissionAccount = async <
             ) || []
         ),
         entryPoint,
-        kernelVersion
+        kernelVersion,
+        permissionId: params.permissionParams.permissionId
     })
 
     const { index, validatorInitData, useMetaFactory } =

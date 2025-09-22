@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.6.1
+
+### Patch Changes
+
+- feat: added optional permissionId param in toPermissionValidator and added it as serialization param
+
 ## 5.6.0
 
 ### Minor Changes
