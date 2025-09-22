@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.2
+
+### Patch Changes
+
+- feat: modified migration kernel account to use migration helper contract
+
 ## 5.5.1
 
 ### Patch Changes

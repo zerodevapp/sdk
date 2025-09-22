@@ -1,6 +1,8 @@
 import {
+    type Call,
     concat,
     concatHex,
+    decodeFunctionData,
     encodeAbiParameters,
     encodeFunctionData,
     getAbiItem,
@@ -12,15 +14,13 @@ import {
 import type { EntryPointVersion } from "viem/account-abstraction"
 import { readContract } from "viem/actions"
 import { getAction } from "viem/utils"
-import {
-    CALL_TYPE,
-    KERNEL_V3_1,
-    KernelVersionToAddressesMap,
-    VALIDATOR_TYPE
-} from "../../constants.js"
+import { CALL_TYPE, VALIDATOR_TYPE } from "../../constants.js"
 import type { GetKernelVersion, KernelValidator } from "../../types/kernel.js"
-import { KernelV3AccountAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
-import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
+import { MigrationHelperAbi } from "./abi/MigrationHelperAbi.js"
+import {
+    KernelV3AccountAbi,
+    KernelV3ExecuteAbi
+} from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import {
     type CreateKernelAccountParameters,
     type CreateKernelAccountReturnType,
@@ -44,6 +44,9 @@ export type CreateKernelMigrationAccountParameters<
         }
     }
 }
+
+export const MIGRATION_HELPER_ADDRESS =
+    "0xdb8D1300EA89549B0FE3863Bba5De0096fa1EeD2"
 
 export async function createKernelMigrationAccount<
     entryPointVersion extends EntryPointVersion,
@@ -120,35 +123,17 @@ export async function createKernelMigrationAccount<
             address: account.address
         })
     }
-    const rootValidatorId = concatHex([
-        VALIDATOR_TYPE[toValidator.validatorType],
-        pad(toValidator.getIdentifier(), {
-            size: 20,
-            dir: "right"
-        })
-    ])
-    const validatorData = await toValidator.getEnableData(account.address)
-
-    const hookId = zeroAddress
-
-    const hookData = "0x"
-    const changeRootValidatorCallData = encodeFunctionData({
-        abi: KernelV3_1AccountAbi,
-        functionName: "changeRootValidator",
-        args: [rootValidatorId, hookId, validatorData, hookData]
-    })
     const installFallbackCallData = encodeFunctionData({
         abi: KernelV3AccountAbi,
         functionName: "installModule",
         args: [
             3n,
-            KernelVersionToAddressesMap[KERNEL_V3_1]
-                .accountImplementationAddress,
+            MIGRATION_HELPER_ADDRESS,
             concat([
                 toFunctionSelector(
                     getAbiItem({
-                        abi: KernelV3_1AccountAbi,
-                        name: "changeRootValidator"
+                        abi: MigrationHelperAbi,
+                        name: "migrateWithCall"
                     })
                 ),
                 zeroAddress,
@@ -166,23 +151,68 @@ export async function createKernelMigrationAccount<
         data: installFallbackCallData,
         value: 0n
     }
-    const updateValidatorCall = {
+    const uninstallFallbackCallData = encodeFunctionData({
+        abi: KernelV3AccountAbi,
+        functionName: "uninstallModule",
+        args: [
+            3n,
+            MIGRATION_HELPER_ADDRESS,
+            concat([
+                toFunctionSelector(
+                    getAbiItem({
+                        abi: MigrationHelperAbi,
+                        name: "migrateWithCall"
+                    })
+                ),
+                "0x"
+            ])
+        ]
+    })
+    const uninstallFallbackCall = {
         to: account.address,
-        data: changeRootValidatorCallData,
+        data: uninstallFallbackCallData,
         value: 0n
     }
-    const updateCalls =
-        rest.kernelVersion === "0.3.0"
-            ? [installFallbackCall, updateValidatorCall]
-            : [updateValidatorCall]
     return {
         ...account,
         getRootValidatorMigrationStatus,
         async encodeCalls(calls, callType) {
-            const _calls = (await getRootValidatorMigrationStatus())
-                ? calls
-                : [...updateCalls, ...calls]
-            return account.encodeCalls(_calls, callType)
+            const isRootValidatorMigrated =
+                await getRootValidatorMigrationStatus()
+            const executeCallData = await account.encodeCalls(calls, callType)
+            if (isRootValidatorMigrated) {
+                return executeCallData
+            }
+            const {
+                args: [execMode, executionCalldata]
+            } = decodeFunctionData({
+                abi: [getAbiItem({ abi: KernelV3ExecuteAbi, name: "execute" })],
+                data: executeCallData
+            })
+            const migrationCallData = encodeFunctionData({
+                abi: MigrationHelperAbi,
+                functionName: "migrateWithCall",
+                args: [[], [], execMode, executionCalldata]
+            })
+
+            const migrationCall = {
+                to: MIGRATION_HELPER_ADDRESS,
+                data: migrationCallData,
+                value: 0n
+            } as Call
+
+            if (params.kernelVersion !== "0.3.0") {
+                return account.encodeCalls([migrationCall], "delegatecall")
+            }
+
+            migrationCall.to = account.address
+            const finalCalls = [
+                installFallbackCall,
+                migrationCall,
+                uninstallFallbackCall
+            ]
+
+            return account.encodeCalls(finalCalls, "call")
         }
     }
 }

@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.6.2
+
+### Patch Changes
+
+- feat: added migrationSessionKeyAccount and isPermissionMigrated utils
+
 ## 5.6.1
 
 ### Patch Changes

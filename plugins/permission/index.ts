@@ -11,3 +11,5 @@ export {
 } from "./deserializePermissionAccount.js"
 export * from "./constants.js"
 export { toInitConfig } from "./toInitConfig.js"
+export { migrationSessionKeyAccount } from "./migration/migrationSessionKeyAccount.js"
+export { isPermissionMigrated } from "./migration/isPermissionMigrated.js"

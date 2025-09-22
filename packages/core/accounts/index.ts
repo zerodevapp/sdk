@@ -11,9 +11,11 @@ export {
     type KernelSmartAccountV1Implementation
 } from "./kernel/v1/createKernelAccountV1.js"
 export {
+    MIGRATION_HELPER_ADDRESS,
     createKernelMigrationAccount,
     type CreateKernelMigrationAccountParameters
 } from "./kernel/createKernelMigrationAccount.js"
+export { MigrationHelperAbi } from "./kernel/abi/MigrationHelperAbi.js"
 export { createKernelAccountV0_2 } from "./kernel/v2/createKernelAccountV0_2.js"
 export { KernelAccountV2Abi } from "./kernel/v2/abi/KernelAccountV2Abi.js"
 export { KernelFactoryV2Abi } from "./kernel/v2/abi/KernelFactoryV2Abi.js"
