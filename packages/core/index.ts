@@ -35,6 +35,10 @@ export {
     createKernelAccountClient,
     type KernelAccountClient
 } from "./clients/kernelAccountClient.js"
+export {
+    createKernelMigrationAccount,
+    type CreateKernelMigrationAccountParameters
+} from "./accounts/kernel/createKernelMigrationAccount.js"
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"
 export {
     type KernelValidator,

@@ -26,6 +26,7 @@ import {
 import {
     type WeightedSigner,
     type WeightedValidatorConfig,
+    WeightedValidatorContractVersion,
     createWeightedValidator,
     getValidatorAddress
 } from "./toWeightedValidatorPlugin.js"
@@ -47,7 +48,8 @@ export {
     type WeightedKernelAccountClient,
     createWeightedKernelAccountClient,
     type WeightedKernelAccountClientActions,
-    weightedKernelAccountClientActions
+    weightedKernelAccountClientActions,
+    WeightedValidatorContractVersion
 }
 export * from "./constants.js"
 export * from "./utils.js"

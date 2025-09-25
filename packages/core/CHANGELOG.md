@@ -1,5 +1,29 @@
 # @zerodev/sdk
 
+## 5.5.2
+
+### Patch Changes
+
+- feat: modified migration kernel account to use migration helper contract
+
+## 5.5.1
+
+### Patch Changes
+
+- feat: expose migration status function from migration util
+
+## 5.5.0
+
+### Minor Changes
+
+- feat: security patch
+
+## 5.4.42
+
+### Patch Changes
+
+- feat: migration account support
+
 ## 5.4.41
 
 ### Patch Changes

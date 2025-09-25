@@ -16,6 +16,7 @@ import {
     type UpdateSignersDataParameters,
     updateSignersData
 } from "../../actions/updateSignersData.js"
+import type { WeightedValidatorContractVersion } from "../../toWeightedValidatorPlugin.js"
 
 export type WeightedKernelAccountClientActions<
     TChain extends Chain | undefined = Chain | undefined,
@@ -50,7 +51,9 @@ export type WeightedKernelAccountClientActions<
      *
      * @returns A promise that resolves to an array of objects, each containing an encoded public key and its associated weight.
      */
-    getCurrentSigner: () => Promise<GetCurrentSignersReturnType>
+    getCurrentSigner: (args: {
+        validatorContractVersion: WeightedValidatorContractVersion
+    }) => Promise<GetCurrentSignersReturnType>
 
     updateSignersData: (args: UpdateSignersDataParameters) => Promise<Hash>
 }
@@ -76,7 +79,7 @@ export function weightedKernelAccountClientActions() {
             ),
         sendUserOperationWithSignatures: (args) =>
             sendUserOperationWithSignatures(client, args),
-        getCurrentSigner: () => getCurrentSigners(client),
+        getCurrentSigner: (args) => getCurrentSigners(client, args),
         updateSignersData: (args) => updateSignersData(client, args)
     })
 }

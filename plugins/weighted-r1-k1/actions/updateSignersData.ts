@@ -28,6 +28,7 @@ import {
     getValidatorAddress,
     sendUserOperationWithSignatures
 } from "../index.js"
+import type { WeightedValidatorContractVersion } from "../toWeightedValidatorPlugin.js"
 import { sortByPublicKey } from "../utils.js"
 
 export type UpdateSignersDataParameters<
@@ -37,6 +38,7 @@ export type UpdateSignersDataParameters<
 > = SendUserOperationParameters<account, accountOverride, calls> & {
     signatures?: Hex[]
     config: WeightedValidatorConfig
+    validatorContractVersion: WeightedValidatorContractVersion
 }
 
 export async function updateSignersData<
@@ -55,7 +57,13 @@ export async function updateSignersData<
         account_
     ) as SmartAccount<KernelSmartAccountImplementation>
 
-    const validatorAddress = getValidatorAddress(account.entryPoint.version)
+    const validatorAddress = getValidatorAddress(
+        account.entryPoint.version,
+        args.validatorContractVersion
+    )
+    if (!validatorAddress) {
+        throw new Error("Validator address not found")
+    }
 
     // Check if sum of weights is equal or greater than threshold
     let totalWeight = 0

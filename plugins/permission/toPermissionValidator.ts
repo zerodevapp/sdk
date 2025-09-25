@@ -34,7 +34,8 @@ export async function toPermissionValidator<
         policies,
         entryPoint,
         kernelVersion: _,
-        flag = PolicyFlags.FOR_ALL_VALIDATION
+        flag = PolicyFlags.FOR_ALL_VALIDATION,
+        permissionId
     }: PermissionPluginParams<entryPointVersion>
 ): Promise<PermissionPlugin> {
     const chainId = client.chain ? client.chain.id : await getChainId(client)
@@ -68,6 +69,9 @@ export async function toPermissionValidator<
     }
 
     const getPermissionId = (): Hex => {
+        if (permissionId) {
+            return permissionId
+        }
         const pIdData = encodeAbiParameters(
             [{ name: "policyAndSignerData", type: "bytes[]" }],
             [[toPolicyId(policies), flag, toSignerId(signer)]]
@@ -126,7 +130,8 @@ export async function toPermissionValidator<
         },
         getPluginSerializationParams: (): PermissionData => {
             return {
-                policies
+                policies,
+                permissionId: getPermissionId()
             }
         },
         isEnabled: async (

@@ -33,7 +33,8 @@ export const kernelVersionRangeToContractVersionToValidator: {
     },
     "0.3.0 || 0.3.1 || 0.3.2 || 0.3.3": {
         "0.0.1": "0xD990393C670dCcE8b4d8F858FB98c9912dBFAa06",
-        "0.0.2": "0xbA45a2BFb8De3D24cA9D7F1B551E14dFF5d690Fd"
+        "0.0.2": "0xbA45a2BFb8De3D24cA9D7F1B551E14dFF5d690Fd",
+        "0.0.3": "0x7ab16Ff354AcB328452F1D445b3Ddee9a91e9e69"
     }
 }
 

@@ -16,6 +16,13 @@ export const WEBAUTHN_SIGNER_CONTRACT_V0_0_2 =
 export const WEBAUTHN_SIGNER_CONTRACT_V0_0_3 =
     "0x615d8641B6Ce9406DE7c3C01f57c552Ab3A96f83"
 
+/**
+ * @dev WEBAUTHN_SIGNER_CONTRACT_V0_0_4 updates
+ * - Fixed critical vulnerability present on all previous version
+ */
+export const WEBAUTHN_SIGNER_CONTRACT_V0_0_4 =
+    "0x65DEeC8fEe717dc044D0CFD63cCf55F02cCaC2b3"
+
 export const CALL_POLICY_CONTRACT_V0_0_1 =
     "0xe4Fec84B7B002273ecC86baa65a831ddB92d30a8"
 /**

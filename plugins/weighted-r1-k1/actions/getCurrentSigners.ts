@@ -8,6 +8,7 @@ import { readContract } from "viem/actions"
 import { getAction, parseAccount } from "viem/utils"
 import { WeightedValidatorAbi } from "../abi.js"
 import { getValidatorAddress } from "../index.js"
+import type { WeightedValidatorContractVersion } from "../toWeightedValidatorPlugin.js"
 
 export type GetCurrentSignersReturnType = Array<{
     encodedPublicKey: Hex
@@ -18,7 +19,12 @@ export async function getCurrentSigners<
     account extends SmartAccount | undefined,
     chain extends Chain | undefined
 >(
-    client: Client<Transport, chain, account>
+    client: Client<Transport, chain, account>,
+    {
+        validatorContractVersion
+    }: {
+        validatorContractVersion: WeightedValidatorContractVersion
+    }
 ): Promise<GetCurrentSignersReturnType> {
     const account_ = client.account
     if (!account_) throw new AccountNotFoundError()
@@ -27,7 +33,13 @@ export async function getCurrentSigners<
         account_
     ) as unknown as SmartAccount<KernelSmartAccountImplementation>
 
-    const validatorAddress = getValidatorAddress(account.entryPoint.version)
+    const validatorAddress = getValidatorAddress(
+        account.entryPoint.version,
+        validatorContractVersion
+    )
+    if (!validatorAddress) {
+        throw new Error("Validator address not found")
+    }
 
     const weightedStorage = await getAction(
         client,

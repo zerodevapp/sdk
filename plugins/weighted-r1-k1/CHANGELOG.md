@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.5.0
+
+### Minor Changes
+
+- feat: security patch
+
 ## 5.4.6
 
 ### Patch Changes
