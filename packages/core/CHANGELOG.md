@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.3
+
+### Patch Changes
+
+- fix: update migration helper contract address
+
 ## 5.5.2
 
 ### Patch Changes

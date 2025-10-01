@@ -46,7 +46,7 @@ export type CreateKernelMigrationAccountParameters<
 }
 
 export const MIGRATION_HELPER_ADDRESS =
-    "0xdb8D1300EA89549B0FE3863Bba5De0096fa1EeD2"
+    "0x03EB97959433D55748839D27C93330Cb85F31A93"
 
 export async function createKernelMigrationAccount<
     entryPointVersion extends EntryPointVersion,
