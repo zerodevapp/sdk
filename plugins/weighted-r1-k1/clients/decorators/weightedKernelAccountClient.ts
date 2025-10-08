@@ -1,6 +1,10 @@
 import type { Chain, Client, Hash, Hex, Transport } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import {
+    type ApprovePluginParameters,
+    approvePlugin
+} from "../../actions/approvePlugin.js"
+import {
     type ApproveUserOperationParameters,
     approveUserOperation
 } from "../../actions/approveUserOperation.js"
@@ -56,6 +60,20 @@ export type WeightedKernelAccountClientActions<
     }) => Promise<GetCurrentSignersReturnType>
 
     updateSignersData: (args: UpdateSignersDataParameters) => Promise<Hash>
+
+    /**
+     * Approve a plugin with the given transport, chain, smart account and signer.
+     *
+     * @param args - Parameters for the approvePlugin function
+     * @returns A promise that resolves to the plugin approval signature by the signer
+     */
+    approvePlugin: <
+        accountOverride extends SmartAccount | undefined =
+            | SmartAccount
+            | undefined
+    >(
+        args: ApprovePluginParameters<TSmartAccount, accountOverride>
+    ) => Promise<Hex | undefined>
 }
 export function weightedKernelAccountClientActions() {
     return <
@@ -80,6 +98,7 @@ export function weightedKernelAccountClientActions() {
         sendUserOperationWithSignatures: (args) =>
             sendUserOperationWithSignatures(client, args),
         getCurrentSigner: (args) => getCurrentSigners(client, args),
-        updateSignersData: (args) => updateSignersData(client, args)
+        updateSignersData: (args) => updateSignersData(client, args),
+        approvePlugin: (args) => approvePlugin(client, args)
     })
 }

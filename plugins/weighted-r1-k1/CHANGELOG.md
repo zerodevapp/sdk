@@ -1,5 +1,11 @@
 # @zerodev/weighted-validator
 
+## 5.5.1
+
+### Patch Changes
+
+- feat: added approvePlugin action
+
 ## 5.5.0
 
 ### Minor Changes
