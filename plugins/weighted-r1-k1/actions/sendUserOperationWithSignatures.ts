@@ -89,7 +89,7 @@ export async function sendUserOperationWithSignatures<
                 )
 
             const encodedDummySignatures = await getEncodedPluginsData({
-                enableSignature: encodeSignatures(signatures),
+                enableSignature: encodeSignatures(signatures, true),
                 userOpSignature: dummySignature,
                 action,
                 enableData: await account.kernelPluginManager.getEnableData(
@@ -106,7 +106,7 @@ export async function sendUserOperationWithSignatures<
             )(_userOperation as PrepareUserOperationParameters)
 
             const encodedSignatures = await getEncodedPluginsData({
-                enableSignature: encodeSignatures(signatures),
+                enableSignature: encodeSignatures(signatures, true),
                 userOpSignature:
                     await account.kernelPluginManager.signUserOperationWithActiveValidator(
                         userOperation as UserOperation
@@ -152,7 +152,7 @@ export async function sendUserOperationWithSignatures<
         }
     }
 
-    const encodedSignatures = encodeSignatures(signatures)
+    const encodedSignatures = encodeSignatures(signatures, true)
     _userOperation.signature = encodedSignatures
     _userOperation.signature = await account.getStubSignature(
         _userOperation as UserOperation

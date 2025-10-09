@@ -1,6 +1,6 @@
 {
     "name": "@zerodev/weighted-validator",
-    "version": "5.5.0",
+    "version": "5.5.1",
     "author": "ZeroDev",
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",

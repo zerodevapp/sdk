@@ -1,9 +1,15 @@
 import { type Hex, decodeAbiParameters, encodeAbiParameters } from "viem"
 
-export const encodeSignatures = (signatures: Hex[]) => {
+export const encodeSignatures = (signatures: Hex[], sort = false) => {
+    let signatures_ = signatures
+    if (sort) {
+        signatures_ = signatures.sort((a, b) =>
+            a.toLowerCase().localeCompare(b.toLowerCase())
+        )
+    }
     return encodeAbiParameters(
         [{ name: "signatures", type: "bytes[]" }],
-        [signatures]
+        [signatures_]
     )
 }
 

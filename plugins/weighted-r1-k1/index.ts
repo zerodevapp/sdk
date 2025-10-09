@@ -1,5 +1,9 @@
 import type { KernelValidator } from "@zerodev/sdk/types"
 import {
+    type ApprovePluginParameters,
+    approvePlugin
+} from "./actions/approvePlugin.js"
+import {
     type ApproveUserOperationParameters,
     approveUserOperation
 } from "./actions/approveUserOperation.js"
@@ -41,6 +45,8 @@ export {
     type ECDSASignerParams,
     type WebAuthnModularSignerParams,
     toWebAuthnSigner,
+    type ApprovePluginParameters,
+    approvePlugin,
     type ApproveUserOperationParameters,
     approveUserOperation,
     type SendUserOperationWithSignaturesParameters,
