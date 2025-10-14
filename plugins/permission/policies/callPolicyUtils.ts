@@ -5,7 +5,9 @@ import {
     type Hex,
     encodeAbiParameters,
     isHex,
+    keccak256,
     pad,
+    size,
     toFunctionSelector,
     toHex
 } from "viem"
@@ -99,6 +101,7 @@ export function getPermissionFromABI<
     // Generate permission from the target function
     const functionSelector = toFunctionSelector(targetFunction)
     let paramRules: ParamRule[] = []
+
     if (args && Array.isArray(args)) {
         paramRules = (args as CombinedArgs<AbiFunction["inputs"]>)
             .map((arg, i) => {
@@ -132,6 +135,41 @@ export function getPermissionFromABI<
                             { size: 32 }
                         )
                     )
+                } else if (arg.condition === ParamCondition.SLICE_EQUAL) {
+                    if (!("start" in arg) || !("length" in arg)) {
+                        throw new Error(
+                            "start and length are required for SLICE_EQUAL condition"
+                        )
+                    }
+                    const functionArgsType = targetFunction.inputs[i].type
+                    const { start, length, value } = arg
+
+                    let hexValue: Hex
+
+                    // functionArgsType can be "string" or "bytes"
+                    if (functionArgsType === "string") {
+                        hexValue = toHex(value as Parameters<typeof toHex>[0])
+                    } else if (functionArgsType === "bytes") {
+                        hexValue = isHex(value, { strict: true })
+                            ? value
+                            : toHex(value as Parameters<typeof toHex>[0])
+                    } else {
+                        throw new Error(
+                            `Unsupported function argument type: ${functionArgsType} could be "string" or "bytes"`
+                        )
+                    }
+
+                    if (size(hexValue) !== length) {
+                        throw new Error(
+                            "Value length is not equal to the given length"
+                        )
+                    }
+
+                    params = [
+                        toHex(start, { size: 32 }),
+                        toHex(length, { size: 32 }),
+                        keccak256(hexValue)
+                    ]
                 } else {
                     params = [
                         pad(
@@ -144,6 +182,7 @@ export function getPermissionFromABI<
                         )
                     ]
                 }
+
                 return {
                     params,
                     offset: i * 32,
