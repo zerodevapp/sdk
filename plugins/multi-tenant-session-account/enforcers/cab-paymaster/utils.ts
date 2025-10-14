@@ -1,4 +1,3 @@
-import type { RepayTokenInfo } from "@zerodev/cab"
 import {
     type Address,
     type Hex,
@@ -11,6 +10,7 @@ import {
     toHex
 } from "viem"
 import type { CABPaymasterEnforcerArgs } from "./toCABPaymasterEnforcer.js"
+import type { RepayTokenInfo } from "./type.js"
 
 export type SponsorTokenInfo = {
     amount: bigint

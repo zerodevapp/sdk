@@ -64,7 +64,7 @@ export async function getSocialValidator<
         throw new Error("initiateLogin() must be called first.")
     }
 
-    const magicProvider = await magic.wallet.getProvider()
+    const magicProvider = magic.rpcProvider
 
     const ecdsaValidator = await signerToEcdsaValidator(client, {
         signer: magicProvider,

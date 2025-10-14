@@ -1,6 +1,5 @@
 // @ts-expect-error
 import { beforeAll, describe, test } from "bun:test"
-import { CAB_V0_2_1, createKernelCABClient } from "@zerodev/cab"
 import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
