@@ -40,7 +40,7 @@ export {
     signUserOperation,
     type SignUserOperationReturnType
 } from "./actions/account-client/signUserOperation.js"
-export { type SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
+export type { SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
 export {
     zerodevPaymasterActions,
     type ZeroDevPaymasterClientActions,
