@@ -20,6 +20,26 @@ export {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType
 } from "./actions/paymaster/sponsorUserOperation.js"
+export {
+    upgradeKernel,
+    type UpgradeKernelParameters
+} from "./actions/account-client/upgradeKernel.js"
+export {
+    changeSudoValidator,
+    type ChangeSudoValidatorParameters
+} from "./actions/account-client/changeSudoValidator.js"
+export {
+    invalidateNonce,
+    type InvalidateNonceParameters
+} from "./actions/account-client/invalidateNonce.js"
+export {
+    uninstallPlugin,
+    type UninstallPluginParameters
+} from "./actions/account-client/uninstallPlugin.js"
+export {
+    signUserOperation,
+    type SignUserOperationReturnType
+} from "./actions/account-client/signUserOperation.js"
 export type { SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
 export {
     zerodevPaymasterActions,

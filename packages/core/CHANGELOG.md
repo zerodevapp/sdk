@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.4
+
+### Patch Changes
+
+- feat: export actions from root in core package
+
 ## 5.5.3
 
 ### Patch Changes
