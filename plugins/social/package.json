@@ -39,7 +39,7 @@
         "viem": "^2.28.0"
     },
     "dependencies": {
-        "@magic-ext/oauth": "^22.0.3",
+        "@magic-ext/oauth2": "^13.0.0",
         "magic-sdk": "^28.0.3"
     },
     "type": "module"

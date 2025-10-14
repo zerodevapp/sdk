@@ -1,4 +1,4 @@
-import { OAuthExtension } from "@magic-ext/oauth"
+import { OAuthExtension } from "@magic-ext/oauth2"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import type {
     EntryPointType,
@@ -20,7 +20,7 @@ export async function isAuthorized({
         const isLoggedIn = await magic.user.isLoggedIn()
         if (isLoggedIn) return true
 
-        const result = await magic.oauth.getRedirectResult()
+        const result = await magic.oauth2.getRedirectResult()
         return result !== null
     } catch {}
     return false
@@ -37,7 +37,7 @@ export async function initiateLogin({
 }) {
     const magic = await getMagic({ projectId })
 
-    magic.oauth.loginWithRedirect({
+    magic.oauth2.loginWithRedirect({
         provider: socialProvider,
         redirectURI: oauthCallbackUrl ?? window.location.href
     })
