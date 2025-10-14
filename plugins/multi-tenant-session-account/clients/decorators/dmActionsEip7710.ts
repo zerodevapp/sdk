@@ -1,13 +1,13 @@
 import type { Chain, Client, Hash, Transport } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import {
-    type EncodeCallDataWithCABParameters,
+    // type EncodeCallDataWithCABParameters,
     type SendDelegateUserOperationParameters,
     type SendInstallDMAndDelegateUserOperationParameters,
     type SendInstallDMAsExecutorUserOperationParameters,
     type SignDelegationParameters,
     delegate,
-    encodeCallDataWithCAB,
+    // encodeCallDataWithCAB,
     installDMAndDelegate,
     installDMAsExecutor,
     signDelegation
@@ -27,9 +27,9 @@ export type DMActionsEip7710<
             typeof signDelegation<TSmartAccount, TChain, accountOverride>
         >[1]
     ) => Promise<Hash>
-    encodeCallDataWithCAB: (
-        args: Parameters<typeof encodeCallDataWithCAB<TSmartAccount, TChain>>[1]
-    ) => Promise<Hash>
+    // encodeCallDataWithCAB: (
+    //     args: Parameters<typeof encodeCallDataWithCAB<TSmartAccount, TChain>>[1]
+    // ) => Promise<Hash>
     installDMAndDelegate: (
         args: SendInstallDMAndDelegateUserOperationParameters
     ) => Promise<Hash>
@@ -40,7 +40,7 @@ export type DMActionsEip7710<
 }
 
 function dmActionsEip7710({
-    enforcerVersion
+    enforcerVersion: _enforcerVersion
 }: {
     enforcerVersion: ENFORCER_VERSION
 }) {
@@ -62,14 +62,14 @@ function dmActionsEip7710({
                     ...args
                 } as SignDelegationParameters<TSmartAccount, accountOverride>
             ),
-        encodeCallDataWithCAB: (args) =>
-            encodeCallDataWithCAB(client, {
-                ...args,
-                enforcerVersion: enforcerVersion
-            } as EncodeCallDataWithCABParameters<
-                TSmartAccount,
-                accountOverride
-            >),
+        // encodeCallDataWithCAB: (args) =>
+        //     encodeCallDataWithCAB(client, {
+        //         ...args,
+        //         enforcerVersion: enforcerVersion
+        //     } as EncodeCallDataWithCABParameters<
+        //         TSmartAccount,
+        //         accountOverride
+        //     >),
         installDMAndDelegate: (args) => installDMAndDelegate(client, args),
         installDMAsExecutor: (args) => installDMAsExecutor(client, args),
         delegate: (args) => delegate(client, args)
