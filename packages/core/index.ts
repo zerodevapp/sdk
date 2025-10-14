@@ -20,7 +20,7 @@ export {
     type SponsorUserOperationParameters,
     type SponsorUserOperationReturnType
 } from "./actions/paymaster/sponsorUserOperation.js"
-export { type SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
+export type { SmartAccountClientConfig } from "./clients/kernelAccountClient.js"
 export {
     zerodevPaymasterActions,
     type ZeroDevPaymasterClientActions,
@@ -40,12 +40,12 @@ export {
     type CreateKernelMigrationAccountParameters
 } from "./accounts/kernel/createKernelMigrationAccount.js"
 export { createFallbackKernelAccountClient } from "./clients/fallbackKernelAccountClient.js"
-export {
-    type KernelValidator,
-    type KernelValidatorHook,
-    type ZeroDevPaymasterRpcSchema,
-    type KernelPluginManager,
-    type Action
+export type {
+    KernelValidator,
+    KernelValidatorHook,
+    ZeroDevPaymasterRpcSchema,
+    KernelPluginManager,
+    Action
 } from "./types/kernel.js"
 export { KernelAccountAbi } from "./accounts/kernel/abi/KernelAccountAbi.js"
 export { KernelFactoryAbi } from "./accounts/kernel/abi/KernelFactoryAbi.js"

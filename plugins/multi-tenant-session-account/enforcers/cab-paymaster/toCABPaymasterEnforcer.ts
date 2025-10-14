@@ -1,4 +1,3 @@
-import type { RepayTokenInfo } from "@zerodev/cab"
 import {
     http,
     type Address,
@@ -8,6 +7,7 @@ import {
 } from "viem"
 import { CAB_PAYMASTER_SERVER_URL } from "../../constants.js"
 import type { Caveat } from "../../types.js"
+import type { RepayTokenInfo } from "./type.js"
 import { type SponsorTokenInfo, cabAllowancesAbiType } from "./utils.js"
 
 export type CABPaymasterEnforcerArgs = {
