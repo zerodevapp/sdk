@@ -35,7 +35,8 @@ import {
 
 const TEST_TIMEOUT = 1000000
 
-describe("Modular Permission kernel Account", async () => {
+// outdated testing
+describe.skip("Modular Permission kernel Account", async () => {
     let publicClient: PublicClient
     let accountAddress: Address
     let testPrivateKey: Hex

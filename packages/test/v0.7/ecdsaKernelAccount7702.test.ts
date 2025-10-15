@@ -82,7 +82,7 @@ const publicClient = createPublicClient({
     chain: chain
 })
 const entryPoint = getEntryPoint("0.7")
-describe("ECDSA kernel Account", () => {
+describe("ECDSA kernel Account 7702", () => {
     let account: SmartAccount<KernelSmartAccountImplementation>
     let ownerAccount: PrivateKeyAccount
     let kernelClient: KernelAccountClient<

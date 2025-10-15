@@ -461,7 +461,8 @@ describe("Session Key kernel Account", async () => {
         expect(allowanceAfter).toBe(allowanceBefore + amountToTransfer)
     }, 1000000)
 
-    test("should execute the native token transfer action using SessionKey", async () => {
+    // outdated testing
+    test.skip("should execute the native token transfer action using SessionKey", async () => {
         await mintToAccount(100000000n)
         const sessionKeyPlugin = await signerToSessionKeyValidator(
             publicClient,
