@@ -13,10 +13,11 @@ import { toECDSASigner as toStandaloneECDSASigner } from "../../../plugins/permi
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator"
 import {
     type WeightedSigner,
+    WeightedValidatorContractVersion,
     createWeightedKernelAccountClient,
     createWeightedValidator,
     toECDSASigner
-} from "../../../plugins/weighted-r1-k1/_types"
+} from "../../../plugins/weighted-r1-k1"
 import {
     getBundlerRpc,
     getEntryPoint,
@@ -26,7 +27,7 @@ import {
 
 const TEST_TIMEOUT = 1000000
 
-describe("weightedValidator", () => {
+describe("weightedValidatorWithPermission", () => {
     test(
         "should enable regular validator",
         async () => {
@@ -46,6 +47,8 @@ describe("weightedValidator", () => {
 
             const ecdsaSigner1 = await toECDSASigner({ signer: eoaAccount1 })
             const ecdsaSigner2 = await toECDSASigner({ signer: eoaAccount2 })
+            const validatorContractVersion =
+                WeightedValidatorContractVersion.V0_0_2_PATCHED
 
             const createWeightedAccountClient = async (
                 signer: WeightedSigner
@@ -68,7 +71,8 @@ describe("weightedValidator", () => {
                                 }
                             ]
                         },
-                        kernelVersion: KERNEL_V3_1
+                        kernelVersion: KERNEL_V3_1,
+                        validatorContractVersion
                     }
                 )
 
@@ -132,7 +136,8 @@ describe("weightedValidator", () => {
                         data: "0x",
                         value: BigInt(0)
                     }
-                ])
+                ]),
+                validatorContractVersion
             })
 
             const signature2 = await client2.approveUserOperation({
@@ -142,7 +147,8 @@ describe("weightedValidator", () => {
                         data: "0x",
                         value: BigInt(0)
                     }
-                ]
+                ],
+                validatorContractVersion
             })
 
             const userOpHash = await client2.sendUserOperationWithSignatures({

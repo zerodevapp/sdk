@@ -1568,13 +1568,13 @@ describe("Permission kernel Account", () => {
                                     condition: ParamCondition.SLICE_EQUAL,
                                     value: "0xffff",
                                     start: 1,
-                                    length: 2
+                                    length: 3
                                 }
                             ]
                         }
                     ]
                 })
-            ).toThrow("Value is too short for the given start and length")
+            ).toThrow("Value length is not equal to the given length")
         },
         TEST_TIMEOUT
     )
