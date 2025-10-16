@@ -1,9 +1,17 @@
-import type { Address, CustomSource, Hex, LocalAccount, PartialBy } from "viem"
+import type {
+    Address,
+    CustomSource,
+    Hex,
+    LocalAccount,
+    OneOf,
+    PartialBy
+} from "viem"
 import type {
     EntryPointVersion,
     UserOperation,
     entryPoint06Abi,
-    entryPoint07Abi
+    entryPoint07Abi,
+    entryPoint08Abi
 } from "viem/account-abstraction"
 import type { PLUGIN_TYPE, VALIDATOR_TYPE } from "../constants.js"
 export type ZeroDevPaymasterRpcSchema<
@@ -21,14 +29,23 @@ export type ZeroDevPaymasterRpcSchema<
                           | "preVerificationGas"
                           | "verificationGasLimit"
                       >
-                    : PartialBy<
-                          UserOperation<"0.7">,
-                          | "callGasLimit"
-                          | "preVerificationGas"
-                          | "verificationGasLimit"
-                          | "paymasterVerificationGasLimit"
-                          | "paymasterPostOpGasLimit"
-                      >
+                    : entryPointVersion extends "0.7"
+                      ? PartialBy<
+                            UserOperation<"0.7">,
+                            | "callGasLimit"
+                            | "preVerificationGas"
+                            | "verificationGasLimit"
+                            | "paymasterVerificationGasLimit"
+                            | "paymasterPostOpGasLimit"
+                        >
+                      : PartialBy<
+                            UserOperation<"0.8">,
+                            | "callGasLimit"
+                            | "preVerificationGas"
+                            | "verificationGasLimit"
+                            | "paymasterVerificationGasLimit"
+                            | "paymasterPostOpGasLimit"
+                        >
                 entryPointAddress: Address
                 gasTokenData?: {
                     tokenAddress: Hex
@@ -51,18 +68,31 @@ export type ZeroDevPaymasterRpcSchema<
                   paymasterPostOpGasLimit?: never
                   paymasterData?: never
               }
-            : {
-                  preVerificationGas: Hex
-                  verificationGasLimit: Hex
-                  callGasLimit: Hex
-                  paymaster: Address
-                  paymasterVerificationGasLimit: Hex
-                  paymasterPostOpGasLimit: Hex
-                  paymasterData: Hex
-                  maxFeePerGas?: Hex
-                  maxPriorityFeePerGas?: Hex
-                  paymasterAndData?: never
-              }
+            : entryPointVersion extends "0.7"
+              ? {
+                    preVerificationGas: Hex
+                    verificationGasLimit: Hex
+                    callGasLimit: Hex
+                    paymaster: Address
+                    paymasterVerificationGasLimit: Hex
+                    paymasterPostOpGasLimit: Hex
+                    paymasterData: Hex
+                    maxFeePerGas?: Hex
+                    maxPriorityFeePerGas?: Hex
+                    paymasterAndData?: never
+                }
+              : {
+                    preVerificationGas: Hex
+                    verificationGasLimit: Hex
+                    callGasLimit: Hex
+                    paymaster: Address
+                    paymasterVerificationGasLimit: Hex
+                    paymasterPostOpGasLimit: Hex
+                    paymasterData: Hex
+                    maxFeePerGas?: Hex
+                    maxPriorityFeePerGas?: Hex
+                    paymasterAndData?: never
+                }
     },
     {
         Method: "zd_pm_accounts"
@@ -243,7 +273,9 @@ export type KernelEncodeCallDataArgs = {
 export type GetEntryPointAbi<entryPointVersion extends EntryPointVersion> =
     entryPointVersion extends "0.6"
         ? typeof entryPoint06Abi
-        : typeof entryPoint07Abi
+        : entryPointVersion extends "0.7"
+          ? typeof entryPoint07Abi
+          : typeof entryPoint08Abi
 
 export type Execution = {
     target: Address
@@ -255,14 +287,19 @@ export type KERNEL_V2_VERSION_TYPE = "0.0.2" | "0.2.2" | "0.2.3" | "0.2.4"
 
 export type KERNEL_V3_VERSION_TYPE = "0.3.0" | "0.3.1" | "0.3.2" | "0.3.3"
 
+export type KERNEL_V4_VERSION_TYPE = "0.4.0"
+
 export type KERNEL_VERSION_TYPE =
     | KERNEL_V2_VERSION_TYPE
     | KERNEL_V3_VERSION_TYPE
+    | KERNEL_V4_VERSION_TYPE
 
 export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
     entryPointVersion extends "0.6"
         ? KERNEL_V2_VERSION_TYPE
-        : KERNEL_V3_VERSION_TYPE
+        : entryPointVersion extends "0.7"
+          ? KERNEL_V3_VERSION_TYPE
+          : KERNEL_V4_VERSION_TYPE
 
 export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
     address: Address

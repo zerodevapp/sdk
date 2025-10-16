@@ -8,6 +8,7 @@ import type {
     EntryPointType,
     KERNEL_V2_VERSION_TYPE,
     KERNEL_V3_VERSION_TYPE,
+    KERNEL_V4_VERSION_TYPE,
     KERNEL_VERSION_TYPE
 } from "./types/kernel.js"
 
@@ -34,7 +35,9 @@ export const KernelVersionToAddressesMap: {
     [key in KERNEL_VERSION_TYPE]: {
         accountImplementationAddress: Address
         factoryAddress: Address
-        metaFactoryAddress?: key extends KERNEL_V3_VERSION_TYPE
+        metaFactoryAddress?: key extends
+            | KERNEL_V3_VERSION_TYPE
+            | KERNEL_V4_VERSION_TYPE
             ? Address
             : never
         initCodeHash?: Hex
@@ -94,6 +97,14 @@ export const KernelVersionToAddressesMap: {
         initCodeHash:
             "0xc452397f1e7518f8cea0566ac057e243bb1643f6298aba8eec8cdee78ee3b3dd"
         //"0x1fefe62c5b9c14c4661af2e04e4a2fa10205066cae5f629d304d483f5fa9e5fc"
+    },
+    "0.4.0": {
+        accountImplementationAddress:
+            "0x05286FEd20783d83424C196a691dBADb71942091",
+        factoryAddress: "0x8329a42F926984f49499ACb3a90b2e3681E4c880",
+        metaFactoryAddress: "0x0000000000000000000000000000000000000000", // TODO: add meta factory address
+        initCodeHash:
+            "0x7fee0d1d5e81ddf67c4d81b3945346f1a066a961425187b0a6dfb0c26768712f"
     }
 }
 
@@ -106,6 +117,7 @@ export const KERNEL_V3_1: KERNEL_V3_VERSION_TYPE = "0.3.1"
 export const KERNEL_V3_2: KERNEL_V3_VERSION_TYPE = "0.3.2"
 export const KERNEL_V3_3_BETA: KERNEL_V3_VERSION_TYPE = "0.3.3"
 export const KERNEL_V3_3: KERNEL_V3_VERSION_TYPE = "0.3.3"
+export const KERNEL_V4_0: KERNEL_V4_VERSION_TYPE = "0.4.0"
 
 export const TOKEN_ACTION = "0x2087C7FfD0d0DAE80a00EE74325aBF3449e0eaf1"
 export const ONLY_ENTRYPOINT_HOOK_ADDRESS =
