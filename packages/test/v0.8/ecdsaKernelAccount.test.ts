@@ -1,23 +1,23 @@
 import { beforeAll, describe, expect, test } from "bun:test"
-import type {
-    KernelAccountClient,
-    KernelSmartAccountImplementation
+import { getKernelAddressFromECDSA } from "@zerodev/ecdsa-validator"
+import {
+    constants,
+    type KernelAccountClient,
+    type KernelSmartAccountImplementation
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
 import {
     type Address,
-    type Chain,
     type GetContractReturnType,
     type Hex,
     type PublicClient,
-    type Transport,
     zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts"
 import type { GreeterAbi } from "../abis/Greeter.js"
 import { validateEnvironmentVariables } from "../v0.7/utils/common.js"
-import { getPublicClient } from "./utils/common.js"
+import { defaultIndex, getEntryPoint, getPublicClient } from "./utils/common.js"
 import {
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
@@ -70,10 +70,25 @@ describe("ECDSA kernel Account v0.8", () => {
         })
     })
 
-    test("Account address should be a valid Ethereum address", async () => {
+    test("account address should be a valid Ethereum address", async () => {
         expect(account.address).toBeString()
         expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
         expect(account.address).not.toEqual(zeroAddress)
+    })
+
+    test("getKernelAddressFromECDSA util should return valid account address", async () => {
+        const kernelVersion = account.kernelVersion
+
+        const generatedAccountAddress = await getKernelAddressFromECDSA({
+            entryPoint: getEntryPoint(),
+            kernelVersion,
+            eoaAddress: ownerAccount.address,
+            index: defaultIndex,
+            initCodeHash:
+                constants.KernelVersionToAddressesMap[kernelVersion]
+                    .initCodeHash ?? "0x"
+        })
+        expect(account.address).toEqual(generatedAccountAddress)
     })
 })

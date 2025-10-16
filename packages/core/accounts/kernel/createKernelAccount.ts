@@ -319,7 +319,7 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
             ? ((await kernelPluginManager.hook?.getEnableData()) ?? "0x")
             : "0x"
 
-        const internalData = concatHex([hook, hookData])
+        const internalData = isHook ? concatHex([hook, hookData]) : "0x"
         const rootPackages = {
             moduleType: 1n, // validator,
             module: validatorAddress,

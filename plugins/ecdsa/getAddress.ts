@@ -13,6 +13,7 @@ import {
     type PublicClient,
     concat,
     concatHex,
+    encodeAbiParameters,
     encodeFunctionData,
     getContract,
     getContractAddress,
@@ -137,7 +138,61 @@ const generateSaltForV07 = (
             initConfig
         ]
     })
+    console.log("initData", initData)
+    console.log("encodedIndex", encodedIndex)
     const packedData = concatHex([initData, encodedIndex])
+    return keccak256(packedData)
+}
+
+// TODO: add initConfig
+const generateSaltForV08 = (
+    eoaAddress: Address,
+    index: bigint,
+    hookAddress: Address,
+    hookData: Hex,
+    validatorAddress: Address
+    // initConfig: Hex[]
+) => {
+    const rootPackage = {
+        moduleType: 1n,
+        module: validatorAddress,
+        moduleData: eoaAddress,
+        internalData: concatHex([hookAddress, hookData])
+    }
+    const packages = [rootPackage]
+    const packedData = encodeAbiParameters(
+        [
+            {
+                name: "packages",
+                type: "tuple[]",
+                internalType: "struct Install[]",
+                components: [
+                    {
+                        name: "moduleType",
+                        type: "uint256",
+                        internalType: "uint256"
+                    },
+                    {
+                        name: "module",
+                        type: "address",
+                        internalType: "address"
+                    },
+                    {
+                        name: "moduleData",
+                        type: "bytes",
+                        internalType: "bytes"
+                    },
+                    {
+                        name: "internalData",
+                        type: "bytes",
+                        internalType: "bytes"
+                    }
+                ]
+            },
+            { name: "index", type: "uint256" }
+        ],
+        [packages, index]
+    )
     return keccak256(packedData)
 }
 
@@ -155,7 +210,7 @@ export type GetKernelAddressFromECDSAParams<
     | { publicClient: PublicClient; initCodeHash?: never }
     | { publicClient?: never; initCodeHash: Hex }
 )
-
+getKernelAddressFromECDSA
 export async function getKernelAddressFromECDSA<
     entryPointVersion extends EntryPointVersion
 >(params: GetKernelAddressFromECDSAParams<entryPointVersion>) {
@@ -189,7 +244,7 @@ export async function getKernelAddressFromECDSA<
             params.index,
             ecdsaValidatorAddress
         )
-    } else {
+    } else if (params.entryPoint.version === "0.7") {
         const hookAddress =
             "hookAddress" in params && params.hookAddress
                 ? params.hookAddress
@@ -206,6 +261,27 @@ export async function getKernelAddressFromECDSA<
             ecdsaValidatorAddress,
             params.kernelVersion,
             initConfig
+        )
+    } else if (params.entryPoint.version === "0.8") {
+        const hookAddress =
+            "hookAddress" in params && params.hookAddress
+                ? params.hookAddress
+                : "0x"
+        const hookData =
+            "hookData" in params && params.hookData ? params.hookData : "0x"
+        // const initConfig =
+        //     "initConfig" in params && params.initConfig ? params.initConfig : []
+        salt = generateSaltForV08(
+            params.eoaAddress,
+            params.index,
+            hookAddress,
+            hookData,
+            ecdsaValidatorAddress
+            // initConfig
+        )
+    } else {
+        throw new Error(
+            `Unsupported entrypoint version ${params.entryPoint.version}`
         )
     }
 

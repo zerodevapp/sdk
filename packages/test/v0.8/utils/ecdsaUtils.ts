@@ -8,7 +8,7 @@ import {
 import type { GetKernelVersion, PluginMigrationData } from "@zerodev/sdk/types"
 import { http, type Chain, type Hex, type Transport } from "viem"
 import type { EntryPointVersion, SmartAccount } from "viem/account-abstraction"
-import { privateKeyToAccount, generatePrivateKey } from "viem/accounts"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import {
     defaultIndex,
     defaultKernelVersion,
