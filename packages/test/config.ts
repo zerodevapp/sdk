@@ -11,8 +11,8 @@ export const config: {
         [key in number]: {
             rpcUrl: string
             chainId: number
-            bundlerUrl: string
-            projectId: string
+            bundlerUrl?: string
+            projectId?: string
         }
     }
 } = {
@@ -42,6 +42,12 @@ export const config: {
             bundlerUrl: process.env.ZERODEV_BUNDLER_RPC_HOST_EPV07 || "",
             chainId: baseSepolia.id,
             projectId: process.env.ZERODEV_PROJECT_ID_BASE_SEPOLIA || ""
+        }
+    },
+    "0.8": {
+        [sepolia.id]: {
+            rpcUrl: process.env.RPC_URL_SEPOLIA || "",
+            chainId: sepolia.id
         }
     }
 }

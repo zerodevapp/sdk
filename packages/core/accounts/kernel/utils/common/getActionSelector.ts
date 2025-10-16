@@ -2,6 +2,7 @@ import { type Hex, getAbiItem, toFunctionSelector } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 import { KernelAccountAbi } from "../../abi/KernelAccountAbi.js"
 import { KernelV3AccountAbi } from "../../abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { KernelV4AccountAbi } from "../../abi/kernel_v_4_0_0/KernelAccountAbi.js"
 
 export const getActionSelector = (
     entryPointVersion: EntryPointVersion
@@ -13,6 +14,10 @@ export const getActionSelector = (
     } else if (entryPointVersion === "0.7") {
         return toFunctionSelector(
             getAbiItem({ abi: KernelV3AccountAbi, name: "execute" })
+        )
+    } else if (entryPointVersion === "0.8") {
+        return toFunctionSelector(
+            getAbiItem({ abi: KernelV4AccountAbi, name: "execute" })
         )
     } else {
         throw new Error("Unsupported entry point version")

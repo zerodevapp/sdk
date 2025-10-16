@@ -116,10 +116,11 @@ export const validateKernelVersionWithEntryPoint = <
     if (
         (entryPointVersion === "0.6" &&
             !satisfies(kernelVersion, ">=0.2.2 || <=0.2.4")) ||
-        (entryPointVersion === "0.7" && !satisfies(kernelVersion, ">=0.3.0"))
+        (entryPointVersion === "0.7" && !satisfies(kernelVersion, ">=0.3.0")) ||
+        (entryPointVersion === "0.8" && !satisfies(kernelVersion, ">=0.4.0"))
     ) {
         throw new Error(
-            "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0 for EntryPointV0.7"
+            "KernelVersion should be >= 0.2.2 and <= 0.2.4 for EntryPointV0.6 and >= 0.3.0 for EntryPointV0.7 and >= 0.4.0 for EntryPointV0.8"
         )
     }
 }

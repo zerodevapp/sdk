@@ -1,11 +1,4 @@
-import type {
-    Address,
-    CustomSource,
-    Hex,
-    LocalAccount,
-    OneOf,
-    PartialBy
-} from "viem"
+import type { Address, CustomSource, Hex, LocalAccount, PartialBy } from "viem"
 import type {
     EntryPointVersion,
     UserOperation,
@@ -300,6 +293,9 @@ export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
         : entryPointVersion extends "0.7"
           ? KERNEL_V3_VERSION_TYPE
           : KERNEL_V4_VERSION_TYPE
+
+export type GetInitConfig<KernelVersion extends KERNEL_VERSION_TYPE> =
+    KernelVersion extends "0.3.1" | KERNEL_V4_VERSION_TYPE ? Hex[] : never
 
 export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
     address: Address

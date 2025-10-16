@@ -51,6 +51,7 @@ import type {
     CallType,
     EntryPointType,
     GetEntryPointAbi,
+    GetInitConfig,
     GetKernelVersion,
     KernelPluginManager,
     KernelPluginManagerParams,
@@ -72,6 +73,7 @@ import { KernelV3InitAbi } from "./abi/kernel_v_3_0_0/KernelAccountAbi.js"
 import { KernelV3FactoryAbi } from "./abi/kernel_v_3_0_0/KernelFactoryAbi.js"
 import { KernelFactoryStakerAbi } from "./abi/kernel_v_3_0_0/KernelFactoryStakerAbi.js"
 import { KernelV3_1AccountAbi } from "./abi/kernel_v_3_1/KernelAccountAbi.js"
+import { KernelV4FactoryAbi } from "./abi/kernel_v_4_0_0/KernelFactoryAbi.js"
 import { encodeCallData as encodeCallDataEpV06 } from "./utils/account/ep0_6/encodeCallData.js"
 import { encodeDeployCallData as encodeDeployCallDataV06 } from "./utils/account/ep0_6/encodeDeployCallData.js"
 import { encodeCallData as encodeCallDataEpV07 } from "./utils/account/ep0_7/encodeCallData.js"
@@ -135,7 +137,7 @@ export type CreateKernelAccountParameters<
     metaFactoryAddress?: Address
     address?: Address
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: KernelVerion extends "0.3.1" ? Hex[] : never
+    initConfig?: GetInitConfig<KernelVerion>
     useMetaFactory?: boolean
     pluginMigrations?: PluginMigrationData[]
 } & (
@@ -225,9 +227,7 @@ const getKernelInitData = async <entryPointVersion extends EntryPointVersion>({
     kernelPluginManager: KernelPluginManager<entryPointVersion>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
-        ? Hex[]
-        : never
+    initConfig?: GetInitConfig<GetKernelVersion<entryPointVersion>>
 }) => {
     const {
         enableData,
@@ -302,11 +302,37 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
     kernelPluginManager: KernelPluginManager<entryPointVersion>
     initHook: boolean
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetKernelVersion<entryPointVersion> extends "0.3.1"
-        ? Hex[]
-        : never
+    initConfig?: GetInitConfig<GetKernelVersion<entryPointVersion>>
     useMetaFactory: boolean
 }): Promise<Hex> => {
+    if (_entryPointVersion === "0.8") {
+        // TODO: add metafactory
+        const {
+            enableData,
+            validatorAddress
+            // initConfig: initConfig_
+        } = await kernelPluginManager.getValidatorInitData()
+
+        const isHook = initHook && kernelPluginManager.hook
+        const hook = kernelPluginManager.hook?.getIdentifier() ?? zeroAddress
+        const hookData = isHook
+            ? ((await kernelPluginManager.hook?.getEnableData()) ?? "0x")
+            : "0x"
+
+        const internalData = concatHex([hook, hookData])
+        const rootPackages = {
+            moduleType: 1n, // validator,
+            module: validatorAddress,
+            moduleData: enableData,
+            internalData: internalData
+        }
+        return encodeFunctionData({
+            abi: KernelV4FactoryAbi,
+            functionName: "deploy",
+            args: [[rootPackages], BigInt(index)]
+        })
+    }
+
     // Build the account initialization data
     const initialisationData = await getKernelInitData<entryPointVersion>({
         entryPointVersion: _entryPointVersion,
@@ -315,6 +341,26 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
         kernelVersion,
         initConfig
     })
+
+    if (_entryPointVersion === "0.7") {
+        if (!useMetaFactory) {
+            return encodeFunctionData({
+                abi: KernelV3FactoryAbi,
+                functionName: "createAccount",
+                args: [initialisationData, toHex(index, { size: 32 })]
+            })
+        }
+
+        return encodeFunctionData({
+            abi: KernelFactoryStakerAbi,
+            functionName: "deployWithFactory",
+            args: [
+                factoryAddress,
+                initialisationData,
+                toHex(index, { size: 32 })
+            ]
+        })
+    }
 
     // Build the account init code
     if (_entryPointVersion === "0.6") {
@@ -325,19 +371,7 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
         })
     }
 
-    if (!useMetaFactory) {
-        return encodeFunctionData({
-            abi: KernelV3FactoryAbi,
-            functionName: "createAccount",
-            args: [initialisationData, toHex(index, { size: 32 })]
-        })
-    }
-
-    return encodeFunctionData({
-        abi: KernelFactoryStakerAbi,
-        functionName: "deployWithFactory",
-        args: [factoryAddress, initialisationData, toHex(index, { size: 32 })]
-    })
+    throw new Error(`Unsupported entrypoint version ${_entryPointVersion}`)
 }
 
 const getDefaultAddresses = <entryPointVersion extends EntryPointVersion>(
