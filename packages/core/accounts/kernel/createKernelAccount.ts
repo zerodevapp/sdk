@@ -83,6 +83,7 @@ import {
     accountMetadata
 } from "./utils/common/accountMetadata.js"
 import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
+import { hashKernelMessage } from "./utils/common/hashKernelMessage.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 import type { CallArgs } from "./utils/types.js"
 
@@ -784,18 +785,18 @@ export async function createKernelAccount<
                     }
                 })
             } else {
-                const wrappedMessageHash = await eip712WrapHash(
-                    messageHash,
-                    {
+                const messageHash = await hashKernelMessage({
+                    accountAddress,
+                    message,
+                    metadata: {
                         name,
-                        chainId: Number(metadataChainId),
-                        version,
-                        verifyingContract: accountAddress
+                        chainId: metadataChainId,
+                        version
                     },
                     useReplayableSignature
-                )
+                })
                 signature = await kernelPluginManager.signMessage({
-                    message: { raw: wrappedMessageHash }
+                    message: { raw: messageHash }
                 })
             }
 

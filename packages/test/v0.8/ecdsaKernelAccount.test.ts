@@ -1,27 +1,40 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { verifyMessage } from "@ambire/signature-validator"
 import { getKernelAddressFromECDSA } from "@zerodev/ecdsa-validator"
 import {
     constants,
     type KernelAccountClient,
-    type KernelSmartAccountImplementation
+    type KernelSmartAccountImplementation,
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import dotenv from "dotenv"
+import { ethers } from "ethers"
 import {
     type Address,
     type GetContractReturnType,
     type Hex,
     type PublicClient,
+    hashMessage,
     zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
 import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts"
 import type { GreeterAbi } from "../abis/Greeter.js"
+import { config } from "../config.js"
 import { validateEnvironmentVariables } from "../v0.7/utils/common.js"
-import { defaultIndex, getEntryPoint, getPublicClient } from "./utils/common.js"
 import {
+    defaultChainId,
+    defaultIndex,
+    getEntryPoint,
+    getPublicClient,
+    getZeroDevPaymasterClient
+} from "./utils/common.js"
+import {
+    getEcdsaKernelAccountWithRandomSigner,
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
 } from "./utils/ecdsaUtils.js"
+
 dotenv.config()
 
 const requiredEnvVars = [
@@ -91,4 +104,36 @@ describe("ECDSA kernel Account v0.8", () => {
         })
         expect(account.address).toEqual(generatedAccountAddress)
     })
+
+    test(
+        "should validate message signatures for undeployed accounts (6492)",
+        async () => {
+            const account = await getEcdsaKernelAccountWithRandomSigner()
+            const chainId = account.client.chain?.id ?? defaultChainId
+            const message = "hello world"
+            const signature = await account.signMessage({
+                message
+            })
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: hashMessage(message),
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                message,
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["0.8"][chainId].rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
 })

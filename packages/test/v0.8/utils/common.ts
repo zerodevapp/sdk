@@ -9,7 +9,7 @@ import { config } from "../../config"
 
 // const
 const zerodevRpcHost = "https://rpc.zerodev.app/api/v3"
-const defaultChainId = allChains.sepolia.id
+export const defaultChainId = allChains.sepolia.id
 export const defaultIndex = 11111111111111111n // 432334375434333332434365532464445487823332432423423n
 export const defaultKernelVersion = "0.4.0"
 const entryPointVersion = "0.8"
