@@ -15,6 +15,7 @@ import {
     type Hex,
     type PublicClient,
     hashMessage,
+    hashTypedData,
     zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
@@ -130,6 +131,71 @@ describe("ECDSA kernel Account v0.8", () => {
                 signature: signature,
                 provider: new ethers.providers.JsonRpcProvider(
                     config["0.8"][chainId].rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "should validate typed data signatures for undeployed accounts (6492)",
+        async () => {
+            const account = await getEcdsaKernelAccountWithRandomSigner()
+            const chainId = account.client.chain?.id ?? defaultChainId
+
+            const domain = {
+                chainId,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
+            const primaryType = "Test"
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const signature = await account.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: typedHash,
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                typedData: {
+                    domain,
+                    types,
+                    message
+                },
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["0.8"][defaultChainId].rpcUrl
                 )
             })
             expect(ambireResult).toBeTrue()

@@ -37,6 +37,7 @@ import {
     getCode,
     signAuthorization as signAuthorizationAction
 } from "viem/actions"
+import { wrapTypedDataSignature } from "viem/experimental/erc7739"
 import { getAction, verifyAuthorization } from "viem/utils"
 import {
     getAccountNonce,
@@ -82,8 +83,8 @@ import {
     type AccountMetadata,
     accountMetadata
 } from "./utils/common/accountMetadata.js"
-import { eip712WrapHash } from "./utils/common/eip712WrapHash.js"
 import { hashKernelMessage } from "./utils/common/hashKernelMessage.js"
+import { hashKernelTypedData } from "./utils/common/hashKernelTypedData.js"
 import { getPluginInstallCallData } from "./utils/plugins/ep0_7/getPluginInstallCallData.js"
 import type { CallArgs } from "./utils/types.js"
 
@@ -793,6 +794,7 @@ export async function createKernelAccount<
                         chainId: metadataChainId,
                         version
                     },
+                    kernelVersion,
                     useReplayableSignature
                 })
                 signature = await kernelPluginManager.signMessage({
@@ -846,7 +848,8 @@ export async function createKernelAccount<
             const {
                 name,
                 chainId: metadataChainId,
-                version
+                version,
+                salt
             } = await getMemoizedAccountMetadata()
 
             let signature: Hex
@@ -865,15 +868,36 @@ export async function createKernelAccount<
                     }
                 })
             } else {
-                const wrappedMessageHash = await eip712WrapHash(typedHash, {
-                    name,
-                    chainId: Number(metadataChainId),
-                    version,
-                    verifyingContract: accountAddress
+                const messageHash = await hashKernelTypedData({
+                    accountAddress,
+                    typedData: {
+                        domain,
+                        message,
+                        primaryType,
+                        types: _types
+                    },
+                    metadata: {
+                        name,
+                        chainId: metadataChainId,
+                        version,
+                        salt
+                    },
+                    kernelVersion
                 })
                 signature = await kernelPluginManager.signMessage({
-                    message: { raw: wrappedMessageHash }
+                    message: { raw: messageHash }
                 })
+
+                // kernel v4 use erc7739 (https://eips.ethereum.org/EIPS/eip-7739)
+                if (satisfies(kernelVersion, ">=0.4.0")) {
+                    signature = wrapTypedDataSignature({
+                        domain,
+                        message,
+                        primaryType,
+                        signature,
+                        types: _types
+                    })
+                }
             }
             if (
                 !hasKernelFeature(

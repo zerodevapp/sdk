@@ -1,6 +1,7 @@
 import {
     type Address,
     type Client,
+    type Hex,
     decodeFunctionResult,
     encodeFunctionData,
     publicActions
@@ -13,6 +14,7 @@ export type AccountMetadata = {
     name: string
     version: string
     chainId: bigint
+    salt: Hex
 }
 export const accountMetadata = async (
     client: Client,
@@ -43,7 +45,8 @@ export const accountMetadata = async (
             return {
                 name: decoded[1],
                 version: decoded[2],
-                chainId: decoded[3]
+                chainId: decoded[3],
+                salt: decoded[5]
             }
         }
     } catch (error) {}
@@ -55,6 +58,7 @@ export const accountMetadata = async (
                 (client.chain
                     ? client.chain.id
                     : await client.extend(publicActions).getChainId())
-        )
+        ),
+        salt: "0x0000000000000000000000000000000000000000000000000000000000000000"
     }
 }
