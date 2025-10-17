@@ -1,8 +1,8 @@
 import type { EntryPointVersion } from "viem/account-abstraction"
 import {
+    arbitrumSepolia,
     baseSepolia,
     optimismSepolia,
-    polygonMumbai,
     sepolia
 } from "viem/chains"
 
@@ -48,6 +48,10 @@ export const config: {
         [sepolia.id]: {
             rpcUrl: process.env.RPC_URL_SEPOLIA || "",
             chainId: sepolia.id
+        },
+        [arbitrumSepolia.id]: {
+            rpcUrl: process.env.RPC_URL_ARB_SEPOLIA || "",
+            chainId: arbitrumSepolia.id
         }
     }
 }
