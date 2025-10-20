@@ -251,7 +251,7 @@ export async function createKernelAccountV0_2(
             return account.signMessage(message)
         },
         async signTypedData(typedData) {
-            return account.signTypedData(typedData)
+            return account.signTypedData(typedData as TypedDataDefinition)
         },
         getFactoryArgs,
         async getAddress() {

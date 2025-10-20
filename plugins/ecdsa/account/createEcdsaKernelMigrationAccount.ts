@@ -508,7 +508,7 @@ export async function createEcdsaKernelMigrationAccount<
                 types: types
             })
 
-            const typedHash = hashTypedData(typedData)
+            const typedHash = hashTypedData(typedData as TypedDataDefinition)
             kernelUpgraded =
                 kernelUpgraded ||
                 (await isKernelUpgraded(

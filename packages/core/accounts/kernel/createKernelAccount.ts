@@ -6,6 +6,7 @@ import {
     type Hex,
     type LocalAccount,
     type SignableMessage,
+    type TypedData,
     type TypedDataDefinition,
     concatHex,
     createNonceManager,
@@ -118,6 +119,19 @@ export type KernelSmartAccountImplementation<
             bytecode
         }: EncodeDeployDataParameters) => Promise<Hex>
         signMessage: (parameters: SignMessageParameters) => Promise<Hex>
+        signTypedData: <
+            const typedData extends TypedData | Record<string, unknown>,
+            primaryType extends
+                | keyof typedData
+                | "EIP712Domain" = keyof typedData
+        >(
+            // parameters: TypedDataDefinitionWithReplayableSignature<typedData, primaryType>
+            parameters:
+                | TypedDataDefinition<typedData, primaryType>
+                | (TypedDataDefinition<typedData, primaryType> & {
+                      useReplayable?: boolean
+                  })
+        ) => Promise<Hex>
         eip7702Authorization?:
             | (() => Promise<SignAuthorizationReturnType | undefined>)
             | undefined
@@ -843,7 +857,7 @@ export async function createKernelAccount<
                 types: types
             })
 
-            const typedHash = hashTypedData(typedData)
+            const typedHash = hashTypedData(typedData as TypedDataDefinition)
 
             const {
                 name,
