@@ -1,4 +1,4 @@
-import { satisfies } from "semver"
+import { coerce, satisfies } from "semver"
 import {
     type Address,
     type Assign,
@@ -735,9 +735,11 @@ export async function createKernelAccount<
             await checkPluginInstallationStatus()
 
             // Add plugin installation calls if needed
+            const semverEntryPointVersion =
+                coerce(entryPoint.version) || entryPoint.version
             if (
                 pluginCache.pendingPlugins.length > 0 &&
-                entryPoint.version === "0.7" &&
+                satisfies(semverEntryPointVersion, ">=0.7.0") &&
                 kernelPluginManager.activeValidatorMode === "sudo"
             ) {
                 // convert map into for loop

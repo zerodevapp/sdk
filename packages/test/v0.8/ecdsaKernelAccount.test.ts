@@ -1,13 +1,22 @@
 import { beforeAll, describe, expect, test } from "bun:test"
 import { verifyMessage } from "@ambire/signature-validator"
-import { getKernelAddressFromECDSA } from "@zerodev/ecdsa-validator"
+import {
+    getKernelAddressFromECDSA,
+    signerToEcdsaValidator
+} from "@zerodev/ecdsa-validator"
 import {
     constants,
     EIP1271Abi,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
+    createKernelAccount,
+    getCustomNonceKeyFromString,
+    getValidatorPluginInstallModuleData,
     verifyEIP6492Signature
 } from "@zerodev/sdk"
+import { isPluginInstalled } from "@zerodev/sdk/actions"
+import { PLUGIN_TYPE } from "@zerodev/sdk/constants"
+import type { PluginMigrationData } from "@zerodev/sdk/types"
 import dotenv from "dotenv"
 import { ethers } from "ethers"
 import {
@@ -17,24 +26,42 @@ import {
     type Hex,
     type PublicClient,
     type Transport,
+    concatHex,
+    decodeEventLog,
+    encodeAbiParameters,
+    encodeFunctionData,
+    erc20Abi,
+    getContract,
     hashTypedData,
+    isAddressEqual,
+    parseAbiParameters,
     zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
-import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts"
+import {
+    type PrivateKeyAccount,
+    generatePrivateKey,
+    privateKeyToAccount
+} from "viem/accounts"
 import { arbitrumSepolia, sepolia } from "viem/chains"
 import { hashMessage } from "viem/experimental/erc7739"
-import type { GreeterAbi } from "../abis/Greeter.js"
-import { config } from "../config.js"
-import { validateEnvironmentVariables } from "../v0.7/utils/common.js"
+import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
+import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
+import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
+import {
+    Test_ERC20Address,
+    findUserOperationEvent,
+    mintToAccount,
+    validateEnvironmentVariables
+} from "../v0.7/utils/common.js"
 import {
     defaultChainId,
     defaultIndex,
     getEntryPoint,
-    getPublicClient,
-    getZeroDevPaymasterClient
+    getPublicClient
 } from "./utils/common.js"
 import {
+    getEcdsaKernelAccountWithPrivateKey,
     getEcdsaKernelAccountWithRandomSigner,
     getKernelAccountClient,
     getSignerToEcdsaKernelAccount
@@ -86,6 +113,11 @@ describe("ECDSA kernel Account v0.8", () => {
         publicClient = await getPublicClient()
         kernelClient = await getKernelAccountClient({
             account
+        })
+        greeterContract = getContract({
+            abi: GreeterAbi,
+            address: process.env.GREETER_ADDRESS as Address,
+            client: kernelClient
         })
     })
 
@@ -391,6 +423,474 @@ describe("ECDSA kernel Account v0.8", () => {
                     client: arbSepoliaPublicClient
                 })
             ).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client signTypedData should return a valid signature",
+        async () => {
+            const domain = {
+                chainId: 1,
+                name: "Test",
+                verifyingContract: zeroAddress
+            }
+
+            const primaryType = "Test"
+
+            const types = {
+                Test: [
+                    {
+                        name: "test",
+                        type: "string"
+                    }
+                ]
+            }
+
+            const message = {
+                test: "hello world"
+            }
+            const typedHash = hashTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const response = await kernelClient.signTypedData({
+                domain,
+                primaryType,
+                types,
+                message
+            })
+
+            const eip1271response = await publicClient.readContract({
+                address: account.address,
+                abi: EIP1271Abi,
+                functionName: "isValidSignature",
+                args: [typedHash, response]
+            })
+            expect(eip1271response).toEqual("0x1626ba7e")
+            expect(response).toBeString()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client deploy contract",
+        async () => {
+            const userOpHash = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeDeployCallData({
+                    abi: GreeterAbi,
+                    bytecode: GreeterBytecode
+                })
+            })
+
+            expect(userOpHash).toBeString()
+            expect(userOpHash).toHaveLength(TX_HASH_LENGTH)
+            expect(userOpHash).toMatch(TX_HASH_REGEX)
+
+            const userOpReceipt =
+                await kernelClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: userOpReceipt.receipt.transactionHash
+                })
+
+            expect(findUserOperationEvent(transactionReceipt.logs)).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send multiple calls",
+        async () => {
+            const txnHash = await kernelClient.sendTransaction({
+                calls: [
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    },
+                    {
+                        to: process.env.GREETER_ADDRESS as Address,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world batched"]
+                        })
+                    }
+                ]
+            })
+            await publicClient.waitForTransactionReceipt({
+                hash: txnHash
+            })
+
+            const newGreet = await greeterContract.read.greet()
+            expect(newGreet).toBeString()
+            expect(newGreet).toEqual("hello world batched")
+
+            expect(txnHash).toBeString()
+            expect(txnHash).toHaveLength(TX_HASH_LENGTH)
+            expect(txnHash).toMatch(TX_HASH_REGEX)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Write contract",
+        async () => {
+            const oldGreet = await greeterContract.read.greet()
+
+            expect(oldGreet).toBeString()
+
+            const txHash = await greeterContract.write.setGreeting([
+                "hello world"
+            ])
+            await publicClient.waitForTransactionReceipt({
+                hash: txHash
+            })
+
+            expect(txHash).toBeString()
+            expect(txHash).toHaveLength(66)
+
+            const newGreet = await greeterContract.read.greet()
+
+            expect(newGreet).toBeString()
+            expect(newGreet).toEqual("hello world")
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client signs and then sends UserOp with paymaster",
+        async () => {
+            const userOp = await kernelClient.signUserOperation({
+                callData: await kernelClient.account.encodeCalls([
+                    {
+                        to: process.env.GREETER_ADDRESS as Address,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world"]
+                        })
+                    },
+                    {
+                        to: process.env.GREETER_ADDRESS as Address,
+                        value: 0n,
+                        data: encodeFunctionData({
+                            abi: GreeterAbi,
+                            functionName: "setGreeting",
+                            args: ["hello world 2"]
+                        })
+                    }
+                ])
+            })
+            expect(userOp.signature).not.toBe("0x")
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                ...userOp
+            })
+            expect(userOpHash).toHaveLength(66)
+            await kernelClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
+
+            const greet = await greeterContract.read.greet()
+            expect(greet).toBeString()
+            expect(greet).toEqual("hello world 2")
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client send UserOp with delegatecall",
+        async () => {
+            const accountAddress = kernelClient.account.address
+            const amountToMint = 10000000n
+            const amountToTransfer = 4337n
+            await mintToAccount(
+                publicClient,
+                kernelClient as KernelAccountClient<
+                    Transport,
+                    Chain,
+                    SmartAccount<KernelSmartAccountImplementation>
+                >,
+                accountAddress,
+                amountToMint
+            )
+            const userOpHash = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeCalls(
+                    [
+                        {
+                            to: TOKEN_ACTION_ADDRESS,
+                            value: 0n,
+                            data: encodeFunctionData({
+                                abi: TokenActionsAbi,
+                                functionName: "transferERC20Action",
+                                args: [
+                                    Test_ERC20Address,
+                                    amountToTransfer,
+                                    owner
+                                ]
+                            })
+                        }
+                    ],
+                    "delegatecall"
+                )
+            })
+            const transaction = await kernelClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
+            const transactionReceipt =
+                await publicClient.waitForTransactionReceipt({
+                    hash: transaction.receipt.transactionHash
+                })
+            let transferEventFound = false
+            for (const log of transactionReceipt.logs) {
+                try {
+                    const event = decodeEventLog({
+                        abi: erc20Abi,
+                        ...log
+                    })
+                    if (
+                        event.eventName === "Transfer" &&
+                        event.args.from === account.address &&
+                        event.args.value === amountToTransfer
+                    ) {
+                        transferEventFound = true
+                    }
+                } catch (error) {}
+            }
+
+            expect(userOpHash).toHaveLength(66)
+            expect(transferEventFound).toBeTrue()
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client send UserOp with custom nonce key",
+        async () => {
+            const customNonceKey = getCustomNonceKeyFromString(
+                "Hello, World!",
+                "0.8"
+            )
+
+            const nonce = await account.getNonce({ key: customNonceKey })
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                callData: await kernelClient.account.encodeCalls([
+                    {
+                        to: zeroAddress,
+                        value: 0n,
+                        data: "0x"
+                    }
+                ]),
+                nonce
+            })
+
+            expect(userOpHash).toHaveLength(TX_HASH_LENGTH)
+            await kernelClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
+            const res = await kernelClient.getUserOperation({
+                hash: userOpHash
+            })
+            expect(res.userOperation.nonce).toEqual(nonce)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client install Kernel executors plugins automatically",
+        async () => {
+            const pluginToInstall: PluginMigrationData = {
+                type: PLUGIN_TYPE.EXECUTOR,
+                address: "0xAd8da92Dd670871bD3f90475d6763d520728881a",
+                data: concatHex([
+                    encodeAbiParameters(
+                        parseAbiParameters(["bytes", "bytes"]),
+                        ["0x", "0x"]
+                    )
+                ])
+            }
+            const kernelAccount = await getEcdsaKernelAccountWithRandomSigner(
+                undefined,
+                undefined,
+                "0.4.0",
+                [pluginToInstall]
+            )
+            const kernelClient = await getKernelAccountClient({
+                account: kernelAccount
+            })
+
+            // plugin not installed
+            const pluginInstalledBefore = await isPluginInstalled(
+                publicClient,
+                {
+                    address: kernelAccount.address,
+                    plugin: pluginToInstall
+                }
+            )
+            expect(pluginInstalledBefore).toBeFalse()
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                calls: [{ to: zeroAddress, value: 0n, data: "0x" }]
+            })
+            const userOpReceipt =
+                await kernelClient.waitForUserOperationReceipt({
+                    hash: userOpHash
+                })
+
+            // plugin installed
+            const pluginInstalledAfter = await isPluginInstalled(publicClient, {
+                address: kernelAccount.address,
+                plugin: pluginToInstall
+            })
+            expect(pluginInstalledAfter).toBeTrue()
+
+            // send transaction after plugin installed
+            const transactionHash2 = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            await publicClient.waitForTransactionReceipt({
+                hash: transactionHash2
+            })
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Client install Kernel validator plugins automatically",
+        async () => {
+            const pluginToInstall = await getValidatorPluginInstallModuleData({
+                plugin: {
+                    address: "0x43C757131417c5a245a99c4D5B7722ec20Cb0b31",
+                    getEnableData: async () => "0x"
+                },
+                entryPoint: getEntryPoint(),
+                kernelVersion: "0.4.0"
+            })
+            const privateKey = generatePrivateKey()
+            const kernelAccountWithoutPlugins =
+                await getEcdsaKernelAccountWithPrivateKey({
+                    privateKey
+                })
+            const kernelAccountWithPlugins =
+                await getEcdsaKernelAccountWithPrivateKey({
+                    privateKey,
+                    pluginMigrations: [pluginToInstall]
+                })
+
+            expect(
+                isAddressEqual(
+                    kernelAccountWithoutPlugins.address,
+                    kernelAccountWithPlugins.address
+                )
+            ).toBeTrue()
+            let kernelClient = await getKernelAccountClient({
+                account: kernelAccountWithoutPlugins
+            })
+            const txnHash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+            await publicClient.waitForTransactionReceipt({
+                hash: txnHash
+            })
+
+            kernelClient = await getKernelAccountClient({
+                account: kernelAccountWithPlugins
+            })
+
+            const pluginInstalledBefore = await isPluginInstalled(
+                publicClient,
+                {
+                    address: kernelAccountWithPlugins.address,
+                    plugin: pluginToInstall
+                }
+            )
+
+            const userOpHash = await kernelClient.sendUserOperation({
+                calls: [{ to: zeroAddress, value: 0n, data: "0x" }]
+            })
+            await kernelClient.waitForUserOperationReceipt({
+                hash: userOpHash
+            })
+
+            const pluginInstalledAfter = await isPluginInstalled(publicClient, {
+                address: kernelAccountWithPlugins.address,
+                plugin: pluginToInstall
+            })
+
+            // send another userOp after plugin installed
+            expect(pluginInstalledBefore).toBeFalse()
+            expect(pluginInstalledAfter).toBeTrue()
+            await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Can use a deployed account",
+        async () => {
+            // Send an initial tx to deploy the account
+            const hash = await kernelClient.sendTransaction({
+                to: zeroAddress,
+                value: 0n,
+                data: "0x"
+            })
+
+            // Wait for the tx to be done (so we are sure that the account is deployed)
+            await publicClient.waitForTransactionReceipt({ hash })
+            const deployedAccountAddress = account.address
+
+            // Build a new account with a valid owner
+            const signer = privateKeyToAccount(
+                process.env.TEST_PRIVATE_KEY as Hex
+            )
+            const ecdsaValidatorPlugin = await signerToEcdsaValidator(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    signer,
+                    kernelVersion: account.kernelVersion
+                }
+            )
+            const alreadyDeployedEcdsaSmartAccount = await createKernelAccount(
+                publicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    plugins: {
+                        sudo: ecdsaValidatorPlugin
+                    },
+                    address: deployedAccountAddress,
+                    index: defaultIndex,
+                    kernelVersion: account.kernelVersion
+                }
+            )
+
+            // Ensure the two account have the same address
+            expect(alreadyDeployedEcdsaSmartAccount.address).toMatch(
+                account.address
+            )
         },
         TEST_TIMEOUT
     )
