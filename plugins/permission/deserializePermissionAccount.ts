@@ -11,6 +11,7 @@ import {
 } from "@zerodev/sdk/accounts"
 import type {
     EntryPointType,
+    GetInitConfig,
     GetKernelVersion,
     KERNEL_VERSION_TYPE,
     ValidatorInitData
@@ -116,12 +117,14 @@ export const createPolicyFromParams = async (policy: Policy) => {
     }
 }
 
-export const decodeParamsFromInitCode = (
+export const decodeParamsFromInitCode = <
+    TKernelVersion extends KERNEL_VERSION_TYPE
+>(
     initCode: Hex,
-    kernelVersion: KERNEL_VERSION_TYPE
+    kernelVersion: TKernelVersion
 ) => {
     let index: bigint | undefined
-    let validatorInitData: ValidatorInitData | undefined
+    let validatorInitData: ValidatorInitData<TKernelVersion> | undefined
     let deployWithFactoryFunctionData:
         | DecodeFunctionDataReturnType<typeof KernelFactoryStakerAbi>
         | DecodeFunctionDataReturnType<typeof KernelV3FactoryAbi>
@@ -164,15 +167,19 @@ export const decodeParamsFromInitCode = (
         }
         if (!initializeFunctionData) throw new Error("Invalid initCode")
         if (initializeFunctionData.functionName === "initialize") {
+            const initConfig: GetInitConfig<TKernelVersion> | undefined =
+                isKernelVersionAfter(kernelVersion, "0.3.1") &&
+                Array.isArray(initializeFunctionData.args[4])
+                    ? ([
+                          ...initializeFunctionData.args[4]
+                      ] as GetInitConfig<TKernelVersion>)
+                    : undefined
+
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
                 identifier: initializeFunctionData.args[0],
                 enableData: initializeFunctionData.args[2],
-                initConfig:
-                    isKernelVersionAfter(kernelVersion, "0.3.1") &&
-                    Array.isArray(initializeFunctionData.args[4])
-                        ? [...initializeFunctionData.args[4]]
-                        : undefined
+                initConfig
             }
         }
     } else if (deployWithFactoryFunctionData.functionName === "createAccount") {
@@ -193,15 +200,19 @@ export const decodeParamsFromInitCode = (
         }
         if (!initializeFunctionData) throw new Error("Invalid initCode")
         if (initializeFunctionData.functionName === "initialize") {
+            const initConfig: GetInitConfig<TKernelVersion> | undefined =
+                isKernelVersionAfter(kernelVersion, "0.3.1") &&
+                Array.isArray(initializeFunctionData.args[4])
+                    ? ([
+                          ...initializeFunctionData.args[4]
+                      ] as GetInitConfig<TKernelVersion>)
+                    : undefined
+
             validatorInitData = {
                 validatorAddress: initializeFunctionData.args[0],
                 identifier: initializeFunctionData.args[0],
                 enableData: initializeFunctionData.args[2],
-                initConfig:
-                    isKernelVersionAfter(kernelVersion, "0.3.1") &&
-                    Array.isArray(initializeFunctionData.args[4])
-                        ? [...initializeFunctionData.args[4]]
-                        : undefined
+                initConfig: initConfig
             }
         }
     }

@@ -3,8 +3,9 @@ import {
     KernelVersionToAddressesMap,
     VALIDATOR_TYPE
 } from "@zerodev/sdk/constants"
+import type { GetInitConfig, KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
+import { satisfies } from "semver"
 import {
-    type Hex,
     concat,
     encodeFunctionData,
     getAbiItem,
@@ -14,9 +15,13 @@ import {
 } from "viem"
 import type { PermissionPlugin } from "./types.js"
 
-export async function toInitConfig(
-    permissionPlugin: PermissionPlugin
-): Promise<Hex[]> {
+export async function toInitConfig<TKernelVersion extends KERNEL_VERSION_TYPE>(
+    permissionPlugin: PermissionPlugin<TKernelVersion>
+): Promise<GetInitConfig<TKernelVersion>> {
+    if (satisfies(permissionPlugin.kernelVersion, ">=0.4.0")) {
+        return (await permissionPlugin.getInstalls()) as GetInitConfig<TKernelVersion>
+    }
+
     const permissionInstallFunctionData = encodeFunctionData({
         abi: KernelV3_3AccountAbi,
         functionName: "installValidations",
@@ -62,5 +67,8 @@ export async function toInitConfig(
         ],
         "delegatecall"
     )
-    return [permissionInstallFunctionData, delegateCall]
+    return [
+        permissionInstallFunctionData,
+        delegateCall
+    ] as GetInitConfig<TKernelVersion>
 }

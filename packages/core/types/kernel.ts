@@ -161,6 +161,7 @@ export type KernelValidator<Name extends string = string> =
             pluginEnableSignature?: Hex
         ) => Promise<Hex>
         getEnableData(accountAddress?: Address): Promise<Hex>
+        getInstalls(internalData?: Hex): Promise<Install[]>
         isEnabled(accountAddress: Address, selector: Hex): Promise<boolean>
         getIdentifier: () => Hex
     }
@@ -170,11 +171,13 @@ export type KernelValidatorHook = {
     getIdentifier: () => Hex
 }
 
-export type ValidatorInitData = {
+export type ValidatorInitData<
+    kernelVersion extends KERNEL_VERSION_TYPE | undefined = undefined
+> = {
     validatorAddress: Address
     enableData: Hex
     identifier: Hex
-    initConfig?: Hex[]
+    initConfig?: GetInitConfig<kernelVersion>
 }
 
 export type ActiveValidatorMode = "sudo" | "regular"
@@ -186,7 +189,9 @@ export type KernelPluginManager<entryPointVersion extends EntryPointVersion> =
         activeValidatorMode: ActiveValidatorMode
         hook?: KernelValidatorHook
         getPluginEnableSignature(accountAddress: Address): Promise<Hex>
-        getValidatorInitData(): Promise<ValidatorInitData>
+        getValidatorInitData(): Promise<
+            ValidatorInitData<GetKernelVersion<entryPointVersion>>
+        >
         getAction(): Action
         getValidityData(): PluginValidityData
         getIdentifier(isSudo?: boolean): Hex
@@ -219,7 +224,9 @@ export type KernelPluginManagerParams<
     regular?: KernelValidator
     hook?: KernelValidatorHook
     pluginEnableSignature?: Hex
-    validatorInitData?: ValidatorInitData
+    validatorInitData?: ValidatorInitData<
+        GetKernelVersion<entryPointVersion> | undefined
+    >
     action?: Action
     entryPoint: EntryPointType<entryPointVersion>
     kernelVersion: KERNEL_VERSION_TYPE
@@ -276,6 +283,13 @@ export type Execution = {
     callData: Hex
 }
 
+export type Install = {
+    moduleType: bigint
+    module: Address
+    moduleData: Hex
+    internalData: Hex
+}
+
 export type KERNEL_V2_VERSION_TYPE = "0.0.2" | "0.2.2" | "0.2.3" | "0.2.4"
 
 export type KERNEL_V3_VERSION_TYPE = "0.3.0" | "0.3.1" | "0.3.2" | "0.3.3"
@@ -294,8 +308,13 @@ export type GetKernelVersion<entryPointVersion extends EntryPointVersion> =
           ? KERNEL_V3_VERSION_TYPE
           : KERNEL_V4_VERSION_TYPE
 
-export type GetInitConfig<KernelVersion extends KERNEL_VERSION_TYPE> =
-    KernelVersion extends "0.3.1" | KERNEL_V4_VERSION_TYPE ? Hex[] : never
+export type GetInitConfig<
+    KernelVersion extends KERNEL_VERSION_TYPE | undefined
+> = KernelVersion extends KERNEL_V4_VERSION_TYPE
+    ? Install[]
+    : KernelVersion extends KERNEL_V3_VERSION_TYPE
+      ? Hex[]
+      : never
 
 export type EntryPointType<entryPointVersion extends EntryPointVersion> = {
     address: Address

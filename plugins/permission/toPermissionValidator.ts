@@ -1,4 +1,5 @@
 import { KernelV3AccountAbi } from "@zerodev/sdk"
+import type { GetKernelVersion, Install } from "@zerodev/sdk/types"
 import {
     type Address,
     type Client,
@@ -15,7 +16,7 @@ import {
     getUserOperationHash
 } from "viem/account-abstraction"
 import { getChainId, readContract } from "viem/actions"
-import { getAction } from "viem/utils"
+import { getAction, pad } from "viem/utils"
 import { PolicyFlags } from "./constants.js"
 import { toPolicyId } from "./policies/index.js"
 import { toSignerId } from "./signers/index.js"
@@ -33,15 +34,17 @@ export async function toPermissionValidator<
         signer,
         policies,
         entryPoint,
-        kernelVersion: _,
+        kernelVersion,
         flag = PolicyFlags.FOR_ALL_VALIDATION,
         permissionId
     }: PermissionPluginParams<entryPointVersion>
-): Promise<PermissionPlugin> {
+): Promise<PermissionPlugin<GetKernelVersion<entryPointVersion>>> {
     const chainId = client.chain ? client.chain.id : await getChainId(client)
 
-    if (entryPoint.version !== "0.7") {
-        throw new Error("Only EntryPoint 0.7 is supported")
+    if (entryPoint.version !== "0.7" && entryPoint.version !== "0.8") {
+        throw new Error(
+            `EntryPoint version ${entryPoint.version} is not supported`
+        )
     }
 
     const getEnableData = async (
@@ -68,6 +71,40 @@ export async function toPermissionValidator<
         return enableData
     }
 
+    const getInstalls = async (_internalData?: Hex): Promise<Install[]> => {
+        const policiyId = toPolicyId(policies)
+        const internalData = concat([getPermissionId(), _internalData ?? "0x"])
+        const policiesInstalls = policies.map((policy) => {
+            const policyAddress = policy.policyParams.policyAddress
+            if (!policyAddress) {
+                throw new Error("unknown policy address")
+            }
+            const moduleData = concat([
+                pad(policiyId, { size: 32 }),
+                policy.getPolicyData()
+            ])
+
+            return {
+                moduleType: 5n,
+                module: policyAddress,
+                moduleData: moduleData,
+                internalData
+            }
+        })
+        const signerData = concat([
+            pad(toSignerId(signer), { size: 12 }),
+            signer.getSignerData()
+        ])
+        const signerInstall = {
+            moduleType: 6n,
+            module: signer.signerContractAddress,
+            moduleData: signerData,
+            internalData
+        }
+
+        return [...policiesInstalls, signerInstall]
+    }
+
     const getPermissionId = (): Hex => {
         if (permissionId) {
             return permissionId
@@ -81,11 +118,13 @@ export async function toPermissionValidator<
 
     return {
         ...signer.account,
+        kernelVersion,
         supportedKernelVersions: ">=0.3.0",
         validatorType: "PERMISSION",
         address: zeroAddress,
         source: "PermissionValidator",
         getEnableData,
+        getInstalls,
         getIdentifier: getPermissionId,
 
         signMessage: async ({ message }) => {

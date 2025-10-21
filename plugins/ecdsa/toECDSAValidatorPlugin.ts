@@ -104,6 +104,16 @@ export async function signerToEcdsaValidator<
         async getEnableData() {
             return viemSigner.address
         },
+        async getInstalls(internalData?: Hex) {
+            return [
+                {
+                    moduleType: 1n,
+                    module: validatorAddress,
+                    moduleData: viemSigner.address,
+                    internalData: internalData ?? "0x"
+                }
+            ]
+        },
         async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
             if (customNonceKey) {
                 return customNonceKey

@@ -751,7 +751,9 @@ describe("ECDSA kernel Account v0.8", () => {
                 await kernelClient.waitForUserOperationReceipt({
                     hash: userOpHash
                 })
-
+            await publicClient.waitForTransactionReceipt({
+                hash: userOpReceipt.receipt.transactionHash
+            })
             // plugin installed
             const pluginInstalledAfter = await isPluginInstalled(publicClient, {
                 address: kernelAccount.address,

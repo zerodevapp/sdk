@@ -68,6 +68,10 @@ export async function signerTo7702Validator<
         async getEnableData() {
             return viemSigner.address
         },
+        // TODO: Implement this
+        async getInstalls() {
+            return []
+        },
         async getNonceKey(_accountAddress?: Address, customNonceKey?: bigint) {
             if (customNonceKey) {
                 return customNonceKey

@@ -3,6 +3,7 @@ import type {
     Action,
     EntryPointType,
     GetKernelVersion,
+    KERNEL_VERSION_TYPE,
     PluginValidityData
 } from "@zerodev/sdk/types"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
@@ -18,8 +19,11 @@ import type {
     TimestampPolicyParams
 } from "./policies/index.js"
 
-export type PermissionPlugin = KernelValidator<"PermissionValidator"> & {
+export type PermissionPlugin<
+    TKernelVersion extends KERNEL_VERSION_TYPE = KERNEL_VERSION_TYPE
+> = KernelValidator<"PermissionValidator"> & {
     getPluginSerializationParams: () => PermissionData
+    kernelVersion: TKernelVersion
 }
 
 export type ModularSignerParams = {

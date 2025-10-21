@@ -55,6 +55,7 @@ import type {
     GetEntryPointAbi,
     GetInitConfig,
     GetKernelVersion,
+    Install,
     KernelPluginManager,
     KernelPluginManagerParams,
     KernelValidator,
@@ -144,7 +145,7 @@ export type CreateKernelAccountReturnType<
 
 export type CreateKernelAccountParameters<
     entryPointVersion extends EntryPointVersion,
-    KernelVerion extends GetKernelVersion<entryPointVersion>
+    KernelVersion extends GetKernelVersion<entryPointVersion>
 > = {
     entryPoint: EntryPointType<entryPointVersion>
     index?: bigint
@@ -153,7 +154,7 @@ export type CreateKernelAccountParameters<
     metaFactoryAddress?: Address
     address?: Address
     kernelVersion: GetKernelVersion<entryPointVersion>
-    initConfig?: GetInitConfig<KernelVerion>
+    initConfig?: GetInitConfig<KernelVersion>
     useMetaFactory?: boolean
     pluginMigrations?: PluginMigrationData[]
 } & (
@@ -232,7 +233,7 @@ export const KERNEL_ADDRESSES: {
     FACTORY_STAKER: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5"
 }
 
-const getKernelInitData = async <entryPointVersion extends EntryPointVersion>({
+const getKernelInitData = async <entryPointVersion extends "0.6" | "0.7">({
     entryPointVersion: _entryPointVersion,
     kernelPluginManager,
     initHook,
@@ -323,35 +324,38 @@ const getAccountInitCode = async <entryPointVersion extends EntryPointVersion>({
 }): Promise<Hex> => {
     if (_entryPointVersion === "0.8") {
         // TODO: add metafactory
-        const {
-            enableData,
-            validatorAddress
-            // initConfig: initConfig_
-        } = await kernelPluginManager.getValidatorInitData()
+        const { initConfig: initConfig_ } =
+            await kernelPluginManager.getValidatorInitData()
 
         const isHook = initHook && kernelPluginManager.hook
         const hook = kernelPluginManager.hook?.getIdentifier() ?? zeroAddress
         const hookData = isHook
             ? ((await kernelPluginManager.hook?.getEnableData()) ?? "0x")
             : "0x"
-
         const internalData = isHook ? concatHex([hook, hookData]) : "0x"
-        const rootPackages = {
-            moduleType: 1n, // validator,
-            module: validatorAddress,
-            moduleData: enableData,
-            internalData: internalData
-        }
+
+        // Get the installs for the validator and the additional installs
+        const installs = await kernelPluginManager.getInstalls(internalData)
+        const additionalInstalls = (initConfig ??
+            initConfig_ ??
+            []) as Install[]
+        const installPackages = [...installs, ...additionalInstalls]
+
         return encodeFunctionData({
             abi: KernelV4FactoryAbi,
             functionName: "deploy",
-            args: [[rootPackages], BigInt(index)]
+            args: [installPackages, BigInt(index)]
         })
     }
 
     // Build the account initialization data
-    const initialisationData = await getKernelInitData<entryPointVersion>({
-        entryPointVersion: _entryPointVersion,
+    const initialisationData = await getKernelInitData<
+        Extract<entryPointVersion, "0.6" | "0.7">
+    >({
+        entryPointVersion: _entryPointVersion as Extract<
+            entryPointVersion,
+            "0.6" | "0.7"
+        >,
         kernelPluginManager,
         initHook,
         kernelVersion,
