@@ -130,10 +130,19 @@ export async function toPermissionValidator<
         getInstalls,
         getIdentifier: getPermissionId,
         signMessage: async ({ message }) => {
-            return concat([
-                "0xff",
-                await signer.account.signMessage({ message })
-            ])
+            const signature = await signer.account.signMessage({ message })
+
+            if (satisfies(kernelVersion, ">=0.4.0")) {
+                return encodeAbiParameters(
+                    [{ name: "policiySignatures", type: "bytes[]" }],
+                    [
+                        policies
+                            .map((policy) => policy.getSignaturePolicyData())
+                            .concat([signature])
+                    ]
+                )
+            }
+            return concat(["0xff", signature])
         },
         signTypedData: async (typedData) => {
             return concat([

@@ -44,7 +44,7 @@ export type ModularSigner = {
 export type Policy = {
     getPolicyData: () => Hex
     getPolicyInfoInBytes: () => Hex
-    getSignaturePolicyData: (userOperation: UserOperation) => Hex
+    getSignaturePolicyData: (userOperation?: UserOperation) => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
         | (CallPolicyParams<Abi | readonly unknown[], string> & {

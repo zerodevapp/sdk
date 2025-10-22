@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test"
+import { verifyMessage } from "@ambire/signature-validator"
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import {
     GAS_POLICY_CONTRACT,
@@ -12,13 +13,16 @@ import { toECDSASigner } from "@zerodev/permissions/signers"
 import {
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
-    createKernelAccount
+    createKernelAccount,
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
+import { ethers } from "ethers"
 import {
     type Chain,
     type Hex,
     type PublicClient,
     type Transport,
+    hashMessage,
     parseEther,
     zeroAddress
 } from "viem"
@@ -28,6 +32,7 @@ import {
     generatePrivateKey,
     privateKeyToAccount
 } from "viem/accounts"
+import { config } from "../config"
 import {
     defaultKernelVersion,
     getEntryPoint,
@@ -90,7 +95,6 @@ describe("Permission kernel Account v0.8", () => {
 
     test("Account address should be a valid Ethereum address", async () => {
         const account = permissionSmartAccountClient.account
-        console.log("Account address:", account.address)
         expect(account.address).toBeString()
         expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
@@ -159,6 +163,40 @@ describe("Permission kernel Account v0.8", () => {
                 data: "0x"
             })
             await publicClient.waitForTransactionReceipt({ hash: tx2 })
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Should validate message signatures for undeployed accounts (6492)",
+        async () => {
+            const chain = getTestingChain()
+            const account = await getSignerToRootPermissionKernelAccount([
+                gasPolicy
+            ])
+            const message = "hello world"
+            const signature = await account.signMessage({
+                message
+            })
+            expect(
+                await verifyEIP6492Signature({
+                    signer: account.address,
+                    hash: hashMessage(message),
+                    signature: signature,
+                    client: publicClient
+                })
+            ).toBeTrue()
+
+            // Try using Ambire as well
+            const ambireResult = await verifyMessage({
+                signer: account.address,
+                message,
+                signature: signature,
+                provider: new ethers.providers.JsonRpcProvider(
+                    config["0.8"][chain.id].rpcUrl
+                )
+            })
+            expect(ambireResult).toBeTrue()
         },
         TEST_TIMEOUT
     )
