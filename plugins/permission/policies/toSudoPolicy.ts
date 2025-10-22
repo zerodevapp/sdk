@@ -15,6 +15,9 @@ export function toSudoPolicy({
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
         },
+        getSignaturePolicyData: () => {
+            return "0x"
+        },
         policyParams: {
             type: "sudo",
             policyAddress,

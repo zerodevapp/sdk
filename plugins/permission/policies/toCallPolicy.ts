@@ -107,6 +107,9 @@ export function toCallPolicy<
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, callPolicyAddress])
         },
+        getSignaturePolicyData: () => {
+            return "0x"
+        },
         policyParams: {
             type: "call",
             policyVersion,

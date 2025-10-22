@@ -102,6 +102,7 @@ export async function toKernelPluginManager<
         if (!action) {
             throw new Error("Action data must be set")
         }
+        // entrypoint version 0.6
         if (entryPoint.version === "0.6") {
             if (regular) {
                 if (pluginEnabled) {
@@ -132,27 +133,60 @@ export async function toKernelPluginManager<
                 )
             }
         }
-        if (regular) {
-            if (pluginEnabled) {
+
+        // entrypoint version 0.7
+        if (entryPoint.version === "0.7") {
+            if (regular) {
+                if (pluginEnabled) {
+                    return userOpSignature
+                }
+                if (await isPluginEnabled(accountAddress, action.selector)) {
+                    return userOpSignature
+                }
+                const enableSignature =
+                    await getPluginEnableSignature(accountAddress)
+                return getEncodedPluginsDataV2({
+                    enableSignature,
+                    userOpSignature,
+                    action,
+                    enableData: await regular.getEnableData(accountAddress),
+                    hook
+                })
+            } else if (sudo) {
                 return userOpSignature
+            } else {
+                throw new Error(
+                    "One of `sudo` or `regular` validator must be set"
+                )
             }
-            if (await isPluginEnabled(accountAddress, action.selector)) {
-                return userOpSignature
-            }
-            const enableSignature =
-                await getPluginEnableSignature(accountAddress)
-            return getEncodedPluginsDataV2({
-                enableSignature,
-                userOpSignature,
-                action,
-                enableData: await regular.getEnableData(accountAddress),
-                hook
-            })
-        } else if (sudo) {
-            return userOpSignature
-        } else {
-            throw new Error("One of `sudo` or `regular` validator must be set")
         }
+        // entrypoint version 0.8
+        if (entryPoint.version === "0.8") {
+            if (regular) {
+                if (pluginEnabled) {
+                    return userOpSignature
+                }
+                if (await isPluginEnabled(accountAddress, action.selector)) {
+                    return userOpSignature
+                }
+                const enableSignature =
+                    await getPluginEnableSignature(accountAddress)
+                return getEncodedPluginsDataV2({
+                    enableSignature,
+                    userOpSignature,
+                    action,
+                    enableData: await regular.getEnableData(accountAddress),
+                    hook
+                })
+            } else if (sudo) {
+                return userOpSignature
+            } else {
+                throw new Error(
+                    "One of `sudo` or `regular` validator must be set"
+                )
+            }
+        }
+        throw new Error(`EntryPoint ${entryPoint.version} not supported`)
     }
 
     const isPluginEnabled = async (accountAddress: Address, selector: Hex) => {

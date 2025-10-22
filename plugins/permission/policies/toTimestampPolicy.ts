@@ -26,6 +26,9 @@ export function toTimestampPolicy({
         getPolicyInfoInBytes: () => {
             return concatHex([policyFlag, policyAddress])
         },
+        getSignaturePolicyData: () => {
+            return "0x"
+        },
         policyParams: {
             type: "timestamp",
             policyAddress,

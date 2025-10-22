@@ -1,11 +1,13 @@
-import { KernelV3AccountAbi } from "@zerodev/sdk"
+import { KernelV3AccountAbi, KernelV4AccountAbi } from "@zerodev/sdk"
 import type { GetKernelVersion, Install } from "@zerodev/sdk/types"
+import { satisfies } from "semver"
 import {
     type Address,
     type Client,
     type Hex,
     concat,
     encodeAbiParameters,
+    isAddressEqual,
     keccak256,
     slice,
     zeroAddress
@@ -25,6 +27,7 @@ import type {
     PermissionPlugin,
     PermissionPluginParams
 } from "./types.js"
+import { permissionToIdentifier } from "./utils.js"
 
 export async function toPermissionValidator<
     entryPointVersion extends EntryPointVersion
@@ -71,16 +74,19 @@ export async function toPermissionValidator<
         return enableData
     }
 
+    // only used for kernel v4
     const getInstalls = async (_internalData?: Hex): Promise<Install[]> => {
-        const policiyId = toPolicyId(policies)
-        const internalData = concat([getPermissionId(), _internalData ?? "0x"])
+        const permissionId = getPermissionId()
+        const paddedPermissionId = pad(permissionId, { size: 32, dir: "right" })
+
+        const internalData = concat([permissionId, _internalData ?? "0x"])
         const policiesInstalls = policies.map((policy) => {
             const policyAddress = policy.policyParams.policyAddress
             if (!policyAddress) {
                 throw new Error("unknown policy address")
             }
             const moduleData = concat([
-                pad(policiyId, { size: 32 }),
+                paddedPermissionId,
                 policy.getPolicyData()
             ])
 
@@ -91,10 +97,7 @@ export async function toPermissionValidator<
                 internalData
             }
         })
-        const signerData = concat([
-            pad(toSignerId(signer), { size: 12 }),
-            signer.getSignerData()
-        ])
+        const signerData = concat([paddedPermissionId, signer.getSignerData()])
         const signerInstall = {
             moduleType: 6n,
             module: signer.signerContractAddress,
@@ -126,7 +129,6 @@ export async function toPermissionValidator<
         getEnableData,
         getInstalls,
         getIdentifier: getPermissionId,
-
         signMessage: async ({ message }) => {
             return concat([
                 "0xff",
@@ -154,6 +156,21 @@ export async function toPermissionValidator<
             const signature = await signer.account.signMessage({
                 message: { raw: userOpHash }
             })
+
+            // kernel v4
+            if (satisfies(kernelVersion, ">=0.4.0")) {
+                return encodeAbiParameters(
+                    [{ name: "policiySignatures", type: "bytes[]" }],
+                    [
+                        policies
+                            .map((policy) =>
+                                policy.getSignaturePolicyData(userOperation)
+                            )
+                            .concat([signature])
+                    ]
+                )
+            }
+            // kernel v3
             return concat(["0xff", signature])
         },
 
@@ -165,6 +182,18 @@ export async function toPermissionValidator<
         },
 
         async getStubSignature(_userOperation) {
+            if (satisfies(kernelVersion, ">=0.4.0")) {
+                return encodeAbiParameters(
+                    [{ name: "policiySignatures", type: "bytes[]" }],
+                    [
+                        policies
+                            .map((policy) =>
+                                policy.getSignaturePolicyData(_userOperation)
+                            )
+                            .concat([signer.getDummySignature()])
+                    ]
+                )
+            }
             return concat(["0xff", signer.getDummySignature()])
         },
         getPluginSerializationParams: (): PermissionData => {
@@ -178,6 +207,25 @@ export async function toPermissionValidator<
             _selector: Hex
         ): Promise<boolean> => {
             try {
+                const permissionId = getPermissionId()
+                if (satisfies(kernelVersion, ">=0.4.0")) {
+                    const validationInfo = await getAction(
+                        client,
+                        readContract,
+                        "readContract"
+                    )({
+                        abi: KernelV4AccountAbi,
+                        address: kernelAccountAddress,
+                        functionName: "validationInfo",
+                        args: [permissionToIdentifier(permissionId)]
+                    })
+                    return isAddressEqual(
+                        validationInfo.signer,
+                        signer.signerContractAddress
+                    )
+                }
+
+                /// v3 kernel
                 const permissionConfig = await getAction(
                     client,
                     readContract,
@@ -186,9 +234,12 @@ export async function toPermissionValidator<
                     abi: KernelV3AccountAbi,
                     address: kernelAccountAddress,
                     functionName: "permissionConfig",
-                    args: [getPermissionId()]
+                    args: [permissionId]
                 })
-                return permissionConfig.signer === signer.signerContractAddress
+                return isAddressEqual(
+                    permissionConfig.signer,
+                    signer.signerContractAddress
+                )
             } catch (error) {
                 return false
             }

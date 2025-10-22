@@ -7,7 +7,7 @@ import type {
     PluginValidityData
 } from "@zerodev/sdk/types"
 import type { Abi, Address, Hex, LocalAccount } from "viem"
-import type { EntryPointVersion } from "viem/account-abstraction"
+import type { EntryPointVersion, UserOperation } from "viem/account-abstraction"
 import type { SignAuthorizationReturnType } from "viem/accounts"
 import type { PolicyFlags } from "./constants.js"
 import type {
@@ -44,6 +44,7 @@ export type ModularSigner = {
 export type Policy = {
     getPolicyData: () => Hex
     getPolicyInfoInBytes: () => Hex
+    getSignaturePolicyData: (userOperation: UserOperation) => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
         | (CallPolicyParams<Abi | readonly unknown[], string> & {

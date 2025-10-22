@@ -1,4 +1,5 @@
 import { coerce, gt } from "semver"
+import { type Hex, concat, pad, size } from "viem"
 import type { PermissionAccountParams, PermissionPlugin } from "./types.js"
 
 export function base64ToBytes(base64: string) {
@@ -48,4 +49,17 @@ export const isKernelVersionAfter = (
     const coercedKernelVersion = coerce(kernelVersion)
     if (!coercedKernelVersion) return false
     return gt(coercedKernelVersion, version)
+}
+
+export const permissionToIdentifier = (permissionId: Hex, isType = true) => {
+    if (size(permissionId) !== 4) {
+        throw new Error(`Permission ID ${permissionId} should be 4 bytes long`)
+    }
+    const paddedPermissionId = pad(permissionId, { size: 20, dir: "right" })
+
+    if (isType) {
+        return concat(["0x02", paddedPermissionId])
+    }
+
+    return paddedPermissionId
 }

@@ -19,7 +19,13 @@ export async function toInitConfig<TKernelVersion extends KERNEL_VERSION_TYPE>(
     permissionPlugin: PermissionPlugin<TKernelVersion>
 ): Promise<GetInitConfig<TKernelVersion>> {
     if (satisfies(permissionPlugin.kernelVersion, ">=0.4.0")) {
-        return (await permissionPlugin.getInstalls()) as GetInitConfig<TKernelVersion>
+        const selector = toFunctionSelector(
+            getAbiItem({ abi: KernelV3_3AccountAbi, name: "execute" })
+        )
+        const internalData = concat([zeroAddress, selector])
+        return (await permissionPlugin.getInstalls(
+            internalData
+        )) as GetInitConfig<TKernelVersion>
     }
 
     const permissionInstallFunctionData = encodeFunctionData({
