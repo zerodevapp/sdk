@@ -13,7 +13,10 @@ import {
     type Hex,
     type TypedDataDefinition,
     bytesToHex,
+    getTypesForEIP712Domain,
+    hashTypedData,
     stringToHex,
+    validateTypedData,
     zeroAddress
 } from "viem"
 import {
@@ -83,6 +86,31 @@ export async function signerToSmartAccountValidator<
     // Fetch chain id
     const chainId = await getChainId(client)
 
+    const _signTypedData = async (message: Hex): Promise<Hex> => {
+        return await signTypedData(client, {
+            account: viemSigner,
+            types: {
+                EIP712Domain: [
+                    { name: "name", type: "string" },
+                    { name: "version", type: "string" },
+                    { name: "chainId", type: "uint256" },
+                    { name: "verifyingContract", type: "address" }
+                ],
+                MessageHash: [{ name: "hash", type: "bytes32" }]
+            },
+            primaryType: "MessageHash",
+            message: {
+                hash: message
+            },
+            domain: {
+                name: "ERC1271Validator",
+                version: validatorVersion,
+                chainId: BigInt(chainId),
+                verifyingContract: validatorAddress
+            }
+        })
+    }
+
     // Build the EOA Signer
     const account = toAccount({
         address: viemSigner.address,
@@ -92,29 +120,7 @@ export async function signerToSmartAccountValidator<
                 if (typeof message_.raw === "string") return message_.raw
                 return bytesToHex(message_.raw)
             })()
-            const signature = await signTypedData(client, {
-                account: viemSigner,
-                types: {
-                    EIP712Domain: [
-                        { name: "name", type: "string" },
-                        { name: "version", type: "string" },
-                        { name: "chainId", type: "uint256" },
-                        { name: "verifyingContract", type: "address" }
-                    ],
-                    MessageHash: [{ name: "hash", type: "bytes32" }]
-                },
-                primaryType: "MessageHash",
-                message: {
-                    hash: message
-                },
-                domain: {
-                    name: "ERC1271Validator",
-                    version: validatorVersion,
-                    chainId: BigInt(chainId),
-                    verifyingContract: validatorAddress
-                }
-            })
-            return signature
+            return _signTypedData(message)
         },
         async signTransaction(_, __) {
             throw new Error(
@@ -127,7 +133,27 @@ export async function signerToSmartAccountValidator<
                 | keyof TTypedData
                 | "EIP712Domain" = keyof TTypedData
         >(typedData: TypedDataDefinition<TTypedData, TPrimaryType>) {
-            return viemSigner.signTypedData(typedData)
+            const {
+                message,
+                primaryType,
+                types: _types,
+                domain
+            } = typedData as TypedDataDefinition
+            const types = {
+                EIP712Domain: getTypesForEIP712Domain({
+                    domain: domain
+                }),
+                ..._types
+            }
+            validateTypedData({
+                domain: domain,
+                message: message,
+                primaryType: primaryType,
+                types: types
+            })
+
+            const typedHash = hashTypedData(typedData)
+            return _signTypedData(typedHash)
         }
     })
 
