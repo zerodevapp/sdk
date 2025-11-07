@@ -44,6 +44,7 @@ import {
     isPluginInstalled
 } from "../../actions/public/index.js"
 import {
+    EXEC_TYPE,
     KernelVersionToAddressesMap,
     MAGIC_VALUE_SIG_REPLAYABLE
 } from "../../constants.js"
@@ -100,7 +101,8 @@ export type KernelSmartAccountImplementation<
         sign: NonNullable<SmartAccountImplementation["sign"]>
         encodeCalls: (
             calls: Parameters<SmartAccountImplementation["encodeCalls"]>[0],
-            callType?: CallType | undefined
+            callType?: CallType | undefined,
+            execType?: EXEC_TYPE | undefined
         ) => Promise<Hex>
         kernelVersion: GetKernelVersion<entryPointVersion>
         kernelPluginManager: KernelPluginManager<entryPointVersion>
@@ -680,7 +682,7 @@ export async function createKernelAccount<
             }
             return encodeDeployCallDataV07(_tx)
         },
-        async encodeCalls(calls, callType) {
+        async encodeCalls(calls, callType, execType) {
             // Check plugin status only if we have pending plugins
             await checkPluginInstallationStatus()
 
@@ -700,7 +702,8 @@ export async function createKernelAccount<
                 return encodeCallDataEpV07(
                     [...calls, ...pluginInstallCalls],
                     callType,
-                    plugins?.hook ? true : undefined
+                    plugins?.hook ? true : undefined,
+                    execType
                 )
             }
 
@@ -716,9 +719,9 @@ export async function createKernelAccount<
             }
 
             if (plugins?.hook) {
-                return encodeCallDataEpV07(calls, callType, true)
+                return encodeCallDataEpV07(calls, callType, true, execType)
             }
-            return encodeCallDataEpV07(calls, callType)
+            return encodeCallDataEpV07(calls, callType, undefined, execType)
         },
         eip7702Authorization: signAuthorization,
         async sign({ hash }) {

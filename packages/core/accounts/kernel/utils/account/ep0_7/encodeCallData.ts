@@ -13,7 +13,8 @@ export const encodeCallData = async <
         KernelSmartAccountImplementation<entryPointVersion>["encodeCalls"]
     >[0],
     callType?: CallType | undefined,
-    includeHooks?: boolean
+    includeHooks?: boolean,
+    execType: EXEC_TYPE = EXEC_TYPE.DEFAULT
 ) => {
     if (calls.length > 1) {
         if (callType === "delegatecall") {
@@ -23,7 +24,7 @@ export const encodeCallData = async <
         return encodeExecuteBatchCall(
             calls,
             {
-                execType: EXEC_TYPE.DEFAULT
+                execType
             },
             includeHooks
         )
@@ -40,7 +41,7 @@ export const encodeCallData = async <
         return encodeExecuteSingleCall(
             call,
             {
-                execType: EXEC_TYPE.DEFAULT
+                execType
             },
             includeHooks
         )
@@ -50,7 +51,7 @@ export const encodeCallData = async <
         return encodeExecuteDelegateCall(
             { to: call.to, data: call.data },
             {
-                execType: EXEC_TYPE.DEFAULT
+                execType
             },
             includeHooks
         )
