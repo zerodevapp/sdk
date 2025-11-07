@@ -44,7 +44,7 @@ import {
     isPluginInstalled
 } from "../../actions/public/index.js"
 import {
-    EXEC_TYPE,
+    type EXEC_TYPE,
     KernelVersionToAddressesMap,
     MAGIC_VALUE_SIG_REPLAYABLE
 } from "../../constants.js"
