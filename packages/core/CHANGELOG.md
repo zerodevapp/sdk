@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.5
+
+### Patch Changes
+
+- feat: added execType param support in Kernel Account encodeCalls function
+
 ## 5.5.4
 
 ### Patch Changes
