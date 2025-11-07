@@ -62,7 +62,7 @@ export type ZeroDevPaymasterClientConfig<
     >
 >
 /**
- * Creates a ZeroDev-specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/clients/chains.html).
+ * Creates a ZeroDev-specific Paymaster Client with a given [Transport](https://viem.sh/docs/clients/intro.html) configured for a [Chain](https://viem.sh/docs/chains/introduction).
  *
  * - Docs: https://docs.zerodev.app/meta-infra/getting-started/intro
  *
