@@ -22,6 +22,7 @@ import {
 import {
     type KernelPluginManager,
     type KernelPluginManagerParams,
+    type KernelValidator,
     ValidatorMode
 } from "../../types/kernel.js"
 import { getKernelV3Nonce } from "../kernel/utils/account/ep0_7/getKernelV3Nonce.js"
@@ -155,34 +156,52 @@ export async function toKernelPluginManager<
         }
     }
 
-    const isPluginEnabled = async (accountAddress: Address, selector: Hex) => {
-        if (isPreInstalled) return true
+    const isPluginEnabled = async (
+        accountAddress: Address,
+        selector: Hex,
+        regularValidator?: KernelValidator
+    ) => {
+        const isExternalRegularValidator = !!regularValidator
+        const regular_ = regularValidator ?? regular
+
+        if (isPreInstalled && !isExternalRegularValidator) return true
         if (!action) {
             throw new Error("Action data must be set")
         }
-        if (!regular) throw new Error("regular validator not set")
+        if (!regular_) throw new Error("regular validator not set")
         if (entryPoint.version === "0.6") {
-            return regular.isEnabled(accountAddress, selector)
+            return regular_.isEnabled(accountAddress, selector)
         }
         const isEnabled =
-            (await regular.isEnabled(accountAddress, action.selector)) ||
-            (await isPluginInitialized(client, accountAddress, regular.address))
-        if (isEnabled) {
+            (await regular_.isEnabled(accountAddress, action.selector)) ||
+            (await isPluginInitialized(
+                client,
+                accountAddress,
+                regular_.address
+            ))
+        if (isEnabled && !isExternalRegularValidator) {
             pluginEnabled = true
         }
         return isEnabled
     }
 
-    const getPluginEnableSignature = async (accountAddress: Address) => {
+    const getPluginEnableSignature = async (
+        accountAddress: Address,
+        regularValidator?: KernelValidator
+    ) => {
+        const isExternalRegularValidator = !!regularValidator
+        const regular_ = regularValidator ?? regular
+
         if (!action) {
             throw new Error("Action data must be set")
         }
-        if (pluginEnableSignature) return pluginEnableSignature
+        if (pluginEnableSignature && !isExternalRegularValidator)
+            return pluginEnableSignature
         if (!sudo)
             throw new Error(
                 "sudo validator not set -- need it to enable the validator"
             )
-        if (!regular) throw new Error("regular validator not set")
+        if (!regular_) throw new Error("regular validator not set")
 
         const { version } = await accountMetadata(
             client,
@@ -199,12 +218,14 @@ export async function toKernelPluginManager<
                 chainId,
                 kernelVersion: version ?? kernelVersion,
                 action,
-                validator: regular,
+                validator: regular_,
                 validUntil,
                 validAfter
             })
             ownerSig = await sudo.signTypedData(typeData)
-            pluginEnableSignature = ownerSig
+            if (!isExternalRegularValidator) {
+                pluginEnableSignature = ownerSig
+            }
             return ownerSig
         }
         const validatorNonce = await getKernelV3Nonce(client, accountAddress)
@@ -214,11 +235,13 @@ export async function toKernelPluginManager<
             kernelVersion: version,
             action,
             hook,
-            validator: regular,
+            validator: regular_,
             validatorNonce
         })
         ownerSig = await sudo.signTypedData(typedData)
-        pluginEnableSignature = ownerSig
+        if (!isExternalRegularValidator) {
+            pluginEnableSignature = ownerSig
+        }
 
         return ownerSig
     }
@@ -230,7 +253,12 @@ export async function toKernelPluginManager<
         ])
     }
 
-    const getPluginsEnableTypedData = async (accountAddress: Address) => {
+    const getPluginsEnableTypedData = async (
+        accountAddress: Address,
+        regularValidator?: KernelValidator
+    ) => {
+        const regular_ = regularValidator ?? regular
+
         if (!action) {
             throw new Error("Action data must be set")
         }
@@ -238,7 +266,7 @@ export async function toKernelPluginManager<
             throw new Error(
                 "sudo validator not set -- need it to enable the validator"
             )
-        if (!regular) throw new Error("regular validator not set")
+        if (!regular_) throw new Error("regular validator not set")
 
         const { version } = await accountMetadata(
             client,
@@ -256,7 +284,7 @@ export async function toKernelPluginManager<
             chainId,
             kernelVersion: version,
             action,
-            validator: regular,
+            validator: regular_,
             validatorNonce
         })
 
@@ -392,6 +420,7 @@ export async function toKernelPluginManager<
             const encodedNonceKey = BigInt(encoding)
             return encodedNonceKey
         },
+        isPluginEnabled,
         getPluginEnableSignature,
         getPluginsEnableTypedData,
         getValidatorInitData: async () => {

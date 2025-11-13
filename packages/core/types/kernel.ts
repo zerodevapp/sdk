@@ -162,15 +162,24 @@ export type KernelPluginManager<entryPointVersion extends EntryPointVersion> =
         regularValidator?: KernelValidator
         activeValidatorMode: ActiveValidatorMode
         hook?: KernelValidatorHook
-        getPluginEnableSignature(accountAddress: Address): Promise<Hex>
+        getPluginEnableSignature(
+            accountAddress: Address,
+            regularValidator?: KernelValidator
+        ): Promise<Hex>
         getValidatorInitData(): Promise<ValidatorInitData>
         getAction(): Action
         getValidityData(): PluginValidityData
         getIdentifier(isSudo?: boolean): Hex
         encodeModuleInstallCallData: (accountAddress: Address) => Promise<Hex>
         getPluginsEnableTypedData: (
-            accountAddress: Address
+            accountAddress: Address,
+            regularValidator?: KernelValidator
         ) => Promise<Parameters<CustomSource["signTypedData"]>[0]>
+        isPluginEnabled: (
+            accountAddress: Address,
+            selector: Hex,
+            regularValidator?: KernelValidator
+        ) => Promise<boolean>
         signUserOperationWithActiveValidator: (
             userOperation: UserOperation<entryPointVersion>
         ) => Promise<Hex>

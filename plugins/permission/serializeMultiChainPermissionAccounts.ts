@@ -19,6 +19,8 @@ import {
 export type MultiChainPermissionAccountsParams = {
     account: SmartAccount<KernelSmartAccountImplementation>
     privateKey?: Hex
+    permissionPlugin?: PermissionPlugin
+    isExternalPermissionPlugin?: boolean
 }
 
 export const serializeMultiChainPermissionAccounts = async (
@@ -26,13 +28,21 @@ export const serializeMultiChainPermissionAccounts = async (
 ): Promise<string[]> => {
     if (params.length === 0) return []
 
+    let isPreInstalled = false
     const permissionParamsPerAccounts = params.map((param) => {
-        if (!isPermissionValidatorPlugin(param.account.kernelPluginManager)) {
+        if (
+            isPermissionValidatorPlugin(param.account.kernelPluginManager) &&
+            !param.isExternalPermissionPlugin
+        ) {
+            return (
+                param.account.kernelPluginManager as PermissionPlugin
+            ).getPluginSerializationParams()
+        } else if (param.permissionPlugin) {
+            isPreInstalled = !param.isExternalPermissionPlugin
+            return param.permissionPlugin.getPluginSerializationParams()
+        } else {
             throw new Error("Account plugin is not a permission validator")
         }
-        return (
-            param.account.kernelPluginManager as PermissionPlugin
-        ).getPluginSerializationParams()
     })
 
     const actions = params.map((param) =>
@@ -43,23 +53,30 @@ export const serializeMultiChainPermissionAccounts = async (
         param.account.kernelPluginManager.getValidityData()
     )
 
-    const pluginEnableTypedDatas = await Promise.all(
-        params.map(async (param) => {
-            return param.account.kernelPluginManager.getPluginsEnableTypedData(
-                param.account.address
-            )
+    let leaves: Hex[] = []
+    let merkleTree: MerkleTree = new MerkleTree(leaves)
+
+    if (!isPreInstalled) {
+        const pluginEnableTypedDatas = await Promise.all(
+            params.map(async (param) => {
+                return param.account.kernelPluginManager.getPluginsEnableTypedData(
+                    param.account.address,
+                    param.isExternalPermissionPlugin
+                        ? param.permissionPlugin
+                        : undefined // override permission plugin if externalPlugin
+                )
+            })
+        )
+
+        // build merkle tree for enable signatures
+        leaves = pluginEnableTypedDatas.map((typedData) => {
+            return hashTypedData(typedData)
         })
-    )
 
-    // build merkle tree for enable signatures
-    const leaves = pluginEnableTypedDatas.map((typedData) => {
-        return hashTypedData(typedData)
-    })
-
-    const merkleTree = new MerkleTree(leaves, keccak256, {
-        sortPairs: true
-    })
-
+        merkleTree = new MerkleTree(leaves, keccak256, {
+            sortPairs: true
+        })
+    }
     const merkleRoot = merkleTree.getHexRoot() as Hex
 
     const toEthSignedMessageHash = hashMessage({ raw: merkleRoot })
@@ -67,7 +84,8 @@ export const serializeMultiChainPermissionAccounts = async (
     let signature: Hex = "0x"
     if (
         params[0].account.kernelPluginManager.sudoValidator?.source ===
-        "MultiChainECDSAValidator"
+            "MultiChainECDSAValidator" &&
+        !isPreInstalled
     ) {
         signature =
             await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
@@ -80,7 +98,8 @@ export const serializeMultiChainPermissionAccounts = async (
     }
     if (
         params[0].account.kernelPluginManager.sudoValidator?.source ===
-        "MultiChainWebAuthnValidator"
+            "MultiChainWebAuthnValidator" &&
+        !isPreInstalled
     ) {
         const encodedSignature =
             await params[0].account.kernelPluginManager.sudoValidator?.signMessage(
@@ -96,6 +115,8 @@ export const serializeMultiChainPermissionAccounts = async (
     // get enable signatures for multi-chain validator
     const enableSignatures = await Promise.all(
         params.map(async (param, index) => {
+            if (isPreInstalled) return undefined
+
             if (!param.account.kernelPluginManager.sudoValidator) {
                 throw new Error(
                     "No sudo validator found, check if sudo validator is multi-chain validator"
