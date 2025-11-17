@@ -60,6 +60,7 @@ import {
 } from "../../../plugins/permission/policies/types"
 import type { Permission } from "../../../plugins/permission/policies/types"
 import { toInitConfig } from "../../../plugins/permission/toInitConfig"
+import type { PermissionPlugin } from "../../../plugins/permission/types"
 import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi"
 import { TOKEN_ACTION_ADDRESS, config } from "../config"
@@ -1625,6 +1626,388 @@ describe("Permission kernel Account", () => {
                 paymaster: zeroDevPaymaster
             })
 
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction after permissionValidator enabled",
+        async () => {
+            const callPolicy = await toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            const privateKey = generatePrivateKey()
+            const signer = privateKeyToAccount(privateKey)
+
+            const account = await getSessionKeySignerToPermissionKernelAccount(
+                [callPolicy],
+                signer
+            )
+            const permissionPlugin = account.kernelPluginManager
+                .regularValidator as PermissionPlugin
+
+            const serializedAccount = await serializePermissionAccount(
+                account,
+                privateKey
+            )
+
+            const deserilizedAccount = await deserializePermissionAccount(
+                publicClient,
+                getEntryPoint(),
+                kernelVersion,
+                serializedAccount
+            )
+
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: deserilizedAccount,
+                paymaster: zeroDevPaymaster
+            })
+
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const txHash = await permissionSmartAccountClient.sendTransaction({
+                to: Test_ERC20Address,
+                data: transferData
+            })
+            await publicClient.waitForTransactionReceipt({
+                hash: txHash
+            })
+            console.log("session enabled on chain txHash", txHash)
+
+            // send the session again with ecdsaKernelAccount with permissionPlugin
+            const ecdsaKernelAccount = await getSignerToEcdsaKernelAccount()
+            const serializedAccountFromECDSA = await serializePermissionAccount(
+                ecdsaKernelAccount,
+                privateKey,
+                undefined,
+                undefined,
+                permissionPlugin
+            )
+
+            const deserilizedAccountFromECDSA =
+                await deserializePermissionAccount(
+                    publicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    serializedAccountFromECDSA
+                )
+            const permissionSmartAccountClientECDSA =
+                await getKernelAccountClient({
+                    account: deserilizedAccountFromECDSA,
+                    paymaster: zeroDevPaymaster
+                })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response =
+                await permissionSmartAccountClientECDSA.sendTransaction({
+                    to: Test_ERC20Address,
+                    data: transferData
+                })
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with external permissionValidator",
+        async () => {
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: zeroAddress
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+            const privateKey = generatePrivateKey()
+            const signer = privateKeyToAccount(privateKey)
+
+            const account = await getSessionKeySignerToPermissionKernelAccount(
+                [callPolicy],
+                signer
+            )
+
+            // external permision plugins
+            const externalCallPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+            const externalSessionSigner = await toECDSASigner({
+                signer: privateKeyToAccount(generatePrivateKey())
+            })
+            const externalPermissionPlugin = await toPermissionValidator(
+                publicClient,
+                {
+                    entryPoint: account.entryPoint,
+                    kernelVersion: account.kernelVersion,
+                    signer: externalSessionSigner,
+                    policies: [externalCallPolicy]
+                }
+            )
+
+            // get serializedAccount from account with externalPermissionPlugin
+            const serializedAccount = await serializePermissionAccount(
+                account,
+                undefined,
+                undefined,
+                undefined,
+                externalPermissionPlugin,
+                true
+            )
+
+            // deserialize and send tx
+            const deserilizedAccount = await deserializePermissionAccount(
+                publicClient,
+                account.entryPoint,
+                account.kernelVersion,
+                serializedAccount,
+                externalSessionSigner
+            )
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: deserilizedAccount,
+                paymaster: zeroDevPaymaster
+            })
+            await mintToAccount(
+                permissionSmartAccountClient.account.address,
+                100000000n
+            )
+
+            const amountToTransfer = 10000n
+            const transferData = encodeFunctionData({
+                abi: TEST_ERC20Abi,
+                functionName: "transfer",
+                args: [owner.address, amountToTransfer]
+            })
+
+            const balanceOfReceipientBefore = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientBefore", balanceOfReceipientBefore)
+
+            const response = await permissionSmartAccountClient.sendTransaction(
+                {
+                    to: Test_ERC20Address,
+                    data: transferData
+                }
+            )
+
+            console.log("Transaction hash:", response)
+
+            const balanceOfReceipientAfter = await publicClient.readContract({
+                abi: TEST_ERC20Abi,
+                address: Test_ERC20Address,
+                functionName: "balanceOf",
+                args: [owner.address]
+            })
+
+            console.log("balanceOfReceipientAfter", balanceOfReceipientAfter)
+
+            expect(balanceOfReceipientAfter).toBe(
+                balanceOfReceipientBefore + amountToTransfer
+            )
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "Smart account client send transaction with permissionValidator without isExternalPermissionPlugin flag",
+        async () => {
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: owner.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+            const privateKey = generatePrivateKey()
+            const signer = privateKeyToAccount(privateKey)
+            const sessionSigner = await toECDSASigner({
+                signer: signer
+            })
+
+            const account = await getSessionKeySignerToPermissionKernelAccount(
+                [callPolicy],
+                signer
+            )
+
+            // external permision plugins
+            const externalCallPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: zeroAddress
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+            const externalSessionSigner = await toECDSASigner({
+                signer: privateKeyToAccount(generatePrivateKey())
+            })
+            const externalPermissionPlugin = await toPermissionValidator(
+                publicClient,
+                {
+                    entryPoint: account.entryPoint,
+                    kernelVersion: account.kernelVersion,
+                    signer: externalSessionSigner,
+                    policies: [externalCallPolicy]
+                }
+            )
+
+            // get approval from account with externalPermissionPlugin
+            const serializedAccount = await serializePermissionAccount(
+                account,
+                undefined,
+                undefined,
+                undefined,
+                externalPermissionPlugin,
+                undefined // use permissionPlugin from kernelAccount if not external
+            )
+
+            // deserialize and send tx
+            const deserilizedAccount = await deserializePermissionAccount(
+                publicClient,
+                account.entryPoint,
+                account.kernelVersion,
+                serializedAccount,
+                sessionSigner
+            )
+            const permissionSmartAccountClient = await getKernelAccountClient({
+                account: deserilizedAccount,
+                paymaster: zeroDevPaymaster
+            })
             await mintToAccount(
                 permissionSmartAccountClient.account.address,
                 100000000n

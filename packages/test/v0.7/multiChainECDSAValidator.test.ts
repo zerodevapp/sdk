@@ -48,12 +48,18 @@ import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { optimismSepolia, sepolia } from "viem/chains"
 import { deserializePermissionAccount } from "../../../plugins/permission/deserializePermissionAccount.js"
-import { toSudoPolicy } from "../../../plugins/permission/policies/index.js"
+import {
+    CallPolicyVersion,
+    ParamCondition,
+    toCallPolicy,
+    toSudoPolicy
+} from "../../../plugins/permission/policies/index.js"
 import { serializeMultiChainPermissionAccounts } from "../../../plugins/permission/serializeMultiChainPermissionAccounts.js"
 import { toECDSASigner } from "../../../plugins/permission/signers/index.js"
 import { toPermissionValidator } from "../../../plugins/permission/toPermissionValidator.js"
 import { EntryPointAbi } from "../abis/EntryPoint.js"
 import { GreeterAbi, GreeterBytecode } from "../abis/Greeter.js"
+import { TEST_ERC20Abi } from "../abis/Test_ERC20Abi"
 import { TokenActionsAbi } from "../abis/TokenActionsAbi.js"
 import { TOKEN_ACTION_ADDRESS, config } from "../config.js"
 import {
@@ -1214,6 +1220,450 @@ describe("MultiChainECDSAValidator", () => {
                 })
 
             console.log("optimismSepoliaTxHash", optimismSepoliaTxHash)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "can enable session key with approval using serialized account with external permission plugin",
+        async () => {
+            const sepoliaSessionKeyAccount = privateKeyToAccount(
+                generatePrivateKey()
+            )
+
+            const optimismSepoliaSessionKeyAccount = privateKeyToAccount(
+                generatePrivateKey()
+            )
+
+            // create an empty account as the session key signer
+            const sepoliaEmptyAccount = addressToEmptyAccount(
+                sepoliaSessionKeyAccount.address
+            )
+            const optimismSepoliaEmptyAccount = addressToEmptyAccount(
+                optimismSepoliaSessionKeyAccount.address
+            )
+
+            const sepoliaEmptySessionKeySigner = await toECDSASigner({
+                signer: sepoliaEmptyAccount
+            })
+
+            const optimismSepoliaEmptySessionKeySigner = await toECDSASigner({
+                signer: optimismSepoliaEmptyAccount
+            })
+
+            const callPolicy = toCallPolicy({
+                policyVersion: CallPolicyVersion.V0_0_2,
+                permissions: [
+                    {
+                        abi: TEST_ERC20Abi,
+                        target: Test_ERC20Address,
+                        functionName: "transfer",
+                        args: [
+                            {
+                                condition: ParamCondition.EQUAL,
+                                value: signer.address
+                            },
+                            null
+                        ]
+                    }
+                ]
+            })
+
+            // create a permission validator plugin with empty account signer
+            const sepoliaPermissionPlugin = await toPermissionValidator(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: sepoliaEmptySessionKeySigner,
+                    policies: [callPolicy]
+                }
+            )
+
+            const optimismSepoliaPermissionPlugin = await toPermissionValidator(
+                optimismSepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: optimismSepoliaEmptySessionKeySigner,
+                    policies: [callPolicy]
+                }
+            )
+
+            const sepoliaKernelAccount = await createKernelAccount(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin,
+                        regular: sepoliaPermissionPlugin
+                    }
+                }
+            )
+
+            const optimismSepoliaKernelAccount = await createKernelAccount(
+                optimismSepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
+                        regular: optimismSepoliaPermissionPlugin
+                    }
+                }
+            )
+
+            console.log(
+                "sepoliaKernelAccount.address",
+                sepoliaKernelAccount.address
+            )
+            console.log(
+                "optimismSepoliaKernelAccount.address",
+                optimismSepoliaKernelAccount.address
+            )
+
+            // create external permission plugin
+            const externalSessionKeySigner = await toECDSASigner({
+                signer: privateKeyToAccount(generatePrivateKey())
+            })
+            const sepoliaExternalPermissionPlugin = await toPermissionValidator(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: externalSessionKeySigner,
+                    policies: [toSudoPolicy({})]
+                }
+            )
+            const optimismSepoliaExternalPermissionPlugin =
+                await toPermissionValidator(optimismSepoliaPublicClient, {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: externalSessionKeySigner,
+                    policies: [toSudoPolicy({})]
+                })
+
+            // serialize multi chain permission account with empty account signer, so get approvals
+            const [sepoliaApproval, optimismSepoliaApproval] =
+                await serializeMultiChainPermissionAccounts([
+                    {
+                        account: sepoliaKernelAccount,
+                        permissionPlugin: sepoliaExternalPermissionPlugin,
+                        isExternalPermissionPlugin: true
+                    },
+                    {
+                        account: optimismSepoliaKernelAccount,
+                        permissionPlugin:
+                            optimismSepoliaExternalPermissionPlugin,
+                        isExternalPermissionPlugin: true
+                    }
+                ])
+
+            // deserialize the permission account with the real session key signers
+            const deserializeSepoliaKernelAccount =
+                await deserializePermissionAccount(
+                    sepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    sepoliaApproval,
+                    externalSessionKeySigner
+                )
+
+            const deserializeOptimismSepoliaKernelAccount =
+                await deserializePermissionAccount(
+                    optimismSepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    optimismSepoliaApproval,
+                    externalSessionKeySigner
+                )
+
+            // create a kernel account client with the deserialized account
+            const sepoliaZerodevKernelClient = createKernelAccountClient({
+                account: deserializeSepoliaKernelAccount,
+                chain: sepolia,
+                bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
+                paymaster: sepoliaZeroDevPaymasterClient
+            })
+
+            const optimismSepoliaZerodevKernelClient =
+                createKernelAccountClient({
+                    account: deserializeOptimismSepoliaKernelAccount,
+                    chain: optimismSepolia,
+                    bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
+                    paymaster: opSepoliaZeroDevPaymasterClient
+                })
+
+            // send user ops. you don't need additional enables, since it already has the approvals with serialized account
+            const sepoliaTxHash =
+                await sepoliaZerodevKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log("sepoliaTxHash", sepoliaTxHash)
+
+            const optimismSepoliaTxHash =
+                await optimismSepoliaZerodevKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log("optimismSepoliaTxHash", optimismSepoliaTxHash)
+        },
+        TEST_TIMEOUT
+    )
+
+    test(
+        "can enable session key with approval using serialized account with enabled plugin",
+        async () => {
+            const sepoliaSessionKeyAccount = privateKeyToAccount(
+                generatePrivateKey()
+            )
+
+            const optimismSepoliaSessionKeyAccount = privateKeyToAccount(
+                generatePrivateKey()
+            )
+
+            // create an empty account as the session key signer
+            const sepoliaEmptyAccount = addressToEmptyAccount(
+                sepoliaSessionKeyAccount.address
+            )
+            const optimismSepoliaEmptyAccount = addressToEmptyAccount(
+                optimismSepoliaSessionKeyAccount.address
+            )
+
+            const sepoliaEmptySessionKeySigner = await toECDSASigner({
+                signer: sepoliaEmptyAccount
+            })
+
+            const optimismSepoliaEmptySessionKeySigner = await toECDSASigner({
+                signer: optimismSepoliaEmptyAccount
+            })
+
+            const sudoPolicy = toSudoPolicy({})
+
+            // create a permission validator plugin with empty account signer
+            const sepoliaPermissionPlugin = await toPermissionValidator(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: sepoliaEmptySessionKeySigner,
+                    policies: [sudoPolicy]
+                }
+            )
+
+            const optimismSepoliaPermissionPlugin = await toPermissionValidator(
+                optimismSepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    signer: optimismSepoliaEmptySessionKeySigner,
+                    policies: [sudoPolicy]
+                }
+            )
+
+            const sepoliaKernelAccount = await createKernelAccount(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin,
+                        regular: sepoliaPermissionPlugin
+                    }
+                }
+            )
+
+            const optimismSepoliaKernelAccount = await createKernelAccount(
+                optimismSepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin,
+                        regular: optimismSepoliaPermissionPlugin
+                    }
+                }
+            )
+
+            // serialize multi chain permission account with empty account signer, so get approvals
+            const [sepoliaApproval, optimismSepoliaApproval] =
+                await serializeMultiChainPermissionAccounts([
+                    {
+                        account: sepoliaKernelAccount
+                    },
+                    {
+                        account: optimismSepoliaKernelAccount
+                    }
+                ])
+
+            // get real session key signers
+            const sepoliaSessionKeySigner = await toECDSASigner({
+                signer: sepoliaSessionKeyAccount
+            })
+
+            const optimismSepoliaSessionKeySigner = await toECDSASigner({
+                signer: optimismSepoliaSessionKeyAccount
+            })
+
+            // deserialize the permission account with the real session key signers
+            const deserializeSepoliaKernelAccount =
+                await deserializePermissionAccount(
+                    sepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    sepoliaApproval,
+                    sepoliaSessionKeySigner
+                )
+
+            const deserializeOptimismSepoliaKernelAccount =
+                await deserializePermissionAccount(
+                    optimismSepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    optimismSepoliaApproval,
+                    optimismSepoliaSessionKeySigner
+                )
+
+            // create a kernel account client with the deserialized account
+            const sepoliaZerodevKernelClient = createKernelAccountClient({
+                account: deserializeSepoliaKernelAccount,
+                chain: sepolia,
+                bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
+                paymaster: sepoliaZeroDevPaymasterClient
+            })
+
+            const optimismSepoliaZerodevKernelClient =
+                createKernelAccountClient({
+                    account: deserializeOptimismSepoliaKernelAccount,
+                    chain: optimismSepolia,
+                    bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
+                    paymaster: opSepoliaZeroDevPaymasterClient
+                })
+
+            // send user ops. you don't need additional enables, since it already has the approvals with serialized account
+            const sepoliaTxHash =
+                await sepoliaZerodevKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log(
+                "permission plugin enabled on sepolia TxHash",
+                sepoliaTxHash
+            )
+
+            const optimismSepoliaTxHash =
+                await optimismSepoliaZerodevKernelClient.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log(
+                "permission plugin enabled on optimismSepolia TxHash",
+                optimismSepoliaTxHash
+            )
+
+            // serialize with ecdsa kernel accounts with enabled permission plugins
+            const sepoliaAccountECDSA = await createKernelAccount(
+                sepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: sepoliaMultiChainECDSAValidatorPlugin
+                    }
+                }
+            )
+            const opSepoliaAccountECDSA = await createKernelAccount(
+                optimismSepoliaPublicClient,
+                {
+                    entryPoint: getEntryPoint(),
+                    kernelVersion,
+                    plugins: {
+                        sudo: optimismsepoliaMultiChainECDSAValidatorPlugin
+                    }
+                }
+            )
+            // serialize multi chain permission account
+            const [sepoliaApprovalECDSA, optimismSepoliaApprovalECDSA] =
+                await serializeMultiChainPermissionAccounts([
+                    {
+                        account: sepoliaAccountECDSA,
+                        permissionPlugin: sepoliaPermissionPlugin
+                    },
+                    {
+                        account: opSepoliaAccountECDSA,
+                        permissionPlugin: optimismSepoliaPermissionPlugin
+                    }
+                ])
+
+            // deserialize the permission account with the real session key signers
+            const deserializeSepoliaKernelAccountECDSA =
+                await deserializePermissionAccount(
+                    sepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    sepoliaApprovalECDSA,
+                    sepoliaSessionKeySigner
+                )
+
+            const deserializeOptimismSepoliaKernelAccountECDSA =
+                await deserializePermissionAccount(
+                    optimismSepoliaPublicClient,
+                    getEntryPoint(),
+                    kernelVersion,
+                    optimismSepoliaApprovalECDSA,
+                    optimismSepoliaSessionKeySigner
+                )
+
+            // create a kernel account client with the deserialized account
+            const sepoliaZerodevKernelClientECDSA = createKernelAccountClient({
+                account: deserializeSepoliaKernelAccountECDSA,
+                chain: sepolia,
+                bundlerTransport: http(SEPOLIA_ZERODEV_RPC_URL),
+                paymaster: sepoliaZeroDevPaymasterClient
+            })
+
+            const optimismSepoliaZerodevKernelClientECDSA =
+                createKernelAccountClient({
+                    account: deserializeOptimismSepoliaKernelAccountECDSA,
+                    chain: optimismSepolia,
+                    bundlerTransport: http(OPTIMISM_SEPOLIA_ZERODEV_RPC_URL),
+                    paymaster: opSepoliaZeroDevPaymasterClient
+                })
+
+            // send user ops. you don't need additional enables, since it already has the approvals with serialized account
+            const sepoliaTxHashECDSA =
+                await sepoliaZerodevKernelClientECDSA.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log(
+                "sepoliaTxHash using ECDSA account with enabled permission plugins",
+                sepoliaTxHashECDSA
+            )
+
+            const optimismSepoliaTxHashECDSA =
+                await optimismSepoliaZerodevKernelClientECDSA.sendTransaction({
+                    to: zeroAddress,
+                    value: BigInt(0),
+                    data: "0x"
+                })
+
+            console.log(
+                "optimismSepoliaTxHash using ECDSA account with enabled permission plugins",
+                optimismSepoliaTxHashECDSA
+            )
         },
         TEST_TIMEOUT
     )

@@ -13,7 +13,8 @@ export const serializePermissionAccount = async (
     privateKey?: Hex,
     enableSignature?: Hex,
     eip7702Auth?: SignAuthorizationReturnType,
-    permissionPlugin?: PermissionPlugin
+    permissionPlugin?: PermissionPlugin,
+    isExternalPermissionPlugin?: boolean
 ): Promise<string> => {
     let permissionParams: PermissionData
     let isPreInstalled = false
@@ -21,13 +22,16 @@ export const serializePermissionAccount = async (
     const validityData = account.kernelPluginManager.getValidityData()
 
     // Check if permission plugin is in kernelPluginManager
-    if (isPermissionValidatorPlugin(account.kernelPluginManager)) {
+    if (
+        isPermissionValidatorPlugin(account.kernelPluginManager) &&
+        !isExternalPermissionPlugin
+    ) {
         permissionParams =
             account.kernelPluginManager.getPluginSerializationParams()
     } else if (permissionPlugin) {
         // Permission plugin provided externally (initConfig case)
         permissionParams = permissionPlugin.getPluginSerializationParams()
-        isPreInstalled = true
+        isPreInstalled = !isExternalPermissionPlugin
     } else {
         throw new Error("No permission validator found in account or provided")
     }
@@ -36,7 +40,8 @@ export const serializePermissionAccount = async (
         ? undefined
         : (enableSignature ??
           (await account.kernelPluginManager.getPluginEnableSignature(
-              account.address
+              account.address,
+              isExternalPermissionPlugin ? permissionPlugin : undefined // override permission plugin if externalPlugin
           )))
     const _eip7702Auth = account.authorization
         ? (eip7702Auth ?? (await account?.eip7702Authorization?.()))

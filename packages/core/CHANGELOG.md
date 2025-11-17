@@ -1,5 +1,15 @@
 # @zerodev/sdk
 
+## 5.5.6
+
+### Patch Changes
+
+- feat: serialize session account with external permissionPlugins
+
+  - serialize session account
+
+  - allow toCallPolicy to accepts permissions with different abi
+
 ## 5.5.5
 
 ### Patch Changes

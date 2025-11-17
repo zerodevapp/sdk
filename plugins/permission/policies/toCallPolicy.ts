@@ -1,4 +1,4 @@
-import type { Abi, Address, Hex } from "viem"
+import type { Abi, Address, Hex, Narrow } from "viem"
 import { concatHex, pad } from "viem"
 import {
     CALL_POLICY_CONTRACT_V0_0_1,
@@ -13,7 +13,7 @@ import {
     encodePermissionData,
     getPermissionFromABI
 } from "./callPolicyUtils.js"
-import { CallType, type Permission } from "./types.js"
+import { CallType, type InferPermissions, type Permission } from "./types.js"
 
 export enum CallPolicyVersion {
     V0_0_1 = "0.0.1",
@@ -43,31 +43,32 @@ export const getCallPolicyAddress = (
 }
 
 export type CallPolicyParams<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
+    permissions extends readonly Permission<
+        Abi,
+        string
+    >[] = readonly Permission<Abi, string>[]
 > = PolicyParams & {
     policyVersion: CallPolicyVersion
-    permissions?: Permission<TAbi, TFunctionName>[]
+    permissions?: InferPermissions<Narrow<permissions>>
 }
 
 export function toCallPolicy<
-    TAbi extends Abi | readonly unknown[],
-    TFunctionName extends string | undefined = string
+    const permissions extends readonly Permission<Abi, string>[]
 >({
     policyAddress,
     policyFlag = PolicyFlags.FOR_ALL_VALIDATION,
     policyVersion,
-    permissions = []
-}: CallPolicyParams<TAbi, TFunctionName>): Policy {
+    permissions: inputPermissions
+}: CallPolicyParams<permissions>): Policy {
     const callPolicyAddress = getCallPolicyAddress(policyVersion, policyAddress)
 
-    const generatedPermissionParams = permissions?.map((perm) => {
+    const generatedPermissionParams = inputPermissions?.map((perm) => {
         // Natural discrimination: if abi and functionName are present, do ABI-based validation
         if (perm.abi && perm.functionName) {
             return getPermissionFromABI({
                 abi: perm.abi as Abi,
                 functionName: perm.functionName as string,
-                args: perm.args as [],
+                args: perm.args,
                 policyAddress: callPolicyAddress,
                 selector: perm.selector
             })
@@ -80,8 +81,8 @@ export function toCallPolicy<
         }
     })
 
-    permissions =
-        permissions?.map((perm, index) => ({
+    const processedPermissions =
+        inputPermissions?.map((perm, index) => ({
             ...perm,
             callType: perm.callType ?? CallType.CALL,
             selector:
@@ -96,7 +97,7 @@ export function toCallPolicy<
         })) ?? []
 
     const encodedPermissionData = encodePermissionData(
-        permissions,
+        processedPermissions,
         callPolicyAddress
     )
 
@@ -112,8 +113,8 @@ export function toCallPolicy<
             policyVersion,
             policyAddress,
             policyFlag,
-            permissions
-        } as unknown as CallPolicyParams<Abi | readonly unknown[], string> & {
+            permissions: processedPermissions
+        } as unknown as CallPolicyParams<permissions> & {
             type: "call"
         }
     }
