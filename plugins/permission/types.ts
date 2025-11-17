@@ -5,7 +5,7 @@ import type {
     GetKernelVersion,
     PluginValidityData
 } from "@zerodev/sdk/types"
-import type { Abi, Address, Hex, LocalAccount } from "viem"
+import type { Address, Hex, LocalAccount } from "viem"
 import type { EntryPointVersion } from "viem/account-abstraction"
 import type { SignAuthorizationReturnType } from "viem/accounts"
 import type { PolicyFlags } from "./constants.js"
@@ -42,7 +42,7 @@ export type Policy = {
     getPolicyInfoInBytes: () => Hex
     // return params directly to serialize/deserialize Policy
     policyParams:
-        | (CallPolicyParams<Abi | readonly unknown[], string> & {
+        | (CallPolicyParams & {
               type: "call"
           })
         | (GasPolicyParams & { type: "gas" })

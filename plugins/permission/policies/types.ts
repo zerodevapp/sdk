@@ -7,8 +7,10 @@ import type {
     AbiParameterToPrimitiveType,
     AbiStateMutability,
     Address,
+    ContractFunctionName,
     Hex,
-    Narrow
+    Narrow,
+    Prettify
 } from "viem"
 
 export enum CallType {
@@ -156,3 +158,43 @@ export type GeneratePermissionFromArgsParameters<
     : _FunctionName extends string
       ? { abi: [Narrow<TAbi[number]>] } & GetFunctionArgs<TAbi, _FunctionName>
       : never)
+
+// infer permission parameters from `unknown` - similar to GetMulticallContractParameters
+export type GetPermissionParameters<permission> = permission extends {
+    abi: infer abi extends Abi
+} // 1. Check if `abi` is const-asserted or defined inline
+    ? // 1a. Check if `functionName` is valid for `abi`
+      permission extends {
+          functionName: infer functionName extends ContractFunctionName<abi>
+      }
+        ? // Use PermissionWithABI which supports CombinedArgs
+          PermissionWithABI<abi, functionName>
+        : // 1b. `functionName` is invalid, check if `abi` is declared as `Abi`
+          Abi extends abi
+          ? PermissionWithABI<abi, string> // `abi` declared as `Abi`, unable to infer types further
+          : // `abi` is const-asserted or defined inline, infer types for `functionName` and `args`
+            PermissionWithABI<abi, string>
+    : permission extends { target: Address } // manual permission
+      ? PermissionManual
+      : never // invalid permission
+
+// Process permissions array - similar to MulticallContracts
+export type InferPermissions<
+    permissions extends readonly unknown[],
+    result extends readonly unknown[] = []
+> = permissions extends readonly [] // no permissions, return empty
+    ? readonly []
+    : permissions extends readonly [infer permission] // one permission left before returning `result`
+      ? readonly [...result, Prettify<GetPermissionParameters<permission>>]
+      : permissions extends readonly [infer permission, ...infer rest] // grab first permission and recurse through `rest`
+        ? InferPermissions<
+              [...rest],
+              [...result, Prettify<GetPermissionParameters<permission>>]
+          >
+        : readonly unknown[] extends permissions
+          ? permissions
+          : // If `permissions` is *some* array but we couldn't assign `unknown[]` to it, then it must hold some known/homogenous type!
+            permissions extends readonly (infer permission)[]
+            ? readonly Prettify<GetPermissionParameters<permission>>[]
+            : // Fallback
+              readonly Permission<Abi, string>[]
