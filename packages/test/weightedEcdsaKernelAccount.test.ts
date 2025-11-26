@@ -1,6 +1,7 @@
 // @ts-expect-error
 import { beforeAll, describe, expect, test } from "bun:test"
 import {
+    EIP1271Abi,
     type KernelAccountClient,
     type KernelSmartAccountImplementation,
     type ZeroDevPaymasterClient,
@@ -15,6 +16,7 @@ import {
     type Transport,
     encodeFunctionData,
     getContract,
+    hashMessage,
     zeroAddress
 } from "viem"
 import type { SmartAccount } from "viem/account-abstraction"
@@ -90,34 +92,6 @@ describe("Weighted ECDSA kernel Account", () => {
         expect(account.address).toHaveLength(ETHEREUM_ADDRESS_LENGTH)
         expect(account.address).toMatch(ETHEREUM_ADDRESS_REGEX)
     })
-
-    // test(
-    //     "Client signMessage should return a valid signature",
-    //     async () => {
-    //         // to make sure kernel is deployed
-    //         await kernelClient.sendTransaction({
-    //             to: zeroAddress,
-    //             value: 0n,
-    //             data: "0x"
-    //         })
-    //         const message = "hello world"
-    //         const response = await kernelClient.signMessage({
-    //             message
-    //         })
-
-    //         const eip1271response = await publicClient.readContract({
-    //             address: account.address,
-    //             abi: EIP1271ABI,
-    //             functionName: "isValidSignature",
-    //             args: [keccak256(stringToHex(message)), response]
-    //         })
-    //         expect(eip1271response).toEqual("0x1626ba7e")
-    //         expect(response).toBeString()
-    //         expect(response).toHaveLength(SIGNATURE_LENGTH)
-    //         expect(response).toMatch(SIGNATURE_REGEX)
-    //     },
-    //     TEST_TIMEOUT
-    // )
 
     test(
         "Client deploy contract",

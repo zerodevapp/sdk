@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.7
+
+### Patch Changes
+
+- fix: signMessage and signTypedData with kernel v3
+
 ## 5.5.6
 
 ### Patch Changes

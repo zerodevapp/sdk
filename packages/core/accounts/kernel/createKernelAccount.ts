@@ -752,7 +752,7 @@ export async function createKernelAccount<
                         verifyingContract: accountAddress
                     }
                 })
-            } else {
+            } else if (entryPoint.version === "0.6") {
                 const wrappedMessageHash = await eip712WrapHash(
                     messageHash,
                     {
@@ -765,6 +765,22 @@ export async function createKernelAccount<
                 )
                 signature = await kernelPluginManager.signMessage({
                     message: { raw: wrappedMessageHash }
+                })
+            } else {
+                signature = await kernelPluginManager.signTypedData({
+                    message: { hash: messageHash },
+                    primaryType: "Kernel",
+                    types: {
+                        Kernel: [{ name: "hash", type: "bytes32" }]
+                    },
+                    domain: {
+                        name,
+                        version,
+                        chainId: useReplayableSignature
+                            ? 0
+                            : Number(metadataChainId),
+                        verifyingContract: accountAddress
+                    }
                 })
             }
 
@@ -832,7 +848,7 @@ export async function createKernelAccount<
                         verifyingContract: accountAddress
                     }
                 })
-            } else {
+            } else if (entryPoint.version === "0.6") {
                 const wrappedMessageHash = await eip712WrapHash(typedHash, {
                     name,
                     chainId: Number(metadataChainId),
@@ -842,7 +858,22 @@ export async function createKernelAccount<
                 signature = await kernelPluginManager.signMessage({
                     message: { raw: wrappedMessageHash }
                 })
+            } else {
+                signature = await kernelPluginManager.signTypedData({
+                    message: { hash: typedHash },
+                    primaryType: "Kernel",
+                    types: {
+                        Kernel: [{ name: "hash", type: "bytes32" }]
+                    },
+                    domain: {
+                        name,
+                        version,
+                        chainId: Number(metadataChainId),
+                        verifyingContract: accountAddress
+                    }
+                })
             }
+
             if (
                 !hasKernelFeature(
                     KERNEL_FEATURES.ERC1271_WITH_VALIDATOR,
