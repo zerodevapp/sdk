@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.5.0
+
+### Minor Changes
+
+- updated chain list for precompile
+
 ## 5.4.4
 
 ### Patch Changes
