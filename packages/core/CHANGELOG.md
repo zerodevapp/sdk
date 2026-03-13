@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.8
+
+### Patch Changes
+
+- feat: use execute(uninstallValidation) calldata in uninstallPlugin instead of uninstallValidation() directly
+
 ## 5.5.7
 
 ### Patch Changes
