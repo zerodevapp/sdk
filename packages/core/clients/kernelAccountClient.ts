@@ -26,6 +26,7 @@ import {
 } from "viem/account-abstraction"
 import type { KernelSmartAccountImplementation } from "../accounts/index.js"
 import { getUserOperationGasPrice } from "../actions/index.js"
+import { FAST_POLLING_CHAIN_IDS } from "../constants.js"
 import {
     type KernelAccountClientActions,
     kernelAccountClientActions
@@ -142,15 +143,23 @@ export function createKernelAccountClient(
         userOperation
     } = parameters
 
+    const chain = parameters.chain ?? client_?.chain
+    const defaultPollingInterval = FAST_POLLING_CHAIN_IDS.includes(
+        chain?.id as number
+    )
+        ? 250
+        : 1000
+
     const client = Object.assign(
         createClient({
             ...parameters,
-            chain: parameters.chain ?? client_?.chain,
+            chain,
             transport: bundlerTransport,
             key,
             name,
             type: "kernelAccountClient",
-            pollingInterval: parameters.pollingInterval ?? 1000
+            pollingInterval:
+                parameters.pollingInterval ?? defaultPollingInterval
         }),
         { client: client_, paymaster, paymasterContext, userOperation }
     )
