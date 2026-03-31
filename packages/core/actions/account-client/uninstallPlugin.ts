@@ -12,6 +12,7 @@ import {
     parseAccount
 } from "viem/utils"
 import { KernelV3AccountAbi } from "../../accounts/kernel/abi/kernel_v_3_0_0/KernelAccountAbi.js"
+import { encodeCallData } from "../../accounts/kernel/utils/account/ep0_7/encodeCallData.js"
 import { VALIDATOR_TYPE } from "../../constants.js"
 import { AccountNotFoundError } from "../../errors/index.js"
 import type {
@@ -78,7 +79,7 @@ export async function uninstallPlugin<
         "sendUserOperation"
     )({
         ...restArgs,
-        calls: [
+        callData: await encodeCallData([
             {
                 to: account.address,
                 data: encodeFunctionData({
@@ -88,7 +89,7 @@ export async function uninstallPlugin<
                 }),
                 value: 0n
             }
-        ],
+        ]),
         account
     } as SendUserOperationParameters)
 }
