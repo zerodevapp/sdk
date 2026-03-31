@@ -147,7 +147,7 @@ export function createKernelAccountClient(
     const defaultPollingInterval = FAST_POLLING_CHAIN_IDS.includes(
         chain?.id as number
     )
-        ? 250
+        ? 200
         : 1000
 
     const client = Object.assign(
