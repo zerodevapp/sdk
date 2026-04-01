@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.10
+
+### Patch Changes
+
+- feat: change custom polling interval to 200 for select chains
+
 ## 5.5.9
 
 ### Patch Changes
