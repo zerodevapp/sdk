@@ -171,3 +171,5 @@ export const getEntryPoint = <TEntryPointVersion extends EntryPointVersion>(
 
 export const KERNEL_7702_DELEGATION_ADDRESS =
     "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28"
+
+export const FAST_POLLING_CHAIN_IDS = [1, 10, 56, 137, 8453, 42161, 84532]
