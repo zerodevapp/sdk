@@ -14,4 +14,4 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: bun install --ignore-scripts
+      run: bun install --ignore-scripts --frozen-lockfile
