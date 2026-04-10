@@ -9,8 +9,8 @@ import {
     createClient
 } from "viem"
 import {
-    type PaymasterActions,
     type EntryPointVersion,
+    type PaymasterActions,
     type SmartAccount,
     paymasterActions
 } from "viem/account-abstraction"
