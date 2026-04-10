@@ -718,7 +718,7 @@ export async function createKernelAccount<
                 return encodeCallDataEpV06(calls, callType)
             }
 
-            if (plugins?.hook) {
+            if (plugins?.hook && kernelPluginManager.regularValidator && await kernelPluginManager.regularValidator.isEnabled(accountAddress, kernelPluginManager.getAction().selector)) {
                 return encodeCallDataEpV07(calls, callType, true, execType)
             }
             return encodeCallDataEpV07(calls, callType, undefined, execType)
