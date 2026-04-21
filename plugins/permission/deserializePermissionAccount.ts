@@ -67,6 +67,7 @@ export const deserializePermissionAccount = async <
         ),
         entryPoint,
         kernelVersion,
+        flag: params.permissionParams.flag,
         permissionId: params.permissionParams.permissionId
     })
 

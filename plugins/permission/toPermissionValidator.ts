@@ -131,6 +131,7 @@ export async function toPermissionValidator<
         getPluginSerializationParams: (): PermissionData => {
             return {
                 policies,
+                flag,
                 permissionId: getPermissionId()
             }
         },
