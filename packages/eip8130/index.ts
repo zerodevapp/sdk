@@ -34,6 +34,10 @@ export type {
     KernelEip8130Status
 } from "./types.js"
 export {
+    webAuthnKeyToEip8130Actor,
+    type WebAuthnKeyToEip8130ActorParameters
+} from "./accounts/webAuthnKeyToEip8130Actor.js"
+export {
     createPayerClient,
     type CreatePayerClientParameters,
     type PayerClient,
