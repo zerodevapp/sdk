@@ -28,3 +28,7 @@ export { getPluginsEnableTypedData } from "./kernel/utils/plugins/ep0_7/getPlugi
 export { getKernelV3Nonce } from "./kernel/utils/account/ep0_7/getKernelV3Nonce.js"
 export { getPluginInstallCallData } from "./kernel/utils/plugins/ep0_7/getPluginInstallCallData.js"
 export type { CallArgs, DelegateCallArgs } from "./kernel/utils/types.js"
+export { encodeExecuteSingleCall as encodeExecuteSingleCallV06 } from "./kernel/utils/ep0_6/encodeExecuteSingleCall.js"
+export { encodeExecuteBatchCall as encodeExecuteBatchCallV06 } from "./kernel/utils/ep0_6/encodeExecuteBatchCall.js"
+export { encodeExecuteSingleCall as encodeExecuteSingleCallV07 } from "./kernel/utils/ep0_7/encodeExecuteSingleCall.js"
+export { encodeExecuteBatchCall as encodeExecuteBatchCallV07 } from "./kernel/utils/ep0_7/encodeExecuteBatchCall.js"
