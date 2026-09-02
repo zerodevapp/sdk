@@ -1,4 +1,5 @@
 import type { KERNEL_VERSION_TYPE } from "@zerodev/sdk/types"
+import type { Chain, Client, Transport } from "viem"
 import type {
     AaActor,
     EncodeExecute,
@@ -6,6 +7,7 @@ import type {
     Signer,
     ToAccountReturnType
 } from "./vendor/eip8130/index.js"
+import type { PayerClient } from "./vendor/eip8168/index.js"
 
 /**
  * An EIP-8130 actor: the on-chain identity (`actorId` + `authenticator`) plus
@@ -32,3 +34,9 @@ export type KernelEip8130Status =
     /** Imported, but this account's actor is not (or no longer) authorized. */
     | { status: "actor-inactive" }
     | { status: "ready"; actor: GetActorConfigReturnType }
+
+/** The shape every EIP-8130 client action reads: a chain-bound viem client carrying the Kernel 8130 account and optional payer. */
+export type KernelEip8130BaseClient = Client<Transport, Chain> & {
+    eip8130Account: KernelEip8130Account
+    payer?: PayerClient | undefined
+}
