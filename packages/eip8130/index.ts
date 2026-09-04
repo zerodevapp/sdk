@@ -45,6 +45,7 @@ export {
 } from "./vendor/eip8168/index.js"
 export {
     allPhasesSucceeded,
+    keystoreAbi,
     keystoreAddress,
     type ReceiptFields
 } from "./vendor/eip8130/index.js"

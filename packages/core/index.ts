@@ -25,6 +25,11 @@ export {
     type UpgradeKernelParameters
 } from "./actions/account-client/upgradeKernel.js"
 export {
+    importEip8130Account,
+    type ImportEip8130AccountParameters,
+    kernel8130ImplementationAddress
+} from "./actions/account-client/importEip8130Account.js"
+export {
     changeSudoValidator,
     type ChangeSudoValidatorParameters
 } from "./actions/account-client/changeSudoValidator.js"

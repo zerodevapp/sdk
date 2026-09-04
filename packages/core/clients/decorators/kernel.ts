@@ -17,6 +17,10 @@ import {
     getUserOperationGasPrice
 } from "../../actions/account-client/getUserOperationGasPrice.js"
 import {
+    type ImportEip8130AccountParameters,
+    importEip8130Account
+} from "../../actions/account-client/importEip8130Account.js"
+import {
     type InvalidateNonceParameters,
     invalidateNonce
 } from "../../actions/account-client/invalidateNonce.js"
@@ -173,6 +177,17 @@ export type KernelAccountClientActions<
         calls extends readonly unknown[] = readonly unknown[]
     >(
         args: UpgradeKernelParameters<TSmartAccount, accountOverride, calls>
+    ) => Promise<Hash>
+    /**
+     * Upgrades the Kernel to Kernel8130 and imports it into the EIP-8130 Keystore
+     * with the sudo key as admin actor, deploying it first when counterfactual.
+     * One UserOperation; this function also allows you to sponsor it.
+     *
+     * @param args - {@link ImportEip8130AccountParameters}
+     * @returns The UserOperation hash.
+     */
+    importEip8130Account: (
+        args?: ImportEip8130AccountParameters<TSmartAccount>
     ) => Promise<Hash>
 
     /**
@@ -483,6 +498,8 @@ export function kernelAccountClientActions() {
         getKernelV3ModuleCurrentNonce: async () =>
             getKernelV3ModuleCurrentNonce(client),
         upgradeKernel: async (args) => upgradeKernel(client, args),
+        importEip8130Account: async (args) =>
+            importEip8130Account(client, args),
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         sendTransaction: (args) => sendTransaction(client, args as any),
         signMessage: (args) => signMessage(client, args),

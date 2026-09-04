@@ -41,6 +41,12 @@ export {
 } from "./account-client/changeSudoValidator.js"
 
 export {
+    importEip8130Account,
+    type ImportEip8130AccountParameters,
+    kernel8130ImplementationAddress
+} from "./account-client/importEip8130Account.js"
+
+export {
     estimateGasInERC20,
     type EstimateGasInERC20Parameters,
     type EstimateGasInERC20ReturnType
