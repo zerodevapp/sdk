@@ -207,8 +207,16 @@ export async function createWeightedValidator<
         // Sign a user operation
         async signUserOperation(userOperation) {
             let signatures: readonly Hex[] = []
-            if (userOperation.signature !== "0x") {
-                signatures = decodeSignatures(userOperation.signature)
+            if (userOperation.signature && userOperation.signature !== "0x") {
+                const ownStubSignature = concatHex([
+                    toHex(getIndexOfSigner(), { size: 1 }),
+                    await signer.getDummySignature()
+                ])
+                signatures = decodeSignatures(userOperation.signature).filter(
+                    (signature) =>
+                        signature.toLowerCase() !==
+                        ownStubSignature.toLowerCase()
+                )
             }
             // last signer signs for userOpHash
             const userOpHash = getUserOperationHash({
@@ -230,8 +238,7 @@ export async function createWeightedValidator<
 
         async getStubSignature(userOperation) {
             let signatures: readonly Hex[] = []
-            if (userOperation.signature !== "0x") {
-                console.log(userOperation.signature)
+            if (userOperation.signature && userOperation.signature !== "0x") {
                 signatures = decodeSignatures(userOperation.signature)
             }
 
