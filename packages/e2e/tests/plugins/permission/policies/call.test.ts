@@ -72,7 +72,7 @@ describe("call policy", () => {
             ).toBeTrue()
             await expect(
                 sendCalls(account, [{ to: target, data: poke(fail) }])
-            ).rejects.toThrow()
+            ).rejects.toThrow(/AA23/)
         })
     }
 
@@ -106,7 +106,7 @@ describe("call policy", () => {
             sendCalls(account, [
                 { to: target, data: poke(1n, "0xcafebabe1234") }
             ])
-        ).rejects.toThrow()
+        ).rejects.toThrow(/AA23/)
     })
 
     test("valueLimit allows up to the limit and rejects above it", async () => {
@@ -118,7 +118,7 @@ describe("call policy", () => {
         ).toBeTrue()
         await expect(
             sendCalls(account, [{ to: target, value: 101n }])
-        ).rejects.toThrow()
+        ).rejects.toThrow(/AA23/)
     })
 
     test("selector-only permission rejects other selectors", async () => {
@@ -136,7 +136,7 @@ describe("call policy", () => {
         ).toBeTrue()
         await expect(
             sendCalls(account, [{ to: target, data: otherSelector }])
-        ).rejects.toThrow()
+        ).rejects.toThrow(/AA23/)
     })
 
     test("calls to an unlisted target are rejected", async () => {
@@ -144,6 +144,6 @@ describe("call policy", () => {
         const account = await accountWith([{ target, valueLimit: 0n }])
         await expect(
             sendCalls(account, [{ to: newOwner().address, data: "0x" }])
-        ).rejects.toThrow()
+        ).rejects.toThrow(/AA23/)
     })
 })

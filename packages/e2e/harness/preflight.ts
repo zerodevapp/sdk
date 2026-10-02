@@ -41,4 +41,11 @@ export async function preflight() {
     }
 }
 
-await preflight()
+// A throwing preload does not stop bun test (it reports the error and runs
+// every file anyway), so exit explicitly.
+try {
+    await preflight()
+} catch (error) {
+    console.error((error as Error).message)
+    process.exit(1)
+}

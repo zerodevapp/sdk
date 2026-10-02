@@ -88,10 +88,12 @@ jobs:
         working-directory: packages/e2e
         run: bun run test
 
+      # Only Ultra Relay and gateway logs: anvil prints its fork URL, which
+      # contains the RPC key, and artifacts of this public repo are public.
       - name: Dump stack logs
         if: failure() && steps.secrets.outputs.ok == 'true'
         working-directory: packages/e2e
-        run: bun run local:logs > stack.log 2>&1
+        run: bun docker/stack.ts logs ur-sepolia ur-arbsepolia gateway > stack.log 2>&1
 
       - name: Upload stack logs
         if: failure() && steps.secrets.outputs.ok == 'true'
@@ -99,3 +101,10 @@ jobs:
         with:
           name: e2e-stack-logs
           path: packages/e2e/stack.log
+
+      # anvil writes its fork cache only on shutdown; stop the stack before
+      # actions/cache saves .cache/anvil in its post step.
+      - name: Stop local stack
+        if: always() && steps.secrets.outputs.ok == 'true'
+        working-directory: packages/e2e
+        run: bun run local:down

@@ -15,5 +15,7 @@ test("rate limit: count 1 per hour allows one op and rejects the next", async ()
         ]
     })
     expect((await sendCalls(account, [{ to: zeroAddress }])).success).toBeTrue()
-    await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow()
+    await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow(
+        /AA23/
+    )
 })

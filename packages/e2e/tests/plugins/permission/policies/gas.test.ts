@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { toGasPolicy, toSudoPolicy } from "@zerodev/permissions/policies"
-import { parseEther, parseGwei, zeroAddress } from "viem"
+import { parseEther, zeroAddress } from "viem"
 import { setBalance } from "../../../../harness/anvil"
 import { getKernelClient } from "../../../../harness/clients"
 import {
@@ -36,23 +36,28 @@ describe("gas policy", () => {
         expect((await sendCalls(account, [call])).success).toBeTrue()
     })
 
-    test("op costing more than the budget is rejected (self-paid, real fees)", async () => {
+    // Real fees (unsponsored project) so the policy's cost check is non-zero.
+    const selfPaid = async (allowed: bigint) => {
         const { account } = await createSessionKeyAccount({
             kernelVersion: "0.3.3",
-            policies: [toSudoPolicy({}), toGasPolicy({ allowed: 1n })]
+            policies: [toSudoPolicy({}), toGasPolicy({ allowed })]
         })
         await setBalance("sepolia", account.address, parseEther("1"))
         const client = getKernelClient(account, "sepolia", {
-            paymaster: "none",
-            estimateFeesPerGas: async () => ({
-                maxFeePerGas: parseGwei("1"),
-                maxPriorityFeePerGas: parseGwei("1")
-            })
+            project: "unsponsored"
         })
-        await expect(
-            client.sendUserOperation({
-                calls: [{ ...call, value: 0n, data: "0x" }]
-            })
-        ).rejects.toThrow()
+        return client.sendUserOperation({
+            calls: [{ ...call, value: 0n, data: "0x" }]
+        })
+    }
+
+    test("self-paid op within the budget succeeds", async () => {
+        await expect(selfPaid(parseEther("100"))).resolves.toMatch(
+            /^0x[0-9a-f]{64}$/
+        )
+    })
+
+    test("self-paid op costing more than the budget is rejected", async () => {
+        await expect(selfPaid(1n)).rejects.toThrow(/AA23/)
     })
 })

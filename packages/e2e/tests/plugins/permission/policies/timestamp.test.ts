@@ -23,9 +23,9 @@ describe("timestamp policy", () => {
                 toTimestampPolicy({ validAfter: later + 3600 })
             ]
         })
-        await expect(
-            sendCalls(account, [{ to: zeroAddress }])
-        ).rejects.toThrow()
+        await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow(
+            /expired|AA22|not valid yet/i
+        )
     })
 
     test("validAfter in the past is accepted", async () => {
@@ -52,8 +52,8 @@ describe("timestamp policy", () => {
             ]
         })
         await increaseTime("sepolia", 120)
-        await expect(
-            sendCalls(account, [{ to: zeroAddress }])
-        ).rejects.toThrow()
+        await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow(
+            /expired|AA22|not valid yet/i
+        )
     })
 })
