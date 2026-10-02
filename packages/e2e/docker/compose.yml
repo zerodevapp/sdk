@@ -72,7 +72,7 @@ services:
     command: ["bun", "run", "/app/gateway.ts"]
     environment:
       PORT: "4000"
-      GATEWAY_UPSTREAMS: '{"11155111":"http://ur-sepolia:4337/rpc","421614":"http://ur-arbsepolia:4337/rpc"}'
+      GATEWAY_UPSTREAMS: '{"11155111":{"bundler":"http://ur-sepolia:4337/rpc","node":"http://anvil-sepolia:8545"},"421614":{"bundler":"http://ur-arbsepolia:4337/rpc","node":"http://anvil-arbsepolia:8545"}}'
     volumes: ["./gateway.ts:/app/gateway.ts:ro"]
     ports: ["4000:4000"]
     healthcheck:

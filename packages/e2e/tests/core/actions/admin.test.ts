@@ -117,35 +117,51 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
             ).toBeGreaterThanOrEqual(0)
         })
 
-        // invalidateNonce spreads its args into sendUserOperation, so
-        // `nonceToSet` lands in the userOp and Ultra Relay's schema rejects it.
-        test.failing(
-            "NEW BUG (invalidateNonce leaks nonceToSet into the userOp): invalidating the nonce disables an enabled session key",
-            async () => {
-                const { account, owner } = await createSessionKeyAccount({
-                    kernelVersion,
-                    policies: [toSudoPolicy({})]
-                })
-                expect((await sendCalls(account, [call])).success).toBeTrue()
-
-                const owned = await sudoOnly(
-                    owner,
-                    kernelVersion,
-                    account.address
-                )
-                const client = getKernelClient(owned, "sepolia")
-                const current = await client.getKernelV3ModuleCurrentNonce()
-                const hash = await client.invalidateNonce({
-                    nonceToSet: current + 1
-                })
-                expect(
-                    (await client.waitForUserOperationReceipt({ hash })).success
-                ).toBeTrue()
-                expect(await client.getKernelV3ModuleCurrentNonce()).toBe(
-                    current + 1
-                )
-                await expect(sendCalls(account, [call])).rejects.toThrow(/AA23/)
+        // Same leak as upgradeKernel (`nonceToSet`): fine via ERC-7677, rejected
+        // when the raw op goes through sponsorUserOperation.
+        for (const { paymaster, run, bug } of [
+            { paymaster: "erc7677", run: test, bug: "" },
+            {
+                paymaster: "sponsor",
+                run: test.failing,
+                bug: "NEW BUG (sponsorUserOperation forwards the raw op incl. nonceToSet): "
             }
-        )
+        ] as const) {
+            run(
+                `${bug}invalidating the nonce via ${paymaster} paymaster disables an enabled session key`,
+                async () => {
+                    const { account, owner } = await createSessionKeyAccount({
+                        kernelVersion,
+                        policies: [toSudoPolicy({})]
+                    })
+                    expect(
+                        (await sendCalls(account, [call])).success
+                    ).toBeTrue()
+
+                    const owned = await sudoOnly(
+                        owner,
+                        kernelVersion,
+                        account.address
+                    )
+                    const client = getKernelClient(owned, "sepolia", {
+                        paymaster
+                    })
+                    const current = await client.getKernelV3ModuleCurrentNonce()
+                    const hash = await client.invalidateNonce({
+                        nonceToSet: current + 1
+                    })
+                    expect(
+                        (await client.waitForUserOperationReceipt({ hash }))
+                            .success
+                    ).toBeTrue()
+                    expect(await client.getKernelV3ModuleCurrentNonce()).toBe(
+                        current + 1
+                    )
+                    await expect(sendCalls(account, [call])).rejects.toThrow(
+                        /AA23/
+                    )
+                }
+            )
+        }
     })
 })

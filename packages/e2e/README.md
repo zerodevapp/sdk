@@ -31,7 +31,7 @@ Adding a validator plugin: create `tests/plugins/<name>/conformance.test.ts` cal
 
 - `zd_getUserOperationGasPrice`: zero fees (sponsored). With project id `unsponsored` it returns Ultra Relay's real fees, like a project without gas policies.
 - `zd_sponsorUserOperation`, `pm_getPaymasterStubData`, `pm_getPaymasterData`: forwarded to Ultra Relay as `eth_estimateUserOperationGas`.
-- Everything else is forwarded unchanged.
+- Other ERC-4337 methods go to Ultra Relay unchanged; every other method (`eth_call`, `eth_getCode`, …) goes to the chain's anvil node, like meta-aa-provider's `isERC4337RpcMethod` routing.
 
 ## Known bugs
 

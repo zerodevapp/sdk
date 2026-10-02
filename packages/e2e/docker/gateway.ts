@@ -3,7 +3,7 @@
 // ponytail: mimics only the UR-sponsored branch; the network tier in
 // packages/test exercises the real gateway.
 
-type Upstreams = Record<string, string>
+type Upstreams = Record<string, { bundler: string; node: string }>
 type JsonRpcRequest = {
     jsonrpc: "2.0"
     id: number | string | null
@@ -13,6 +13,30 @@ type JsonRpcRequest = {
 type UserOp = Record<string, unknown>
 
 const ZERO_FEES = { maxFeePerGas: "0x0", maxPriorityFeePerGas: "0x0" }
+
+// meta-aa-provider sends these to the bundler and everything else (eth_call,
+// eth_getCode, ...) to the chain's node (shared/utils/bundlerUtils.ts
+// isERC4337RpcMethod).
+const ERC4337_METHODS = new Set([
+    "eth_sendUserOperation",
+    "eth_estimateUserOperationGas",
+    "eth_getUserOperationReceipt",
+    "eth_getUserOperationByHash",
+    "eth_supportedEntryPoints",
+    "eth_maxPriorityFeePerGas",
+    "rundler_maxPriorityFeePerGas",
+    "pimlico_getUserOperationGasPrice",
+    "pimlico_getUserOperationStatus",
+    "thirdweb_getUserOperationGasPrice",
+    "zd_getUserOperationGasPrice",
+    "zd_sponsorUserOperation",
+    "zd_pm_accounts",
+    "alchemy_requestPaymasterAndData",
+    "stackup_getERC20TokenQuotes",
+    "pm_getPaymasterData",
+    "pm_getPaymasterStubData",
+    "eth_callUserOperation"
+])
 const ROUTE = /^\/api\/v3\/([^/]+)\/chain\/(\d+)\/?$/
 // meta-aa-provider returns real fees for UR projects without gas policies.
 const UNSPONSORED_PROJECT = "unsponsored"
@@ -68,10 +92,11 @@ function estimate(
 }
 
 async function handleRpc(
-    upstream: string,
+    { bundler: upstream, node }: Upstreams[string],
     req: JsonRpcRequest,
     sponsored: boolean
 ) {
+    if (!ERC4337_METHODS.has(req.method)) return forward(node, req)
     switch (req.method) {
         case "zd_getUserOperationGasPrice":
             if (!sponsored) {

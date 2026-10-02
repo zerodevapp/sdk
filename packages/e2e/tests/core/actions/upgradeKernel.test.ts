@@ -20,69 +20,94 @@ const pairs = KERNEL_V3_VERSIONS.flatMap((from, i) =>
     KERNEL_V3_VERSIONS.slice(i + 1).map((to) => [from, to] as const)
 )
 
+// upgradeKernel spreads its args, so `kernelVersion` rides along on the op.
+// The ERC-7677 wiring serializes the op with viem's formatUserOperationRequest
+// (known fields only), so it works. The sponsorUserOperation wiring sends the
+// raw op to zd_sponsorUserOperation, which forwards it unchanged, and strict
+// bundler/paymaster schemas reject the extra key (same in production).
+const wirings = [
+    { paymaster: "erc7677", run: test, bug: "" },
+    {
+        paymaster: "sponsor",
+        run: test.failing,
+        bug: "NEW BUG (sponsorUserOperation forwards the raw op incl. kernelVersion): "
+    }
+] as const
+
 describe("upgradeKernel", () => {
     for (const [from, to] of pairs) {
-        // upgradeKernel spreads its args into sendUserOperation, so `kernelVersion`
-        // lands in the userOp and Ultra Relay's strict schema rejects it.
-        test.failing(
-            `NEW BUG (upgradeKernel leaks kernelVersion into the userOp): ${from} → ${to}: account keeps working on the new implementation`,
-            async () => {
-                const publicClient = getPublicClient("sepolia")
-                const { account, owner } = await createEcdsaAccount({
-                    chain: "sepolia",
-                    kernelVersion: from
-                })
-                const client = getKernelClient(account, "sepolia")
-                await client.waitForUserOperationReceipt({
-                    hash: await client.sendUserOperation({ calls: [call] })
-                })
+        for (const { paymaster, run, bug } of wirings) {
+            run(
+                `${bug}${from} → ${to} via ${paymaster} paymaster: account keeps working on the new implementation`,
+                async () => {
+                    const publicClient = getPublicClient("sepolia")
+                    const { account, owner } = await createEcdsaAccount({
+                        chain: "sepolia",
+                        kernelVersion: from
+                    })
+                    const client = getKernelClient(account, "sepolia", {
+                        paymaster
+                    })
+                    await client.waitForUserOperationReceipt({
+                        hash: await client.sendUserOperation({ calls: [call] })
+                    })
 
-                const hash = await client.upgradeKernel({ kernelVersion: to })
-                expect(
-                    (await client.waitForUserOperationReceipt({ hash })).success
-                ).toBeTrue()
+                    const hash = await client.upgradeKernel({
+                        kernelVersion: to
+                    })
+                    expect(
+                        (await client.waitForUserOperationReceipt({ hash }))
+                            .success
+                    ).toBeTrue()
 
-                const { domain } = await getEip712Domain(publicClient, {
-                    address: account.address
-                })
-                expect(domain.version).toBe(to)
+                    const { domain } = await getEip712Domain(publicClient, {
+                        address: account.address
+                    })
+                    expect(domain.version).toBe(to)
 
-                // The installed sudo validator is still the one from the original
-                // version (0.3.0 uses a different ECDSA validator address).
-                const sudo = await signerToEcdsaValidator(publicClient, {
-                    signer: owner,
-                    entryPoint: ENTRY_POINT,
-                    kernelVersion: to,
-                    validatorAddress: getValidatorAddress(ENTRY_POINT, from)
-                })
-                const upgraded = await createKernelAccount(publicClient, {
-                    entryPoint: ENTRY_POINT,
-                    kernelVersion: to,
-                    address: account.address,
-                    plugins: { sudo }
-                })
-                const upgradedClient = getKernelClient(upgraded, "sepolia")
-                expect(
-                    (
-                        await upgradedClient.waitForUserOperationReceipt({
-                            hash: await upgradedClient.sendUserOperation({
-                                calls: [call]
-                            })
-                        })
-                    ).success
-                ).toBeTrue()
-
-                const message = "upgraded"
-                const signature = await upgraded.signMessage({ message })
-                expect(
-                    await isValid1271(
+                    // The installed sudo validator is still the one from the
+                    // original version (0.3.0 uses a different ECDSA validator).
+                    const sudo = await signerToEcdsaValidator(publicClient, {
+                        signer: owner,
+                        entryPoint: ENTRY_POINT,
+                        kernelVersion: to,
+                        validatorAddress: getValidatorAddress(ENTRY_POINT, from)
+                    })
+                    const upgraded = await createKernelAccount(publicClient, {
+                        entryPoint: ENTRY_POINT,
+                        kernelVersion: to,
+                        address: account.address,
+                        plugins: { sudo }
+                    })
+                    const upgradedClient = getKernelClient(
+                        upgraded,
                         "sepolia",
-                        account.address,
-                        hashMessage(message),
-                        signature
+                        {
+                            paymaster
+                        }
                     )
-                ).toBeTrue()
-            }
-        )
+                    expect(
+                        (
+                            await upgradedClient.waitForUserOperationReceipt({
+                                hash: await upgradedClient.sendUserOperation({
+                                    calls: [call]
+                                })
+                            })
+                        ).success
+                    ).toBeTrue()
+
+                    const message = "upgraded"
+                    const signature = await upgraded.signMessage({ message })
+                    expect(
+                        await isValid1271(
+                            "sepolia",
+                            account.address,
+                            hashMessage(message),
+                            signature
+                        )
+                    ).toBeTrue()
+                }
+            )
+        }
     }
 })

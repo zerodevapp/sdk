@@ -4,7 +4,9 @@ import { createGateway, normalizeUserOp } from "./gateway"
 type Recorded = { method: string; params: unknown[]; id: unknown }
 
 const recorded: Recorded[] = []
+const nodeRecorded: Recorded[] = []
 let upstream: ReturnType<typeof Bun.serve>
+let node: ReturnType<typeof Bun.serve>
 let gateway: ReturnType<typeof Bun.serve>
 
 beforeAll(() => {
@@ -20,16 +22,32 @@ beforeAll(() => {
             })
         }
     })
+    node = Bun.serve({
+        port: 0,
+        async fetch(req) {
+            const body = (await req.json()) as Recorded
+            nodeRecorded.push(body)
+            return Response.json({
+                jsonrpc: "2.0",
+                id: body.id,
+                result: { node: body.method }
+            })
+        }
+    })
     gateway = Bun.serve({
         port: 0,
         fetch: createGateway({
-            "11155111": `http://127.0.0.1:${upstream.port}/rpc`
+            "11155111": {
+                bundler: `http://127.0.0.1:${upstream.port}/rpc`,
+                node: `http://127.0.0.1:${node.port}`
+            }
         })
     })
 })
 
 afterAll(() => {
     upstream.stop(true)
+    node.stop(true)
     gateway.stop(true)
 })
 
@@ -135,7 +153,21 @@ describe("gateway", () => {
         }
     })
 
-    test("other methods are forwarded unchanged", async () => {
+    test("non-ERC-4337 methods go to the chain node, not the bundler", async () => {
+        const before = recorded.length
+        const body = {
+            jsonrpc: "2.0",
+            id: 12,
+            method: "eth_call",
+            params: [{ to: EP, data: "0x" }, "latest"]
+        }
+        const { json } = await call(body)
+        expect(nodeRecorded.at(-1)).toEqual(body as unknown as Recorded)
+        expect(recorded.length).toBe(before)
+        expect(json.result).toEqual({ node: "eth_call" })
+    })
+
+    test("other ERC-4337 methods are forwarded unchanged to the bundler", async () => {
         const body = {
             jsonrpc: "2.0",
             id: 10,
@@ -149,7 +181,12 @@ describe("gateway", () => {
 
     test("batched bodies answer every entry and keep ids", async () => {
         const { json } = await call([
-            { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] },
+            {
+                jsonrpc: "2.0",
+                id: 1,
+                method: "eth_supportedEntryPoints",
+                params: []
+            },
             {
                 jsonrpc: "2.0",
                 id: 2,

@@ -20,6 +20,7 @@ export function getPublicClient(key: ChainKey): PublicClient {
 
 // Default wiring is the documented SDK setup: fees from
 // zd_getUserOperationGasPrice and sponsorship via zd_sponsorUserOperation.
+// "erc7677" passes the paymaster client itself, so viem uses pm_* methods.
 export function getKernelClient(
     account: KernelAccount,
     key: ChainKey,
@@ -28,7 +29,7 @@ export function getKernelClient(
         project = "sponsored",
         estimateFeesPerGas
     }: {
-        paymaster?: "sponsor" | "none"
+        paymaster?: "sponsor" | "erc7677" | "none"
         project?: Project
         estimateFeesPerGas?: () => Promise<Fees>
     } = {}
@@ -52,7 +53,9 @@ export function getKernelClient(
                               userOperation
                           })
                   }
-                : undefined,
+                : paymaster === "erc7677"
+                  ? paymasterClient
+                  : undefined,
         userOperation: estimateFeesPerGas ? { estimateFeesPerGas } : undefined
     })
 }
