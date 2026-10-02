@@ -32,6 +32,7 @@ services:
       - --retries=20
       - --fork-retry-backoff=1000
       - --compute-units-per-second=100
+      - --mnemonic=${E2E_MNEMONIC}
     ports: ["8545:8545"]
     volumes: ["../.cache/anvil:/root/.foundry/cache"]
 
@@ -46,6 +47,7 @@ services:
       - --retries=20
       - --fork-retry-backoff=1000
       - --compute-units-per-second=100
+      - --mnemonic=${E2E_MNEMONIC}
     ports: ["8546:8545"]
     volumes: ["../.cache/anvil:/root/.foundry/cache"]
 
