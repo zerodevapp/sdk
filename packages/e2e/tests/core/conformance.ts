@@ -161,6 +161,21 @@ export function runCoreFlows({
                             ).toBeTrue()
                         })
 
+                        test("signTypedData verifies via ERC-1271 after deployment", async () => {
+                            const account = await fresh(chain, kernelVersion)
+                            await deploy(account, chain)
+                            const signature =
+                                await account.signTypedData(TYPED_DATA)
+                            expect(
+                                await isValid1271(
+                                    chain,
+                                    account.address,
+                                    hashTypedData(TYPED_DATA),
+                                    signature
+                                )
+                            ).toBeTrue()
+                        })
+
                         test("signMessage verifies via ERC-1271 after deployment", async () => {
                             const account = await fresh(chain, kernelVersion)
                             await deploy(account, chain)
