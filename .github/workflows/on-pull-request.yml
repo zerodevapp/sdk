@@ -31,3 +31,71 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           package_manager: bun
+  e2e-local:
+    name: E2E (local)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+      ARB_SEPOLIA_RPC_URL: ${{ secrets.ARB_SEPOLIA_RPC_URL }}
+
+    steps:
+      - name: Check fork RPC secrets
+        id: secrets
+        run: |
+          if [ -z "$SEPOLIA_RPC_URL" ] || [ -z "$ARB_SEPOLIA_RPC_URL" ]; then
+            echo "::notice::Fork RPC secrets unavailable (PR from an external fork); skipping local e2e."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Clone repository
+        if: steps.secrets.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        if: steps.secrets.outputs.ok == 'true'
+        uses: ./.github/actions/install-dependencies
+
+      - name: Build
+        if: steps.secrets.outputs.ok == 'true'
+        run: bun run build
+
+      - name: Gateway unit tests
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: packages/e2e
+        run: bun run test:gateway
+
+      - name: Restore anvil fork cache
+        if: steps.secrets.outputs.ok == 'true'
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/.cache/anvil
+          key: anvil-${{ hashFiles('packages/e2e/docker/stack.env') }}
+
+      - name: Set up Docker Buildx
+        if: steps.secrets.outputs.ok == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start local stack
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: packages/e2e
+        run: bun run local:up
+
+      - name: Run e2e suite
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: packages/e2e
+        run: bun run test
+
+      - name: Dump stack logs
+        if: failure() && steps.secrets.outputs.ok == 'true'
+        working-directory: packages/e2e
+        run: bun run local:logs > stack.log 2>&1
+
+      - name: Upload stack logs
+        if: failure() && steps.secrets.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-stack-logs
+          path: packages/e2e/stack.log
