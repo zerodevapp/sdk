@@ -5,6 +5,7 @@ import type { ChainKey } from "./env"
 
 const ERC1271_MAGIC = "0x1626ba7e"
 
+// A signature the validator cannot even parse reverts; that is "not valid".
 export function isValid6492(
     key: ChainKey,
     signer: Address,
@@ -16,7 +17,7 @@ export function isValid6492(
         hash,
         signature,
         client: getPublicClient(key)
-    })
+    }).catch(() => false)
 }
 
 export async function isValid1271(
