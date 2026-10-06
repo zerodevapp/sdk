@@ -51,7 +51,7 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
         // are rejected (InvalidSignature) and the old owner keeps working.
         const isV030 = kernelVersion === "0.3.0"
         test(isV030
-            ? "FINDING (current behaviour, 0.3.0): switching root to a permission validator reports success but the new key cannot sign and the old owner still can"
+            ? "ZER-1089 (current behaviour, 0.3.0): switching root to a permission validator reports success but the new key cannot sign and the old owner still can"
             : "switching root to a different validator (permission, sudo policy): new key sends, old owner is rejected", async () => {
             const { account, owner: ownerA } = await createEcdsaAccount({
                 chain: "sepolia",
@@ -98,7 +98,7 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
         // only installs a validator that is not installed yet, so pointing root
         // at the already-installed ECDSA validator with a new owner keeps the old
         // owner's config. The SDK reports success instead of refusing.
-        test("FOOTGUN (current behaviour): changing to the same ECDSA validator with a new owner keeps the old owner", async () => {
+        test("ZER-1088 (current behaviour): changing to the same ECDSA validator with a new owner keeps the old owner", async () => {
             const { account, owner: ownerA } = await createEcdsaAccount({
                 chain: "sepolia",
                 kernelVersion
@@ -199,7 +199,7 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
         })
 
         // Known bug, asserted as current behaviour (same leak as upgradeKernel).
-        test("NEW BUG (current behaviour): via sponsorUserOperation the op is rejected for the leaked nonceToSet key", async () => {
+        test("ZER-1087 (current behaviour): via sponsorUserOperation the op is rejected for the leaked nonceToSet key", async () => {
             const { account } = await createEcdsaAccount({
                 chain: "sepolia",
                 kernelVersion

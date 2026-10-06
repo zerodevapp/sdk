@@ -96,7 +96,7 @@ describe("upgradeKernel", () => {
     // Known bug, asserted as current behaviour: upgradeKernel spreads its args,
     // so `kernelVersion` rides on the op; sponsorUserOperation forwards the raw
     // op and strict schemas reject it (same on production rpc.zerodev.app).
-    test("NEW BUG (current behaviour): via sponsorUserOperation the op is rejected for the leaked kernelVersion key", async () => {
+    test("ZER-1087 (current behaviour): via sponsorUserOperation the op is rejected for the leaked kernelVersion key", async () => {
         const { account } = await createEcdsaAccount({
             chain: "sepolia",
             kernelVersion: "0.3.2"

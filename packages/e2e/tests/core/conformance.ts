@@ -294,8 +294,8 @@ export function runCoreFlows({
                     })
 
                     // Known bug, asserted as current behaviour so the test
-                    // breaks loudly once SUP-1497 is fixed (then invert it).
-                    test("SUP-1497 (current behaviour): replayable signature from an account deployed on one chain does not verify where it is not deployed", async () => {
+                    // breaks loudly once ZDS-11 is fixed (then invert it).
+                    test("ZDS-11 / SUP-1497 (current behaviour): replayable signature from an account deployed on one chain does not verify where it is not deployed", async () => {
                         const account = await fresh(home, kernelVersion)
                         await deploy(account, home)
                         const signature = await account.signMessage({
@@ -323,7 +323,7 @@ export function runCoreFlows({
                         ).toBeFalse()
                     })
                 } else {
-                    test("SUP-1499 (current behaviour): useReplayableSignature yields an invalid signature on kernel <0.3.2", async () => {
+                    test("ZDS-13 / SUP-1499 (current behaviour): useReplayableSignature yields an invalid signature on kernel <0.3.2", async () => {
                         const account = await fresh(home, kernelVersion)
                         await deploy(account, home)
                         const hash = hashMessage(MESSAGE)

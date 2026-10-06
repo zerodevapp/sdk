@@ -100,7 +100,7 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
 // estimation settles on the smallest gas that "succeeds"; CreateCall then runs
 // out of gas inside the delegatecall and the op still reports success.
 describe("encodeDeployCallData on kernel 0.3.0", () => {
-    test("FINDING (current behaviour): with estimated gas the op succeeds but nothing is deployed", async () => {
+    test("ZER-1090 (current behaviour): with estimated gas the op succeeds but nothing is deployed", async () => {
         const { account } = await createEcdsaAccount({
             chain: "sepolia",
             kernelVersion: "0.3.0"
