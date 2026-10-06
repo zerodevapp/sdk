@@ -46,15 +46,16 @@ describe("gas policy", () => {
         const client = getKernelClient(account, "sepolia", {
             project: "unsponsored"
         })
-        return client.sendUserOperation({
+        const hash = await client.sendUserOperation({
             calls: [{ ...call, value: 0n, data: "0x" }]
         })
+        return client.waitForUserOperationReceipt({ hash })
     }
 
     test("self-paid op within the budget succeeds", async () => {
-        await expect(selfPaid(parseEther("100"))).resolves.toMatch(
-            /^0x[0-9a-f]{64}$/
-        )
+        const receipt = await selfPaid(parseEther("100"))
+        expect(receipt.success).toBeTrue()
+        expect(receipt.actualGasCost).toBeGreaterThan(0n)
     })
 
     test("self-paid op costing more than the budget is rejected", async () => {

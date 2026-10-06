@@ -66,6 +66,13 @@ jobs:
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
+          # Mask every part of the URLs, not only the whole string, so a key
+          # echoed in a path or query by any later step is hidden too.
+          for url in "$SEPOLIA_RPC_URL" "$ARB_SEPOLIA_RPC_URL"; do
+            for part in $(printf '%s' "$url" | tr '/?&=@:#' '\n\n\n\n\n\n\n'); do
+              if [ ${#part} -ge 8 ]; then echo "::add-mask::$part"; fi
+            done
+          done
 
       - name: Clone repository
         if: steps.secrets.outputs.ok == 'true'
@@ -100,19 +107,12 @@ jobs:
         working-directory: packages/e2e
         run: bun run test
 
-      # Only Ultra Relay and gateway logs: anvil prints its fork URL, which
-      # contains the RPC key, and artifacts of this public repo are public.
-      - name: Dump stack logs
+      # Printed, not uploaded: console output is masked, artifacts are not.
+      # Anvil logs stay out because they print the full fork URL.
+      - name: Print stack logs
         if: failure() && steps.secrets.outputs.ok == 'true'
         working-directory: packages/e2e
-        run: bun docker/stack.ts logs ur-sepolia ur-arbsepolia gateway > stack.log 2>&1
-
-      - name: Upload stack logs
-        if: failure() && steps.secrets.outputs.ok == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-stack-logs
-          path: packages/e2e/stack.log
+        run: bun docker/stack.ts logs --no-color ur-sepolia ur-arbsepolia gateway
 
       # anvil writes its fork cache only on shutdown; stop the stack before
       # actions/cache saves .cache/anvil in its post step.
