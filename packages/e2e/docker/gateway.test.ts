@@ -225,9 +225,73 @@ describe("normalizeUserOp", () => {
         expect(normalizeUserOp(userOp07)).toEqual(userOp07)
     })
 
-    test("moves authorization to eip7702Auth and turns zero-quantity '0x' into '0x0'", () => {
+    test("turns '0x' into '0x0' only in 7702 auth quantity fields", () => {
+        const auth = {
+            nonce: "0x",
+            chainId: "0x",
+            yParity: "0x",
+            r: "0x",
+            s: "0x"
+        }
+        const want = {
+            nonce: "0x0",
+            chainId: "0x0",
+            yParity: "0x0",
+            r: "0x",
+            s: "0x"
+        }
+        expect(normalizeUserOp({ authorization: auth })).toEqual({
+            authorization: want
+        })
+        expect(normalizeUserOp({ eip7702Auth: auth })).toEqual({
+            eip7702Auth: want
+        })
+    })
+
+    test("renames authorization to eip7702Auth only when asked, overwriting an existing one", () => {
         expect(
-            normalizeUserOp({ authorization: { nonce: "0x", yParity: "0x1" } })
-        ).toEqual({ eip7702Auth: { nonce: "0x0", yParity: "0x1" } })
+            normalizeUserOp(
+                {
+                    authorization: { nonce: "0x1" },
+                    eip7702Auth: { nonce: "0x9" }
+                },
+                { renameAuthorization: true }
+            )
+        ).toEqual({ eip7702Auth: { nonce: "0x1" } })
+    })
+})
+
+describe("7702 alias handling per method", () => {
+    const auth = { nonce: "0x", r: "0x" }
+
+    test("zd_sponsorUserOperation renames authorization to eip7702Auth", async () => {
+        await call({
+            jsonrpc: "2.0",
+            id: 20,
+            method: "zd_sponsorUserOperation",
+            params: [
+                {
+                    userOp: { ...userOp07, authorization: auth },
+                    entryPointAddress: EP
+                }
+            ]
+        })
+        expect(recorded.at(-1)?.params[0]).toEqual({
+            ...userOp07,
+            eip7702Auth: { nonce: "0x0", r: "0x" }
+        })
+    })
+
+    test("pm_getPaymasterData keeps authorization (no rename)", async () => {
+        await call({
+            jsonrpc: "2.0",
+            id: 21,
+            method: "pm_getPaymasterData",
+            params: [{ ...userOp07, authorization: auth }, EP, "0xaa36a7", {}]
+        })
+        expect(recorded.at(-1)?.params[0]).toEqual({
+            ...userOp07,
+            authorization: { nonce: "0x0", r: "0x" }
+        })
     })
 })

@@ -33,9 +33,19 @@ Adding a validator plugin: create `tests/plugins/<name>/conformance.test.ts` cal
 - `zd_sponsorUserOperation`, `pm_getPaymasterStubData`, `pm_getPaymasterData`: forwarded to Ultra Relay as `eth_estimateUserOperationGas`.
 - Other ERC-4337 methods go to Ultra Relay unchanged; every other method (`eth_call`, `eth_getCode`, …) goes to the chain's anvil node, like meta-aa-provider's `isERC4337RpcMethod` routing.
 
-## Known bugs
+## Known bugs and findings
 
-Tests named `SUP-XXXX: …` use `test.failing`: they pass while the bug exists and fail once it is fixed. The fix PR removes `.failing`; never delete the test. Current ones: SUP-1497, SUP-1498, SUP-1499.
+Known bugs are tested as their **current behaviour**: each test asserts exactly what happens today (with a control showing the setup works), so it cannot pass for an unrelated reason and it breaks loudly once the bug is fixed. The fix PR then inverts the assertion; never delete the test. Names start with the ticket or a `NEW BUG` / `FOOTGUN` / `FINDING` label so `bun test -t "SUP-"` or `-t "NEW BUG"` selects them.
+
+| Label | Behaviour | Test |
+|---|---|---|
+| SUP-1497 | Replayable signature from an account deployed on one chain does not verify where it is not deployed | `tests/core/conformance.ts` |
+| SUP-1498 | `kernelClient.signMessage` drops `useReplayableSignature` | `tests/core/clients/kernelAccountClient.test.ts` |
+| SUP-1499 | `useReplayableSignature` yields an invalid signature on Kernel <0.3.2 | `tests/core/conformance.ts` |
+| NEW BUG | Via `sponsorUserOperation`, `upgradeKernel` / `invalidateNonce` are rejected for the leaked `kernelVersion` / `nonceToSet` key (the ERC-7677 paymaster wiring works) | `tests/core/actions/upgradeKernel.test.ts`, `admin.test.ts` |
+| FOOTGUN | `changeSudoValidator` to the already-installed ECDSA validator with a new owner keeps the old owner (Kernel skips re-install; the SDK reports success) | `tests/core/actions/admin.test.ts` |
+| FINDING | Kernel 0.3.0: switching root to a permission validator reports success, but the new key cannot sign and the old owner still can | `tests/core/actions/admin.test.ts` |
+| FINDING | Kernel 0.3.0: `encodeDeployCallData` with estimated gas deploys nothing (the failed delegatecall is swallowed, so estimation under-sizes call gas); an explicit `callGasLimit` works | `tests/core/actions/send.test.ts` |
 
 SUP-1431 (gas-policy estimation) does not reproduce locally: anvil caps `eth_call` gas at the block gas limit, so Ultra Relay's estimation probe stays far below the budget.
 

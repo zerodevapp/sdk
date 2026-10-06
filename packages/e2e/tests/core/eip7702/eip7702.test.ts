@@ -52,11 +52,28 @@ describe("EIP-7702 (kernel 0.3.3)", () => {
 
     test("second op on an already-delegated EOA skips re-authorization", async () => {
         const eoa = newOwner()
-        const { client } = await delegated(eoa, "sepolia")
-        const hash = await client.sendUserOperation({ calls: [call] })
-        expect(
-            (await client.waitForUserOperationReceipt({ hash })).success
-        ).toBeTrue()
+        const account = await createKernelAccount(getPublicClient("sepolia"), {
+            eip7702Account: eoa,
+            entryPoint: ENTRY_POINT,
+            kernelVersion: KERNEL_V3_3
+        })
+        const client = getKernelClient(account, "sepolia")
+        // The bundle tx carries the 7702 authorization list only when the op
+        // included one.
+        const send = async () => {
+            const hash = await client.sendUserOperation({ calls: [call] })
+            const { success, receipt } =
+                await client.waitForUserOperationReceipt({ hash })
+            expect(success).toBeTrue()
+            return getPublicClient("sepolia").getTransaction({
+                hash: receipt.transactionHash
+            })
+        }
+        const first = await send()
+        const second = await send()
+        expect(first.type).toBe("eip7702")
+        expect(first.authorizationList?.length).toBe(1)
+        expect(second.type).not.toBe("eip7702")
     })
 
     test("signTypedData verifies via ERC-1271", async () => {
@@ -79,22 +96,27 @@ describe("EIP-7702 (kernel 0.3.3)", () => {
         ).toBeTrue()
     })
 
-    test("replayable signature from one chain verifies on another where the EOA is also delegated", async () => {
-        const eoa = newOwner()
-        const { account } = await delegated(eoa, "sepolia")
-        await delegated(eoa, "arbSepolia")
-        const message = "zerodev e2e 7702 replayable"
-        const signature = await account.signMessage({
-            message,
-            useReplayableSignature: true
-        })
-        expect(
-            await isValid1271(
-                "arbSepolia",
-                eoa.address,
-                hashMessage(message),
-                signature
-            )
-        ).toBeTrue()
-    })
+    // Two delegations on two forks: allow for cold fork caches.
+    test(
+        "replayable signature from one chain verifies on another where the EOA is also delegated",
+        { timeout: 60_000 },
+        async () => {
+            const eoa = newOwner()
+            const { account } = await delegated(eoa, "sepolia")
+            await delegated(eoa, "arbSepolia")
+            const message = "zerodev e2e 7702 replayable"
+            const signature = await account.signMessage({
+                message,
+                useReplayableSignature: true
+            })
+            expect(
+                await isValid1271(
+                    "arbSepolia",
+                    eoa.address,
+                    hashMessage(message),
+                    signature
+                )
+            ).toBeTrue()
+        }
+    )
 })

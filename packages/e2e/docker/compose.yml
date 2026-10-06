@@ -20,6 +20,8 @@ x-ur: &ur
     timeout: 5s
     retries: 90
 
+# Host ports bind to 127.0.0.1 only: anvil exposes admin methods and spends
+# the upstream RPC quota. Ultra Relay is reached through the gateway.
 services:
   anvil-sepolia:
     <<: *anvil
@@ -34,7 +36,7 @@ services:
       - --compute-units-per-second=100
       - --mnemonic=${E2E_MNEMONIC}
       - --hardfork=prague
-    ports: ["8545:8545"]
+    ports: ["127.0.0.1:8545:8545"]
     volumes: ["../.cache/anvil:/root/.foundry/cache"]
 
   anvil-arbsepolia:
@@ -50,20 +52,18 @@ services:
       - --compute-units-per-second=100
       - --mnemonic=${E2E_MNEMONIC}
       - --hardfork=prague
-    ports: ["8546:8545"]
+    ports: ["127.0.0.1:8546:8545"]
     volumes: ["../.cache/anvil:/root/.foundry/cache"]
 
   ur-sepolia:
     <<: *ur
     volumes: ["./ur.sepolia.json:/app/ur.json:ro"]
-    ports: ["4337:4337"]
     depends_on:
       anvil-sepolia: { condition: service_healthy }
 
   ur-arbsepolia:
     <<: *ur
     volumes: ["./ur.arbsepolia.json:/app/ur.json:ro"]
-    ports: ["4338:4337"]
     depends_on:
       anvil-arbsepolia: { condition: service_healthy }
 
@@ -74,7 +74,7 @@ services:
       PORT: "4000"
       GATEWAY_UPSTREAMS: '{"11155111":{"bundler":"http://ur-sepolia:4337/rpc","node":"http://anvil-sepolia:8545"},"421614":{"bundler":"http://ur-arbsepolia:4337/rpc","node":"http://anvil-arbsepolia:8545"}}'
     volumes: ["./gateway.ts:/app/gateway.ts:ro"]
-    ports: ["4000:4000"]
+    ports: ["127.0.0.1:4000:4000"]
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
       interval: 2s

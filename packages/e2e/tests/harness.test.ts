@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import { zeroAddress } from "viem"
+import { http, createPublicClient, zeroAddress, zeroHash } from "viem"
+import { sepolia } from "viem/chains"
 import { createEcdsaAccount, newOwner, randomIndex } from "../harness/accounts"
 import { chainTime, increaseTime } from "../harness/anvil"
 import { getKernelClient, getPublicClient } from "../harness/clients"
 import { ALL_CHAINS, CHAINS } from "../harness/env"
-import { isDeployed } from "../harness/verify"
+import { falseOnRevert, isDeployed, isValid1271 } from "../harness/verify"
 
 describe("harness", () => {
     for (const key of ALL_CHAINS) {
@@ -39,5 +40,21 @@ describe("harness", () => {
     test("randomIndex and newOwner give fresh values", () => {
         expect(randomIndex()).not.toBe(randomIndex())
         expect(newOwner().address).not.toBe(newOwner().address)
+    })
+
+    test("isValid1271 on an undeployed account is false (no data, not an error)", async () => {
+        expect(
+            await isValid1271("sepolia", newOwner().address, zeroHash, "0x")
+        ).toBeFalse()
+    })
+
+    test("falseOnRevert propagates transport errors instead of returning false", async () => {
+        const dead = createPublicClient({
+            chain: sepolia,
+            transport: http("http://127.0.0.1:1", { retryCount: 0 })
+        })
+        await expect(
+            falseOnRevert(dead.call({ to: zeroAddress }).then(() => true))
+        ).rejects.toThrow()
     })
 })

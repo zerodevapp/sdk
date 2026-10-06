@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { toSudoPolicy, toTimestampPolicy } from "@zerodev/permissions/policies"
 import { zeroAddress } from "viem"
 import { chainTime, increaseTime } from "../../../../harness/anvil"
+import { rpcErrorDetails } from "../../../../harness/errors"
 import {
     createSessionKeyAccount,
     sendCalls
@@ -23,9 +24,9 @@ describe("timestamp policy", () => {
                 toTimestampPolicy({ validAfter: later + 3600 })
             ]
         })
-        await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow(
-            /expired|AA22|not valid yet/i
-        )
+        expect(
+            await rpcErrorDetails(sendCalls(account, [{ to: zeroAddress }]))
+        ).toMatch(/AA22 expired or not due|User operation is not valid yet/)
     })
 
     test("validAfter in the past is accepted", async () => {
@@ -42,18 +43,28 @@ describe("timestamp policy", () => {
         ).toBeTrue()
     })
 
-    test("validUntil in the past is rejected", async () => {
-        const now = await chainTime("sepolia")
+    test("validUntil: accepted before the deadline, rejected as expired after it", async () => {
+        // The deadline must be in the future for both clocks: UR checks
+        // validUntil against its wall clock, the EntryPoint against block time.
+        const deadline = Math.max(await chainTime("sepolia"), wallClock()) + 600
         const { account } = await createSessionKeyAccount({
             kernelVersion: "0.3.3",
             policies: [
                 toSudoPolicy({}),
-                toTimestampPolicy({ validUntil: now + 60 })
+                toTimestampPolicy({ validUntil: deadline })
             ]
         })
-        await increaseTime("sepolia", 120)
-        await expect(sendCalls(account, [{ to: zeroAddress }])).rejects.toThrow(
-            /expired|AA22|not valid yet/i
+        expect(
+            (await sendCalls(account, [{ to: zeroAddress }])).success
+        ).toBeTrue()
+
+        await increaseTime(
+            "sepolia",
+            deadline - (await chainTime("sepolia")) + 60
         )
+        expect(await chainTime("sepolia")).toBeGreaterThan(deadline)
+        expect(
+            await rpcErrorDetails(sendCalls(account, [{ to: zeroAddress }]))
+        ).toMatch(/AA22 expired/)
     })
 })

@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import { hashMessage, hashTypedData, zeroAddress } from "viem"
+import {
+    type Address,
+    hashMessage,
+    hashTypedData,
+    parseEther,
+    zeroAddress
+} from "viem"
 import { entryPoint07Abi } from "viem/account-abstraction"
 import type { PrivateKeyAccount } from "viem/accounts"
 import {
@@ -10,9 +16,15 @@ import {
     randomIndex,
     supportsReplayable
 } from "../../harness/accounts"
-import { type KernelAccount, getKernelClient } from "../../harness/clients"
+import { setBalance } from "../../harness/anvil"
+import {
+    type KernelAccount,
+    getKernelClient,
+    getPublicClient
+} from "../../harness/clients"
 import { ALL_CHAINS, type ChainKey } from "../../harness/env"
 import { forEachKernelVersion } from "../../harness/matrix"
+import { userOpSucceeded } from "../../harness/receipts"
 import { isDeployed, isValid1271, isValid6492 } from "../../harness/verify"
 
 export type MakeAccount = (args: {
@@ -95,20 +107,47 @@ export function runCoreFlows({
                         ).toBeTrue()
                     })
 
-                    test("sendTransaction with a single call", async () => {
+                    // Funded so each call moves 1 wei: the effect proves the
+                    // calls ran with the requested target and value.
+                    const funded = async () => {
                         const account = await fresh(chain, kernelVersion)
+                        await setBalance(
+                            chain,
+                            account.address,
+                            parseEther("1")
+                        )
+                        return account
+                    }
+                    const balanceOf = (address: Address) =>
+                        getPublicClient(chain).getBalance({ address })
+
+                    test("sendTransaction with a single call", async () => {
+                        const account = await funded()
+                        const to = newOwner().address
                         const client = getKernelClient(account, chain)
-                        const txHash = await client.sendTransaction(noopCall)
-                        expect(txHash).toMatch(/^0x[0-9a-f]{64}$/)
+                        const txHash = await client.sendTransaction({
+                            to,
+                            value: 1n,
+                            data: "0x"
+                        })
+                        expect(
+                            await userOpSucceeded(
+                                chain,
+                                txHash,
+                                account.address
+                            )
+                        ).toBeTrue()
+                        expect(await balanceOf(to)).toBe(1n)
                     })
 
                     test("sendUserOperation with a batch", async () => {
-                        const account = await fresh(chain, kernelVersion)
+                        const account = await funded()
+                        const [a, b] = [newOwner().address, newOwner().address]
                         const client = getKernelClient(account, chain)
                         const hash = await client.sendUserOperation({
                             calls: [
-                                noopCall,
-                                { ...noopCall, to: account.address }
+                                { to: a, value: 1n, data: "0x" },
+                                { to: b, value: 2n, data: "0x" }
                             ]
                         })
                         const receipt =
@@ -116,19 +155,36 @@ export function runCoreFlows({
                                 hash
                             })
                         expect(receipt.success).toBeTrue()
+                        expect(await balanceOf(a)).toBe(1n)
+                        expect(await balanceOf(b)).toBe(2n)
                     })
 
                     test("writeContract", async () => {
-                        const account = await fresh(chain, kernelVersion)
+                        const account = await funded()
                         const client = getKernelClient(account, chain)
                         const txHash = await client.writeContract({
                             address: ENTRY_POINT.address,
                             abi: entryPoint07Abi,
                             functionName: "depositTo",
                             args: [account.address],
-                            value: 0n
+                            value: 1n
                         })
-                        expect(txHash).toMatch(/^0x[0-9a-f]{64}$/)
+                        expect(
+                            await userOpSucceeded(
+                                chain,
+                                txHash,
+                                account.address
+                            )
+                        ).toBeTrue()
+                        const deposit = await getPublicClient(
+                            chain
+                        ).readContract({
+                            address: ENTRY_POINT.address,
+                            abi: entryPoint07Abi,
+                            functionName: "balanceOf",
+                            args: [account.address]
+                        })
+                        expect(deposit).toBe(1n)
                     })
 
                     if (signatures) {
@@ -215,45 +271,62 @@ export function runCoreFlows({
                         ).toBeTrue()
                     })
 
-                    test.failing(
-                        "SUP-1497: replayable signature from an account deployed on one chain verifies where it is not deployed",
-                        async () => {
-                            const account = await fresh(home, kernelVersion)
-                            await deploy(account, home)
-                            const signature = await account.signMessage({
-                                message: MESSAGE,
-                                useReplayableSignature: true
-                            })
-                            expect(
-                                await isValid6492(
-                                    away,
-                                    account.address,
-                                    hashMessage(MESSAGE),
-                                    signature
-                                )
-                            ).toBeTrue()
-                        }
-                    )
+                    // Known bug, asserted as current behaviour so the test
+                    // breaks loudly once SUP-1497 is fixed (then invert it).
+                    test("SUP-1497 (current behaviour): replayable signature from an account deployed on one chain does not verify where it is not deployed", async () => {
+                        const account = await fresh(home, kernelVersion)
+                        await deploy(account, home)
+                        const signature = await account.signMessage({
+                            message: MESSAGE,
+                            useReplayableSignature: true
+                        })
+                        const hash = hashMessage(MESSAGE)
+                        // Control: the signature itself is good on the home chain.
+                        expect(
+                            await isValid1271(
+                                home,
+                                account.address,
+                                hash,
+                                signature
+                            )
+                        ).toBeTrue()
+                        // Bug: no ERC-6492 wrapping, so the undeployed chain rejects it.
+                        expect(
+                            await isValid6492(
+                                away,
+                                account.address,
+                                hash,
+                                signature
+                            )
+                        ).toBeFalse()
+                    })
                 } else {
-                    test.failing(
-                        "SUP-1499: useReplayableSignature is ignored on kernel <0.3.2",
-                        async () => {
-                            const account = await fresh(home, kernelVersion)
-                            await deploy(account, home)
-                            const signature = await account.signMessage({
-                                message: MESSAGE,
-                                useReplayableSignature: true
-                            })
-                            expect(
-                                await isValid1271(
-                                    home,
-                                    account.address,
-                                    hashMessage(MESSAGE),
-                                    signature
-                                )
-                            ).toBeTrue()
-                        }
-                    )
+                    test("SUP-1499 (current behaviour): useReplayableSignature yields an invalid signature on kernel <0.3.2", async () => {
+                        const account = await fresh(home, kernelVersion)
+                        await deploy(account, home)
+                        const hash = hashMessage(MESSAGE)
+                        // Control: a normal signature from the same account is valid.
+                        expect(
+                            await isValid1271(
+                                home,
+                                account.address,
+                                hash,
+                                await account.signMessage({ message: MESSAGE })
+                            )
+                        ).toBeTrue()
+                        // Bug: the flag is not ignored, the chainId-0 digest is wrong.
+                        expect(
+                            await isValid1271(
+                                home,
+                                account.address,
+                                hash,
+                                await account.signMessage({
+                                    message: MESSAGE,
+                                    useReplayableSignature: true
+                                })
+                            )
+                        ).toBeFalse()
+                    })
                 }
             }
         })

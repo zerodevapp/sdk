@@ -10,6 +10,7 @@ import {
     newOwner
 } from "../../harness/accounts"
 import { getKernelClient, getPublicClient } from "../../harness/clients"
+import { rpcErrorDetails } from "../../harness/errors"
 import { forEachKernelVersion } from "../../harness/matrix"
 import { sendCalls } from "../../harness/permissions"
 
@@ -65,7 +66,9 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
                 })
             }
         })
-        await expect(sendCalls(intruder, [call])).rejects.toThrow(/AA24/)
+        expect(await rpcErrorDetails(sendCalls(intruder, [call]))).toMatch(
+            /AA24/
+        )
     })
 
     test("a malformed signature is rejected", async () => {
@@ -78,7 +81,7 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
             calls: [{ ...call, value: 0n, data: "0x" }]
         })
         const garbage = "0x1234" as Hex
-        await expect(
+        const details = await rpcErrorDetails(
             client.request({
                 method: "eth_sendUserOperation",
                 params: [
@@ -86,6 +89,8 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
                     ENTRY_POINT.address
                 ]
             } as never)
-        ).rejects.toThrow()
+        )
+        // InvalidSignature() from the validator
+        expect(details).toMatch(/AA23 reverted 0x8baa579f/)
     })
 })

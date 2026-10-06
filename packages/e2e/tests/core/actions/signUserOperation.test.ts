@@ -7,6 +7,7 @@ import {
     createEcdsaAccount
 } from "../../../harness/accounts"
 import { type KernelAccount, getKernelClient } from "../../../harness/clients"
+import { rpcErrorDetails } from "../../../harness/errors"
 import { forEachKernelVersion } from "../../../harness/matrix"
 
 const call = { to: zeroAddress, value: 0n, data: "0x" } as const
@@ -53,6 +54,10 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
             .padStart(2, "0")
         const tampered =
             `${signature.slice(0, i)}${flipped}${signature.slice(i + 2)}` as Hex
-        await expect(submit(tampered)).rejects.toThrow(/AA2[34]|signature/i)
+        // A flipped r either recovers another signer (AA24) or is not a valid
+        // curve point, which the ECDSA validator rejects (InvalidSignature).
+        expect(await rpcErrorDetails(submit(tampered))).toMatch(
+            /AA24|AA23 reverted 0x8baa579f/
+        )
     })
 })

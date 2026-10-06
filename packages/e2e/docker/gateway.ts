@@ -41,22 +41,35 @@ const ROUTE = /^\/api\/v3\/([^/]+)\/chain\/(\d+)\/?$/
 // meta-aa-provider returns real fees for UR projects without gas policies.
 const UNSPONSORED_PROJECT = "unsponsored"
 
+// Only quantity fields: "0x" is never a valid zero for r/s/address, and
+// rewriting those would mask a malformed signature
+// (meta-aa-provider shared/utils/helper.ts normalizeEip7702Auth).
+const AUTH_QUANTITY_FIELDS = ["nonce", "chainId", "yParity", "v"]
+
+function normalizeAuth(auth: unknown) {
+    if (!auth || typeof auth !== "object") return auth
+    const out: Record<string, unknown> = { ...auth }
+    for (const field of AUTH_QUANTITY_FIELDS) {
+        if (out[field] === "0x") out[field] = "0x0"
+    }
+    return out
+}
+
 // Same fix-ups meta-aa-provider applies before forwarding to UR:
-// v0.6 ops need paymasterAndData for UR's schema (normalizeUserOpForUpstreamEstimate),
-// 7702 auth uses eip7702Auth with "0x" quantities as "0x0" (normalizeUserOpEip7702).
-export function normalizeUserOp(userOp: UserOp): UserOp {
+// both 7702 auth aliases get normalizeEip7702Auth (normalizeUserOpEip7702);
+// zd_sponsorUserOperation's UR branch renames authorization → eip7702Auth,
+// overwriting any existing one (pm_* does not rename); v0.6 ops need
+// paymasterAndData for UR's schema (normalizeUserOpForUpstreamEstimate).
+export function normalizeUserOp(
+    userOp: UserOp,
+    { renameAuthorization = false }: { renameAuthorization?: boolean } = {}
+): UserOp {
     const op: UserOp = { ...userOp }
-    if (op.authorization && !op.eip7702Auth) {
+    if (op.authorization) op.authorization = normalizeAuth(op.authorization)
+    if (op.eip7702Auth) op.eip7702Auth = normalizeAuth(op.eip7702Auth)
+    if (renameAuthorization && op.authorization) {
         op.eip7702Auth = op.authorization
         op.authorization = undefined
-    }
-    if (op.eip7702Auth && typeof op.eip7702Auth === "object") {
-        op.eip7702Auth = Object.fromEntries(
-            Object.entries(op.eip7702Auth).map(([k, v]) => [
-                k,
-                v === "0x" ? "0x0" : v
-            ])
-        )
     }
     if (
         typeof op.initCode === "string" &&
@@ -87,7 +100,7 @@ function estimate(
         jsonrpc: "2.0",
         id,
         method: "eth_estimateUserOperationGas",
-        params: [normalizeUserOp(userOp), entryPointAddress]
+        params: [userOp, entryPointAddress]
     })
 }
 
@@ -119,7 +132,12 @@ async function handleRpc(
                 userOp: UserOp
                 entryPointAddress: string
             }
-            return estimate(upstream, req.id, userOp, entryPointAddress)
+            return estimate(
+                upstream,
+                req.id,
+                normalizeUserOp(userOp, { renameAuthorization: true }),
+                entryPointAddress
+            )
         }
         case "pm_getPaymasterStubData":
         case "pm_getPaymasterData": {
@@ -127,7 +145,12 @@ async function handleRpc(
                 UserOp,
                 string
             ]
-            return estimate(upstream, req.id, userOp, entryPointAddress)
+            return estimate(
+                upstream,
+                req.id,
+                normalizeUserOp(userOp),
+                entryPointAddress
+            )
         }
         default:
             return forward(upstream, req)

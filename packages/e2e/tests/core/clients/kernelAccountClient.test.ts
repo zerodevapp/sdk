@@ -3,7 +3,7 @@ import {
     createKernelAccountClient,
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
-import { http, hashMessage, zeroAddress } from "viem"
+import { http, zeroAddress } from "viem"
 import {
     KERNEL_V3_VERSIONS,
     createEcdsaAccount
@@ -11,7 +11,6 @@ import {
 import { getKernelClient, getPublicClient } from "../../../harness/clients"
 import { CHAINS, zerodevRpc } from "../../../harness/env"
 import { forEachKernelVersion } from "../../../harness/matrix"
-import { isValid6492 } from "../../../harness/verify"
 
 const call = { to: zeroAddress, value: 0n, data: "0x" } as const
 
@@ -81,30 +80,31 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
             (await client.waitForUserOperationReceipt({ hash })).success
         ).toBeTrue()
         expect(seen.length).toBe(1)
-        expect(seen[0]).toBeGreaterThanOrEqual(1_500_000n)
+        // The op that actually landed carries the overridden limit.
+        const { userOperation } = await client.getUserOperation({ hash })
+        expect(userOperation.verificationGasLimit).toBe(seen[0])
+        expect(userOperation.verificationGasLimit).toBeGreaterThanOrEqual(
+            1_500_000n
+        )
     })
 })
 
-test.failing(
-    "SUP-1498: kernelClient.signMessage forwards useReplayableSignature",
-    async () => {
-        const { account } = await createEcdsaAccount({
-            chain: "sepolia",
-            kernelVersion: "0.3.3"
-        })
-        const client = getKernelClient(account, "sepolia")
-        const message = "zerodev e2e"
-        const signature = await client.signMessage({
-            message,
-            useReplayableSignature: true
-        } as Parameters<typeof client.signMessage>[0])
-        expect(
-            await isValid6492(
-                "arbSepolia",
-                account.address,
-                hashMessage(message),
-                signature
-            )
-        ).toBeTrue()
-    }
-)
+// Known bug, asserted as current behaviour so the test breaks once SUP-1498 is
+// fixed. ECDSA signatures are deterministic, so the client's output must equal
+// the account's non-replayable signature while the flag is dropped.
+test("SUP-1498 (current behaviour): kernelClient.signMessage drops useReplayableSignature", async () => {
+    const { account } = await createEcdsaAccount({
+        chain: "sepolia",
+        kernelVersion: "0.3.3"
+    })
+    const client = getKernelClient(account, "sepolia")
+    const message = "zerodev e2e"
+    const viaClient = await client.signMessage({
+        message,
+        useReplayableSignature: true
+    } as Parameters<typeof client.signMessage>[0])
+    expect(viaClient).toBe(await account.signMessage({ message }))
+    expect(viaClient).not.toBe(
+        await account.signMessage({ message, useReplayableSignature: true })
+    )
+})
