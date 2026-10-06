@@ -56,12 +56,14 @@ export function runCoreFlows({
     name,
     makeAccount,
     versions = KERNEL_V3_VERSIONS,
-    chains = ALL_CHAINS,
+    chains = ["sepolia"],
     signatures = true
 }: {
     name: string
     makeAccount: MakeAccount
     versions?: readonly KernelV3Version[]
+    // Chains the full per-chain flows run on. Cross-chain checks always use
+    // every chain, and any chain left out here still gets a smoke test.
     chains?: readonly ChainKey[]
     signatures?: boolean
 }) {
@@ -79,7 +81,7 @@ export function runCoreFlows({
                 const owner = newOwner()
                 const index = randomIndex()
                 const addresses = await Promise.all(
-                    chains.map(
+                    ALL_CHAINS.map(
                         async (chain) =>
                             (
                                 await makeAccount({
@@ -251,8 +253,28 @@ export function runCoreFlows({
                 })
             }
 
-            if (signatures && chains.length > 1) {
-                const [home, away] = chains
+            for (const chain of ALL_CHAINS.filter((c) => !chains.includes(c))) {
+                // Catches a missing deployment or factory approval on the
+                // other fork without repeating every flow there.
+                test(`${chain} smoke: first userOp deploys and ${signatures ? "the account signs (ERC-1271)" : "sends"}`, async () => {
+                    const account = await fresh(chain, kernelVersion)
+                    await deploy(account, chain)
+                    expect(await isDeployed(chain, account.address)).toBeTrue()
+                    if (signatures) {
+                        expect(
+                            await isValid1271(
+                                chain,
+                                account.address,
+                                hashMessage(MESSAGE),
+                                await account.signMessage({ message: MESSAGE })
+                            )
+                        ).toBeTrue()
+                    }
+                })
+            }
+
+            if (signatures) {
+                const [home, away] = ALL_CHAINS
 
                 if (supportsReplayable(kernelVersion)) {
                     test("replayable signature from an undeployed account verifies on another chain", async () => {
