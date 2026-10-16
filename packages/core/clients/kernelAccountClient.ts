@@ -114,6 +114,19 @@ export type SmartAccountClientConfig<
         | undefined
 }
 
+// ponytail: the .extend() chains below run on an untyped client. Inferring
+// every intermediate client type cost ~4 min of tsc per build pass, and the
+// result is cast to KernelAccountClient anyway.
+// biome-ignore lint/suspicious/noExplicitAny: see above
+type UntypedClient = any
+
+// What each .extend() callback receives; typed so its body is still checked.
+type ExtendedClient = Client<
+    Transport,
+    Chain | undefined,
+    SmartAccount | undefined
+>
+
 export function createKernelAccountClient<
     transport extends Transport,
     chain extends Chain | undefined = undefined,
@@ -168,9 +181,9 @@ export function createKernelAccountClient(
         const customPrepareUserOp =
             parameters.userOperation.prepareUserOperation
 
-        return client
+        return (client as UntypedClient)
             .extend(bundlerActions)
-            .extend((_client) => ({
+            .extend((_client: ExtendedClient) => ({
                 prepareUserOperation: <
                     _account extends SmartAccount | undefined,
                     const _calls extends readonly unknown[],
@@ -201,7 +214,14 @@ export function createKernelAccountClient(
                         _request
                     >
                 > => {
-                    return customPrepareUserOp(_client, args) as Promise<
+                    return customPrepareUserOp(
+                        _client as Client<
+                            Transport,
+                            Chain | undefined,
+                            _account
+                        >,
+                        args
+                    ) as Promise<
                         PrepareUserOperationReturnType<
                             _account,
                             _accountOverride,
@@ -212,7 +232,7 @@ export function createKernelAccountClient(
                 }
             }))
             .extend(bundlerActions)
-            .extend((_client) => ({
+            .extend((_client: ExtendedClient) => ({
                 prepareUserOperation: <
                     _account extends SmartAccount | undefined,
                     const _calls extends readonly unknown[],
@@ -243,7 +263,14 @@ export function createKernelAccountClient(
                         _request
                     >
                 > => {
-                    return customPrepareUserOp(_client, args) as Promise<
+                    return customPrepareUserOp(
+                        _client as Client<
+                            Transport,
+                            Chain | undefined,
+                            _account
+                        >,
+                        args
+                    ) as Promise<
                         PrepareUserOperationReturnType<
                             _account,
                             _accountOverride,
@@ -265,9 +292,9 @@ export function createKernelAccountClient(
         }
     }
 
-    return client
+    return (client as UntypedClient)
         .extend(bundlerActions)
-        .extend((_client) => ({
+        .extend((_client: ExtendedClient) => ({
             prepareUserOperation: async (
                 args: PrepareUserOperationParameters
             ) => {
@@ -287,7 +314,7 @@ export function createKernelAccountClient(
             }
         }))
         .extend(bundlerActions)
-        .extend((_client) => ({
+        .extend((_client: ExtendedClient) => ({
             prepareUserOperation: async (
                 args: PrepareUserOperationParameters
             ) => {
