@@ -61,8 +61,12 @@ export async function signMessage<TAccount extends SmartAccount | undefined>(
     client: Client<Transport, Chain | undefined, TAccount>,
     {
         account: account_ = client.account,
-        message
-    }: SignMessageParameters<TAccount>
+        message,
+        useReplayableSignature
+    }: SignMessageParameters<TAccount> & {
+        /** Kernel v3.2+: sign so the signature is valid on every chain. */
+        useReplayableSignature?: boolean
+    }
 ): Promise<SignMessageReturnType> {
     if (!account_)
         throw new AccountNotFoundError({
@@ -71,5 +75,7 @@ export async function signMessage<TAccount extends SmartAccount | undefined>(
 
     const account = parseAccount(account_) as SmartAccount
 
-    return account.signMessage({ message })
+    // Kernel accounts read useReplayableSignature; other accounts ignore it.
+    const parameters = { message, useReplayableSignature }
+    return account.signMessage(parameters)
 }
