@@ -114,6 +114,12 @@ export type SmartAccountClientConfig<
         | undefined
 }
 
+// ponytail: the .extend() chains below run on an untyped client. Inferring
+// every intermediate client type cost ~4 min of tsc per build pass, and the
+// result is cast to KernelAccountClient anyway.
+// biome-ignore lint/suspicious/noExplicitAny: see above
+type UntypedClient = any
+
 export function createKernelAccountClient<
     transport extends Transport,
     chain extends Chain | undefined = undefined,
@@ -168,9 +174,9 @@ export function createKernelAccountClient(
         const customPrepareUserOp =
             parameters.userOperation.prepareUserOperation
 
-        return client
+        return (client as UntypedClient)
             .extend(bundlerActions)
-            .extend((_client) => ({
+            .extend((_client: UntypedClient) => ({
                 prepareUserOperation: <
                     _account extends SmartAccount | undefined,
                     const _calls extends readonly unknown[],
@@ -212,7 +218,7 @@ export function createKernelAccountClient(
                 }
             }))
             .extend(bundlerActions)
-            .extend((_client) => ({
+            .extend((_client: UntypedClient) => ({
                 prepareUserOperation: <
                     _account extends SmartAccount | undefined,
                     const _calls extends readonly unknown[],
@@ -265,9 +271,9 @@ export function createKernelAccountClient(
         }
     }
 
-    return client
+    return (client as UntypedClient)
         .extend(bundlerActions)
-        .extend((_client) => ({
+        .extend((_client: UntypedClient) => ({
             prepareUserOperation: async (
                 args: PrepareUserOperationParameters
             ) => {
@@ -287,7 +293,7 @@ export function createKernelAccountClient(
             }
         }))
         .extend(bundlerActions)
-        .extend((_client) => ({
+        .extend((_client: UntypedClient) => ({
             prepareUserOperation: async (
                 args: PrepareUserOperationParameters
             ) => {
