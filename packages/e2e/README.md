@@ -43,9 +43,6 @@ Known bugs are tested as their **current behaviour**: each test asserts exactly 
 | ZER-1088 | `changeSudoValidator` to the already-installed ECDSA validator with a new owner keeps the old owner (Kernel skips re-install; the SDK reports success) | `tests/core/actions/admin.test.ts` |
 | ZER-1089 | Kernel 0.3.0: switching root to a permission validator reports success, but the new key cannot sign and the old owner still can | `tests/core/actions/admin.test.ts` |
 | ZER-1090 | Kernel 0.3.0: `encodeDeployCallData` with estimated gas deploys nothing (the failed delegatecall is swallowed, so estimation under-sizes call gas); an explicit `callGasLimit` works | `tests/core/actions/send.test.ts` |
-| ZER-1092 (ZDS-11) | Replayable signature from an account deployed on one chain does not verify where it is not deployed | `tests/core/conformance.ts` |
-| ZER-1093 (ZDS-12) | `kernelClient.signMessage` drops `useReplayableSignature` | `tests/core/clients/kernelAccountClient.test.ts` |
-| ZER-1094 (ZDS-13) | `useReplayableSignature` yields an invalid signature on Kernel <0.3.2 | `tests/core/conformance.ts` |
 
 SUP-1431 (gas-policy estimation) does not reproduce locally: anvil caps `eth_call` gas at the block gas limit, so Ultra Relay's estimation probe stays far below the budget.
 

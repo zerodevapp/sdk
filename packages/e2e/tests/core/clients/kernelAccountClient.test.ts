@@ -89,22 +89,21 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
     })
 })
 
-// Known bug, asserted as current behaviour so the test breaks once ZER-1093 is
-// fixed. ECDSA signatures are deterministic, so the client's output must equal
-// the account's non-replayable signature while the flag is dropped.
-test("ZER-1093 / ZDS-12 (current behaviour): kernelClient.signMessage drops useReplayableSignature", async () => {
+test("ZER-1093 / ZDS-12: kernelClient.signMessage passes useReplayableSignature through", async () => {
     const { account } = await createEcdsaAccount({
         chain: "sepolia",
         kernelVersion: "0.3.3"
     })
     const client = getKernelClient(account, "sepolia")
     const message = "zerodev e2e"
+    // ECDSA signing is deterministic, so the client must return exactly what
+    // the account returns for the same flag.
     const viaClient = await client.signMessage({
         message,
         useReplayableSignature: true
-    } as Parameters<typeof client.signMessage>[0])
-    expect(viaClient).toBe(await account.signMessage({ message }))
-    expect(viaClient).not.toBe(
+    })
+    expect(viaClient).toBe(
         await account.signMessage({ message, useReplayableSignature: true })
     )
+    expect(viaClient).not.toBe(await account.signMessage({ message }))
 })

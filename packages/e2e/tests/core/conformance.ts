@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test"
+import { toReplayableErc6492Signature } from "@zerodev/sdk"
 import {
     type Address,
     hashMessage,
     hashTypedData,
+    isErc6492Signature,
+    parseErc6492Signature,
     parseEther,
     zeroAddress
 } from "viem"
@@ -291,63 +294,104 @@ export function runCoreFlows({
                                 signature
                             )
                         ).toBeTrue()
+                        // viem already wrapped it, so the helper must not
+                        // wrap it a second time.
+                        expect(
+                            await toReplayableErc6492Signature(
+                                account,
+                                signature
+                            )
+                        ).toBe(signature)
                     })
 
-                    // Known bug, asserted as current behaviour so the test
-                    // breaks loudly once ZER-1092 is fixed (then invert it).
-                    test("ZER-1092 / ZDS-11 (current behaviour): replayable signature from an account deployed on one chain does not verify where it is not deployed", async () => {
+                    test("ZER-1092 / ZDS-11: toReplayableErc6492Signature makes a deployed account's replayable signature verify where it is not deployed", async () => {
                         const account = await fresh(home, kernelVersion)
                         await deploy(account, home)
-                        const signature = await account.signMessage({
+                        expect(
+                            await isDeployed(home, account.address)
+                        ).toBeTrue()
+                        expect(
+                            await isDeployed(away, account.address)
+                        ).toBeFalse()
+                        const hash = hashMessage(MESSAGE)
+                        const plain = await account.signMessage({
                             message: MESSAGE,
                             useReplayableSignature: true
                         })
-                        const hash = hashMessage(MESSAGE)
-                        // Control: the signature itself is good on the home chain.
+                        // signMessage keeps viem's behaviour: no ERC-6492
+                        // wrapper once deployed, so direct ERC-1271 works.
+                        expect(isErc6492Signature(plain)).toBeFalse()
                         expect(
                             await isValid1271(
                                 home,
                                 account.address,
                                 hash,
-                                signature
+                                plain
                             )
                         ).toBeTrue()
-                        // Bug: no ERC-6492 wrapping, so the undeployed chain rejects it.
                         expect(
                             await isValid6492(
                                 away,
                                 account.address,
                                 hash,
-                                signature
+                                plain
                             )
                         ).toBeFalse()
-                    })
-                } else {
-                    test("ZER-1094 / ZDS-13 (current behaviour): useReplayableSignature yields an invalid signature on kernel <0.3.2", async () => {
-                        const account = await fresh(home, kernelVersion)
-                        await deploy(account, home)
-                        const hash = hashMessage(MESSAGE)
-                        // Control: a normal signature from the same account is valid.
+
+                        const wrapped = await toReplayableErc6492Signature(
+                            account,
+                            plain
+                        )
+                        // ABI decoding returns lowercase hex.
+                        expect(parseErc6492Signature(wrapped).signature).toBe(
+                            plain.toLowerCase() as typeof plain
+                        )
                         expect(
-                            await isValid1271(
-                                home,
+                            await isValid6492(
+                                away,
                                 account.address,
                                 hash,
-                                await account.signMessage({ message: MESSAGE })
+                                wrapped
                             )
                         ).toBeTrue()
-                        // Bug: the flag is not ignored, the chainId-0 digest is wrong.
+                        expect(
+                            await isValid6492(
+                                home,
+                                account.address,
+                                hash,
+                                wrapped
+                            )
+                        ).toBeTrue()
+                    })
+                } else {
+                    test("ZER-1094 / ZDS-13: useReplayableSignature is ignored on kernel <0.3.2", async () => {
+                        const account = await fresh(home, kernelVersion)
+                        await deploy(account, home)
+                        const normal = await account.signMessage({
+                            message: MESSAGE
+                        })
+                        const replayable = await account.signMessage({
+                            message: MESSAGE,
+                            useReplayableSignature: true
+                        })
+                        // ECDSA signing is deterministic, so an ignored flag
+                        // yields the identical signature.
+                        expect(replayable).toBe(normal)
+                        // Nothing to make replayable, so nothing is wrapped.
+                        expect(
+                            await toReplayableErc6492Signature(
+                                account,
+                                replayable
+                            )
+                        ).toBe(replayable)
                         expect(
                             await isValid1271(
                                 home,
                                 account.address,
-                                hash,
-                                await account.signMessage({
-                                    message: MESSAGE,
-                                    useReplayableSignature: true
-                                })
+                                hashMessage(MESSAGE),
+                                replayable
                             )
-                        ).toBeFalse()
+                        ).toBeTrue()
                     })
                 }
             }
