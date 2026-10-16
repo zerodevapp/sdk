@@ -24,12 +24,12 @@
     "keywords": [],
     "license": "MIT",
     "scripts": {
-        "build": "bash build-all.sh",
+        "build": "bun build-all.ts",
         "format": "biome format . --write",
         "lint": "biome check .",
         "lint:fix": "bun run lint --write",
         "changeset": "changeset",
-        "changeset:release": "bash remove-type.sh && bun run build && changeset publish && bash restore-type.sh && bun run format",
+        "changeset:release": "bash release.sh",
         "changeset:version": "changeset version && bun install --lockfile-only"
     },
     "simple-git-hooks": {
