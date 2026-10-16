@@ -84,6 +84,7 @@ export * from "./utils.js"
 export { gasTokenAddresses, type TokenSymbolsMap } from "./gasTokenAddresses.js"
 export {
     verifyEIP6492Signature,
+    toReplayableErc6492Signature,
     getCustomNonceKeyFromString
 } from "./accounts/utils/index.js"
 export { KernelEIP1193Provider } from "./providers/index.js"

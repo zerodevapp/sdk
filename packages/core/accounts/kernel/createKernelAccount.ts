@@ -734,6 +734,11 @@ export async function createKernelAccount<
                 chainId: metadataChainId,
                 version
             } = await getMemoizedAccountMetadata()
+            // Kernel <0.3.2 cannot verify chain-agnostic signatures, so the
+            // flag is ignored there.
+            const replayable =
+                useReplayableSignature === true &&
+                hasKernelFeature(KERNEL_FEATURES.ERC1271_REPLAYABLE, version)
 
             let signature: Hex
             if (isEip7702) {
@@ -746,9 +751,7 @@ export async function createKernelAccount<
                     domain: {
                         name,
                         version,
-                        chainId: useReplayableSignature
-                            ? 0
-                            : Number(metadataChainId),
+                        chainId: replayable ? 0 : Number(metadataChainId),
                         verifyingContract: accountAddress
                     }
                 })
@@ -761,7 +764,7 @@ export async function createKernelAccount<
                         version,
                         verifyingContract: accountAddress
                     },
-                    useReplayableSignature
+                    replayable
                 )
                 signature = await kernelPluginManager.signMessage({
                     message: { raw: wrappedMessageHash }
@@ -776,9 +779,7 @@ export async function createKernelAccount<
                     domain: {
                         name,
                         version,
-                        chainId: useReplayableSignature
-                            ? 0
-                            : Number(metadataChainId),
+                        chainId: replayable ? 0 : Number(metadataChainId),
                         verifyingContract: accountAddress
                     }
                 })
@@ -793,10 +794,7 @@ export async function createKernelAccount<
                 return signature
             }
 
-            if (
-                useReplayableSignature &&
-                hasKernelFeature(KERNEL_FEATURES.ERC1271_REPLAYABLE, version)
-            ) {
+            if (replayable) {
                 signature = concatHex([MAGIC_VALUE_SIG_REPLAYABLE, signature])
             }
 

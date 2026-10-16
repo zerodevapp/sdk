@@ -1,5 +1,16 @@
 # @zerodev/sdk
 
+## 5.5.11
+
+### Patch Changes
+
+- fix: replayable signatures (`useReplayableSignature`)
+
+  - Add `toReplayableErc6492Signature(account, signature)`. `signMessage` keeps viem's behaviour and only wraps a signature with ERC-6492 while the account is undeployed on the signing chain, so a replayable signature from a deployed account fails on chains where the account is not deployed yet. Pass it through this helper to wrap it with ERC-6492 for those chains. It returns the signature unchanged when it is already wrapped, for EIP-7702 accounts and for Kernel <0.3.2. The other chain deploys the account from its factory data, so that must match the signing account (same Kernel version and root validator).
+  - `kernelClient.signMessage` now passes `useReplayableSignature` to the account instead of dropping it.
+  - Kernel versions below 0.3.2 ignore `useReplayableSignature` instead of returning a signature that never verifies.
+  - `toKernelPluginManager` passes the hook into the regular validator's enable data.
+
 ## 5.5.10
 
 ### Patch Changes

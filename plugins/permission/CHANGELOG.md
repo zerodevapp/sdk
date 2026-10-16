@@ -1,5 +1,11 @@
 # @zerodev/permissions
 
+## 5.6.4
+
+### Patch Changes
+
+- feat: `toInitConfig` accepts an optional `hook` and `hookData` (default `zeroAddress` and `0x`)
+
 ## 5.6.3
 
 ### Patch Changes
