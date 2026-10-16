@@ -15,7 +15,9 @@ import {
 import type { PermissionPlugin } from "./types.js"
 
 export async function toInitConfig(
-    permissionPlugin: PermissionPlugin
+    permissionPlugin: PermissionPlugin,
+    hook: Hex = zeroAddress,
+    hookData: Hex = "0x"
 ): Promise<Hex[]> {
     const permissionInstallFunctionData = encodeFunctionData({
         abi: KernelV3_3AccountAbi,
@@ -30,9 +32,9 @@ export async function toInitConfig(
                     { size: 21, dir: "right" }
                 )
             ],
-            [{ nonce: 1, hook: zeroAddress }],
+            [{ nonce: 1, hook }],
             [await permissionPlugin.getEnableData()],
-            ["0x"]
+            [hookData]
         ]
     })
     const grantAccessFunctionData = encodeFunctionData({

@@ -284,6 +284,7 @@ export async function toKernelPluginManager<
             chainId,
             kernelVersion: version,
             action,
+            hook,
             validator: regular_,
             validatorNonce
         })
