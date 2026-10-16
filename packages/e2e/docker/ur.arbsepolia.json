@@ -1,0 +1,17 @@
+{
+    "network-name": "arbsepolia-local",
+    "rpc-url": "http://anvil-arbsepolia:8545",
+    "port": 4337,
+    "entrypoints": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "utility-private-key": "0x8f83efc7050266a23c0bdc01fae05d54ae00a5b678b9163f280caa86326affc2",
+    "executor-private-keys": "0xcf81c9a3e88a50030b50f0b3a8e48f6cd54fea1587f90c41302a4a23e4fa202f,0xf893fdb9bf244df10344b733c0fca4d635d0a28fe697846cc7997c2cb1e076d2,0xf44143041d5289a741be48642fc5918d91152a0c11932f73c659729cc677dc7d",
+    "chain-type": "default",
+    "deploy-simulations-contract": true,
+    "safe-mode": false,
+    "api-version": "v1,v2",
+    "max-bundle-interval": 200,
+    "polling-interval": 100,
+    "balance-override-enabled": "true",
+    "code-override-support": true,
+    "log-level": "info"
+}

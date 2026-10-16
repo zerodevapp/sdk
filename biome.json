@@ -5,6 +5,7 @@
             "node_modules",
             "**/node_modules",
             "cache",
+            "**/.cache",
             "coverage",
             "tsconfig.json",
             "tsconfig.*.json",
