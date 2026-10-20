@@ -21,6 +21,11 @@ import {
     invalidateNonce
 } from "../../actions/account-client/invalidateNonce.js"
 import { sendTransaction } from "../../actions/account-client/sendTransaction.js"
+import {
+    type SendUserOperationSyncParameters,
+    type SendUserOperationSyncReturnType,
+    sendUserOperationSync
+} from "../../actions/account-client/sendUserOperationSync.js"
 import { signMessage } from "../../actions/account-client/signMessage.js"
 import { signTypedData } from "../../actions/account-client/signTypedData.js"
 import {
@@ -110,6 +115,23 @@ export type KernelAccountClientActions<
     getUserOperationGasPrice: () => Promise<
         Prettify<GetUserOperationGasPriceReturnType>
     >
+    /**
+     * Prepares, signs, and sends a user operation with `zd_sendUserOperationSync`, returning its receipt once included.
+     * On a bundler timeout it polls for the receipt unless `fallbackToPolling` is false.
+     *
+     * @param args - {@link SendUserOperationSyncParameters}
+     * @returns The user operation receipt. {@link SendUserOperationSyncReturnType}
+     */
+    sendUserOperationSync: <
+        accountOverride extends SmartAccount | undefined = undefined,
+        calls extends readonly unknown[] = readonly unknown[]
+    >(
+        args: SendUserOperationSyncParameters<
+            TSmartAccount,
+            accountOverride,
+            calls
+        >
+    ) => Promise<SendUserOperationSyncReturnType>
     /**
      * Creates, signs, and sends an uninstall kernel plugin transaction to the network.
      * This function also allows you to sponsor this transaction if sender is a smartAccount
@@ -477,6 +499,8 @@ export function kernelAccountClientActions() {
     ): KernelAccountClientActions<TChain, TSmartAccount> => ({
         signUserOperation: (args) => signUserOperation(client, args),
         getUserOperationGasPrice: async () => getUserOperationGasPrice(client),
+        sendUserOperationSync: async (args) =>
+            sendUserOperationSync(client, args),
         uninstallPlugin: async (args) => uninstallPlugin(client, args),
         changeSudoValidator: async (args) => changeSudoValidator(client, args),
         invalidateNonce: async (args) => invalidateNonce(client, args),
