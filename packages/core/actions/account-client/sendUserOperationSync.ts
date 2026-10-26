@@ -1,4 +1,10 @@
-import type { BaseError, Chain, Client, Hash, Transport } from "viem"
+import {
+    BaseError,
+    type Chain,
+    type Client,
+    type Hash,
+    type Transport
+} from "viem"
 import {
     type PrepareUserOperationParameters,
     type SendUserOperationParameters,
@@ -31,21 +37,26 @@ export type SendUserOperationSyncParameters<
 
 export type SendUserOperationSyncReturnType = UserOperationReceipt
 
+type SyncTimeoutError = { code: 4; data: { userOpHash: Hash } }
+
+const isSyncTimeout = (error: unknown): error is SyncTimeoutError => {
+    const { code, data } = (error ?? {}) as { code?: unknown; data?: unknown }
+    return (
+        code === SEND_USER_OPERATION_SYNC_TIMEOUT_CODE &&
+        typeof (data as { userOpHash?: unknown } | undefined)?.userOpHash ===
+            "string"
+    )
+}
+
+// viem wraps a bundler's JSON-RPC error; an EIP-1193 provider may throw it bare.
 function getSyncTimeoutUserOpHash(error: unknown): Hash | undefined {
-    let current: unknown = error
-    while (current && typeof current === "object") {
-        const { code, data } = current as { code?: unknown; data?: unknown }
-        if (
-            code === SEND_USER_OPERATION_SYNC_TIMEOUT_CODE &&
-            data &&
-            typeof data === "object" &&
-            typeof (data as { userOpHash?: unknown }).userOpHash === "string"
-        ) {
-            return (data as { userOpHash: Hash }).userOpHash
-        }
-        current = (current as { cause?: unknown }).cause
-    }
-    return undefined
+    const timeout =
+        error instanceof BaseError
+            ? (error.walk(isSyncTimeout) as SyncTimeoutError | null)
+            : isSyncTimeout(error)
+              ? error
+              : null
+    return timeout?.data.userOpHash
 }
 
 /**
@@ -124,7 +135,6 @@ export async function sendUserOperationSync<
                 "waitForUserOperationReceipt"
             )({ hash: userOpHash })
         }
-        if (userOpHash) throw error
 
         const calls = (args as { calls?: readonly unknown[] }).calls
         throw getUserOperationError(error as BaseError, {
