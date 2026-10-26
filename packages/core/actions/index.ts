@@ -29,6 +29,13 @@ export {
 
 export { sendTransaction } from "./account-client/sendTransaction.js"
 
+export {
+    sendUserOperationSync,
+    SEND_USER_OPERATION_SYNC_TIMEOUT_CODE,
+    type SendUserOperationSyncParameters,
+    type SendUserOperationSyncReturnType
+} from "./account-client/sendUserOperationSync.js"
+
 export { signMessage } from "./account-client/signMessage.js"
 
 export { signTypedData } from "./account-client/signTypedData.js"
