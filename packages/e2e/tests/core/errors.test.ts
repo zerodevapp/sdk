@@ -41,7 +41,9 @@ describe("configuration errors", () => {
                     entryPoint: ENTRY_POINT,
                     kernelVersion
                 })
-            ).rejects.toThrow()
+            ).rejects.toThrow(
+                /EIP-7702 is recommended for kernel version >=0.3.3/
+            )
         })
     }
 })

@@ -167,16 +167,22 @@ describe("gateway", () => {
         expect(json.result).toEqual({ node: "eth_call" })
     })
 
-    test("other ERC-4337 methods are forwarded unchanged to the bundler", async () => {
-        const body = {
-            jsonrpc: "2.0",
-            id: 10,
-            method: "eth_supportedEntryPoints",
-            params: []
-        }
+    // Each must reach the bundler, not the node; dropping one from the
+    // gateway's ERC-4337 method set fails here.
+    test.each([
+        ["eth_sendUserOperation", [userOp07, EP]],
+        ["eth_estimateUserOperationGas", [userOp07, EP]],
+        ["eth_getUserOperationReceipt", ["0x01"]],
+        ["eth_getUserOperationByHash", ["0x01"]],
+        ["eth_supportedEntryPoints", []],
+        ["pimlico_getUserOperationGasPrice", []]
+    ])("%s is forwarded unchanged to the bundler", async (method, params) => {
+        const nodeBefore = nodeRecorded.length
+        const body = { jsonrpc: "2.0", id: 10, method, params }
         const { json } = await call(body)
         expect(recorded.at(-1)).toEqual(body as unknown as Recorded)
-        expect(json.result).toEqual({ echoed: "eth_supportedEntryPoints" })
+        expect(nodeRecorded.length).toBe(nodeBefore)
+        expect(json.result).toEqual({ echoed: method })
     })
 
     test("batched bodies answer every entry and keep ids", async () => {

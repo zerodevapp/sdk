@@ -16,7 +16,7 @@ import {
     KERNEL_V3_VERSIONS,
     newOwner
 } from "../../../harness/accounts"
-import { getPublicClient } from "../../../harness/clients"
+import { getKernelClient, getPublicClient } from "../../../harness/clients"
 import { forEachKernelVersion } from "../../../harness/matrix"
 import {
     createSessionKeyAccount,
@@ -31,8 +31,19 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
             kernelVersion,
             policies: [toSudoPolicy({})]
         })
-        expect((await sendCalls(account, [call])).success).toBeTrue()
-        expect((await sendCalls(account, [call])).success).toBeTrue()
+        // Kernel keeps the validation mode in the nonce's top byte:
+        // 0x01 enables the permission on first use, 0x00 uses it as installed.
+        const client = getKernelClient(account, "sepolia")
+        const mode = async () => {
+            const { userOpHash, success } = await sendCalls(account, [call])
+            expect(success).toBeTrue()
+            const { userOperation } = await client.getUserOperation({
+                hash: userOpHash
+            })
+            return userOperation.nonce >> 248n
+        }
+        expect(await mode()).toBe(1n)
+        expect(await mode()).toBe(0n)
     })
 
     test("serialize with private key, deserialize, send", async () => {

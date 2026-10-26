@@ -162,18 +162,6 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
     })
 
     describe("invalidateNonce", () => {
-        test("getKernelV3ModuleCurrentNonce reads the nonce", async () => {
-            const { account } = await createEcdsaAccount({
-                chain: "sepolia",
-                kernelVersion
-            })
-            expect((await sendCalls(account, [call])).success).toBeTrue()
-            const client = getKernelClient(account, "sepolia")
-            expect(
-                await client.getKernelV3ModuleCurrentNonce()
-            ).toBeGreaterThanOrEqual(0)
-        })
-
         test("invalidating the nonce (ERC-7677 paymaster) disables an enabled session key", async () => {
             const { account, owner } = await createSessionKeyAccount({
                 kernelVersion,

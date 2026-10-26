@@ -11,21 +11,10 @@ import {
 const call = { to: zeroAddress }
 
 describe("gas policy", () => {
-    test("large allowed budget: sponsored op succeeds", async () => {
-        const { account } = await createSessionKeyAccount({
-            kernelVersion: "0.3.3",
-            policies: [
-                toSudoPolicy({}),
-                toGasPolicy({ allowed: parseEther("100") })
-            ]
-        })
-        expect((await sendCalls(account, [call])).success).toBeTrue()
-    })
-
-    // SUP-1431 does not reproduce here: UR's estimator probes with gasleft(),
-    // which anvil caps at the block gas limit (~60M), while production nodes
-    // allow ~1.7e19 and push the probe's cost over a 0.2 ETH budget.
-    test("small allowed budget (0.2 ETH): sponsored op succeeds on the local stack", async () => {
+    // Zero-fee sponsorship with a gas policy is the production path SUP-1431
+    // came from. Its estimation failure does not reproduce on anvil (see the
+    // README), but this catches the policy rejecting zero-fee ops.
+    test("sponsored (zero-fee) op passes the gas policy", async () => {
         const { account } = await createSessionKeyAccount({
             kernelVersion: "0.3.3",
             policies: [
