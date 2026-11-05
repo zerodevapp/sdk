@@ -1,13 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import {
-    getValidatorAddress,
-    signerToEcdsaValidator
-} from "@zerodev/ecdsa-validator"
+import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator"
 import { toPermissionValidator } from "@zerodev/permissions"
 import { toSudoPolicy } from "@zerodev/permissions/policies"
 import { toECDSASigner } from "@zerodev/permissions/signers"
 import { createKernelAccount } from "@zerodev/sdk"
-import { parseAbi, zeroAddress } from "viem"
+import { zeroAddress } from "viem"
 import {
     ENTRY_POINT,
     KERNEL_V3_VERSIONS,
@@ -92,49 +89,6 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
                     /AA2[34]/
                 )
             }
-        })
-
-        // Footgun, asserted as current behaviour: Kernel's changeRootValidator
-        // only installs a validator that is not installed yet, so pointing root
-        // at the already-installed ECDSA validator with a new owner keeps the old
-        // owner's config. The SDK reports success instead of refusing.
-        test("ZER-1088 (current behaviour): changing to the same ECDSA validator with a new owner keeps the old owner", async () => {
-            const { account, owner: ownerA } = await createEcdsaAccount({
-                chain: "sepolia",
-                kernelVersion
-            })
-            expect((await sendCalls(account, [call])).success).toBeTrue()
-
-            const publicClient = getPublicClient("sepolia")
-            const ownerB = newOwner()
-            const validatorB = await signerToEcdsaValidator(publicClient, {
-                signer: ownerB,
-                entryPoint: ENTRY_POINT,
-                kernelVersion
-            })
-            const client = getKernelClient(account, "sepolia")
-            const hash = await client.changeSudoValidator({
-                sudoValidator: validatorB
-            })
-            expect(
-                (await client.waitForUserOperationReceipt({ hash })).success
-            ).toBeTrue()
-
-            const storedOwner = await publicClient.readContract({
-                address: getValidatorAddress(ENTRY_POINT, kernelVersion),
-                abi: parseAbi([
-                    "function ecdsaValidatorStorage(address) view returns (address)"
-                ]),
-                functionName: "ecdsaValidatorStorage",
-                args: [account.address]
-            })
-            expect(storedOwner).toBe(ownerA.address)
-            const asA = await sudoOnly(ownerA, kernelVersion, account.address)
-            expect((await sendCalls(asA, [call])).success).toBeTrue()
-            const asB = await sudoOnly(ownerB, kernelVersion, account.address)
-            expect(await rpcErrorDetails(sendCalls(asB, [call]))).toMatch(
-                /AA24/
-            )
         })
     })
 

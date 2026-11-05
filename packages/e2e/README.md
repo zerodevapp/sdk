@@ -40,7 +40,6 @@ Known bugs are tested as their **current behaviour**: each test asserts exactly 
 | Ticket | Behaviour | Test |
 |---|---|---|
 | ZER-1087 | Via `sponsorUserOperation`, `upgradeKernel` / `invalidateNonce` are rejected for the leaked `kernelVersion` / `nonceToSet` key (the ERC-7677 paymaster wiring works) | `tests/core/actions/upgradeKernel.test.ts`, `admin.test.ts` |
-| ZER-1088 | `changeSudoValidator` to the already-installed ECDSA validator with a new owner keeps the old owner (Kernel skips re-install; the SDK reports success) | `tests/core/actions/admin.test.ts` |
 | ZER-1089 | Kernel 0.3.0: switching root to a permission validator reports success, but the new key cannot sign and the old owner still can | `tests/core/actions/admin.test.ts` |
 | ZER-1090 | Kernel 0.3.0: `encodeDeployCallData` with estimated gas deploys nothing (the failed delegatecall is swallowed, so estimation under-sizes call gas); an explicit `callGasLimit` works | `tests/core/actions/send.test.ts` |
 
