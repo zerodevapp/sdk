@@ -65,6 +65,7 @@ export type PermissionPluginParams<
 
 export interface PermissionData {
     policies?: Policy[]
+    flag?: PolicyFlags
     permissionId?: Hex
 }
 
