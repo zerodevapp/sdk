@@ -31,3 +31,80 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           package_manager: bun
+  # Needs no secrets, so it also runs for PRs from forks.
+  e2e-gateway:
+    name: E2E gateway unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+
+      - name: Gateway unit tests
+        working-directory: packages/e2e
+        run: bun run test:gateway
+
+  e2e-local:
+    name: E2E (local)
+    # PRs from forks get no secrets, so the job shows as skipped there.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+      ARB_SEPOLIA_RPC_URL: ${{ secrets.ARB_SEPOLIA_RPC_URL }}
+
+    steps:
+      - name: Mask fork RPC URL parts
+        run: |
+          # Mask every part of the URLs, not only the whole string, so a key
+          # echoed in a path or query by any later step is hidden too.
+          for url in "$SEPOLIA_RPC_URL" "$ARB_SEPOLIA_RPC_URL"; do
+            for part in $(printf '%s' "$url" | tr '/?&=@:#' '\n\n\n\n\n\n\n'); do
+              if [ ${#part} -ge 8 ]; then echo "::add-mask::$part"; fi
+            done
+          done
+
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+
+      - name: Build
+        run: bun run build
+
+      - name: Restore anvil fork cache
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/.cache/anvil
+          key: anvil-${{ hashFiles('packages/e2e/docker/stack.env') }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start local stack
+        working-directory: packages/e2e
+        run: bun run local:up
+
+      - name: Run e2e suite
+        working-directory: packages/e2e
+        run: bun run test
+
+      # Printed, not uploaded: console output is masked, artifacts are not.
+      # Anvil logs stay out because they print the full fork URL.
+      - name: Print stack logs
+        if: failure()
+        working-directory: packages/e2e
+        run: bun docker/stack.ts logs --no-color ur-sepolia ur-arbsepolia gateway
+
+      # anvil writes its fork cache only on shutdown; stop the stack before
+      # actions/cache saves .cache/anvil in its post step.
+      - name: Stop local stack
+        if: always()
+        working-directory: packages/e2e
+        run: bun run local:down
