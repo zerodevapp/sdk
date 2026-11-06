@@ -125,8 +125,13 @@ export type KernelAccountClientActions<
         args: UninstallPluginParameters<TSmartAccount, accountOverride, calls>
     ) => Promise<Hash>
     /**
-     * Creates, signs, and sends a user operation to change sudo validator to the network.
-     * This function also allows you to sponsor this transaction if sender is a smartAccount
+     * Changes the account's root (sudo) validator to a validator that is not
+     * installed yet. Throws if the validator is already installed: Kernel v3 keeps
+     * an installed validator's current owner and settings and would silently
+     * ignore the new ones. The account must be deployed first.
+     *
+     * @deprecated Changing the owner of an installed validator is not supported on
+     * Kernel v3. This action will be removed in a future major release.
      */
     changeSudoValidator: <
         accountOverride extends SmartAccount | undefined = undefined,
