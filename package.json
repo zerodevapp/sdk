@@ -25,6 +25,7 @@
     "license": "MIT",
     "scripts": {
         "build": "bun build-all.ts",
+        "check:consumer-types": "bun scripts/check-consumer-types.ts",
         "format": "biome format . --write",
         "lint": "biome check .",
         "lint:fix": "bun run lint --write",
