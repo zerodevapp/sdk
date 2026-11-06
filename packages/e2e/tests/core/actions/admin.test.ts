@@ -90,6 +90,62 @@ forEachKernelVersion(KERNEL_V3_VERSIONS, (kernelVersion) => {
                 )
             }
         })
+
+        // Kernel keeps an installed validator's data, so the SDK refuses.
+        test("refuses the validator already installed as root (new owner)", async () => {
+            const { account, owner: ownerA } = await createEcdsaAccount({
+                chain: "sepolia",
+                kernelVersion
+            })
+            expect((await sendCalls(account, [call])).success).toBeTrue()
+            const withNewOwner = await signerToEcdsaValidator(
+                getPublicClient("sepolia"),
+                { signer: newOwner(), entryPoint: ENTRY_POINT, kernelVersion }
+            )
+            await expect(
+                getKernelClient(account, "sepolia").changeSudoValidator({
+                    sudoValidator: withNewOwner
+                })
+            ).rejects.toThrow(/already installed/)
+            const asA = await sudoOnly(ownerA, kernelVersion, account.address)
+            expect((await sendCalls(asA, [call])).success).toBeTrue()
+        })
+
+        test("refuses before the account is deployed", async () => {
+            const { account } = await createEcdsaAccount({
+                chain: "sepolia",
+                kernelVersion
+            })
+            const withNewOwner = await signerToEcdsaValidator(
+                getPublicClient("sepolia"),
+                { signer: newOwner(), entryPoint: ENTRY_POINT, kernelVersion }
+            )
+            await expect(
+                getKernelClient(account, "sepolia").changeSudoValidator({
+                    sudoValidator: withNewOwner
+                })
+            ).rejects.toThrow(/not deployed yet/)
+        })
+
+        test("refuses promoting an installed secondary validator", async () => {
+            const { account, owner, permissionPlugin } =
+                await createSessionKeyAccount({
+                    kernelVersion,
+                    policies: [toSudoPolicy({})]
+                })
+            // The session key's first op installs it as a secondary validator.
+            expect((await sendCalls(account, [call])).success).toBeTrue()
+            const asOwner = await sudoOnly(
+                owner,
+                kernelVersion,
+                account.address
+            )
+            await expect(
+                getKernelClient(asOwner, "sepolia").changeSudoValidator({
+                    sudoValidator: permissionPlugin
+                })
+            ).rejects.toThrow(/already installed/)
+        })
     })
 
     describe("uninstallPlugin", () => {
