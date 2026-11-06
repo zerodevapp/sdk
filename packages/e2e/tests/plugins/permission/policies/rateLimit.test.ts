@@ -49,14 +49,14 @@ describe("rate limit (no reset)", () => {
                 toSudoPolicy({}),
                 toRateLimitPolicy({
                     count: 2,
-                    interval: 5,
+                    interval: 10,
                     startAt: await chainTime("arbSepolia")
                 })
             ]
         })
         expect((await op(account, "arbSepolia")).success).toBeTrue()
         await expect(op(account, "arbSepolia")).rejects.toThrow(/AA22/)
-        await sleep(6)
+        await sleep(11)
         await mine("arbSepolia")
         expect((await op(account, "arbSepolia")).success).toBeTrue()
         await expect(op(account, "arbSepolia")).rejects.toThrow(POLICY_FAILED)
