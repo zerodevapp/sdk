@@ -12,6 +12,7 @@ import {
     type SmartAccount,
     sendUserOperation
 } from "viem/account-abstraction"
+import { readContract } from "viem/actions"
 import {
     concatHex,
     encodeFunctionData,
@@ -44,6 +45,15 @@ export type ChangeSudoValidatorParameters<
     }
 >
 
+/**
+ * Changes the account's root (sudo) validator to a validator that is not
+ * installed yet. Throws if the validator is already installed: Kernel v3 keeps
+ * an installed validator's current owner and settings and would silently
+ * ignore the new ones.
+ *
+ * @deprecated Changing the owner of an installed validator is not supported on
+ * Kernel v3. This action will be removed in a future major release.
+ */
 export async function changeSudoValidator<
     account extends SmartAccount | undefined,
     chain extends Chain | undefined,
@@ -85,6 +95,12 @@ export async function changeSudoValidator<
     } else {
         throw new Error(
             `Cannot change sudo validator to type ${sudoValidator.validatorType}`
+        )
+    }
+
+    if (await isValidationInstalled(account, rootValidatorId)) {
+        throw new Error(
+            "changeSudoValidator: this validator is already installed on the account. Kernel v3 keeps an installed validator's current owner and settings, so the new ones would be silently ignored. Changing the owner of an installed validator is not supported; use a validator that is not installed yet."
         )
     }
 
@@ -148,4 +164,29 @@ export async function changeSudoValidator<
             }
         ])
     } as SendUserOperationParameters)
+}
+
+// Kernel v3's changeRootValidator only installs a validator that is not
+// installed yet; for an installed one it keeps the old data and drops the new.
+async function isValidationInstalled(
+    account: SmartAccount<KernelSmartAccountImplementation>,
+    validationId: Hex
+): Promise<boolean> {
+    if (!(await account.isDeployed())) {
+        // The first user op deploys the account with its root validator.
+        const { identifier } =
+            await account.kernelPluginManager.getValidatorInitData()
+        return identifier.toLowerCase() === validationId.toLowerCase()
+    }
+    const { hook } = await getAction(
+        account.client,
+        readContract,
+        "readContract"
+    )({
+        address: account.address,
+        abi: KernelV3_1AccountAbi,
+        functionName: "validationConfig",
+        args: [validationId]
+    })
+    return hook !== zeroAddress
 }
