@@ -1,5 +1,11 @@
 # @zerodev/sdk
 
+## 5.5.12
+
+### Patch Changes
+
+- fix: changeSudoValidator now throws when the target validator is already installed on the account (including the current root). Kernel v3 keeps an installed validator's owner and settings, so the new ones were silently ignored. The account must be deployed before calling it. Switching root to a validator that is not installed yet works as before. changeSudoValidator is now deprecated.
+
 ## 5.5.11
 
 ### Patch Changes
