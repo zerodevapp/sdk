@@ -49,7 +49,7 @@ export type ChangeSudoValidatorParameters<
  * Changes the account's root (sudo) validator to a validator that is not
  * installed yet. Throws if the validator is already installed: Kernel v3 keeps
  * an installed validator's current owner and settings and would silently
- * ignore the new ones.
+ * ignore the new ones. The account must be deployed first.
  *
  * @deprecated Changing the owner of an installed validator is not supported on
  * Kernel v3. This action will be removed in a future major release.
@@ -98,6 +98,13 @@ export async function changeSudoValidator<
         )
     }
 
+    // Deployment can install more validators than the root (initConfig), so
+    // only a deployed account's state tells which ones are installed.
+    if (!(await account.isDeployed())) {
+        throw new Error(
+            "changeSudoValidator: the account is not deployed yet. Deploy it first (send any user operation), then change its root validator."
+        )
+    }
     if (await isValidationInstalled(account, rootValidatorId)) {
         throw new Error(
             "changeSudoValidator: this validator is already installed on the account. Kernel v3 keeps an installed validator's current owner and settings, so the new ones would be silently ignored. Changing the owner of an installed validator is not supported; use a validator that is not installed yet."
@@ -172,12 +179,6 @@ async function isValidationInstalled(
     account: SmartAccount<KernelSmartAccountImplementation>,
     validationId: Hex
 ): Promise<boolean> {
-    if (!(await account.isDeployed())) {
-        // The first user op deploys the account with its root validator.
-        const { identifier } =
-            await account.kernelPluginManager.getValidatorInitData()
-        return identifier.toLowerCase() === validationId.toLowerCase()
-    }
     const { hook } = await getAction(
         account.client,
         readContract,

@@ -128,7 +128,7 @@ export type KernelAccountClientActions<
      * Changes the account's root (sudo) validator to a validator that is not
      * installed yet. Throws if the validator is already installed: Kernel v3 keeps
      * an installed validator's current owner and settings and would silently
-     * ignore the new ones.
+     * ignore the new ones. The account must be deployed first.
      *
      * @deprecated Changing the owner of an installed validator is not supported on
      * Kernel v3. This action will be removed in a future major release.
