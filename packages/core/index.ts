@@ -91,6 +91,12 @@ export { KernelEIP1193Provider } from "./providers/index.js"
 export { getEncodedPluginsData } from "./accounts/kernel/utils/plugins/ep0_7/getEncodedPluginsData.js"
 export { isProviderSet, setPimlicoAsProvider } from "./clients/utils.js"
 export { getUserOperationGasPrice } from "./actions/account-client/getUserOperationGasPrice.js"
+export {
+    sendUserOperationSync,
+    SEND_USER_OPERATION_SYNC_TIMEOUT_CODE,
+    type SendUserOperationSyncParameters,
+    type SendUserOperationSyncReturnType
+} from "./actions/account-client/sendUserOperationSync.js"
 export { isPluginInitialized } from "./accounts/kernel/utils/plugins/ep0_7/isPluginInitialized.js"
 export * from "./errors/index.js"
 export * from "./utils/index.js"

@@ -1,6 +1,8 @@
 import type { Address, CustomSource, Hex, LocalAccount, PartialBy } from "viem"
 import type {
     EntryPointVersion,
+    RpcUserOperation,
+    RpcUserOperationReceipt,
     UserOperation,
     entryPoint06Abi,
     entryPoint07Abi
@@ -111,6 +113,17 @@ export type ZeroDevAccountClientRpcSchema = [
         Method: "zd_getUserOperationGasPrice"
         Parameters: []
         ReturnType: ZeroDevUserOperationGasPriceWithBigIntAsHex
+    },
+    {
+        Method: "zd_sendUserOperationSync"
+        Parameters:
+            | [userOperation: RpcUserOperation, entryPoint: Address]
+            | [
+                  userOperation: RpcUserOperation,
+                  entryPoint: Address,
+                  options: { timeoutMs?: number }
+              ]
+        ReturnType: RpcUserOperationReceipt
     }
 ]
 
