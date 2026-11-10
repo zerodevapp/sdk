@@ -25,7 +25,7 @@
         "allowSyntheticDefaultImports": false,
         "forceConsistentCasingInFileNames": true,
         "verbatimModuleSyntax": true,
-        "importHelpers": true, // This is only used for build validation. Since we do not have `tslib` installed, this will fail if we accidentally make use of anything that'd require injection of helpers.
+        "importHelpers": false, // Inline any helpers rather than import them from `tslib`, which the packages don't depend on. The CommonJS build needs one for every `export * from`.
         // Language and environment
         "moduleResolution": "NodeNext",
         "module": "NodeNext",
