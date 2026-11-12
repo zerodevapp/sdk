@@ -19,8 +19,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write # push the version PR branch
-  pull-requests: write # open or update the version PR
+  contents: write
+  pull-requests: write
   id-token: write # OIDC for npm Trusted Publishing and provenance
 
 jobs:
@@ -29,10 +29,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # A short-lived token from the org's release GitHub App: the version PR is
+      # then opened by the App, so CI runs on it (a GITHUB_TOKEN PR would not
+      # trigger workflows). No personal token.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
@@ -53,4 +64,4 @@ jobs:
           title: "chore: version packages"
           createGithubReleases: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
