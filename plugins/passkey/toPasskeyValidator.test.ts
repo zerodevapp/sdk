@@ -36,37 +36,43 @@ const clientOn = (chainId: number) =>
 
 describe("passkey validator stub signature", () => {
     // 1 has the P-256 precompile, 100 does not. A custom signMessageCallback
-    // sets its own flag, so the stub stays on the Solidity verifier.
+    // sets its own flag: the stub follows it only if the callback exposes it.
+    const callback = async () => "0x" as const
+    const exposingCallback = Object.assign(async () => "0x" as const, {
+        usePrecompiled: isRIP7212SupportedNetwork
+    })
     test.each([
-        [1, false, true],
-        [100, false, false],
-        [1, true, false]
-    ])(
-        "chain %d, custom callback %p: usePrecompiled is %p",
-        async (chainId, withCallback, expected) => {
-            expect(isRIP7212SupportedNetwork(chainId)).toBe(chainId === 1)
-            const validator = await toPasskeyValidator(clientOn(chainId), {
-                webAuthnKey: {
-                    pubX: 1n,
-                    pubY: 2n,
-                    authenticatorId: "id",
-                    authenticatorIdHash: zeroHash,
-                    rpID: "localhost",
-                    signMessageCallback: withCallback
-                        ? async () => "0x"
-                        : undefined
-                },
-                entryPoint: getEntryPoint("0.7"),
-                kernelVersion: KERNEL_V3_1,
-                validatorContractVersion:
-                    PasskeyValidatorContractVersion.V0_0_3_PATCHED
-            })
-            const stub = await validator.getStubSignature({} as UserOperation)
-            const [, , , , , usePrecompiled] = decodeAbiParameters(
-                WEBAUTHN_SIGNATURE_ABI,
-                stub
-            )
-            expect(usePrecompiled).toBe(expected)
-        }
-    )
+        ["SDK signs, chain 1", 1, undefined, true],
+        ["SDK signs, chain 100", 100, undefined, false],
+        ["custom callback, chain 1", 1, callback, false],
+        ["callback with usePrecompiled, chain 1", 1, exposingCallback, true],
+        [
+            "callback with usePrecompiled, chain 100",
+            100,
+            exposingCallback,
+            false
+        ]
+    ])("%s", async (_, chainId, signMessageCallback, expected) => {
+        expect(isRIP7212SupportedNetwork(chainId)).toBe(chainId === 1)
+        const validator = await toPasskeyValidator(clientOn(chainId), {
+            webAuthnKey: {
+                pubX: 1n,
+                pubY: 2n,
+                authenticatorId: "id",
+                authenticatorIdHash: zeroHash,
+                rpID: "localhost",
+                signMessageCallback
+            },
+            entryPoint: getEntryPoint("0.7"),
+            kernelVersion: KERNEL_V3_1,
+            validatorContractVersion:
+                PasskeyValidatorContractVersion.V0_0_3_PATCHED
+        })
+        const stub = await validator.getStubSignature({} as UserOperation)
+        const [, , , , , usePrecompiled] = decodeAbiParameters(
+            WEBAUTHN_SIGNATURE_ABI,
+            stub
+        )
+        expect(usePrecompiled).toBe(expected)
+    })
 })

@@ -156,10 +156,15 @@ export async function toPasskeyValidator<
     )
     // Fetch chain id
     const chainId = await getChainId(client)
-    // A custom signMessageCallback encodes its own usePrecompiled flag, so the
-    // stub keeps the Solidity verifier there: it may overestimate, never under.
-    const stubUsePrecompiled =
-        !webAuthnKey.signMessageCallback && isRIP7212SupportedNetwork(chainId)
+    // A custom signMessageCallback sets its own usePrecompiled flag. The stub
+    // matches it only if the callback exposes usePrecompiled(chainId);
+    // otherwise it stays false: the estimate may be high, never too low.
+    const callback = webAuthnKey.signMessageCallback as
+        | { usePrecompiled?: (chainId: number) => boolean }
+        | undefined
+    const stubUsePrecompiled = callback
+        ? callback.usePrecompiled?.(chainId) === true
+        : isRIP7212SupportedNetwork(chainId)
 
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
