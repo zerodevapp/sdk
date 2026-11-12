@@ -37,11 +37,11 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
 
-      # npm Trusted Publishing needs npm >= 11.5.1, which current Node 24 ships.
+      # npm Trusted Publishing needs npm >= 11.5.1; Node 24.22.1 ships npm 11.19.1.
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 24.22.1
           registry-url: https://registry.npmjs.org/
 
       - name: Create version PR or publish
