@@ -175,9 +175,7 @@ export async function toMultiChainWebAuthnValidator<
     // A custom signMessageCallback sets its own usePrecompiled flag. The stub
     // matches it only if the callback exposes usePrecompiled(chainId);
     // otherwise it stays false: the estimate may be high, never too low.
-    const callback = webAuthnKey.signMessageCallback as
-        | { usePrecompiled?: (chainId: number) => boolean }
-        | undefined
+    const callback = webAuthnKey.signMessageCallback
     const stubUsePrecompiled = callback
         ? callback.usePrecompiled?.(chainId) === true
         : isRIP7212SupportedNetwork(chainId)
