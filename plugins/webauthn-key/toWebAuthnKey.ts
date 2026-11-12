@@ -14,18 +14,24 @@ export enum WebAuthnMode {
     Login = "login"
 }
 
+export type WebAuthnSignMessageCallback = ((
+    message: SignableMessage,
+    rpId: string,
+    chainId: number,
+    allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
+) => Promise<Hex>) & {
+    // The usePrecompiled flag the callback sets in its signature for a chain.
+    // Validators use it for the gas estimate stub; without it the stub is false.
+    readonly usePrecompiled?: (chainId: number) => boolean
+}
+
 export type WebAuthnKey = {
     pubX: bigint
     pubY: bigint
     authenticatorId: string
     authenticatorIdHash: Hex
     rpID: string
-    signMessageCallback?: (
-        message: SignableMessage,
-        rpId: string,
-        chainId: number,
-        allowCredentials?: PublicKeyCredentialRequestOptionsJSON["allowCredentials"]
-    ) => Promise<Hex>
+    signMessageCallback?: WebAuthnSignMessageCallback
 }
 
 interface BaseParams {

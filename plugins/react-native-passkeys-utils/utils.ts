@@ -15,10 +15,8 @@ declare module "asn1js" {
     }
 }
 
-const RIP7212_SUPPORTED_NETWORKS = [80001, 137]
-
-export const isRIP7212SupportedNetwork = (chainId: number): boolean =>
-    RIP7212_SUPPORTED_NETWORKS.includes(chainId)
+// The list lives in @zerodev/webauthn-key; re-exported for existing imports.
+export { isRIP7212SupportedNetwork } from "@zerodev/webauthn-key"
 
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
     return `0x${Array.from(array, (byte) =>

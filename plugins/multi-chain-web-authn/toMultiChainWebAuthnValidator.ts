@@ -172,6 +172,13 @@ export async function toMultiChainWebAuthnValidator<
 
     // Fetch chain id
     const chainId = await getChainId(client)
+    // A custom signMessageCallback sets its own usePrecompiled flag. The stub
+    // matches it only if the callback exposes usePrecompiled(chainId);
+    // otherwise it stays false: the estimate may be high, never too low.
+    const callback = webAuthnKey.signMessageCallback
+    const stubUsePrecompiled = callback
+        ? callback.usePrecompiled?.(chainId) === true
+        : isRIP7212SupportedNetwork(chainId)
 
     const account: LocalAccount = toAccount({
         // note that this address will be overwritten by actual address
@@ -317,7 +324,7 @@ export async function toMultiChainWebAuthnValidator<
                         1n,
                         44941127272049826721201904734628716258498742255959991581049806490182030242267n,
                         9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-                        false
+                        stubUsePrecompiled
                     ]
                 )
 
@@ -338,7 +345,8 @@ export async function toMultiChainWebAuthnValidator<
                 } as UserOperation,
                 multiChainIds.length,
                 entryPoint,
-                chainId
+                chainId,
+                stubUsePrecompiled
             )
         },
         async isEnabled(
@@ -535,7 +543,7 @@ export async function deserializeMultiChainWebAuthnValidator<
                         1n,
                         44941127272049826721201904734628716258498742255959991581049806490182030242267n,
                         9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-                        false
+                        isRIP7212SupportedNetwork(chainId)
                     ]
                 )
 
@@ -557,7 +565,8 @@ export async function deserializeMultiChainWebAuthnValidator<
                 } as UserOperation,
                 multiChainIds.length,
                 entryPoint,
-                chainId
+                chainId,
+                isRIP7212SupportedNetwork(chainId)
             )
         },
         async isEnabled(
