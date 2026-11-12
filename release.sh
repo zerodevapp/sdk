@@ -4,7 +4,7 @@
 # step failed.
 bash remove-type.sh || exit 1
 
-bun run build && changeset publish
+bun run build && changeset publish --no-git-tag
 status=$?
 
 mark_failed() { if [ "$status" -eq 0 ]; then status=1; fi; }

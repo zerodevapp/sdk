@@ -1,0 +1,67 @@
+name: Release
+
+# Changesets release. On every push to main:
+#   - pending changesets: opens or updates the "chore: version packages" PR
+#     (bumps versions, writes changelogs, deletes the changesets)
+#   - that PR merged (no changesets left): publishes the changed packages to npm
+#
+# Publishing uses npm Trusted Publishing (OIDC): no NPM_TOKEN and no 2FA prompt.
+# Each published package must list this repo and release.yml as a Trusted
+# Publisher on npm, and its package.json repository field must match this repo.
+
+on:
+  push:
+    branches: [main]
+
+# Never cancel a run: a cancelled publish can leave a partial release.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # OIDC for npm Trusted Publishing and provenance
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # A short-lived token from the org's release GitHub App: the version PR is
+      # then opened by the App, so CI runs on it (a GITHUB_TOKEN PR would not
+      # trigger workflows). No personal token.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+
+      # npm Trusted Publishing needs npm >= 11.5.1; Node 24.22.1 ships npm 11.19.1.
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+          registry-url: https://registry.npmjs.org/
+
+      - name: Create version PR or publish
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          version: bun run changeset:version
+          publish: bun run changeset:release
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
