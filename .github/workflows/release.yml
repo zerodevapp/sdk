@@ -18,20 +18,28 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# The GitHub App token does all writes, so the default token only reads.
 permissions:
-  contents: write
-  pull-requests: write
-  id-token: write # OIDC for npm Trusted Publishing and provenance
+  contents: read
 
 jobs:
+  # Publish only a commit that lints and builds.
+  verify:
+    name: Verify
+    uses: ./.github/workflows/verify.yml
+
   release:
     name: Release
+    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # OIDC for npm Trusted Publishing and provenance
     steps:
       # A short-lived token from the org's release GitHub App: the version PR is
-      # then opened by the App, so CI runs on it (a GITHUB_TOKEN PR would not
-      # trigger workflows). No personal token.
+      # opened and committed by the App, so CI runs on it (a GITHUB_TOKEN PR
+      # would not trigger workflows). No personal token.
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -43,7 +51,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          # Keep the App token out of git config while build scripts run.
+          persist-credentials: false
 
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
@@ -63,5 +72,7 @@ jobs:
           commit: "chore: version packages"
           title: "chore: version packages"
           createGithubReleases: false
+          # Commit the version PR through the API, so git needs no credentials.
+          commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
