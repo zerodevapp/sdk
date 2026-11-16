@@ -13,8 +13,7 @@ export const webauthnGetMultiUserOpDummySignature = <
     userOperation: UserOperation<entryPointVersion>,
     numOfUserOps: number,
     entryPoint: EntryPointType<entryPointVersion>,
-    chainId: number,
-    usePrecompiled = false
+    chainId: number
 ): Hex => {
     const userOpHash = getUserOperationHash({
         userOperation,
@@ -50,7 +49,7 @@ export const webauthnGetMultiUserOpDummySignature = <
             1n,
             44941127272049826721201904734628716258498742255959991581049806490182030242267n,
             9910254599581058084911561569808925251374718953855182016200087235935345969636n,
-            usePrecompiled
+            false
         ]
     )
 
