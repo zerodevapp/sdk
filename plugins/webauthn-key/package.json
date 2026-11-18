@@ -2,6 +2,11 @@
     "name": "@zerodev/webauthn-key",
     "version": "5.5.0",
     "author": "ZeroDev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zerodevapp/sdk.git",
+        "directory": "plugins/webauthn-key"
+    },
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",

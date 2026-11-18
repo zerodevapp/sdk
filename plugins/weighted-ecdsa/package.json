@@ -2,6 +2,11 @@
     "name": "@zerodev/weighted-ecdsa-validator",
     "version": "5.4.4",
     "author": "ZeroDev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zerodevapp/sdk.git",
+        "directory": "plugins/weighted-ecdsa"
+    },
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",

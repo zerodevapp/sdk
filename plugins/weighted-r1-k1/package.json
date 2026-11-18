@@ -2,6 +2,11 @@
     "name": "@zerodev/weighted-validator",
     "version": "5.5.1",
     "author": "ZeroDev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zerodevapp/sdk.git",
+        "directory": "plugins/weighted-r1-k1"
+    },
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",

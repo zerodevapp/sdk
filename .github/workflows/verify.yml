@@ -16,6 +16,9 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
 
+      - name: Check published packages
+        run: bun check-publishable.ts
+
       - name: Lint code
         run: bun format && bun lint:fix
       

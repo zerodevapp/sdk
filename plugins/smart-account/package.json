@@ -2,6 +2,11 @@
     "name": "@zerodev/smart-account-validator",
     "version": "5.4.1",
     "author": "ZeroDev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zerodevapp/sdk.git",
+        "directory": "plugins/smart-account"
+    },
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",

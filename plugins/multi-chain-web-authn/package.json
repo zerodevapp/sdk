@@ -2,6 +2,11 @@
     "name": "@zerodev/multi-chain-web-authn-validator",
     "version": "5.5.0",
     "author": "ZeroDev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zerodevapp/sdk.git",
+        "directory": "plugins/multi-chain-web-authn"
+    },
     "main": "./_cjs/index.js",
     "module": "./_esm/index.js",
     "types": "./_types/index.d.ts",
