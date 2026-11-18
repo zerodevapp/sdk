@@ -46,6 +46,10 @@ jobs:
       - name: Build
         run: bun run build
 
+      # Unit tests only; they import the packages built above.
+      - name: Unit tests
+        run: bun test ./plugins
+
   types:
     if: false
     name: Types

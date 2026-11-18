@@ -90,3 +90,7 @@ export async function signMessageWithReactNativePasskeys(
 
     return encodedSignature
 }
+
+// The usePrecompiled flag this signer sets for a chain. The passkey validators
+// read it so the gas estimate stub sets the same flag as the real signature.
+signMessageWithReactNativePasskeys.usePrecompiled = isRIP7212SupportedNetwork
