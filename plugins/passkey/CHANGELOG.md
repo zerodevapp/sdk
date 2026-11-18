@@ -1,5 +1,11 @@
 # @zerodev/passkey-validator
 
+## 5.6.1
+
+### Patch Changes
+
+- 457af26e0f3b2c69b240aa06f643ec1c0d7c7255: fix: WebAuthn stub signatures now set `usePrecompiled` like real signatures, so gas estimates use the P-256 precompile where the chain has it. A custom `signMessageCallback` can expose `usePrecompiled(chainId)` to set the stub's flag; without it the stub stays `false`. `signMessageWithReactNativePasskeys` exposes it and now uses the chain list from `@zerodev/webauthn-key`, so React Native signatures use the precompile on every chain in that list.
+
 ## 5.6.0
 
 ### Minor Changes
